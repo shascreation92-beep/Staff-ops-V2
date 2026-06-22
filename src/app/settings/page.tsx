@@ -70,6 +70,24 @@ export default async function SettingsPage() {
     }
   });
 
+  // Fetch pending invitations (pending users with roles TEAM_LEAD or IT_DEPARTMENT)
+  const pendingInvitations = await db.user.findMany({
+    where: {
+      companyId: user.role === "SUPER_ADMIN" ? undefined : (user.companyId || ""),
+      status: "PENDING",
+      role: { in: ["TEAM_LEAD", "IT_DEPARTMENT"] }
+    },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      createdAt: true
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
   return (
     <DashboardLayout user={{ ...user, companyName }}>
       <SettingsShard
@@ -78,6 +96,7 @@ export default async function SettingsPage() {
         companies={companies}
         rules={rulesMap}
         announcements={announcements}
+        pendingInvitations={pendingInvitations}
       />
     </DashboardLayout>
   );

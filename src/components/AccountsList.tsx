@@ -352,14 +352,38 @@ export default function AccountsList({
                         </button>
                       </td>
                       <td>
-                        <span className="badge" style={{
-                          background: acc.status === "ACTIVE" ? "rgba(34,197,94,0.06)" : acc.status === "REJECTED" ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.02)",
-                          border: acc.status === "ACTIVE" ? "1px solid rgba(34,197,94,0.2)" : acc.status === "REJECTED" ? "1px solid rgba(239,68,68,0.2)" : "1px solid var(--border-dim)",
-                          color: acc.status === "ACTIVE" ? "var(--color-success)" : acc.status === "REJECTED" ? "var(--color-danger)" : "var(--text-secondary)",
-                          fontSize: "0.7rem"
-                        }}>
-                          {acc.status.replace(/_/g, " ")}
-                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <span className="badge" style={{
+                            background: acc.status === "ACTIVE" ? "rgba(34,197,94,0.06)" : acc.status === "REJECTED" ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.02)",
+                            border: acc.status === "ACTIVE" ? "1px solid rgba(34,197,94,0.2)" : acc.status === "REJECTED" ? "1px solid rgba(239,68,68,0.2)" : "1px solid var(--border-dim)",
+                            color: acc.status === "ACTIVE" ? "var(--color-success)" : acc.status === "REJECTED" ? "var(--color-danger)" : "var(--text-secondary)",
+                            fontSize: "0.7rem"
+                          }}>
+                            {acc.status.replace(/_/g, " ")}
+                          </span>
+                          {(acc.status === "ASSIGNED_TO_IT" || acc.status === "IN_PROGRESS") && acc.user_account_updatedByIdTouser && (
+                            <span 
+                              title={`Claimed by ${acc.user_account_updatedByIdTouser.name || acc.user_account_updatedByIdTouser.email}`}
+                              style={{
+                                width: "18px",
+                                height: "18px",
+                                borderRadius: "50%",
+                                background: "rgba(212, 175, 55, 0.2)",
+                                border: "1px solid var(--gold-premium)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "0.65rem",
+                                fontWeight: 800,
+                                color: "var(--gold-premium)",
+                                cursor: "help",
+                                boxShadow: "0 0 8px rgba(212, 175, 55, 0.4)"
+                              }}
+                            >
+                              {(acc.user_account_updatedByIdTouser.name || acc.user_account_updatedByIdTouser.email || "I").charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <div 

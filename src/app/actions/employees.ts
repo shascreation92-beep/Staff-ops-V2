@@ -16,7 +16,14 @@ const CreateEmployeeSchema = z.object({
   fullName: z.string().min(1, "Full Name is required"),
   email: z.string().email("Invalid email format"),
   status: z.string().default("ACTIVE"),
-  targetCompanyId: z.string().optional() // For Super Admin
+  targetCompanyId: z.string().optional(),
+  laptopBrand: z.nativeEnum(employee_laptopBrand).nullable().optional(),
+  laptopModel: z.string().nullable().optional(),
+  laptopSerialNumber: z.string().nullable().optional(),
+  windowsVersion: z.nativeEnum(employee_windowsVersion).nullable().optional(),
+  vpnProvider: z.nativeEnum(employee_vpnProvider).nullable().optional(),
+  laptopPassword: z.string().nullable().optional(),
+  vpnCredentials: z.string().nullable().optional(),
 });
 
 export async function createEmployeeAction(formData: z.infer<typeof CreateEmployeeSchema>) {
@@ -66,6 +73,13 @@ export async function createEmployeeAction(formData: z.infer<typeof CreateEmploy
         email,
         status,
         companyId,
+        laptopBrand: result.data.laptopBrand || null,
+        laptopModel: result.data.laptopModel || null,
+        laptopSerialNumber: result.data.laptopSerialNumber || null,
+        windowsVersion: result.data.windowsVersion || null,
+        vpnProvider: result.data.vpnProvider || null,
+        laptopPassword: result.data.laptopPassword || null,
+        vpnCredentials: result.data.vpnCredentials || null,
         updatedAt: new Date()
       }
     });
@@ -102,7 +116,7 @@ export async function updateEmployeeITAction(
   id: string, 
   formData: z.infer<typeof UpdateEmployeeITSchema>
 ) {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]);
 
   const result = UpdateEmployeeITSchema.safeParse(formData);
   if (!result.success) {

@@ -7,6 +7,10 @@ import {
   createAnnouncementAction, 
   updateCompanyRuleAction 
 } from "@/app/actions/settings";
+import {
+  sendInvitationAction,
+  declineInvitationAction
+} from "@/app/actions/users";
 import { 
   Sliders, 
   Building, 
@@ -16,7 +20,8 @@ import {
   FileText, 
   Check, 
   HelpCircle,
-  AlertCircle
+  AlertCircle,
+  Users
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 
@@ -31,6 +36,7 @@ interface SettingsShardProps {
   companies: any[];
   rules: Record<string, string>;
   announcements: any[];
+  pendingInvitations: any[];
 }
 
 export default function SettingsShard({
@@ -38,10 +44,11 @@ export default function SettingsShard({
   platforms,
   companies,
   rules,
-  announcements
+  announcements,
+  pendingInvitations
 }: SettingsShardProps) {
   const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState<"RULES" | "PLATFORMS" | "ANNOUNCEMENTS">("RULES");
+  const [activeTab, setActiveTab] = useState<"RULES" | "PLATFORMS" | "ANNOUNCEMENTS" | "INVITATIONS" >("RULES");
 
   // State for target company selection (Super Admin override)
   const [targetCompanyId, setTargetCompanyId] = useState(
@@ -65,6 +72,49 @@ export default function SettingsShard({
   const [annTargetCompany, setAnnTargetCompany] = useState("");
   const [annError, setAnnError] = useState<string | null>(null);
   const [annSuccessMsg, setAnnSuccessMsg] = useState<string | null>(null);
+
+  // Invitations state
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"TEAM_LEAD" | "IT_DEPARTMENT">("TEAM_LEAD");
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
+
+  const handleSendInvitation = (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviteError(null);
+    setInviteSuccessMsg(null);
+
+    if (!inviteEmail.trim()) return;
+
+    startTransition(async () => {
+      try {
+        const res = await sendInvitationAction({
+          email: inviteEmail,
+          role: inviteRole
+        });
+
+        setInviteEmail("");
+        setInviteSuccessMsg(
+          res.mode === "UPGRADE"
+            ? "Upgrade invitation successfully sent to active Sales Associate."
+            : "Invitation successfully dispatched to new Gmail address."
+        );
+        setTimeout(() => setInviteSuccessMsg(null), 4000);
+      } catch (err: any) {
+        setInviteError(err.message || "Failed to dispatch invitation.");
+      }
+    });
+  };
+
+  const handleCancelInvitation = async (id: string, emailAddress: string) => {
+    if (confirm(`Are you sure you wish to cancel and delete the invitation for "${emailAddress}"?`)) {
+      try {
+        await declineInvitationAction("", true, id);
+      } catch (err: any) {
+        alert(err.message);
+      }
+    }
+  };
 
   const isSuperAdmin = currentUser.role === "SUPER_ADMIN";
   const isCompanyOwner = currentUser.role === "COMPANY_OWNER";
@@ -178,6 +228,17 @@ export default function SettingsShard({
             <Sliders className="sidebar-icon" size={16} />
             <span>Rule Engine</span>
           </button>
+
+          {(isSuperAdmin || isCompanyOwner) && (
+            <button
+              onClick={() => setActiveTab("INVITATIONS")}
+              className={`sidebar-item ${activeTab === "INVITATIONS" ? "active" : ""}`}
+              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
+            >
+              <Users className="sidebar-icon" size={16} />
+              <span>Team Invitations</span>
+            </button>
+          )}
 
           {isSuperAdmin && (
             <>
@@ -458,6 +519,118 @@ export default function SettingsShard({
                       </div>
                     ))
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Team Invitations */}
+        {activeTab === "INVITATIONS" && (isSuperAdmin || isCompanyOwner) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            <div>
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>TEAM INVITATION DISPATCHER</h2>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+                Add new IT department operators or designate Team Leads by sending email invitations.
+              </p>
+            </div>
+
+            {inviteSuccessMsg && (
+              <div style={{ background: "rgba(34, 197, 94, 0.08)", border: "1px solid rgba(34, 197, 94, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-success)", fontSize: "0.85rem" }}>
+                {inviteSuccessMsg}
+              </div>
+            )}
+
+            {inviteError && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {inviteError}
+              </div>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2.5rem" }}>
+              {/* Form */}
+              <form onSubmit={handleSendInvitation} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", maxWidth: "380px" }}>
+                <div className="form-group">
+                  <label className="form-label">Recipient Gmail Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. operator@gmail.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="input-gold"
+                    disabled={isPending}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Designation Role</label>
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value as any)}
+                    className="select-gold"
+                    disabled={isPending}
+                  >
+                    <option value="TEAM_LEAD">Team Lead</option>
+                    <option value="IT_DEPARTMENT">IT Department Member</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{ width: "100%", height: "42px", marginTop: "0.5rem" }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Sending..." : "DISPATCH INVITATION"}
+                </button>
+              </form>
+
+              {/* Invitation List */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <h3 style={{ fontSize: "0.95rem", fontWeight: 700, borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.5rem" }}>
+                  Pending Invitations
+                </h3>
+                <div className="table-container-outer" style={{ maxHeight: "380px", overflowY: "auto" }}>
+                  <table className="premium-table">
+                    <thead>
+                      <tr>
+                        <th>Recipient</th>
+                        <th>Role</th>
+                        <th style={{ textAlign: "right" }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingInvitations.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem", fontSize: "0.8rem" }}>
+                            No active invitations.
+                          </td>
+                        </tr>
+                      ) : (
+                        pendingInvitations.map(invite => (
+                          <tr key={invite.id}>
+                            <td style={{ fontWeight: 500, fontSize: "0.85rem" }}>{invite.email}</td>
+                            <td>
+                              <span className="badge pending" style={{ fontSize: "0.65rem" }}>
+                                {invite.role.replace("_", " ")}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: "right" }}>
+                              <button
+                                onClick={() => handleCancelInvitation(invite.id, invite.email)}
+                                className="btn-danger"
+                                style={{ padding: "0.25rem 0.5rem", height: "auto" }}
+                                title="Cancel Invite"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

@@ -210,6 +210,39 @@ export async function updateAccountStatusAction(
           }
         });
       }
+    } else if (toStatus === "ASSIGNED_TO_IT") {
+      const lastApproval = await db.accounthistory.findFirst({
+        where: {
+          accountId: accountId,
+          toStatus: "APPROVED_BY_TEAM_LEAD"
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        select: {
+          changedById: true
+        }
+      });
+
+      const creator = await db.user.findUnique({
+        where: { id: account.createdById },
+        select: { teamLeadId: true }
+      });
+
+      const targetTLId = lastApproval?.changedById || creator?.teamLeadId;
+
+      if (targetTLId) {
+        await db.notification.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: targetTLId,
+            title: "IT Operator Claimed Task",
+            message: `IT Operator ${user.name || user.email} is taking over and handling the task for account ${account.serialCode}.`,
+            type: "IT Takeover",
+            isRead: false
+          }
+        });
+      }
     } else if (toStatus === "REJECTED" || toStatus === "ACTIVE" || toStatus === "COMPLETED") {
       // Notify Sales Associate who created the account
       await db.notification.create({

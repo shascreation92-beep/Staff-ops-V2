@@ -47,6 +47,13 @@ export default function EmployeesList({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [targetCompanyId, setTargetCompanyId] = useState(companies[0]?.id || "");
+  const [addLaptopBrand, setAddLaptopBrand] = useState<"HP" | "Dell" | "ThinkPad" | "">("");
+  const [addLaptopModel, setAddLaptopModel] = useState("");
+  const [addLaptopSerialNumber, setAddLaptopSerialNumber] = useState("");
+  const [addWindowsVersion, setAddWindowsVersion] = useState<"Windows_10" | "Windows_11" | "">("");
+  const [addVpnProvider, setAddVpnProvider] = useState<"Surfshark" | "ExpressVPN" | "NordVPN" | "ProtonVPN" | "PureVPN" | "HideMe" | "">("");
+  const [addLaptopPassword, setAddLaptopPassword] = useState("");
+  const [addVpnCredentials, setAddVpnCredentials] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
 
   // Edit IT specifications modal state
@@ -67,7 +74,7 @@ export default function EmployeesList({
   const isIT = currentUser.role === "IT_DEPARTMENT";
 
   const canCreate = isSuperAdmin || isCompanyOwner || isTeamLead;
-  const canEditIT = isSuperAdmin || isCompanyOwner || isIT;
+  const canEditIT = isSuperAdmin || isCompanyOwner || isTeamLead;
 
   // Filter employees
   const filteredEmployees = employees.filter(emp => {
@@ -93,7 +100,14 @@ export default function EmployeesList({
           fullName,
           email,
           status: "ACTIVE",
-          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
+          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined,
+          laptopBrand: addLaptopBrand === "" ? null : addLaptopBrand,
+          laptopModel: addLaptopModel === "" ? null : addLaptopModel,
+          laptopSerialNumber: addLaptopSerialNumber === "" ? null : addLaptopSerialNumber,
+          windowsVersion: addWindowsVersion === "" ? null : addWindowsVersion,
+          vpnProvider: addVpnProvider === "" ? null : addVpnProvider,
+          laptopPassword: addLaptopPassword === "" ? null : addLaptopPassword,
+          vpnCredentials: addVpnCredentials === "" ? null : addVpnCredentials,
         });
 
         if (res.success) {
@@ -101,6 +115,13 @@ export default function EmployeesList({
           setEmployeeId("");
           setFullName("");
           setEmail("");
+          setAddLaptopBrand("");
+          setAddLaptopModel("");
+          setAddLaptopSerialNumber("");
+          setAddWindowsVersion("");
+          setAddVpnProvider("");
+          setAddLaptopPassword("");
+          setAddVpnCredentials("");
         }
       } catch (err: any) {
         setAddError(err.message || "Failed to add employee.");
@@ -325,14 +346,16 @@ export default function EmployeesList({
           padding: "1.5rem"
         }}>
           <div className="glass-panel" style={{
-            maxWidth: "500px",
+            maxWidth: "540px",
             width: "100%",
             padding: "2rem",
             background: "rgba(10,10,10,0.98)",
             border: "1px solid var(--border-gold)",
             display: "flex",
             flexDirection: "column",
-            gap: "1.25rem"
+            gap: "1.25rem",
+            maxHeight: "90vh",
+            overflowY: "auto"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>ADD NEW EMPLOYEE</h2>
 
@@ -390,6 +413,103 @@ export default function EmployeesList({
                   placeholder="e.g. sarah@acme.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="input-gold"
+                />
+              </div>
+
+              <div style={{ flex: 1, height: "1px", background: "var(--border-dim)", margin: "0.5rem 0" }}></div>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--gold-premium)" }}>Laptop & Credentials Setup (Team Lead Exclusive)</h3>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div className="form-group">
+                  <label className="form-label">Laptop Brand</label>
+                  <select
+                    value={addLaptopBrand}
+                    onChange={(e) => setAddLaptopBrand(e.target.value as any)}
+                    className="select-gold"
+                  >
+                    <option value="">Unassigned</option>
+                    <option value="HP">HP</option>
+                    <option value="Dell">Dell</option>
+                    <option value="ThinkPad">ThinkPad</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Windows Version</label>
+                  <select
+                    value={addWindowsVersion}
+                    onChange={(e) => setAddWindowsVersion(e.target.value as any)}
+                    className="select-gold"
+                  >
+                    <option value="">N/A</option>
+                    <option value="Windows_10">Windows 10</option>
+                    <option value="Windows_11">Windows 11</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div className="form-group">
+                  <label className="form-label">Laptop Model</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Latitude 5420"
+                    value={addLaptopModel}
+                    onChange={(e) => setAddLaptopModel(e.target.value)}
+                    className="input-gold"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Laptop Serial S/N</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. TAG-23091A"
+                    value={addLaptopSerialNumber}
+                    onChange={(e) => setAddLaptopSerialNumber(e.target.value)}
+                    className="input-gold"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Laptop Administrator Password</label>
+                <input
+                  type="text"
+                  placeholder="Specify strong password"
+                  value={addLaptopPassword}
+                  onChange={(e) => setAddLaptopPassword(e.target.value)}
+                  className="input-gold"
+                />
+              </div>
+
+              <div style={{ flex: 1, height: "1px", background: "var(--border-dim)", margin: "0.5rem 0" }}></div>
+
+              <div className="form-group">
+                <label className="form-label">VPN Provider</label>
+                <select
+                  value={addVpnProvider}
+                  onChange={(e) => setAddVpnProvider(e.target.value as any)}
+                  className="select-gold"
+                >
+                  <option value="">No VPN</option>
+                  <option value="Surfshark">Surfshark</option>
+                  <option value="ExpressVPN">ExpressVPN</option>
+                  <option value="NordVPN">NordVPN</option>
+                  <option value="ProtonVPN">ProtonVPN</option>
+                  <option value="PureVPN">PureVPN</option>
+                  <option value="HideMe">HideMe</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">VPN Security Credentials</label>
+                <input
+                  type="text"
+                  placeholder="e.g. User token or login keys"
+                  value={addVpnCredentials}
+                  onChange={(e) => setAddVpnCredentials(e.target.value)}
                   className="input-gold"
                 />
               </div>

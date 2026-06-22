@@ -27,6 +27,9 @@ export default async function AccountsPage() {
       platform: true,
       company: {
         select: { name: true }
+      },
+      user_account_updatedByIdTouser: {
+        select: { name: true, email: true }
       }
     },
     orderBy: {
