@@ -1,13 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { 
   Bell, 
   Menu, 
-  ChevronDown, 
-  Terminal, 
   AlertCircle, 
   Check, 
   Archive,
@@ -34,7 +31,6 @@ interface HeaderProps {
 
 export default function Header({ user, onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
-  const [selectedEmail, setSelectedEmail] = useState(user.email || "");
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -98,18 +94,7 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
     }
   };
 
-  const handleImpersonation = async (email: string) => {
-    setSelectedEmail(email);
-    try {
-      await signIn("developer-login", {
-        email,
-        callbackUrl: pathname,
-        redirect: true,
-      });
-    } catch (err) {
-      console.error("Impersonation failed:", err);
-    }
-  };
+
 
   const getPageTitle = () => {
     if (pathname === "/") return "Control Panel";
@@ -146,39 +131,6 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
       </div>
 
       <div className="header-actions">
-        {/* Server status telemetry */}
-        <div className="server-status-pill">
-          <div className="status-dot-active"></div>
-          <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", letterSpacing: "0.05em" }}>
-            NODE_4: SYNCED
-          </span>
-        </div>
-
-        {/* Developer Impersonation Switcher */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-gold)", borderRadius: "var(--border-radius-sm)", padding: "0.2rem 0.5rem" }}>
-          <Terminal size={14} style={{ color: "var(--gold-primary)" }} />
-          <select
-            value={selectedEmail}
-            onChange={(e) => handleImpersonation(e.target.value)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "var(--text-primary)",
-              fontSize: "0.75rem",
-              fontFamily: "var(--font-mono)",
-              outline: "none",
-              cursor: "pointer"
-            }}
-          >
-            <option value="admin@staffops.com" style={{ background: "#0a0a0a" }}>admin@staffops.com (SUPER_ADMIN)</option>
-            <option value="owner@acme.com" style={{ background: "#0a0a0a" }}>owner@acme.com (COMPANY_OWNER)</option>
-            <option value="lead@acme.com" style={{ background: "#0a0a0a" }}>lead@acme.com (TEAM_LEAD)</option>
-            <option value="sales@acme.com" style={{ background: "#0a0a0a" }}>sales@acme.com (SALES_ASSOCIATE)</option>
-            <option value="it@acme.com" style={{ background: "#0a0a0a" }}>it@acme.com (IT_DEPARTMENT)</option>
-            <option value="owner@betacorp.com" style={{ background: "#0a0a0a" }}>owner@betacorp.com (PENDING OWNER)</option>
-          </select>
-        </div>
-
         {/* Notifications Panel */}
         <div style={{ position: "relative" }} ref={dropdownRef}>
           <button 
