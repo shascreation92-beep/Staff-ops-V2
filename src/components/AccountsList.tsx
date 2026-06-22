@@ -23,6 +23,7 @@ import {
   Eye
 } from "lucide-react";
 import { account_status, user_role } from "@prisma/client";
+import NotificationBell from "./NotificationBell";
 
 interface AccountsListProps {
   currentUser: {
@@ -204,8 +205,9 @@ export default function AccountsList({
       
       {/* Toolbar Controls */}
       <div className="glass-panel table-panel" style={{ padding: "1.25rem 1.5rem", marginBottom: 0 }}>
-        <div className="table-toolbar">
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", flex: 1 }}>
+        <div className="table-toolbar table-toolbar-responsive">
+          {/* Center Column: Search icon, Search input, and Select filters */}
+          <div className="toolbar-center-group">
             <div className="table-search-wrapper" style={{ width: "100%", maxWidth: "360px" }}>
               <Search className="header-search-icon" />
               <input
@@ -248,16 +250,20 @@ export default function AccountsList({
             </div>
           </div>
 
-          {(isSuperAdmin || isCompanyOwner) && (
-            <button 
-              className="btn-gold" 
-              onClick={() => setShowModal(true)}
-              disabled={isPending}
-            >
-              <Plus size={16} />
-              <span>PROVISION ACCOUNT</span>
-            </button>
-          )}
+          {/* Right Column: Provision Button and Notification Icon */}
+          <div className="toolbar-right-group">
+            {(isSuperAdmin || isCompanyOwner) && (
+              <button 
+                className="btn-gold" 
+                onClick={() => setShowModal(true)}
+                disabled={isPending}
+              >
+                <Plus size={16} />
+                <span>PROVISION ACCOUNT</span>
+              </button>
+            )}
+            <NotificationBell />
+          </div>
         </div>
       </div>
 

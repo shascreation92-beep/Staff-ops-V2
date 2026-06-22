@@ -36,14 +36,14 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const menuItems = [
     { 
       id: "dashboard", 
-      label: "Control Panel", 
+      label: "Dashboard", 
       path: "/", 
       icon: LayoutDashboard,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     { 
       id: "accounts", 
-      label: "Accounts Shard", 
+      label: "User Data", 
       path: "/accounts", 
       icon: Database,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
@@ -57,7 +57,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     },
     { 
       id: "chat", 
-      label: "Communications", 
+      label: "Chat Box", 
       path: "/chat", 
       icon: MessageSquare,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 

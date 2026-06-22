@@ -25,7 +25,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const pathname = usePathname();
-  const isDashboard = pathname === "/";
+  const hideHeader = pathname === "/" || pathname === "/accounts";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [invitation, setInvitation] = useState<{ id: string; title: string; message: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -173,8 +173,8 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         )}
 
         {/* Main Viewport */}
-        <main className="main-content" style={isDashboard ? { paddingTop: "2rem" } : undefined}>
-          {isDashboard && (
+        <main className="main-content" style={hideHeader ? { paddingTop: "2rem" } : undefined}>
+          {hideHeader && (
             <button 
               onClick={() => setSidebarOpen(true)}
               className="mobile-menu-trigger btn-glass"
@@ -197,7 +197,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
             </button>
           )}
 
-          {!isDashboard && (
+          {!hideHeader && (
             <Header 
               user={user} 
               onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 

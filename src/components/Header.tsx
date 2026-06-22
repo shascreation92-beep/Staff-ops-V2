@@ -18,10 +18,10 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
 
   const getPageTitle = () => {
-    if (pathname === "/") return "Control Panel";
-    if (pathname.startsWith("/accounts")) return "Accounts Database Shard";
+    if (pathname === "/") return "Dashboard";
+    if (pathname.startsWith("/accounts")) return "User Data";
     if (pathname.startsWith("/employees")) return "Asset Registry (Laptops/VPNs)";
-    if (pathname.startsWith("/chat")) return "Direct Channels & Communications";
+    if (pathname.startsWith("/chat")) return "Chat Box";
     if (pathname.startsWith("/settings")) return "Global Platform Rule Engine";
     if (pathname.startsWith("/audit-logs")) return "SOC2 System Audit Logs";
     return "StaffOps Console";

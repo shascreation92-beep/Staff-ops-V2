@@ -892,3 +892,93 @@ body {
     display: flex !important;
   }
 }
+
+/* Responsive Table Toolbar Centering */
+@media (min-width: 1025px) {
+  .table-toolbar-responsive {
+    position: relative !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  .toolbar-center-group {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 1rem !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  .toolbar-right-group {
+    position: absolute !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    z-index: 10 !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .table-toolbar-responsive {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    width: 100% !important;
+  }
+  
+  .toolbar-center-group {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    width: 100% !important;
+  }
+  
+  .toolbar-right-group {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    width: 100% !important;
+  }
+}
+
+/* Table Search Input and Icon Alignment */
+.table-search-wrapper {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.table-search-wrapper .header-search-icon {
+  position: absolute !important;
+  left: 0.75rem !important;
+  color: var(--text-muted) !important;
+  pointer-events: none !important;
+  width: 16px !important;
+  height: 16px !important;
+  z-index: 1 !important;
+}
+
+.table-search-wrapper .header-search-input {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-gold) !important;
+  border-radius: var(--border-radius-sm) !important;
+  color: var(--text-primary) !important;
+  padding: 0.45rem 0.75rem 0.45rem 2.25rem !important;
+  outline: none !important;
+  font-size: 0.85rem !important;
+  width: 100% !important;
+  transition: all 0.2s ease !important;
+}
+
+.table-search-wrapper .header-search-input:focus {
+  border-color: var(--gold-premium) !important;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2) !important;
+}
