@@ -177,7 +177,9 @@ export default async function DashboardPage() {
         justifyContent: "space-between",
         alignItems: "center",
         flexWrap: "wrap",
-        gap: "1rem"
+        gap: "1rem",
+        position: "relative",
+        zIndex: 50
       }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800 }} className="text-gold-gradient">
