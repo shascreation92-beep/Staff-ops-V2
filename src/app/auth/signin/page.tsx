@@ -179,22 +179,7 @@ export default function SignInPage() {
     setEmail(targetEmail);
   };
 
-  // Styled white pill buttons style matching the mockup
-  const pillStyle = (role: string) => ({
-    backgroundColor: "#FFFFFF",
-    color: "#000000",
-    border: activeRole === role ? "2px solid #FBBF24" : "1px solid transparent",
-    borderRadius: "6px",
-    padding: "0.55rem 1rem",
-    fontSize: "0.9rem",
-    fontWeight: 500,
-    cursor: "pointer",
-    boxShadow: activeRole === role 
-      ? "0 0 12px rgba(251, 191, 36, 0.5)" 
-      : "0 2px 4px rgba(0, 0, 0, 0.05)",
-    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-    fontFamily: "var(--font-sans)",
-  });
+
 
   return (
     <div style={{
@@ -332,7 +317,8 @@ export default function SignInPage() {
               <button
                 type="button"
                 onClick={() => handleRoleSelection("SUPER_ADMIN", "admin@staffops.com")}
-                style={{ ...pillStyle("SUPER_ADMIN"), width: "100%", maxWidth: "250px" }}
+                className={`glass-pill ${activeRole === "SUPER_ADMIN" ? "active" : ""}`}
+                style={{ width: "100%", maxWidth: "250px" }}
                 disabled={isLoading}
               >
                 Super Admin
@@ -344,7 +330,8 @@ export default function SignInPage() {
               <button
                 type="button"
                 onClick={() => handleRoleSelection("COMPANY_OWNER", "owner@acme.com")}
-                style={{ ...pillStyle("COMPANY_OWNER"), flex: 1 }}
+                className={`glass-pill ${activeRole === "COMPANY_OWNER" ? "active" : ""}`}
+                style={{ flex: 1 }}
                 disabled={isLoading}
               >
                 Company
@@ -352,7 +339,8 @@ export default function SignInPage() {
               <button
                 type="button"
                 onClick={() => handleRoleSelection("IT_DEPARTMENT", "it@acme.com")}
-                style={{ ...pillStyle("IT_DEPARTMENT"), flex: 1 }}
+                className={`glass-pill ${activeRole === "IT_DEPARTMENT" ? "active" : ""}`}
+                style={{ flex: 1 }}
                 disabled={isLoading}
               >
                 IT Dept.
@@ -364,7 +352,8 @@ export default function SignInPage() {
               <button
                 type="button"
                 onClick={() => handleRoleSelection("TEAM_LEAD", "lead@acme.com")}
-                style={{ ...pillStyle("TEAM_LEAD"), flex: 1 }}
+                className={`glass-pill ${activeRole === "TEAM_LEAD" ? "active" : ""}`}
+                style={{ flex: 1 }}
                 disabled={isLoading}
               >
                 Team Lead
@@ -372,7 +361,8 @@ export default function SignInPage() {
               <button
                 type="button"
                 onClick={() => handleRoleSelection("SALES_ASSOCIATE", "sales@acme.com")}
-                style={{ ...pillStyle("SALES_ASSOCIATE"), flex: 1 }}
+                className={`glass-pill ${activeRole === "SALES_ASSOCIATE" ? "active" : ""}`}
+                style={{ flex: 1 }}
                 disabled={isLoading}
               >
                 Sale As.
@@ -392,17 +382,7 @@ export default function SignInPage() {
                   setActiveRole(""); // remove active pill highlight when customized
                 }}
                 disabled={isLoading}
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  color: "#000000",
-                  border: "1px solid transparent",
-                  borderRadius: "6px",
-                  padding: "0.65rem 0.9rem",
-                  fontSize: "0.95rem",
-                  width: "100%",
-                  outline: "none",
-                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.1)"
-                }}
+                className="glass-input"
               />
             </div>
 
@@ -413,17 +393,7 @@ export default function SignInPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  color: "#000000",
-                  border: "1px solid transparent",
-                  borderRadius: "6px",
-                  padding: "0.65rem 0.9rem",
-                  fontSize: "0.95rem",
-                  width: "100%",
-                  outline: "none",
-                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.1)"
-                }}
+                className="glass-input"
               />
             </div>
           </div>
