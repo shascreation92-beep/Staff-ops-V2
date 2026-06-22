@@ -169,24 +169,26 @@ export default function NotificationBell() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)" }}>{n.title}</span>
-                    <div style={{ display: "flex", gap: "0.35rem" }}>
-                      {!n.isRead && (
+                    {n.type !== "IT_READ_ONLY" && (
+                      <div style={{ display: "flex", gap: "0.35rem" }}>
+                        {!n.isRead && (
+                          <button 
+                            onClick={() => handleMarkAsRead(n.id)}
+                            title="Mark as read"
+                            style={{ background: "none", border: "none", color: "var(--color-success)", cursor: "pointer" }}
+                          >
+                            <Check size={14} />
+                          </button>
+                        )}
                         <button 
-                          onClick={() => handleMarkAsRead(n.id)}
-                          title="Mark as read"
-                          style={{ background: "none", border: "none", color: "var(--color-success)", cursor: "pointer" }}
+                          onClick={() => handleArchive(n.id)}
+                          title="Archive"
+                          style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
                         >
-                          <Check size={14} />
+                          <Archive size={12} />
                         </button>
-                      )}
-                      <button 
-                        onClick={() => handleArchive(n.id)}
-                        title="Archive"
-                        style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
-                      >
-                        <Archive size={12} />
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                   <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>{n.message}</p>
                   <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>

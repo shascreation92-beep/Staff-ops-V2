@@ -88,6 +88,22 @@ export default async function SettingsPage() {
     }
   });
 
+  // Fetch active users in the same company context
+  const users = await db.user.findMany({
+    where: {
+      isArchived: false,
+      companyId: user.role === "SUPER_ADMIN" ? undefined : (user.companyId || "")
+    },
+    include: {
+      user: { // self relation for teamLeadId mapping to team lead
+        select: { name: true }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
   return (
     <DashboardLayout user={{ ...user, companyName }}>
       <SettingsShard
@@ -97,6 +113,7 @@ export default async function SettingsPage() {
         rules={rulesMap}
         announcements={announcements}
         pendingInvitations={pendingInvitations}
+        users={users}
       />
     </DashboardLayout>
   );

@@ -6,6 +6,7 @@ import {
   updateEmployeeITAction, 
   archiveEmployeeAction 
 } from "@/app/actions/employees";
+import { onboardSalesAssociateAction } from "@/app/actions/users";
 import { 
   Search, 
   Plus, 
@@ -18,7 +19,8 @@ import {
   FileText,
   User,
   Key,
-  ShieldAlert
+  ShieldAlert,
+  UserCheck
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 
@@ -40,6 +42,14 @@ export default function EmployeesList({
   const [isPending, startTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const [brandFilter, setBrandFilter] = useState("ALL");
+
+  // Onboard Associate modal state
+  const [showOnboardModal, setShowOnboardModal] = useState(false);
+  const [onboardFullName, setOnboardFullName] = useState("");
+  const [onboardEmail, setOnboardEmail] = useState("");
+  const [onboardEmployeeId, setOnboardEmployeeId] = useState("");
+  const [onboardPassword, setOnboardPassword] = useState("");
+  const [onboardError, setOnboardError] = useState<string | null>(null);
 
   // Create Employee modal state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -88,6 +98,32 @@ export default function EmployeesList({
 
     return matchesSearch && matchesBrand;
   });
+
+  const handleOnboardSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setOnboardError(null);
+
+    startTransition(async () => {
+      try {
+        const res = await onboardSalesAssociateAction({
+          fullName: onboardFullName,
+          email: onboardEmail,
+          employeeId: onboardEmployeeId,
+          password: onboardPassword
+        });
+
+        if (res.success) {
+          setShowOnboardModal(false);
+          setOnboardFullName("");
+          setOnboardEmail("");
+          setOnboardEmployeeId("");
+          setOnboardPassword("");
+        }
+      } catch (err: any) {
+        setOnboardError(err.message || "Failed to onboard Sales Associate.");
+      }
+    });
+  };
 
   const handleAddEmployee = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,10 +247,16 @@ export default function EmployeesList({
           </div>
 
           {canCreate && (
-            <button className="btn-gold" onClick={() => setShowAddModal(true)}>
-              <Plus size={16} />
-              <span>ADD EMPLOYEE</span>
-            </button>
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button className="btn-gold" onClick={() => setShowOnboardModal(true)}>
+                <UserCheck size={16} />
+                <span>ONBOARD ASSOCIATE</span>
+              </button>
+              <button className="btn-gold" onClick={() => setShowAddModal(true)}>
+                <Plus size={16} />
+                <span>ADD EMPLOYEE</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -531,6 +573,117 @@ export default function EmployeesList({
                   disabled={isPending}
                 >
                   {isPending ? "Adding..." : "Add Employee"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Onboard Sales Associate Modal */}
+      {showOnboardModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "500px",
+            width: "100%",
+            padding: "2rem",
+            background: "rgba(10,10,10,0.98)",
+            border: "1px solid var(--border-gold)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem"
+          }}>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>ONBOARD SALES ASSOCIATE</h2>
+
+            {onboardError && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {onboardError}
+              </div>
+            )}
+
+            <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="form-group">
+                <label className="form-label">Employee ID (Globally Unique)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. EMP-101"
+                  value={onboardEmployeeId}
+                  onChange={(e) => setOnboardEmployeeId(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Alice Margatroid"
+                  value={onboardFullName}
+                  onChange={(e) => setOnboardFullName(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. alice@company.com"
+                  value={onboardEmail}
+                  onChange={(e) => setOnboardEmail(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Initial Password</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Assign initial password"
+                  value={onboardPassword}
+                  onChange={(e) => setOnboardPassword(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowOnboardModal(false)}
+                  className="btn-glass"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Onboarding..." : "Onboard Associate"}
                 </button>
               </div>
             </form>

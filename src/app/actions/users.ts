@@ -275,3 +275,231 @@ export async function getUpgradeInvitationAction() {
     invitation: invite ? { id: invite.id, title: invite.title, message: invite.message } : null
   };
 }
+
+const OnboardSalesAssociateSchema = z.object({
+  fullName: z.string().min(1, "Full Name is required"),
+  email: z.string().email("Invalid email format"),
+  employeeId: z.string().min(1, "Employee ID is required"),
+  password: z.string().min(1, "Initial Password is required"),
+});
+
+export async function onboardSalesAssociateAction(formData: z.infer<typeof OnboardSalesAssociateSchema>) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]);
+
+  const result = OnboardSalesAssociateSchema.safeParse(formData);
+  if (!result.success) {
+    throw new Error(result.error.issues.map(e => e.message).join(", "));
+  }
+
+  const { fullName, email, employeeId, password } = result.data;
+
+  // Determine Company ID
+  let companyId = currentUser.companyId;
+  if (currentUser.role === "SUPER_ADMIN") {
+    const company = await db.company.findFirst({
+      where: { isArchived: false, status: "APPROVED" }
+    });
+    companyId = company?.id || "";
+  }
+
+  if (!companyId) {
+    throw new Error("No company context found to assign Sales Associate.");
+  }
+
+  // Check unique email and employeeId
+  const existingUser = await db.user.findUnique({
+    where: { email },
+  });
+  if (existingUser) {
+    throw new Error("A user with this email already exists.");
+  }
+
+  const existingEmail = await db.employee.findUnique({
+    where: { email },
+  });
+  if (existingEmail) {
+    throw new Error("An employee with this email already exists.");
+  }
+
+  const existingId = await db.employee.findUnique({
+    where: { employeeId },
+  });
+  if (existingId) {
+    throw new Error(`Employee ID "${employeeId}" is already in use.`);
+  }
+
+  try {
+    const newUserId = crypto.randomUUID();
+    const newEmployeeId = crypto.randomUUID();
+
+    // Create User
+    const newUser = await db.user.create({
+      data: {
+        id: newUserId,
+        email,
+        name: fullName,
+        role: "SALES_ASSOCIATE",
+        status: "APPROVED",
+        password,
+        companyId,
+        teamLeadId: currentUser.role === "TEAM_LEAD" ? currentUser.id : null,
+        updatedAt: new Date(),
+      }
+    });
+
+    // Create Employee
+    const newEmp = await db.employee.create({
+      data: {
+        id: newEmployeeId,
+        employeeId,
+        fullName,
+        email,
+        status: "ACTIVE",
+        companyId,
+        userId: newUserId,
+        updatedAt: new Date(),
+      }
+    });
+
+    // Notify IT department (IT_READ_ONLY notification)
+    const itMembers = await db.user.findMany({
+      where: {
+        companyId,
+        role: "IT_DEPARTMENT",
+        isArchived: false,
+        status: "APPROVED"
+      }
+    });
+
+    for (const itUser of itMembers) {
+      await db.notification.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: itUser.id,
+          title: "New Sales Associate Onboarded",
+          message: `${fullName} (${email}) has been successfully onboarded by ${currentUser.name || currentUser.email}.`,
+          type: "IT_READ_ONLY",
+          isRead: false
+        }
+      });
+    }
+
+    // Write audit log
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "ONBOARD_SALES_ASSOCIATE",
+      entity: "user",
+      entityId: newUserId,
+      newValue: JSON.stringify({ user: newUser, employee: newEmp })
+    });
+
+    revalidatePath("/employees");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to onboard Sales Associate.");
+  }
+}
+
+export async function updateUserPasswordAction(newPassword: string) {
+  const currentUser = await enforceAuth();
+  if (!newPassword || !newPassword.trim()) {
+    throw new Error("Password cannot be empty.");
+  }
+
+  try {
+    await db.user.update({
+      where: { id: currentUser.id },
+      data: {
+        password: newPassword,
+        updatedAt: new Date(),
+      }
+    });
+
+    // Also write audit log
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "UPDATE_PASSWORD",
+      entity: "user",
+      entityId: currentUser.id,
+      newValue: "Password updated successfully"
+    });
+
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update password.");
+  }
+}
+
+export async function updateTeamLeadNameAction(userId: string, newName: string) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+  if (!newName || !newName.trim()) {
+    throw new Error("Name cannot be empty.");
+  }
+
+  const targetUser = await db.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found.");
+  }
+
+  if (targetUser.role !== "TEAM_LEAD") {
+    throw new Error("Target user is not a Team Lead.");
+  }
+
+  // Multi-tenant check
+  if (currentUser.role !== "SUPER_ADMIN" && targetUser.companyId !== currentUser.companyId) {
+    throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
+  }
+
+  try {
+    const oldName = targetUser.name || "";
+
+    // Update User Name
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        name: newName,
+        updatedAt: new Date(),
+      }
+    });
+
+    // Find if there's a corresponding employee record and update it
+    const emp = await db.employee.findFirst({
+      where: { userId }
+    });
+
+    if (emp) {
+      await db.employee.update({
+        where: { id: emp.id },
+        data: {
+          fullName: newName,
+          updatedAt: new Date(),
+        }
+      });
+    }
+
+    // Write audit log
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "UPDATE_TL_NAME",
+      entity: "user",
+      entityId: userId,
+      oldValue: oldName,
+      newValue: newName
+    });
+
+    revalidatePath("/settings");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update Team Lead profile.");
+  }
+}

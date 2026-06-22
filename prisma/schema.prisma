@@ -228,6 +228,7 @@ model user {
   updatedAt                                DateTime
   teamLeadId                               String?
   lastActiveAt                             DateTime?
+  password                                 String?
   account_account_createdByIdTouser        account[]        @relation("account_createdByIdTouser")
   account_account_updatedByIdTouser        account[]        @relation("account_updatedByIdTouser")
   accounthistory                           accounthistory[]

@@ -7,9 +7,10 @@ import {
   createAnnouncementAction, 
   updateCompanyRuleAction 
 } from "@/app/actions/settings";
-import {
+import { 
   sendInvitationAction,
-  declineInvitationAction
+  declineInvitationAction,
+  updateTeamLeadNameAction
 } from "@/app/actions/users";
 import { 
   Sliders, 
@@ -21,7 +22,8 @@ import {
   Check, 
   HelpCircle,
   AlertCircle,
-  Users
+  Users,
+  Edit2
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 
@@ -37,6 +39,7 @@ interface SettingsShardProps {
   rules: Record<string, string>;
   announcements: any[];
   pendingInvitations: any[];
+  users: any[];
 }
 
 export default function SettingsShard({
@@ -45,10 +48,11 @@ export default function SettingsShard({
   companies,
   rules,
   announcements,
-  pendingInvitations
+  pendingInvitations,
+  users
 }: SettingsShardProps) {
   const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState<"RULES" | "PLATFORMS" | "ANNOUNCEMENTS" | "INVITATIONS" >("RULES");
+  const [activeTab, setActiveTab] = useState<"RULES" | "PLATFORMS" | "ANNOUNCEMENTS" | "INVITATIONS" | "USERS">("RULES");
 
   // State for target company selection (Super Admin override)
   const [targetCompanyId, setTargetCompanyId] = useState(
@@ -114,6 +118,31 @@ export default function SettingsShard({
         alert(err.message);
       }
     }
+  };
+
+  // Edit Team Lead Name state
+  const [showEditTLModal, setShowEditTLModal] = useState(false);
+  const [editTLUserId, setEditTLUserId] = useState("");
+  const [editTLName, setEditTLName] = useState("");
+  const [editTLError, setEditTLError] = useState<string | null>(null);
+
+  const handleEditTLNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditTLError(null);
+    if (!editTLName.trim()) return;
+
+    startTransition(async () => {
+      try {
+        const res = await updateTeamLeadNameAction(editTLUserId, editTLName.trim());
+        if (res.success) {
+          setShowEditTLModal(false);
+          setEditTLUserId("");
+          setEditTLName("");
+        }
+      } catch (err: any) {
+        setEditTLError(err.message || "Failed to update Team Lead profile.");
+      }
+    });
   };
 
   const isSuperAdmin = currentUser.role === "SUPER_ADMIN";
@@ -230,14 +259,25 @@ export default function SettingsShard({
           </button>
 
           {(isSuperAdmin || isCompanyOwner) && (
-            <button
-              onClick={() => setActiveTab("INVITATIONS")}
-              className={`sidebar-item ${activeTab === "INVITATIONS" ? "active" : ""}`}
-              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-            >
-              <Users className="sidebar-icon" size={16} />
-              <span>Team Invitations</span>
-            </button>
+            <>
+              <button
+                onClick={() => setActiveTab("INVITATIONS")}
+                className={`sidebar-item ${activeTab === "INVITATIONS" ? "active" : ""}`}
+                style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
+              >
+                <Users className="sidebar-icon" size={16} />
+                <span>Team Invitations</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("USERS")}
+                className={`sidebar-item ${activeTab === "USERS" ? "active" : ""}`}
+                style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
+              >
+                <Users className="sidebar-icon" size={16} />
+                <span>User Accounts</span>
+              </button>
+            </>
           )}
 
           {isSuperAdmin && (
@@ -637,7 +677,162 @@ export default function SettingsShard({
           </div>
         )}
 
+        {/* Tab 5: User Accounts Directory */}
+        {activeTab === "USERS" && (isSuperAdmin || isCompanyOwner) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            <div>
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER ACCOUNTS DIRECTORY</h2>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+                Monitor system operators, view plain-text active passwords, and manage profiles.
+              </p>
+            </div>
+
+            <div className="table-container-outer" style={{ width: "100%", marginTop: "1rem" }}>
+              <table className="premium-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email Address</th>
+                    <th>Designation Role</th>
+                    <th>Status</th>
+                    <th>Active Password</th>
+                    <th>Mapped Team Lead</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
+                        No user accounts cataloged.
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map(u => (
+                      <tr key={u.id}>
+                        <td style={{ fontWeight: 600 }}>{u.name || "N/A"}</td>
+                        <td>{u.email}</td>
+                        <td>
+                          <span className="badge developer" style={{ fontSize: "0.7rem" }}>
+                            {u.role.replace(/_/g, " ")}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge ${u.status === "APPROVED" ? "verified" : "pending"}`} style={{ fontSize: "0.7rem" }}>
+                            {u.status}
+                          </span>
+                        </td>
+                        <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--gold-premium)" }}>
+                          {u.password || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>No Password Set</span>}
+                        </td>
+                        <td>
+                          {u.role === "SALES_ASSOCIATE" ? (
+                            u.user?.name || <span style={{ color: "var(--text-muted)" }}>—</span>
+                          ) : (
+                            <span style={{ color: "var(--text-muted)" }}>N/A</span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {u.role === "TEAM_LEAD" && (
+                            <button
+                              onClick={() => {
+                                setEditTLUserId(u.id);
+                                setEditTLName(u.name || "");
+                                setEditTLError(null);
+                                setShowEditTLModal(true);
+                              }}
+                              className="btn-glass"
+                              style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                              title="Edit Team Lead Name"
+                            >
+                              <Edit2 size={12} />
+                              <span>Edit Profile</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
       </div>
+
+      {/* Edit Team Lead Name Modal */}
+      {showEditTLModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "420px",
+            width: "100%",
+            padding: "2rem",
+            background: "rgba(10,10,10,0.98)",
+            border: "1px solid var(--border-gold)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem"
+          }}>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>EDIT TEAM LEAD PROFILE</h2>
+
+            {editTLError && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {editTLError}
+              </div>
+            )}
+
+            <form onSubmit={handleEditTLNameSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="form-group">
+                <label className="form-label">Team Lead Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter new profile name"
+                  value={editTLName}
+                  onChange={(e) => setEditTLName(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  onClick={() => { setShowEditTLModal(false); setEditTLUserId(""); }}
+                  className="btn-glass"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Updating..." : "Save Name"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
