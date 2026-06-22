@@ -2,19 +2,19 @@ import React from "react";
 import { enforceAuth, getCompanyFilter } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import DashboardLayout from "@/components/DashboardLayout";
-import TelemetryGauges from "@/components/TelemetryGauges";
 import { 
   Database, 
   ShieldCheck, 
   Clock, 
   Users, 
   Building,
-  Activity,
   UserCheck,
-  ArrowUpRight,
-  Shield
+  CheckCircle,
+  ShieldAlert,
+  AlertCircle,
+  HelpCircle,
+  Target
 } from "lucide-react";
-import Link from "next/link";
 
 export default async function DashboardPage() {
   // Enforce server-side authentication and status checks
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
     companyName = company?.name;
   }
 
-  // Fetch dashboard stats
+  // Fetch standard dashboard stats
   const totalAccounts = await db.account.count({
     where: {
       ...companyFilter,
@@ -85,26 +85,86 @@ export default async function DashboardPage() {
     });
   }
 
-  // Fetch recent activity audit logs
-  const activityLogs = await db.auditlog.findMany({
-    where: user.role === "SUPER_ADMIN" ? {} : {
-      user: {
-        companyId: user.companyId
+  // Sales Associate specific metrics
+  let saTotalAccounts = 0;
+  let saActiveAccounts = 0;
+  let saVerifiedAccounts = 0;
+  let saUnverifiedAccounts = 0;
+  let saMarketplaceIssues = 0;
+  let saIdentityIssues = 0;
+  let saTargetToMaintain = 15;
+  let saTodaySuspensions = 0;
+
+  if (user.role === "SALES_ASSOCIATE") {
+    saTotalAccounts = await db.account.count({
+      where: {
+        createdById: user.id,
+        isArchived: false
       }
-    },
-    orderBy: {
-      createdAt: "desc"
-    },
-    take: 5,
-    include: {
-      user: {
-        select: {
-          name: true,
-          email: true
-        }
+    });
+
+    saActiveAccounts = await db.account.count({
+      where: {
+        createdById: user.id,
+        status: "ACTIVE",
+        isArchived: false
       }
-    }
-  });
+    });
+
+    saVerifiedAccounts = await db.account.count({
+      where: {
+        createdById: user.id,
+        verificationStatus: "Yes",
+        isArchived: false
+      }
+    });
+
+    saUnverifiedAccounts = await db.account.count({
+      where: {
+        createdById: user.id,
+        verificationStatus: "No",
+        isArchived: false
+      }
+    });
+
+    saMarketplaceIssues = await db.account.count({
+      where: {
+        createdById: user.id,
+        status: "REJECTED",
+        isArchived: false
+      }
+    });
+
+    saIdentityIssues = await db.account.count({
+      where: {
+        createdById: user.id,
+        status: "UNDER_REVIEW",
+        verificationStatus: "No",
+        isArchived: false
+      }
+    });
+
+    // Target to maintain: read from rules or default to 15
+    const rulesList = await db.rule.findMany({
+      where: {
+        companyId: user.companyId || ""
+      }
+    });
+    const targetRule = rulesList.find(r => r.key === "targetToMaintain");
+    saTargetToMaintain = targetRule ? (parseInt(targetRule.value, 10) || 15) : 15;
+
+    // Today suspensions
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    saTodaySuspensions = await db.account.count({
+      where: {
+        createdById: user.id,
+        status: "REJECTED",
+        updatedAt: { gte: todayStart },
+        isArchived: false
+      }
+    });
+  }
 
   return (
     <DashboardLayout user={{ ...user, companyName }}>
@@ -143,127 +203,189 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="kpi-grid">
-        <div className="glass-panel kpi-card">
-          <div className="kpi-card-glow"></div>
-          <div className="kpi-header">
-            <span className="kpi-title">Total Accounts</span>
-            <div className="kpi-icon-wrapper"><Database size={18} /></div>
-          </div>
-          <div className="kpi-value">{totalAccounts}</div>
-          <div className="kpi-footer kpi-trend-up">
-            <span>Scoped shard db records</span>
-          </div>
-        </div>
-
-        <div className="glass-panel kpi-card">
-          <div className="kpi-card-glow"></div>
-          <div className="kpi-header">
-            <span className="kpi-title">Verified Accounts</span>
-            <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
-          </div>
-          <div className="kpi-value">{verifiedAccounts}</div>
-          <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
-            <span>Verification rate: {totalAccounts > 0 ? Math.round((verifiedAccounts / totalAccounts) * 100) : 0}%</span>
-          </div>
-        </div>
-
-        <div className="glass-panel kpi-card">
-          <div className="kpi-card-glow"></div>
-          <div className="kpi-header">
-            <span className="kpi-title">Pending Reviews</span>
-            <div className="kpi-icon-wrapper"><Clock size={18} /></div>
-          </div>
-          <div className="kpi-value">{pendingReviews}</div>
-          <div className="kpi-footer" style={{ color: pendingReviews > 0 ? "var(--color-warning)" : "var(--text-muted)" }}>
-            <span>Awaiting authorization</span>
-          </div>
-        </div>
-
-        <div className="glass-panel kpi-card">
-          <div className="kpi-card-glow"></div>
-          <div className="kpi-header">
-            <span className="kpi-title">Active Employees</span>
-            <div className="kpi-icon-wrapper"><Users size={18} /></div>
-          </div>
-          <div className="kpi-value">{activeEmployees}</div>
-          <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
-            <span>Hardware/VPN catalog items</span>
-          </div>
-        </div>
-
-        {user.role === "SUPER_ADMIN" ? (
+      {user.role === "SALES_ASSOCIATE" ? (
+        <div className="kpi-grid">
+          {/* Card 1: Total Account */}
           <div className="glass-panel kpi-card">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
-              <span className="kpi-title">Total Companies</span>
-              <div className="kpi-icon-wrapper"><Building size={18} /></div>
+              <span className="kpi-title">Total Account</span>
+              <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{companyCount}</div>
-            <div className="kpi-footer kpi-trend-up">
-              <span>SaaS tenant company count</span>
-            </div>
-          </div>
-        ) : (
-          <div className="glass-panel kpi-card">
-            <div className="kpi-card-glow"></div>
-            <div className="kpi-header">
-              <span className="kpi-title">Teammates</span>
-              <div className="kpi-icon-wrapper"><UserCheck size={18} /></div>
-            </div>
-            <div className="kpi-value">{totalSystemUsers}</div>
+            <div className="kpi-value">{saTotalAccounts}</div>
             <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
-              <span>Users in company registry</span>
+              <span>Personal registered accounts</span>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Telemetry and Activity Feed Grid */}
-      <div className="dashboard-grid">
-        {/* Left Side: VPS telemetry */}
-        <TelemetryGauges />
-
-        {/* Right Side: Activity Log Feed */}
-        <div className="glass-panel activity-panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem", marginBottom: "1rem" }}>
-            <h2 style={{ fontSize: "1.1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Activity size={18} style={{ color: "var(--gold-primary)" }} />
-              <span>Operation Logs</span>
-            </h2>
-            {user.role === "SUPER_ADMIN" && (
-              <Link href="/audit-logs" style={{ fontSize: "0.75rem", color: "var(--gold-premium)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                <span>View all</span> <ArrowUpRight size={12} />
-              </Link>
-            )}
+          {/* Card 2: Active Accounts */}
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Active Accounts</span>
+              <div className="kpi-icon-wrapper"><CheckCircle size={18} style={{ color: "var(--color-success)" }} /></div>
+            </div>
+            <div className="kpi-value">{saActiveAccounts}</div>
+            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+              <span>Live operational nodes</span>
+            </div>
           </div>
 
-          <div className="activity-list">
-            {activityLogs.length === 0 ? (
-              <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
-                No recent database activities logged.
-              </div>
-            ) : (
-              activityLogs.map((log) => (
-                <div key={log.id} className="activity-item">
-                  <div className="activity-indicator info"></div>
-                  <div className="activity-details">
-                    <span className="activity-item-title">
-                      {log.action}
-                    </span>
-                    <span className="activity-item-desc">
-                      {log.entity} {log.entityId ? `#${log.entityId.slice(0,8)}` : ""} by {log.user?.name || log.userEmail || "System"}
-                    </span>
-                    <span className="activity-item-time">
-                      {new Date(log.createdAt).toLocaleString()} | {log.country || "Local"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
+          {/* Card 3: Verified Accounts */}
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Verified Accounts</span>
+              <div className="kpi-icon-wrapper"><ShieldCheck size={18} style={{ color: "var(--gold-premium)" }} /></div>
+            </div>
+            <div className="kpi-value">{saVerifiedAccounts}</div>
+            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+              <span>Verification rate: {saTotalAccounts > 0 ? Math.round((saVerifiedAccounts / saTotalAccounts) * 100) : 0}%</span>
+            </div>
+          </div>
+
+          {/* Card 4: Unverified Accounts */}
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Unverified Accounts</span>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} style={{ color: "var(--orange-accent)" }} /></div>
+            </div>
+            <div className="kpi-value">{saUnverifiedAccounts}</div>
+            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+              <span>Awaiting verification submit</span>
+            </div>
+          </div>
+
+          {/* Card 5: Marketplace Issue */}
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Marketplace Issue</span>
+              <div className="kpi-icon-wrapper"><AlertCircle size={18} style={{ color: "var(--color-danger)" }} /></div>
+            </div>
+            <div className="kpi-value">{saMarketplaceIssues}</div>
+            <div className="kpi-footer" style={{ color: saMarketplaceIssues > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
+              <span>Platform level rejections</span>
+            </div>
+          </div>
+
+          {/* Card 6: Identity Issue */}
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Identity Issue</span>
+              <div className="kpi-icon-wrapper"><HelpCircle size={18} style={{ color: "var(--color-warning)" }} /></div>
+            </div>
+            <div className="kpi-value">{saIdentityIssues}</div>
+            <div className="kpi-footer" style={{ color: saIdentityIssues > 0 ? "var(--color-warning)" : "var(--text-muted)" }}>
+              <span>Verification hold status</span>
+            </div>
+          </div>
+
+          {/* Card 7: Target To Maintain */}
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Target To Maintain</span>
+              <div className="kpi-icon-wrapper"><Target size={18} style={{ color: "var(--gold-premium)" }} /></div>
+            </div>
+            <div className="kpi-value">{saTargetToMaintain}</div>
+            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+              <span>Monthly operational quota</span>
+            </div>
+          </div>
+
+          {/* Card 8: Today Suspension */}
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Today Suspension</span>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} style={{ color: "var(--color-danger)" }} /></div>
+            </div>
+            <div className="kpi-value">{saTodaySuspensions}</div>
+            <div className="kpi-footer" style={{ color: saTodaySuspensions > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
+              <span>Suspended in the last 24h</span>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="kpi-grid">
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Total Accounts</span>
+              <div className="kpi-icon-wrapper"><Database size={18} /></div>
+            </div>
+            <div className="kpi-value">{totalAccounts}</div>
+            <div className="kpi-footer kpi-trend-up">
+              <span>Scoped shard db records</span>
+            </div>
+          </div>
+
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Verified Accounts</span>
+              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
+            </div>
+            <div className="kpi-value">{verifiedAccounts}</div>
+            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+              <span>Verification rate: {totalAccounts > 0 ? Math.round((verifiedAccounts / totalAccounts) * 100) : 0}%</span>
+            </div>
+          </div>
+
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Pending Reviews</span>
+              <div className="kpi-icon-wrapper"><Clock size={18} /></div>
+            </div>
+            <div className="kpi-value">{pendingReviews}</div>
+            <div className="kpi-footer" style={{ color: pendingReviews > 0 ? "var(--color-warning)" : "var(--text-muted)" }}>
+              <span>Awaiting authorization</span>
+            </div>
+          </div>
+
+          <div className="glass-panel kpi-card">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Active Employees</span>
+              <div className="kpi-icon-wrapper"><Users size={18} /></div>
+            </div>
+            <div className="kpi-value">{activeEmployees}</div>
+            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+              <span>Hardware/VPN catalog items</span>
+            </div>
+          </div>
+
+          {user.role === "SUPER_ADMIN" ? (
+            <div className="glass-panel kpi-card">
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Total Companies</span>
+                <div className="kpi-icon-wrapper"><Building size={18} /></div>
+              </div>
+              <div className="kpi-value">{companyCount}</div>
+              <div className="kpi-footer kpi-trend-up">
+                <span>SaaS tenant company count</span>
+              </div>
+            </div>
+          ) : (
+            <div className="glass-panel kpi-card">
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Teammates</span>
+                <div className="kpi-icon-wrapper"><UserCheck size={18} /></div>
+              </div>
+              <div className="kpi-value">{totalSystemUsers}</div>
+              <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+                <span>Users in company registry</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </DashboardLayout>
   );
 }
