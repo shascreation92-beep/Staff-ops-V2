@@ -15,6 +15,7 @@ model account {
   adsPublished                   Int              @default(0)
   verificationStatus             String           @default("No")
   status                         account_status   @default(DRAFT)
+  associateId                    String?
   itNotes                        String?          @db.Text
   isArchived                     Boolean          @default(false)
   archivedAt                     DateTime?
@@ -255,6 +256,10 @@ enum accounthistory_fromStatus {
   COMPLETED
   ACTIVE
   REJECTED
+  PENDING_TL
+  FORWARDED_TO_IT
+  IT_PENDING
+  SORTED
 }
 
 enum accounthistory_toStatus {
@@ -267,6 +272,10 @@ enum accounthistory_toStatus {
   COMPLETED
   ACTIVE
   REJECTED
+  PENDING_TL
+  FORWARDED_TO_IT
+  IT_PENDING
+  SORTED
 }
 
 enum employee_laptopBrand {
@@ -293,6 +302,10 @@ enum account_status {
   COMPLETED
   ACTIVE
   REJECTED
+  PENDING_TL
+  FORWARDED_TO_IT
+  IT_PENDING
+  SORTED
 }
 
 enum user_status {

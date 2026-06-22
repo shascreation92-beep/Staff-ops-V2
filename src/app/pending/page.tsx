@@ -47,7 +47,7 @@ export default function PendingPage() {
   };
 
   useEffect(() => {
-    fetchStatus(true);
+    Promise.resolve().then(() => fetchStatus(true));
     
     // Poll status every 5 seconds
     const interval = setInterval(() => {

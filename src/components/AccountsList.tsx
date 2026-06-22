@@ -4,7 +4,8 @@ import React, { useState, useTransition } from "react";
 import { 
   createAccountAction, 
   updateAccountStatusAction, 
-  verifyAccountAction 
+  verifyAccountAction,
+  updateAccountAdsAction
 } from "@/app/actions/accounts";
 import { 
   Search, 
@@ -61,11 +62,93 @@ export default function AccountsList({
   const [targetCompanyId, setTargetCompanyId] = useState(companies[0]?.id || "");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Guided Add Account Wizard State
+  const [showAddWizard, setShowAddWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [wizardPlatformId, setWizardPlatformId] = useState(platforms[0]?.id || "");
+  const [wizardSerialCode, setWizardSerialCode] = useState("");
+  const [wizardFirstName, setWizardFirstName] = useState("");
+  const [wizardSecondName, setWizardSecondName] = useState("");
+  const [wizardAdsPublished, setWizardAdsPublished] = useState(0);
+  const [wizardVerificationStatus, setWizardVerificationStatus] = useState<"Yes" | "No">("No");
+  const [wizardSubmissionDate, setWizardSubmissionDate] = useState(new Date().toISOString().split("T")[0]);
+  const [wizardErrorMsg, setWizardErrorMsg] = useState<string | null>(null);
+
+  // Inline ads editing state
+  const [editingAdsId, setEditingAdsId] = useState<string | null>(null);
+  const [tempAdsValue, setTempAdsValue] = useState<number>(0);
+
   // Workflow update state
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [activeAccount, setActiveAccount] = useState<any | null>(null);
   const [targetStatus, setTargetStatus] = useState<account_status>("SUBMITTED");
   const [transitionNotes, setTransitionNotes] = useState("");
+
+  // Request to TL state
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestAccountId, setRequestAccountId] = useState("");
+  const [associateIdInput, setAssociateIdInput] = useState("");
+  const [requestError, setRequestError] = useState<string | null>(null);
+
+  const handleRequestToTL = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRequestError(null);
+    if (!associateIdInput.trim()) {
+      setRequestError("Associate ID is required.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await updateAccountStatusAction(
+          requestAccountId,
+          "PENDING_TL",
+          "Request to TL submitted by Associate",
+          associateIdInput.trim()
+        );
+        if (res.success) {
+          setShowRequestModal(false);
+          setRequestAccountId("");
+          setAssociateIdInput("");
+        }
+      } catch (err: any) {
+        setRequestError(err.message || "Failed to submit request.");
+      }
+    });
+  };
+
+  const handleTLApprove = async (accountId: string) => {
+    startTransition(async () => {
+      try {
+        const res = await updateAccountStatusAction(accountId, "FORWARDED_TO_IT", "Approved by Team Lead");
+        if (!res.success) alert("Failed to approve.");
+      } catch (err: any) {
+        alert(err.message);
+      }
+    });
+  };
+
+  const handleITAcknowledge = async (accountId: string) => {
+    startTransition(async () => {
+      try {
+        const res = await updateAccountStatusAction(accountId, "IT_PENDING", "Acknowledged by IT Department");
+        if (!res.success) alert("Failed to acknowledge.");
+      } catch (err: any) {
+        alert(err.message);
+      }
+    });
+  };
+
+  const handleITResolve = async (accountId: string) => {
+    startTransition(async () => {
+      try {
+        const res = await updateAccountStatusAction(accountId, "SORTED", "Sorted and resolved by IT Department");
+        if (!res.success) alert("Failed to resolve.");
+      } catch (err: any) {
+        alert(err.message);
+      }
+    });
+  };
 
   const isSuperAdmin = currentUser.role === "SUPER_ADMIN";
   const isCompanyOwner = currentUser.role === "COMPANY_OWNER";
@@ -91,6 +174,43 @@ export default function AccountsList({
   });
 
   const getStatusStyle = (acc: any) => {
+    if (acc.status === "PENDING_TL") {
+      return {
+        color: "#60A5FA",
+        text: "Pending TL Approval",
+        bg: "rgba(96, 165, 250, 0.08)",
+        border: "rgba(96, 165, 250, 0.25)",
+        glow: "none"
+      };
+    }
+    if (acc.status === "FORWARDED_TO_IT") {
+      return {
+        color: "#A78BFA",
+        text: "Forwarded to IT",
+        bg: "rgba(167, 139, 250, 0.08)",
+        border: "rgba(167, 139, 250, 0.25)",
+        glow: "none"
+      };
+    }
+    if (acc.status === "IT_PENDING") {
+      return {
+        color: "#F59E0B",
+        text: "Pending",
+        bg: "rgba(245, 158, 11, 0.08)",
+        border: "rgba(245, 158, 11, 0.25)",
+        glow: "none"
+      };
+    }
+    if (acc.status === "SORTED") {
+      return {
+        color: "#22C55E",
+        text: "Sorted",
+        bg: "rgba(34, 197, 94, 0.08)",
+        border: "rgba(34, 197, 94, 0.3)",
+        glow: "0 0 12px rgba(34, 197, 94, 0.3)"
+      };
+    }
+
     const isVerified = acc.verificationStatus === "Yes";
     const adsCount = acc.adsPublished;
     const isApproved = ["ACTIVE", "COMPLETED", "APPROVED_BY_TEAM_LEAD"].includes(acc.status);
@@ -189,6 +309,16 @@ export default function AccountsList({
     });
   };
 
+  const handleSaveAds = async (accountId: string) => {
+    if (tempAdsValue < 0) return;
+    setEditingAdsId(null);
+    try {
+      await updateAccountAdsAction(accountId, tempAdsValue);
+    } catch (err: any) {
+      alert(err.message || "Failed to update ads count");
+    }
+  };
+
   const handleToggleVerification = async (accountId: string, current: string) => {
     const nextVal = current !== "Yes";
     if (confirm(`Do you wish to change verification status to ${nextVal ? "VERIFIED" : "UNVERIFIED"}?`)) {
@@ -198,6 +328,60 @@ export default function AccountsList({
         alert(err.message);
       }
     }
+  };
+
+  const handleWizardSubmit = () => {
+    setWizardErrorMsg(null);
+    if (!wizardPlatformId) {
+      setWizardErrorMsg("Platform selection is required.");
+      return;
+    }
+    if (!wizardSerialCode.trim()) {
+      setWizardErrorMsg("ID Serial is required.");
+      return;
+    }
+    if (!wizardFirstName.trim() || !wizardSecondName.trim()) {
+      setWizardErrorMsg("Both first and second names are required.");
+      return;
+    }
+    if (wizardAdsPublished < 0) {
+      setWizardErrorMsg("Ads Published must be 0 or more.");
+      return;
+    }
+    if (!wizardVerificationStatus) {
+      setWizardErrorMsg("Verification option is required.");
+      return;
+    }
+    if (!wizardSubmissionDate) {
+      setWizardErrorMsg("Date of submission is required.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await createAccountAction({
+          platformId: wizardPlatformId,
+          serialCode: wizardSerialCode.trim(),
+          idName: `${wizardFirstName.trim()} ${wizardSecondName.trim()}`,
+          adsPublished: wizardAdsPublished,
+          verificationStatus: wizardVerificationStatus,
+          submissionDate: wizardSubmissionDate
+        });
+
+        if (res.success) {
+          setShowAddWizard(false);
+          setWizardStep(1);
+          setWizardSerialCode("");
+          setWizardFirstName("");
+          setWizardSecondName("");
+          setWizardAdsPublished(0);
+          setWizardVerificationStatus("No");
+          setWizardSubmissionDate(new Date().toISOString().split("T")[0]);
+        }
+      } catch (err: any) {
+        setWizardErrorMsg(err.message || "Failed to create account.");
+      }
+    });
   };
 
   return (
@@ -250,8 +434,8 @@ export default function AccountsList({
             </div>
           </div>
 
-          {/* Right Column: Provision Button and Notification Icon */}
-          <div className="toolbar-right-group">
+          {/* Left Column: Provision and Add Account Buttons */}
+          <div className="toolbar-left-group">
             {(isSuperAdmin || isCompanyOwner) && (
               <button 
                 className="btn-gold" 
@@ -262,6 +446,31 @@ export default function AccountsList({
                 <span>PROVISION ACCOUNT</span>
               </button>
             )}
+            {(isSalesAssociate || isTeamLead || isSuperAdmin || isCompanyOwner) && (
+              <button 
+                className="btn-gold" 
+                onClick={() => {
+                  setWizardStep(1);
+                  setWizardPlatformId(platforms[0]?.id || "");
+                  setWizardSerialCode("");
+                  setWizardFirstName("");
+                  setWizardSecondName("");
+                  setWizardAdsPublished(0);
+                  setWizardVerificationStatus("No");
+                  setWizardSubmissionDate(new Date().toISOString().split("T")[0]);
+                  setWizardErrorMsg(null);
+                  setShowAddWizard(true);
+                }}
+                disabled={isPending}
+              >
+                <Plus size={16} />
+                <span>ADD ACCOUNT</span>
+              </button>
+            )}
+          </div>
+
+          {/* Right Column: Notification Icon only */}
+          <div className="toolbar-right-group">
             <NotificationBell />
           </div>
         </div>
@@ -275,13 +484,13 @@ export default function AccountsList({
               <tr>
                 {isSuperAdmin && <th>Tenant Company</th>}
                 <th>Platform</th>
-                <th>Serial Code</th>
-                <th>ID Name (Duplicates)</th>
-                <th>Ads Published</th>
+                <th>ID Serial</th>
+                <th>ID Name</th>
+                <th>Ads Pub.</th>
                 <th>Verified</th>
-                <th>Workflow Status</th>
-                <th>Rule Metrics</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
+                <th>date of entry</th>
+                <th>Request to TL</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -332,7 +541,36 @@ export default function AccountsList({
                         </div>
                       </td>
                       <td style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>
-                        {acc.adsPublished} ads
+                        {editingAdsId === acc.id ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <input
+                              type="number"
+                              min="0"
+                              value={tempAdsValue}
+                              onChange={(e) => setTempAdsValue(parseInt(e.target.value, 10) || 0)}
+                              className="input-gold"
+                              style={{ width: "80px", padding: "0.2rem 0.4rem", fontSize: "0.85rem" }}
+                              autoFocus
+                              onBlur={() => handleSaveAds(acc.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveAds(acc.id);
+                                if (e.key === "Escape") setEditingAdsId(null);
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div 
+                            onClick={() => {
+                              setEditingAdsId(acc.id);
+                              setTempAdsValue(acc.adsPublished);
+                            }}
+                            style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "0.35rem" }}
+                            title="Click to edit ads count"
+                          >
+                            <span>{acc.adsPublished} ads</span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", opacity: 0.6 }}>✏️</span>
+                          </div>
+                        )}
                       </td>
                       <td>
                         <button
@@ -357,139 +595,103 @@ export default function AccountsList({
                           )}
                         </button>
                       </td>
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                        {new Date(acc.createdAt).toISOString().split("T")[0]}
+                      </td>
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <span className="badge" style={{
-                            background: acc.status === "ACTIVE" ? "rgba(34,197,94,0.06)" : acc.status === "REJECTED" ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.02)",
-                            border: acc.status === "ACTIVE" ? "1px solid rgba(34,197,94,0.2)" : acc.status === "REJECTED" ? "1px solid rgba(239,68,68,0.2)" : "1px solid var(--border-dim)",
-                            color: acc.status === "ACTIVE" ? "var(--color-success)" : acc.status === "REJECTED" ? "var(--color-danger)" : "var(--text-secondary)",
-                            fontSize: "0.7rem"
-                          }}>
-                            {acc.status.replace(/_/g, " ")}
-                          </span>
-                          {(acc.status === "ASSIGNED_TO_IT" || acc.status === "IN_PROGRESS") && acc.user_account_updatedByIdTouser && (
-                            <span 
-                              title={`Claimed by ${acc.user_account_updatedByIdTouser.name || acc.user_account_updatedByIdTouser.email}`}
-                              style={{
-                                width: "18px",
-                                height: "18px",
-                                borderRadius: "50%",
-                                background: "rgba(212, 175, 55, 0.2)",
-                                border: "1px solid var(--gold-premium)",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "0.65rem",
-                                fontWeight: 800,
-                                color: "var(--gold-premium)",
-                                cursor: "help",
-                                boxShadow: "0 0 8px rgba(212, 175, 55, 0.4)"
-                              }}
-                            >
-                              {(acc.user_account_updatedByIdTouser.name || acc.user_account_updatedByIdTouser.email || "I").charAt(0).toUpperCase()}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", alignItems: "flex-start" }}>
+                          {isSalesAssociate && ["DRAFT", "REJECTED"].includes(acc.status) ? (
+                            acc.adsPublished >= 4 ? (
+                              <button
+                                onClick={() => {
+                                  setRequestAccountId(acc.id);
+                                  setAssociateIdInput("");
+                                  setRequestError(null);
+                                  setShowRequestModal(true);
+                                }}
+                                className="btn-gold"
+                                style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
+                                disabled={isPending}
+                              >
+                                Request to TL
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                                Need ≥ 4 ads
+                              </span>
+                            )
+                          ) : (acc.status === "PENDING_TL" && (isTeamLead || isSuperAdmin)) ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                                ID: {acc.associateId || "N/A"}
+                              </span>
+                              <button
+                                onClick={() => handleTLApprove(acc.id)}
+                                className="btn-success"
+                                style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
+                                disabled={isPending}
+                              >
+                                Approve / OK
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                              {acc.associateId ? `ID: ${acc.associateId}` : "—"}
                             </span>
                           )}
                         </div>
                       </td>
                       <td>
-                        <div 
-                          className="badge" 
-                          style={{ 
-                            background: rule.bg, 
-                            border: `1px solid ${rule.border}`, 
-                            color: rule.color, 
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <span className="badge" style={{
+                            background: rule.bg,
+                            border: `1px solid ${rule.border}`,
+                            color: rule.color,
                             boxShadow: rule.glow,
-                            fontSize: "0.7rem"
-                          }}
-                        >
-                          {rule.text}
-                        </div>
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                          
-                          {/* Sales Associate workflow action: Submit */}
-                          {isSalesAssociate && ["DRAFT", "REJECTED"].includes(acc.status) && (
+                            fontSize: "0.7rem",
+                            letterSpacing: "0.02em"
+                          }}>
+                            {rule.text}
+                          </span>
+
+                          {(acc.status === "FORWARDED_TO_IT" && (isIT || isSuperAdmin)) && (
                             <button
-                              onClick={() => triggerStatusTransition(acc, "SUBMITTED")}
+                              onClick={() => handleITAcknowledge(acc.id)}
                               className="btn-glass"
-                              style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", gap: "0.25rem" }}
+                              style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto", border: "1px solid var(--border-gold)" }}
+                              disabled={isPending}
                             >
-                              <span>Submit</span> <ArrowRight size={12} />
+                              OK
                             </button>
                           )}
 
-                          {/* Team Lead workflow action: TL Approve/Reject */}
-                          {isTeamLead && ["SUBMITTED", "UNDER_REVIEW"].includes(acc.status) && (
-                            <>
-                              <button
-                                onClick={() => triggerStatusTransition(acc, "APPROVED_BY_TEAM_LEAD")}
-                                className="btn-success"
-                                style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
-                              >
-                                TL Approve
-                              </button>
-                              <button
-                                onClick={() => triggerStatusTransition(acc, "REJECTED")}
-                                className="btn-danger"
-                                style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
-
-                          {/* IT Department workflow action */}
-                          {isIT && acc.status === "APPROVED_BY_TEAM_LEAD" && (
+                          {(acc.status === "IT_PENDING" && (isIT || isSuperAdmin)) && (
                             <button
-                              onClick={() => triggerStatusTransition(acc, "ASSIGNED_TO_IT")}
-                              className="btn-glass"
-                              style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem" }}
-                            >
-                              IT Assign
-                            </button>
-                          )}
-
-                          {isIT && acc.status === "ASSIGNED_TO_IT" && (
-                            <button
-                              onClick={() => triggerStatusTransition(acc, "IN_PROGRESS")}
-                              className="btn-gold"
-                              style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
-                            >
-                              In Progress
-                            </button>
-                          )}
-
-                          {isIT && acc.status === "IN_PROGRESS" && (
-                            <button
-                              onClick={() => triggerStatusTransition(acc, "ACTIVE")}
+                              onClick={() => handleITResolve(acc.id)}
                               className="btn-success"
-                              style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
+                              style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
+                              disabled={isPending}
                             >
-                              Set Active
+                              Done
                             </button>
                           )}
 
-                          {/* Super Admin unrestricted override */}
                           {isSuperAdmin && (
                             <select
                               value={acc.status}
                               onChange={(e) => triggerStatusTransition(acc, e.target.value as account_status)}
                               className="table-select-filter"
-                              style={{ padding: "0.15rem 1.5rem 0.15rem 0.45rem", fontSize: "0.75rem" }}
+                              style={{ padding: "0.1rem 1.25rem 0.1rem 0.3rem", fontSize: "0.7rem", height: "auto", marginLeft: "0.5rem" }}
                             >
                               <option value="DRAFT">DRAFT</option>
-                              <option value="SUBMITTED">SUBMITTED</option>
-                              <option value="UNDER_REVIEW">UNDER REVIEW</option>
-                              <option value="APPROVED_BY_TEAM_LEAD">TL APPROVED</option>
-                              <option value="ASSIGNED_TO_IT">ASSIGNED IT</option>
-                              <option value="IN_PROGRESS">IN PROGRESS</option>
-                              <option value="COMPLETED">COMPLETED</option>
+                              <option value="PENDING_TL">PENDING_TL</option>
+                              <option value="FORWARDED_TO_IT">FORWARDED_TO_IT</option>
+                              <option value="IT_PENDING">IT_PENDING</option>
+                              <option value="SORTED">SORTED</option>
                               <option value="ACTIVE">ACTIVE</option>
                               <option value="REJECTED">REJECTED</option>
                             </select>
                           )}
-
                         </div>
                       </td>
                     </tr>
@@ -713,6 +915,388 @@ export default function AccountsList({
         </div>
       )}
 
+      {/* Request to TL Modal */}
+      {showRequestModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "460px",
+            width: "100%",
+            padding: "2rem",
+            background: "rgba(10,10,10,0.98)",
+            border: "1px solid var(--border-gold)",
+            boxShadow: "var(--shadow-premium), var(--shadow-gold-glow-hover)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem"
+          }}>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>SUBMIT TO TEAM LEADER</h2>
+            
+            {requestError && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {requestError}
+              </div>
+            )}
+
+            <form onSubmit={handleRequestToTL} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="form-group">
+                <label className="form-label">Associate ID</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter your Associate_ID..."
+                  value={associateIdInput}
+                  onChange={(e) => setAssociateIdInput(e.target.value)}
+                  className="input-gold"
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRequestModal(false);
+                    setRequestAccountId("");
+                    setAssociateIdInput("");
+                    setRequestError(null);
+                  }}
+                  className="btn-glass"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Guided Add Account Wizard Modal */}
+      {showAddWizard && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel kpi-card" style={{
+            maxWidth: "500px",
+            width: "100%",
+            padding: "2.5rem 2rem",
+            background: "rgba(10,10,10,0.98)",
+            border: "1px solid var(--border-gold)",
+            boxShadow: "var(--shadow-premium), var(--shadow-gold-glow-hover)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.5rem",
+            position: "relative"
+          }}>
+            <div className="kpi-card-glow"></div>
+            
+            {/* Header: Progress & Title */}
+            <div className="kpi-header" style={{ borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem", marginBottom: "0.5rem" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+                  STEP {wizardStep} OF 6
+                </span>
+                <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>
+                  {wizardStep === 1 && "Platform Selection"}
+                  {wizardStep === 2 && "ID Serial Code"}
+                  {wizardStep === 3 && "ID Name Definition"}
+                  {wizardStep === 4 && "Ads Published Count"}
+                  {wizardStep === 5 && "Verification Status"}
+                  {wizardStep === 6 && "Submission Date"}
+                </h2>
+              </div>
+              <div className="kpi-icon-wrapper">
+                <Database size={20} />
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {wizardErrorMsg && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {wizardErrorMsg}
+              </div>
+            )}
+
+            {/* Step Body */}
+            <div style={{ minHeight: "140px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              {wizardStep === 1 && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Platform Selection</label>
+                  <select
+                    value={wizardPlatformId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setWizardPlatformId(val);
+                      if (val) {
+                        setWizardStep(2);
+                        setWizardErrorMsg(null);
+                      }
+                    }}
+                    className="select-gold"
+                    style={{ width: "100%" }}
+                  >
+                    <option value="">Select Platform...</option>
+                    {platforms.map(p => (
+                      <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {wizardStep === 2 && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">ID Serial Code</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Type the ID Serial (e.g. SC-983021)..."
+                    value={wizardSerialCode}
+                    onChange={(e) => setWizardSerialCode(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (wizardSerialCode.trim()) {
+                          setWizardStep(3);
+                          setWizardErrorMsg(null);
+                        } else {
+                          setWizardErrorMsg("ID Serial is required.");
+                        }
+                      }
+                    }}
+                    className="input-gold"
+                    style={{ width: "100%" }}
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {wizardStep === 3 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">First Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Enter ID first name..."
+                      value={wizardFirstName}
+                      onChange={(e) => setWizardFirstName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const nextInput = document.getElementById("wizard-second-name");
+                          if (nextInput) {
+                            (nextInput as HTMLInputElement).focus();
+                          }
+                        }
+                      }}
+                      className="input-gold"
+                      style={{ width: "100%" }}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Second Name</label>
+                    <input
+                      type="text"
+                      id="wizard-second-name"
+                      required
+                      placeholder="Enter ID second name..."
+                      value={wizardSecondName}
+                      onChange={(e) => setWizardSecondName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (wizardFirstName.trim() && wizardSecondName.trim()) {
+                            setWizardStep(4);
+                            setWizardErrorMsg(null);
+                          } else {
+                            setWizardErrorMsg("Both first and second names are required.");
+                          }
+                        }
+                      }}
+                      className="input-gold"
+                      style={{ width: "100%" }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 4 && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Ads Published Count</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    placeholder="Enter number of ads..."
+                    value={wizardAdsPublished}
+                    onChange={(e) => setWizardAdsPublished(parseInt(e.target.value, 10) || 0)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (wizardAdsPublished >= 0) {
+                          setWizardStep(5);
+                          setWizardErrorMsg(null);
+                        } else {
+                          setWizardErrorMsg("Ads Published must be 0 or more.");
+                        }
+                      }
+                    }}
+                    className="input-gold"
+                    style={{ width: "100%" }}
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {wizardStep === 5 && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Verification Option</label>
+                  <select
+                    value={wizardVerificationStatus}
+                    onChange={(e) => {
+                      const val = e.target.value as "Yes" | "No";
+                      setWizardVerificationStatus(val);
+                      setWizardStep(6);
+                      setWizardErrorMsg(null);
+                    }}
+                    className="select-gold"
+                    style={{ width: "100%" }}
+                  >
+                    <option value="No">No (Unverified)</option>
+                    <option value="Yes">Yes (Verified)</option>
+                  </select>
+                </div>
+              )}
+
+              {wizardStep === 6 && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Date of Submission</label>
+                  <input
+                    type="date"
+                    required
+                    value={wizardSubmissionDate}
+                    onChange={(e) => setWizardSubmissionDate(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleWizardSubmit();
+                      }
+                    }}
+                    className="input-gold"
+                    style={{ width: "100%" }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Footer Navigation Buttons */}
+            <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (wizardStep > 1) {
+                    setWizardStep(prev => prev - 1);
+                    setWizardErrorMsg(null);
+                  } else {
+                    setShowAddWizard(false);
+                  }
+                }}
+                className="btn-glass"
+                style={{ flex: 1 }}
+                disabled={isPending}
+              >
+                {wizardStep > 1 ? "Back" : "Cancel"}
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setWizardErrorMsg(null);
+                  if (wizardStep === 1) {
+                    if (!wizardPlatformId) {
+                      setWizardErrorMsg("Platform selection is required.");
+                      return;
+                    }
+                    setWizardStep(2);
+                  } else if (wizardStep === 2) {
+                    if (!wizardSerialCode.trim()) {
+                      setWizardErrorMsg("ID Serial is required.");
+                      return;
+                    }
+                    setWizardStep(3);
+                  } else if (wizardStep === 3) {
+                    if (!wizardFirstName.trim() || !wizardSecondName.trim()) {
+                      setWizardErrorMsg("Both first and second names are required.");
+                      return;
+                    }
+                    setWizardStep(4);
+                  } else if (wizardStep === 4) {
+                    if (wizardAdsPublished < 0) {
+                      setWizardErrorMsg("Ads Published must be 0 or more.");
+                      return;
+                    }
+                    setWizardStep(5);
+                  } else if (wizardStep === 5) {
+                    if (!wizardVerificationStatus) {
+                      setWizardErrorMsg("Verification option is required.");
+                      return;
+                    }
+                    setWizardStep(6);
+                  } else if (wizardStep === 6) {
+                    handleWizardSubmit();
+                  }
+                }}
+                className="btn-gold"
+                style={{ flex: 1 }}
+                disabled={isPending}
+              >
+                {isPending ? (
+                  "Processing..."
+                ) : wizardStep === 6 ? (
+                  "Submit"
+                ) : (
+                  "Next"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
     </div>
   );
 }

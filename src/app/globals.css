@@ -921,6 +921,17 @@ body {
     gap: 1rem !important;
     z-index: 10 !important;
   }
+
+  .toolbar-left-group {
+    position: absolute !important;
+    left: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    z-index: 10 !important;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -941,6 +952,14 @@ body {
   }
   
   .toolbar-right-group {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    width: 100% !important;
+  }
+
+  .toolbar-left-group {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;

@@ -13,7 +13,8 @@ const CreateAccountSchema = z.object({
   idName: z.string().min(1, "ID Name is required"),
   adsPublished: z.number().nonnegative("Ads count must be non-negative"),
   verificationStatus: z.enum(["Yes", "No"]),
-  targetCompanyId: z.string().optional() // For Super Admin
+  targetCompanyId: z.string().optional(), // For Super Admin
+  submissionDate: z.string().optional() // New field
 });
 
 export async function createAccountAction(formData: z.infer<typeof CreateAccountSchema>) {
@@ -25,7 +26,7 @@ export async function createAccountAction(formData: z.infer<typeof CreateAccount
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { platformId, serialCode, idName, adsPublished, verificationStatus, targetCompanyId } = result.data;
+  const { platformId, serialCode, idName, adsPublished, verificationStatus, targetCompanyId, submissionDate } = result.data;
 
   // Determine Company ID based on role
   let companyId = user.companyId;
@@ -64,6 +65,7 @@ export async function createAccountAction(formData: z.infer<typeof CreateAccount
         companyId,
         createdById: user.id,
         updatedById: user.id,
+        createdAt: submissionDate ? new Date(submissionDate) : new Date(),
         updatedAt: new Date(),
       },
     });
@@ -101,7 +103,8 @@ export async function createAccountAction(formData: z.infer<typeof CreateAccount
 export async function updateAccountStatusAction(
   accountId: string, 
   toStatus: account_status, 
-  notes?: string
+  notes?: string,
+  associateId?: string
 ) {
   const user = await enforceAuth();
 
@@ -122,45 +125,58 @@ export async function updateAccountStatusAction(
 
   // Workflow State Validation based on roles
   if (user.role === "SALES_ASSOCIATE") {
-    // Sales Associates can transition DRAFT -> SUBMITTED, or edits to own
-    if (fromStatus !== "DRAFT" && fromStatus !== "REJECTED") {
-      throw new Error("UNAUTHORIZED: Sales Associates can only submit Draft or Rejected accounts.");
-    }
-    if (toStatus !== "SUBMITTED" && toStatus !== "DRAFT") {
-      throw new Error("Invalid transition: Sales Associates can only transition to Draft or Submitted.");
+    if (toStatus === "PENDING_TL") {
+      if (fromStatus !== "DRAFT" && fromStatus !== "REJECTED") {
+        throw new Error("UNAUTHORIZED: Sales Associates can only submit Draft or Rejected accounts for TL approval.");
+      }
+      if (!associateId || !associateId.trim()) {
+        throw new Error("Associate ID is required to submit request to TL.");
+      }
+    } else {
+      if (fromStatus !== "DRAFT" && fromStatus !== "REJECTED") {
+        throw new Error("UNAUTHORIZED: Sales Associates can only submit Draft or Rejected accounts.");
+      }
+      if (toStatus !== "SUBMITTED" && toStatus !== "DRAFT") {
+        throw new Error("Invalid transition: Sales Associates can only transition to Draft or Submitted.");
+      }
     }
   }
 
   if (user.role === "TEAM_LEAD") {
-    // Team Lead can approve or reject submitted/under review accounts
-    const validFrom = ["SUBMITTED", "UNDER_REVIEW"];
+    const validFrom = ["PENDING_TL", "SUBMITTED", "UNDER_REVIEW"];
     if (!validFrom.includes(fromStatus)) {
-      throw new Error("Invalid transition: Team Leads can only review submitted or under-review accounts.");
+      throw new Error("Invalid transition: Team Leads can only review pending, submitted, or under-review accounts.");
     }
-    if (toStatus !== "APPROVED_BY_TEAM_LEAD" && toStatus !== "REJECTED" && toStatus !== "UNDER_REVIEW") {
-      throw new Error("Invalid transition: Team Leads can only Approve, Reject, or hold Under Review.");
+    const validTo = ["APPROVED_BY_TEAM_LEAD", "FORWARDED_TO_IT", "REJECTED", "UNDER_REVIEW"];
+    if (!validTo.includes(toStatus)) {
+      throw new Error("Invalid transition: Team Leads can only Approve, Forward to IT, Reject, or hold Under Review.");
     }
   }
 
   if (user.role === "IT_DEPARTMENT") {
-    // IT Department manages laptops/VPN assignments and shifts progress
-    const validFrom = ["APPROVED_BY_TEAM_LEAD", "ASSIGNED_TO_IT", "IN_PROGRESS"];
+    const validFrom = ["FORWARDED_TO_IT", "APPROVED_BY_TEAM_LEAD", "ASSIGNED_TO_IT", "IN_PROGRESS", "IT_PENDING"];
     if (!validFrom.includes(fromStatus)) {
       throw new Error("Invalid transition: IT department can only process approved or in-progress tickets.");
     }
-    if (!["ASSIGNED_TO_IT", "IN_PROGRESS", "COMPLETED", "ACTIVE"].includes(toStatus)) {
-      throw new Error("Invalid transition: IT department can only transition to In Progress, Completed, or Active.");
+    const validTo = ["IT_PENDING", "SORTED", "ASSIGNED_TO_IT", "IN_PROGRESS", "COMPLETED", "ACTIVE"];
+    if (!validTo.includes(toStatus)) {
+      throw new Error("Invalid transition: IT department invalid target status.");
     }
   }
 
   try {
+    const dataUpdate: any = {
+      status: toStatus,
+      updatedById: user.id,
+      updatedAt: new Date()
+    };
+    if (associateId) {
+      dataUpdate.associateId = associateId.trim();
+    }
+
     const updatedAccount = await db.account.update({
       where: { id: accountId },
-      data: {
-        status: toStatus,
-        updatedById: user.id,
-        updatedAt: new Date()
-      }
+      data: dataUpdate
     });
 
     // Create workflow history
@@ -171,7 +187,7 @@ export async function updateAccountStatusAction(
         fromStatus,
         toStatus,
         changedById: user.id,
-        notes: notes || `Status updated from ${fromStatus} to ${toStatus}.`
+        notes: notes || `Status updated from ${fromStatus} to ${toStatus}${associateId ? ` (Associate ID: ${associateId})` : ""}.`
       }
     });
 
@@ -188,7 +204,29 @@ export async function updateAccountStatusAction(
     });
 
     // Trigger Notification for transitions
-    if (toStatus === "APPROVED_BY_TEAM_LEAD") {
+    if (toStatus === "PENDING_TL") {
+      // Find Team Leads in the company to notify
+      const tlUsers = await db.user.findMany({
+        where: {
+          companyId: account.companyId,
+          role: "TEAM_LEAD",
+          status: "APPROVED"
+        }
+      });
+
+      for (const tlUser of tlUsers) {
+        await db.notification.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: tlUser.id,
+            title: "New Ad Request Pending Approval",
+            message: `Account serial ${account.serialCode} has been submitted by Sales Associate (ID: ${associateId || "N/A"}) and is pending your approval.`,
+            type: "TL Approval Pending",
+            isRead: false
+          }
+        });
+      }
+    } else if (toStatus === "FORWARDED_TO_IT" || toStatus === "APPROVED_BY_TEAM_LEAD") {
       // Find IT users in the company to notify
       const itUsers = await db.user.findMany({
         where: {
@@ -203,8 +241,8 @@ export async function updateAccountStatusAction(
           data: {
             id: crypto.randomUUID(),
             userId: itUser.id,
-            title: "New Account Assigned to IT",
-            message: `Account serial ${account.serialCode} has been approved by Team Lead and requires IT provisioning.`,
+            title: "New Account Routing to IT",
+            message: `Account serial ${account.serialCode} has been approved and forwarded to the IT queue.`,
             type: "Task Assignment",
             isRead: false
           }
@@ -214,7 +252,7 @@ export async function updateAccountStatusAction(
       const lastApproval = await db.accounthistory.findFirst({
         where: {
           accountId: accountId,
-          toStatus: "APPROVED_BY_TEAM_LEAD"
+          toStatus: { in: ["APPROVED_BY_TEAM_LEAD", "FORWARDED_TO_IT"] }
         },
         orderBy: {
           createdAt: "desc"
@@ -243,7 +281,19 @@ export async function updateAccountStatusAction(
           }
         });
       }
-    } else if (toStatus === "REJECTED" || toStatus === "ACTIVE" || toStatus === "COMPLETED") {
+    } else if (toStatus === "IT_PENDING") {
+      // Notify Sales Associate that it's in progress
+      await db.notification.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: account.createdById,
+          title: "IT Processing Ticket",
+          message: `Your account with serial ${account.serialCode} has been acknowledged and is now Pending in the IT queue.`,
+          type: "IT Processing",
+          isRead: false
+        }
+      });
+    } else if (toStatus === "SORTED" || toStatus === "REJECTED" || toStatus === "ACTIVE" || toStatus === "COMPLETED") {
       // Notify Sales Associate who created the account
       await db.notification.create({
         data: {
@@ -306,5 +356,48 @@ export async function verifyAccountAction(accountId: string, verify: boolean) {
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Verification update failed.");
+  }
+}
+
+export async function updateAccountAdsAction(accountId: string, adsCount: number) {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE"]);
+
+  const account = await db.account.findUnique({
+    where: { id: accountId }
+  });
+
+  if (!account) {
+    throw new Error("Account not found.");
+  }
+
+  if (user.role !== "SUPER_ADMIN" && account.companyId !== user.companyId) {
+    throw new Error("UNAUTHORIZED: Access to another company's account is forbidden.");
+  }
+
+  try {
+    const updatedAccount = await db.account.update({
+      where: { id: accountId },
+      data: {
+        adsPublished: adsCount,
+        updatedById: user.id,
+        updatedAt: new Date()
+      }
+    });
+
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "",
+      userRole: user.role,
+      action: "UPDATE_ADS",
+      entity: "account",
+      entityId: accountId,
+      oldValue: String(account.adsPublished),
+      newValue: String(adsCount)
+    });
+
+    revalidatePath("/accounts");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update ads count.");
   }
 }
