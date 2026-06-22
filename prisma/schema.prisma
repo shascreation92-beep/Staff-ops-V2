@@ -1,0 +1,324 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model account {
+  id                             String           @id
+  platformId                     String
+  serialCode                     String           @unique(map: "Account_serialCode_key")
+  idName                         String
+  adsPublished                   Int              @default(0)
+  verificationStatus             String           @default("No")
+  status                         account_status   @default(DRAFT)
+  itNotes                        String?          @db.Text
+  isArchived                     Boolean          @default(false)
+  archivedAt                     DateTime?
+  archivedBy                     String?
+  createdAt                      DateTime         @default(now())
+  updatedAt                      DateTime
+  companyId                      String
+  createdById                    String
+  updatedById                    String
+  company                        company          @relation(fields: [companyId], references: [id], map: "Account_companyId_fkey")
+  user_account_createdByIdTouser user             @relation("account_createdByIdTouser", fields: [createdById], references: [id], map: "Account_createdById_fkey")
+  platform                       platform         @relation(fields: [platformId], references: [id], map: "Account_platformId_fkey")
+  user_account_updatedByIdTouser user             @relation("account_updatedByIdTouser", fields: [updatedById], references: [id], map: "Account_updatedById_fkey")
+  accounthistory                 accounthistory[]
+
+  @@index([companyId], map: "Account_companyId_fkey")
+  @@index([createdById], map: "Account_createdById_fkey")
+  @@index([platformId], map: "Account_platformId_fkey")
+  @@index([updatedById], map: "Account_updatedById_fkey")
+}
+
+model accounthistory {
+  id          String                     @id
+  accountId   String
+  fromStatus  accounthistory_fromStatus?
+  toStatus    accounthistory_toStatus
+  changedById String
+  notes       String?                    @db.Text
+  createdAt   DateTime                   @default(now())
+  account     account                    @relation(fields: [accountId], references: [id], onDelete: Cascade, map: "AccountHistory_accountId_fkey")
+  user        user                       @relation(fields: [changedById], references: [id], map: "AccountHistory_changedById_fkey")
+
+  @@index([accountId], map: "AccountHistory_accountId_fkey")
+  @@index([changedById], map: "AccountHistory_changedById_fkey")
+}
+
+model announcement {
+  id          String    @id
+  title       String
+  content     String    @db.Text
+  createdById String
+  companyId   String?
+  isArchived  Boolean   @default(false)
+  archivedAt  DateTime?
+  archivedBy  String?
+  createdAt   DateTime  @default(now())
+  company     company?  @relation(fields: [companyId], references: [id], map: "Announcement_companyId_fkey")
+  user        user      @relation(fields: [createdById], references: [id], onDelete: Cascade, map: "Announcement_createdById_fkey")
+
+  @@index([companyId], map: "Announcement_companyId_fkey")
+  @@index([createdById], map: "Announcement_createdById_fkey")
+}
+
+model auditlog {
+  id        String   @id
+  userId    String?
+  userEmail String?
+  userRole  String?
+  action    String
+  entity    String
+  entityId  String?
+  oldValue  String?  @db.Text
+  newValue  String?  @db.Text
+  ipAddress String?
+  country   String?
+  createdAt DateTime @default(now())
+  user      user?    @relation(fields: [userId], references: [id], map: "AuditLog_userId_fkey")
+
+  @@index([userId], map: "AuditLog_userId_fkey")
+}
+
+model chatmessage {
+  id                                String    @id
+  senderId                          String
+  receiverId                        String
+  message                           String    @db.Text
+  isRead                            Boolean   @default(false)
+  readAt                            DateTime?
+  createdAt                         DateTime  @default(now())
+  user_chatmessage_receiverIdTouser user      @relation("chatmessage_receiverIdTouser", fields: [receiverId], references: [id], onDelete: Cascade, map: "ChatMessage_receiverId_fkey")
+  user_chatmessage_senderIdTouser   user      @relation("chatmessage_senderIdTouser", fields: [senderId], references: [id], onDelete: Cascade, map: "ChatMessage_senderId_fkey")
+
+  @@index([receiverId], map: "ChatMessage_receiverId_fkey")
+  @@index([senderId], map: "ChatMessage_senderId_fkey")
+}
+
+model company {
+  id            String         @id
+  name          String
+  website       String?
+  ownerName     String?
+  ownerEmail    String?
+  logo          String?
+  industry      String?
+  country       String?
+  employeeCount Int?
+  status        company_status @default(PENDING)
+  isArchived    Boolean        @default(false)
+  archivedAt    DateTime?
+  archivedBy    String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  account       account[]
+  announcement  announcement[]
+  employee      employee[]
+  platform      platform[]
+  rule          rule[]
+  user          user[]
+}
+
+model employee {
+  id                 String                   @id
+  employeeId         String                   @unique(map: "Employee_employeeId_key")
+  fullName           String
+  email              String                   @unique(map: "Employee_email_key")
+  status             String                   @default("ACTIVE")
+  laptopBrand        employee_laptopBrand?
+  laptopModel        String?
+  laptopSerialNumber String?
+  windowsVersion     employee_windowsVersion?
+  vpnProvider        employee_vpnProvider?
+  isArchived         Boolean                  @default(false)
+  archivedAt         DateTime?
+  archivedBy         String?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime
+  companyId          String
+  userId             String?                  @unique(map: "Employee_userId_key")
+  laptopPassword     String?
+  vpnCredentials     String?
+  company            company                  @relation(fields: [companyId], references: [id], map: "Employee_companyId_fkey")
+  user               user?                    @relation(fields: [userId], references: [id], map: "Employee_userId_fkey")
+
+  @@index([companyId], map: "Employee_companyId_fkey")
+}
+
+model loginlog {
+  id            String    @id
+  userId        String
+  loginTime     DateTime  @default(now())
+  logoutTime    DateTime?
+  browser       String?
+  device        String?
+  ipAddress     String?
+  country       String?
+  sessionLength Int?
+  createdAt     DateTime  @default(now())
+  user          user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "LoginLog_userId_fkey")
+
+  @@index([userId], map: "LoginLog_userId_fkey")
+}
+
+model notification {
+  id         String   @id
+  userId     String
+  title      String
+  message    String
+  type       String
+  isRead     Boolean  @default(false)
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Notification_userId_fkey")
+
+  @@index([userId], map: "Notification_userId_fkey")
+}
+
+model platform {
+  id         String    @id
+  name       String
+  companyId  String?
+  isArchived Boolean   @default(false)
+  archivedAt DateTime?
+  archivedBy String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+  account    account[]
+  company    company?  @relation(fields: [companyId], references: [id], map: "Platform_companyId_fkey")
+
+  @@unique([name, companyId], map: "Platform_name_companyId_key")
+  @@index([companyId], map: "Platform_companyId_fkey")
+}
+
+model rule {
+  id        String   @id
+  name      String
+  key       String
+  value     String
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  company   company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "Rule_companyId_fkey")
+
+  @@unique([key, companyId], map: "Rule_key_companyId_key")
+  @@index([companyId], map: "Rule_companyId_fkey")
+}
+
+model user {
+  id                                       String           @id
+  name                                     String?
+  email                                    String           @unique(map: "User_email_key")
+  emailVerified                            DateTime?
+  image                                    String?
+  role                                     user_role        @default(SALES_ASSOCIATE)
+  status                                   user_status      @default(PENDING)
+  companyId                                String?
+  isArchived                               Boolean          @default(false)
+  archivedAt                               DateTime?
+  archivedBy                               String?
+  createdAt                                DateTime         @default(now())
+  updatedAt                                DateTime
+  teamLeadId                               String?
+  lastActiveAt                             DateTime?
+  account_account_createdByIdTouser        account[]        @relation("account_createdByIdTouser")
+  account_account_updatedByIdTouser        account[]        @relation("account_updatedByIdTouser")
+  accounthistory                           accounthistory[]
+  announcement                             announcement[]
+  auditlog                                 auditlog[]
+  chatmessage_chatmessage_receiverIdTouser chatmessage[]    @relation("chatmessage_receiverIdTouser")
+  chatmessage_chatmessage_senderIdTouser   chatmessage[]    @relation("chatmessage_senderIdTouser")
+  employee                                 employee?
+  loginlog                                 loginlog[]
+  notification                             notification[]
+  company                                  company?         @relation(fields: [companyId], references: [id], map: "User_companyId_fkey")
+  user                                     user?            @relation("userTouser", fields: [teamLeadId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "User_teamLeadId_fkey")
+  other_user                               user[]           @relation("userTouser")
+
+  @@index([companyId], map: "User_companyId_fkey")
+  @@index([teamLeadId], map: "User_teamLeadId_fkey")
+}
+
+enum accounthistory_fromStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED_BY_TEAM_LEAD
+  ASSIGNED_TO_IT
+  IN_PROGRESS
+  COMPLETED
+  ACTIVE
+  REJECTED
+}
+
+enum accounthistory_toStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED_BY_TEAM_LEAD
+  ASSIGNED_TO_IT
+  IN_PROGRESS
+  COMPLETED
+  ACTIVE
+  REJECTED
+}
+
+enum employee_laptopBrand {
+  HP
+  Dell
+  ThinkPad
+}
+
+enum user_role {
+  SUPER_ADMIN
+  COMPANY_OWNER
+  TEAM_LEAD
+  SALES_ASSOCIATE
+  IT_DEPARTMENT
+}
+
+enum account_status {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED_BY_TEAM_LEAD
+  ASSIGNED_TO_IT
+  IN_PROGRESS
+  COMPLETED
+  ACTIVE
+  REJECTED
+}
+
+enum user_status {
+  PENDING
+  APPROVED
+  BLOCKED
+  REJECTED
+}
+
+enum employee_windowsVersion {
+  Windows_10
+  Windows_11
+}
+
+enum company_status {
+  PENDING
+  APPROVED
+  BLOCKED
+  ARCHIVED
+}
+
+enum employee_vpnProvider {
+  Surfshark
+  ExpressVPN
+  NordVPN
+  ProtonVPN
+  PureVPN
+  HideMe
+}
