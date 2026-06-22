@@ -814,3 +814,15 @@ body {
   background: rgba(255, 215, 0, 0.05) !important;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
 }
+
+.btn-google-auth:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.45) !important;
+  filter: brightness(1.05);
+}
+
+.btn-signin-enter:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(251, 191, 36, 0.35) !important;
+  filter: brightness(1.05);
+}

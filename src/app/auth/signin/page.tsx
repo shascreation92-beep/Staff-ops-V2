@@ -2,14 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { Shield, Key, Lock, ArrowRight, Server, Terminal } from "lucide-react";
+import { Shield, Lock, ArrowRight, Terminal } from "lucide-react";
 
 export default function SignInPage() {
-  const [selectedEmail, setSelectedEmail] = useState("admin@staffops.com");
+  const [email, setEmail] = useState("admin@staffops.com");
+  const [password, setPassword] = useState("••••••••");
+  const [activeRole, setActiveRole] = useState("SUPER_ADMIN");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Parse error parameters if any (e.g. NextAuth auth errors)
+  // Parse error parameters if any
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -24,6 +26,114 @@ export default function SignInPage() {
         }
       }
     }
+  }, []);
+
+  // Canvas background animation
+  useEffect(() => {
+    const canvas = document.getElementById("auth-canvas") as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Particle definition
+    class Particle {
+      x: number;
+      y: number;
+      size: number;
+      speedY: number;
+      speedX: number;
+      opacity: number;
+
+      constructor() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedY = -(Math.random() * 0.4 + 0.15); // floats upward
+        this.speedX = (Math.random() - 0.5) * 0.2;
+        this.opacity = Math.random() * 0.5 + 0.15;
+      }
+
+      update() {
+        this.y += this.speedY;
+        this.x += this.speedX;
+
+        // Horizonal bounds wrap
+        if (this.x < 0 || this.x > width) {
+          this.x = Math.random() * width;
+        }
+
+        // Off top screen boundary reset
+        if (this.y < 0) {
+          this.y = height;
+          this.x = Math.random() * width;
+          this.opacity = Math.random() * 0.5 + 0.15;
+        }
+      }
+
+      draw() {
+        if (!ctx) return;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(251, 191, 36, ${this.opacity})`; // Golden tint
+        ctx.shadowBlur = this.size * 3;
+        ctx.shadowColor = "rgba(251, 191, 36, 0.6)";
+        ctx.fill();
+      }
+    }
+
+    const particles: Particle[] = [];
+    const particleCount = 70;
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw subtle grid network lines
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(251, 191, 36, 0.02)";
+      ctx.lineWidth = 1;
+      const gridSize = 70;
+
+      for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      particles.forEach((p) => {
+        p.update();
+        p.draw();
+      });
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
   }, []);
 
   const handleGoogleLogin = async () => {
@@ -41,9 +151,16 @@ export default function SignInPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    if (!email.trim()) {
+      setError("Please specify a login email address.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const res = await signIn("developer-login", {
-        email: selectedEmail,
+        email: email,
         callbackUrl: "/",
         redirect: true,
       });
@@ -57,6 +174,28 @@ export default function SignInPage() {
     }
   };
 
+  const handleRoleSelection = (role: string, targetEmail: string) => {
+    setActiveRole(role);
+    setEmail(targetEmail);
+  };
+
+  // Styled white pill buttons style matching the mockup
+  const pillStyle = (role: string) => ({
+    backgroundColor: "#FFFFFF",
+    color: "#000000",
+    border: activeRole === role ? "2px solid #FBBF24" : "1px solid transparent",
+    borderRadius: "6px",
+    padding: "0.55rem 1rem",
+    fontSize: "0.9rem",
+    fontWeight: 500,
+    cursor: "pointer",
+    boxShadow: activeRole === role 
+      ? "0 0 12px rgba(251, 191, 36, 0.5)" 
+      : "0 2px 4px rgba(0, 0, 0, 0.05)",
+    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+    fontFamily: "var(--font-sans)",
+  });
+
   return (
     <div style={{
       display: "flex",
@@ -65,51 +204,71 @@ export default function SignInPage() {
       minHeight: "100vh",
       padding: "1.5rem",
       position: "relative",
-      zIndex: 1
+      overflow: "hidden",
+      backgroundColor: "#000000"
     }}>
+      {/* Animated canvas starfield */}
+      <canvas
+        id="auth-canvas"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 0,
+          pointerEvents: "none"
+        }}
+      />
+
       <div className="glass-panel" style={{
-        maxWidth: "460px",
+        maxWidth: "440px",
         width: "100%",
-        padding: "2.5rem 2rem",
+        padding: "2.5rem 2.25rem",
         display: "flex",
         flexDirection: "column",
-        gap: "1.5rem",
+        gap: "1.25rem",
         border: "1px solid var(--border-gold)",
         boxShadow: "var(--shadow-premium), var(--shadow-gold-glow)",
-        background: "rgba(10, 10, 10, 0.95)"
+        background: "rgba(10, 10, 10, 0.95)",
+        position: "relative",
+        zIndex: 1,
+        borderRadius: "16px"
       }}>
-        {/* Logo and Header */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-          <div className="user-avatar-gold" style={{ width: "3.5rem", height: "3.5rem", fontSize: "1.5rem" }}>
-            <Shield size={28} style={{ color: "var(--bg-primary)" }} />
+        {/* Logo and Header Block */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem" }}>
+          <div style={{
+            width: "4.5rem",
+            height: "4.5rem",
+            borderRadius: "50%",
+            backgroundColor: "#FBBF24",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 0 20px rgba(251, 191, 36, 0.45)",
+            border: "2px solid #FFD700"
+          }}>
+            <Shield size={34} style={{ color: "#000000" }} />
           </div>
-          <h1 className="text-gold-gradient" style={{
-            fontSize: "1.75rem",
+          <h1 style={{
+            fontSize: "1.9rem",
             fontWeight: 800,
-            letterSpacing: "0.05em",
-            marginTop: "0.5rem"
+            color: "#FBBF24",
+            letterSpacing: "0.08em",
+            marginTop: "0.6rem",
+            textShadow: "0 0 10px rgba(251, 191, 36, 0.3)"
           }}>
             STAFFOPS
           </h1>
-          <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+          <span style={{ 
+            fontSize: "0.75rem", 
+            color: "#888888", 
+            letterSpacing: "0.18em", 
+            textTransform: "uppercase",
+            fontWeight: 600
+          }}>
             Secure SaaS Portal
           </span>
-        </div>
-
-        {/* Info Box */}
-        <div style={{
-          background: "rgba(255, 215, 0, 0.03)",
-          border: "1px solid rgba(255, 215, 0, 0.1)",
-          borderRadius: "var(--border-radius-sm)",
-          padding: "0.75rem 1rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.75rem",
-          fontSize: "0.8rem",
-          color: "var(--text-secondary)"
-        }}>
-          <Server size={18} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
-          <span>Multi-tenant isolation & data partition sharding enabled. Connection secure.</span>
         </div>
 
         {/* Error Alert */}
@@ -118,9 +277,9 @@ export default function SignInPage() {
             background: "rgba(239, 68, 68, 0.08)",
             border: "1px solid rgba(239, 68, 68, 0.25)",
             borderRadius: "var(--border-radius-sm)",
-            padding: "0.75rem 1rem",
+            padding: "0.6rem 0.85rem",
             color: "var(--color-danger)",
-            fontSize: "0.85rem",
+            fontSize: "0.8rem",
             textAlign: "center"
           }}>
             {error}
@@ -131,67 +290,178 @@ export default function SignInPage() {
         <button
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          className="btn-gold"
           style={{
             width: "100%",
             height: "46px",
-            fontSize: "0.95rem"
+            fontSize: "0.9rem",
+            fontWeight: 700,
+            color: "#000000",
+            backgroundColor: "#FBBF24",
+            border: "none",
+            borderRadius: "6px",
+            boxShadow: "0 4px 15px rgba(251, 191, 36, 0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
+            cursor: "pointer",
+            letterSpacing: "0.04em",
+            transition: "all 0.2s ease"
           }}
+          className="btn-google-auth"
         >
-          <Lock size={18} />
-          {isLoading ? "AUTHORIZING..." : "SIGN IN WITH GOOGLE"}
+          <Lock size={16} />
+          <span>SIGN IN WITH GOOGLE</span>
         </button>
 
         {/* Or Divider */}
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ flex: 1, height: "1px", background: "var(--border-dim)" }}></div>
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>OR DEVELOPER BYPASS</span>
-          <div style={{ flex: 1, height: "1px", background: "var(--border-dim)" }}></div>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", width: "100%", margin: "0.25rem 0" }}>
+          <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.08)" }}></div>
+          <span style={{ fontSize: "0.7rem", color: "#555555", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            OR DEVELOPER BYPASS
+          </span>
+          <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.08)" }}></div>
         </div>
 
-        {/* Developer Console bypass */}
-        <form onSubmit={handleDevLogin} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-              <Terminal size={14} /> Select Identity
-            </label>
-            <select
-              value={selectedEmail}
-              onChange={(e) => setSelectedEmail(e.target.value)}
-              className="select-gold"
-              style={{ height: "42px" }}
-              disabled={isLoading}
-            >
-              <option value="admin@staffops.com">admin@staffops.com (SUPER_ADMIN)</option>
-              <option value="owner@acme.com">owner@acme.com (COMPANY_OWNER - Acme Corp)</option>
-              <option value="lead@acme.com">lead@acme.com (TEAM_LEAD - Acme Corp)</option>
-              <option value="sales@acme.com">sales@acme.com (SALES_ASSOCIATE - Acme Corp)</option>
-              <option value="it@acme.com">it@acme.com (IT_DEPARTMENT - Acme Corp)</option>
-              <option value="owner@betacorp.com">owner@betacorp.com (COMPANY_OWNER - Beta Corp [PENDING])</option>
-            </select>
+        {/* Developer Console bypass pills */}
+        <form onSubmit={handleDevLogin} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%" }}>
+            
+            {/* Super Admin Pill Row */}
+            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+              <button
+                type="button"
+                onClick={() => handleRoleSelection("SUPER_ADMIN", "admin@staffops.com")}
+                style={{ ...pillStyle("SUPER_ADMIN"), width: "100%", maxWidth: "250px" }}
+                disabled={isLoading}
+              >
+                Super Admin
+              </button>
+            </div>
+
+            {/* Company / IT Dept Row */}
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", width: "100%" }}>
+              <button
+                type="button"
+                onClick={() => handleRoleSelection("COMPANY_OWNER", "owner@acme.com")}
+                style={{ ...pillStyle("COMPANY_OWNER"), flex: 1 }}
+                disabled={isLoading}
+              >
+                Company
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleSelection("IT_DEPARTMENT", "it@acme.com")}
+                style={{ ...pillStyle("IT_DEPARTMENT"), flex: 1 }}
+                disabled={isLoading}
+              >
+                IT Dept.
+              </button>
+            </div>
+
+            {/* Team Lead / Sales Associate Row */}
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", width: "100%" }}>
+              <button
+                type="button"
+                onClick={() => handleRoleSelection("TEAM_LEAD", "lead@acme.com")}
+                style={{ ...pillStyle("TEAM_LEAD"), flex: 1 }}
+                disabled={isLoading}
+              >
+                Team Lead
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleSelection("SALES_ASSOCIATE", "sales@acme.com")}
+                style={{ ...pillStyle("SALES_ASSOCIATE"), flex: 1 }}
+                disabled={isLoading}
+              >
+                Sale As.
+              </button>
+            </div>
+          </div>
+
+          {/* Form Inputs (Custom Style) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "0.25rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+              <input
+                type="text"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setActiveRole(""); // remove active pill highlight when customized
+                }}
+                disabled={isLoading}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  color: "#000000",
+                  border: "1px solid transparent",
+                  borderRadius: "6px",
+                  padding: "0.65rem 0.9rem",
+                  fontSize: "0.95rem",
+                  width: "100%",
+                  outline: "none",
+                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.1)"
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  color: "#000000",
+                  border: "1px solid transparent",
+                  borderRadius: "6px",
+                  padding: "0.65rem 0.9rem",
+                  fontSize: "0.95rem",
+                  width: "100%",
+                  outline: "none",
+                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.1)"
+                }}
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="btn-glass"
             style={{
               width: "100%",
-              height: "42px",
-              fontSize: "0.9rem"
+              height: "44px",
+              fontSize: "0.9rem",
+              fontWeight: 700,
+              color: "#000000",
+              backgroundColor: "#FBBF24",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              boxShadow: "0 3px 10px rgba(251, 191, 36, 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              marginTop: "0.25rem",
+              transition: "all 0.2s ease"
             }}
+            className="btn-signin-enter"
           >
-            <span>Bypass Auth & Enter</span>
+            <span>SIGN IN & ENTER</span>
             <ArrowRight size={16} />
           </button>
         </form>
 
-        {/* Footer */}
+        {/* Footer info */}
         <div style={{
           textAlign: "center",
-          fontSize: "0.75rem",
-          color: "var(--text-muted)",
-          marginTop: "0.5rem"
+          fontSize: "0.7rem",
+          color: "#555555",
+          marginTop: "0.25rem"
         }}>
           StaffOps V2.0 © 2026. Data strictly isolated under SOC2 guidelines.
         </div>
