@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { user_role } from "@prisma/client";
-import { Shield, Check, X, Loader2 } from "lucide-react";
+import { Shield, Check, X, Loader2, Menu } from "lucide-react";
 import { 
   getUpgradeInvitationAction, 
   acceptUpgradeAction, 
@@ -23,6 +24,8 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children, user }: DashboardLayoutProps) {
+  const pathname = usePathname();
+  const isDashboard = pathname === "/";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [invitation, setInvitation] = useState<{ id: string; title: string; message: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -170,11 +173,36 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         )}
 
         {/* Main Viewport */}
-        <main className="main-content">
-          <Header 
-            user={user} 
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-          />
+        <main className="main-content" style={isDashboard ? { paddingTop: "2rem" } : undefined}>
+          {isDashboard && (
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="mobile-menu-trigger btn-glass"
+              style={{
+                position: "fixed",
+                top: "1rem",
+                left: "1rem",
+                zIndex: 95,
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 215, 0, 0.1)"
+              }}
+            >
+              <Menu size={20} style={{ color: "var(--gold-primary)" }} />
+            </button>
+          )}
+
+          {!isDashboard && (
+            <Header 
+              user={user} 
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
+            />
+          )}
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {children}
           </div>

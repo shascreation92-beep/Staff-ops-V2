@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Target
 } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 export default async function DashboardPage() {
   // Enforce server-side authentication and status checks
@@ -186,19 +187,8 @@ export default async function DashboardPage() {
             Current node operations running at normal threshold parameters.
           </span>
         </div>
-        <div style={{
-          display: "flex",
-          gap: "1.5rem",
-          fontSize: "0.8rem",
-          fontFamily: "var(--font-mono)",
-          color: "var(--text-muted)"
-        }}>
-          <div>
-            ROLE: <span style={{ color: "var(--gold-primary)" }}>{user.role.replace("_", " ")}</span>
-          </div>
-          <div>
-            SHARD DOMAIN: <span style={{ color: "var(--gold-primary)" }}>{companyName || "SYSTEM GLOBAL"}</span>
-          </div>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <NotificationBell />
         </div>
       </div>
 
