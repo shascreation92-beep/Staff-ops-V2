@@ -71,6 +71,12 @@ export default function SettingsShard({
   const [requireVerification, setRequireVerification] = useState(
     rules["requireVerification"] !== "false" ? "true" : "false"
   );
+  const [targetToMaintain, setTargetToMaintain] = useState(
+    parseInt(rules["targetToMaintain"] || "15", 10)
+  );
+  const [targetToMaintainFB, setTargetToMaintainFB] = useState(
+    parseInt(rules["targetToMaintainFB"] || "15", 10)
+  );
   const [ruleSuccessMsg, setRuleSuccessMsg] = useState<string | null>(null);
 
   // Announcements state
@@ -238,6 +244,18 @@ export default function SettingsShard({
         await updateCompanyRuleAction({
           key: "requireVerification",
           value: requireVerification,
+          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
+        });
+
+        await updateCompanyRuleAction({
+          key: "targetToMaintain",
+          value: targetToMaintain.toString(),
+          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
+        });
+
+        await updateCompanyRuleAction({
+          key: "targetToMaintainFB",
+          value: targetToMaintainFB.toString(),
           targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
         });
 
@@ -441,6 +459,40 @@ export default function SettingsShard({
                   <option value="true">Yes (Flag unverified accounts red)</option>
                   <option value="false">No (Accept unverified accounts)</option>
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <span>Global Target to Maintain</span>
+                  <span title="Overall target count for operational accounts to maintain" style={{ display: "inline-flex", cursor: "help" }}>
+                    <HelpCircle size={14} style={{ color: "var(--text-muted)" }} />
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={targetToMaintain}
+                  onChange={(e) => setTargetToMaintain(parseInt(e.target.value, 10) || 0)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <span>FB Target to Maintain</span>
+                  <span title="Target count for operational Facebook accounts to maintain" style={{ display: "inline-flex", cursor: "help" }}>
+                    <HelpCircle size={14} style={{ color: "var(--text-muted)" }} />
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={targetToMaintainFB}
+                  onChange={(e) => setTargetToMaintainFB(parseInt(e.target.value, 10) || 0)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
               </div>
 
               <button

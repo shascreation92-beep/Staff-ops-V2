@@ -190,6 +190,8 @@ export async function updateCompanyRuleAction(formData: z.infer<typeof RuleSchem
   let name = key;
   if (key === "minAds") name = "Minimum Ads Required";
   if (key === "requireVerification") name = "Verification Required";
+  if (key === "targetToMaintain") name = "Global Target to Maintain";
+  if (key === "targetToMaintainFB") name = "FB Target to Maintain";
 
   try {
     const existingRule = await db.rule.findUnique({
