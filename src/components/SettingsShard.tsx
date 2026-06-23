@@ -10,7 +10,9 @@ import {
 import { 
   sendInvitationAction,
   declineInvitationAction,
-  updateTeamLeadNameAction
+  updateTeamLeadNameAction,
+  approveSalesAssociateAction,
+  adminResetUserPasswordAction
 } from "@/app/actions/users";
 import { 
   Sliders, 
@@ -23,7 +25,8 @@ import {
   HelpCircle,
   AlertCircle,
   Users,
-  Edit2
+  Edit2,
+  Key
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 
@@ -141,6 +144,77 @@ export default function SettingsShard({
         }
       } catch (err: any) {
         setEditTLError(err.message || "Failed to update Team Lead profile.");
+      }
+    });
+  };
+
+  // Approve Sales Associate state
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [approveUserId, setApproveUserId] = useState("");
+  const [approveUserName, setApproveUserName] = useState("");
+  const [approveEmployeeId, setApproveEmployeeId] = useState("");
+  const [approvePassword, setApprovePassword] = useState("");
+  const [approveError, setApproveError] = useState<string | null>(null);
+
+  const handleApproveSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setApproveError(null);
+    if (!approveEmployeeId.trim() || !approvePassword.trim()) {
+      setApproveError("Employee ID and Password are required.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await approveSalesAssociateAction({
+          userId: approveUserId,
+          employeeId: approveEmployeeId.trim(),
+          password: approvePassword.trim()
+        });
+        if (res.success) {
+          setShowApproveModal(false);
+          setApproveUserId("");
+          setApproveUserName("");
+          setApproveEmployeeId("");
+          setApprovePassword("");
+        }
+      } catch (err: any) {
+        setApproveError(err.message || "Failed to approve onboarding request.");
+      }
+    });
+  };
+
+  // Admin Reset Password state
+  const [showResetPassModal, setShowResetPassModal] = useState(false);
+  const [resetPassUserId, setResetPassUserId] = useState("");
+  const [resetPassUserName, setResetPassUserName] = useState("");
+  const [resetPassUserEmail, setResetPassUserEmail] = useState("");
+  const [resetPassNewPassword, setResetPassNewPassword] = useState("");
+  const [resetPassError, setResetPassError] = useState<string | null>(null);
+
+  const handleResetPassSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetPassError(null);
+    if (!resetPassNewPassword.trim()) {
+      setResetPassError("Password cannot be empty.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await adminResetUserPasswordAction({
+          userId: resetPassUserId,
+          newPassword: resetPassNewPassword.trim()
+        });
+        if (res.success) {
+          setShowResetPassModal(false);
+          setResetPassUserId("");
+          setResetPassUserName("");
+          setResetPassUserEmail("");
+          setResetPassNewPassword("");
+        }
+      } catch (err: any) {
+        setResetPassError(err.message || "Failed to reset password.");
       }
     });
   };
@@ -733,22 +807,62 @@ export default function SettingsShard({
                           )}
                         </td>
                         <td style={{ textAlign: "right" }}>
-                          {u.role === "TEAM_LEAD" && (
-                            <button
-                              onClick={() => {
-                                setEditTLUserId(u.id);
-                                setEditTLName(u.name || "");
-                                setEditTLError(null);
-                                setShowEditTLModal(true);
-                              }}
-                              className="btn-glass"
-                              style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
-                              title="Edit Team Lead Name"
-                            >
-                              <Edit2 size={12} />
-                              <span>Edit Profile</span>
-                            </button>
-                          )}
+                          <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", alignItems: "center" }}>
+                            {u.status === "PENDING" && u.role === "SALES_ASSOCIATE" && (
+                              <button
+                                onClick={() => {
+                                  setApproveUserId(u.id);
+                                  setApproveUserName(u.name || "");
+                                  setApproveEmployeeId("");
+                                  setApprovePassword("");
+                                  setApproveError(null);
+                                  setShowApproveModal(true);
+                                }}
+                                className="btn-gold"
+                                style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                                title="Approve & Onboard Associate"
+                              >
+                                <Check size={12} />
+                                <span>Approve</span>
+                              </button>
+                            )}
+
+                            {u.role === "TEAM_LEAD" && (
+                              <button
+                                onClick={() => {
+                                  setEditTLUserId(u.id);
+                                  setEditTLName(u.name || "");
+                                  setEditTLError(null);
+                                  setShowEditTLModal(true);
+                                }}
+                                className="btn-glass"
+                                style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                                title="Edit Team Lead Name"
+                              >
+                                <Edit2 size={12} />
+                                <span>Edit Profile</span>
+                              </button>
+                            )}
+
+                            {(u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE") && (
+                              <button
+                                onClick={() => {
+                                  setResetPassUserId(u.id);
+                                  setResetPassUserName(u.name || "");
+                                  setResetPassUserEmail(u.email);
+                                  setResetPassNewPassword("");
+                                  setResetPassError(null);
+                                  setShowResetPassModal(true);
+                                }}
+                                className="btn-glass"
+                                style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                                title="Reset User Password"
+                              >
+                                <Key size={12} />
+                                <span>Password</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -826,6 +940,174 @@ export default function SettingsShard({
                   disabled={isPending}
                 >
                   {isPending ? "Updating..." : "Save Name"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Onboarding Modal */}
+      {showApproveModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "450px",
+            width: "100%",
+            padding: "2rem",
+            background: "rgba(10,10,10,0.98)",
+            border: "1px solid var(--border-gold)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem"
+          }}>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>APPROVE ONBOARDING REQUEST</h2>
+            <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              Assigning credentials to: <strong style={{ color: "var(--text-primary)" }}>{approveUserName}</strong>
+            </div>
+
+            {approveError && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {approveError}
+              </div>
+            )}
+
+            <form onSubmit={handleApproveSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="form-group">
+                <label className="form-label">Employee ID (Globally Unique)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. EMP-101"
+                  value={approveEmployeeId}
+                  onChange={(e) => setApproveEmployeeId(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Assign Password</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter user account password"
+                  value={approvePassword}
+                  onChange={(e) => setApprovePassword(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  onClick={() => { setShowApproveModal(false); setApproveUserId(""); setApproveUserName(""); }}
+                  className="btn-glass"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Approving..." : "Approve & Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Reset Password Modal */}
+      {showResetPassModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "420px",
+            width: "100%",
+            padding: "2rem",
+            background: "rgba(10,10,10,0.98)",
+            border: "1px solid var(--border-gold)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem"
+          }}>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>RESET USER PASSWORD</h2>
+            <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              User: <strong style={{ color: "var(--text-primary)" }}>{resetPassUserName || resetPassUserEmail}</strong>
+            </div>
+
+            {resetPassError && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {resetPassError}
+              </div>
+            )}
+
+            <form onSubmit={handleResetPassSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="form-group">
+                <label className="form-label">New Password</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter new password"
+                  value={resetPassNewPassword}
+                  onChange={(e) => setResetPassNewPassword(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetPassModal(false);
+                    setResetPassUserId("");
+                    setResetPassUserName("");
+                    setResetPassUserEmail("");
+                  }}
+                  className="btn-glass"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Resetting..." : "Reset Password"}
                 </button>
               </div>
             </form>

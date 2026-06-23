@@ -279,8 +279,8 @@ export async function getUpgradeInvitationAction() {
 const OnboardSalesAssociateSchema = z.object({
   fullName: z.string().min(1, "Full Name is required"),
   email: z.string().email("Invalid email format"),
-  employeeId: z.string().min(1, "Employee ID is required"),
-  password: z.string().min(1, "Initial Password is required"),
+  employeeId: z.string().optional(),
+  password: z.string().optional(),
 });
 
 export async function onboardSalesAssociateAction(formData: z.infer<typeof OnboardSalesAssociateSchema>) {
@@ -306,7 +306,7 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
     throw new Error("No company context found to assign Sales Associate.");
   }
 
-  // Check unique email and employeeId
+  // Check unique email in user table
   const existingUser = await db.user.findUnique({
     where: { email },
   });
@@ -314,8 +314,197 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
     throw new Error("A user with this email already exists.");
   }
 
+  const isTL = currentUser.role === "TEAM_LEAD";
+
+  if (isTL || !employeeId || !password) {
+    // Team Lead Onboarding Request Flow (Pending status, no password assigned yet)
+    try {
+      const newUserId = crypto.randomUUID();
+
+      // Create User (Pending)
+      const newUser = await db.user.create({
+        data: {
+          id: newUserId,
+          email,
+          name: fullName,
+          role: "SALES_ASSOCIATE",
+          status: "PENDING",
+          companyId,
+          teamLeadId: isTL ? currentUser.id : null,
+          updatedAt: new Date(),
+        }
+      });
+
+      // Notify IT department (IT_READ_ONLY notification)
+      const itMembers = await db.user.findMany({
+        where: {
+          companyId,
+          role: "IT_DEPARTMENT",
+          isArchived: false,
+          status: "APPROVED"
+        }
+      });
+
+      for (const itUser of itMembers) {
+        await db.notification.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: itUser.id,
+            title: "New Onboarding Request Submitted",
+            message: `New Onboarding Request Submitted: Sales Associate ${fullName} (${email}) has been submitted for onboarding by Team Lead ${currentUser.name || currentUser.email}.`,
+            type: "IT_READ_ONLY",
+            isRead: false
+          }
+        });
+      }
+
+      // Write audit log
+      await logAction({
+        userId: currentUser.id,
+        userEmail: currentUser.email || "",
+        userRole: currentUser.role,
+        action: "SUBMIT_ONBOARDING_REQUEST",
+        entity: "user",
+        entityId: newUserId,
+        newValue: JSON.stringify({ user: newUser })
+      });
+
+      revalidatePath("/employees");
+      revalidatePath("/settings");
+      return { success: true };
+    } catch (error: any) {
+      throw new Error(error.message || "Failed to submit onboarding request.");
+    }
+  } else {
+    // Direct Onboarding Flow (for Super Admin / Company Owner who provides employeeId and password)
+    // Check unique email and employeeId in employee table
+    const existingEmail = await db.employee.findUnique({
+      where: { email },
+    });
+    if (existingEmail) {
+      throw new Error("An employee with this email already exists.");
+    }
+
+    const existingId = await db.employee.findUnique({
+      where: { employeeId },
+    });
+    if (existingId) {
+      throw new Error(`Employee ID "${employeeId}" is already in use.`);
+    }
+
+    try {
+      const newUserId = crypto.randomUUID();
+      const newEmployeeId = crypto.randomUUID();
+
+      // Create User (Approved)
+      const newUser = await db.user.create({
+        data: {
+          id: newUserId,
+          email,
+          name: fullName,
+          role: "SALES_ASSOCIATE",
+          status: "APPROVED",
+          password,
+          companyId,
+          teamLeadId: null,
+          updatedAt: new Date(),
+        }
+      });
+
+      // Create Employee
+      const newEmp = await db.employee.create({
+        data: {
+          id: newEmployeeId,
+          employeeId,
+          fullName,
+          email,
+          status: "ACTIVE",
+          companyId,
+          userId: newUserId,
+          updatedAt: new Date(),
+        }
+      });
+
+      // Notify IT department (IT_READ_ONLY notification)
+      const itMembers = await db.user.findMany({
+        where: {
+          companyId,
+          role: "IT_DEPARTMENT",
+          isArchived: false,
+          status: "APPROVED"
+        }
+      });
+
+      for (const itUser of itMembers) {
+        await db.notification.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: itUser.id,
+            title: "New Sales Associate Onboarded",
+            message: `${fullName} (${email}) has been successfully onboarded by ${currentUser.name || currentUser.email}.`,
+            type: "IT_READ_ONLY",
+            isRead: false
+          }
+        });
+      }
+
+      // Write audit log
+      await logAction({
+        userId: currentUser.id,
+        userEmail: currentUser.email || "",
+        userRole: currentUser.role,
+        action: "ONBOARD_SALES_ASSOCIATE",
+        entity: "user",
+        entityId: newUserId,
+        newValue: JSON.stringify({ user: newUser, employee: newEmp })
+      });
+
+      revalidatePath("/employees");
+      revalidatePath("/settings");
+      return { success: true };
+    } catch (error: any) {
+      throw new Error(error.message || "Failed to onboard Sales Associate.");
+    }
+  }
+}
+
+const ApproveSalesAssociateSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+  employeeId: z.string().min(1, "Employee ID is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export async function approveSalesAssociateAction(formData: z.infer<typeof ApproveSalesAssociateSchema>) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+
+  const result = ApproveSalesAssociateSchema.safeParse(formData);
+  if (!result.success) {
+    throw new Error(result.error.issues.map(e => e.message).join(", "));
+  }
+
+  const { userId, employeeId, password } = result.data;
+
+  // Fetch the pending user
+  const pendingUser = await db.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!pendingUser) {
+    throw new Error("User not found.");
+  }
+
+  if (pendingUser.status !== "PENDING" || pendingUser.role !== "SALES_ASSOCIATE") {
+    throw new Error("Target user is not a pending Sales Associate.");
+  }
+
+  // Multi-tenant check
+  if (currentUser.role !== "SUPER_ADMIN" && pendingUser.companyId !== currentUser.companyId) {
+    throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
+  }
+
+  // Check unique email and employeeId in employee table
   const existingEmail = await db.employee.findUnique({
-    where: { email },
+    where: { email: pendingUser.email },
   });
   if (existingEmail) {
     throw new Error("An employee with this email already exists.");
@@ -329,42 +518,36 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
   }
 
   try {
-    const newUserId = crypto.randomUUID();
     const newEmployeeId = crypto.randomUUID();
 
-    // Create User
-    const newUser = await db.user.create({
+    // 1. Update User to APPROVED and set Password
+    const updatedUser = await db.user.update({
+      where: { id: userId },
       data: {
-        id: newUserId,
-        email,
-        name: fullName,
-        role: "SALES_ASSOCIATE",
         status: "APPROVED",
         password,
-        companyId,
-        teamLeadId: currentUser.role === "TEAM_LEAD" ? currentUser.id : null,
-        updatedAt: new Date(),
+        updatedAt: new Date()
       }
     });
 
-    // Create Employee
+    // 2. Create Employee record
     const newEmp = await db.employee.create({
       data: {
         id: newEmployeeId,
         employeeId,
-        fullName,
-        email,
+        fullName: pendingUser.name || "Sales Associate",
+        email: pendingUser.email,
         status: "ACTIVE",
-        companyId,
-        userId: newUserId,
-        updatedAt: new Date(),
+        companyId: pendingUser.companyId || currentUser.companyId || "",
+        userId: userId,
+        updatedAt: new Date()
       }
     });
 
-    // Notify IT department (IT_READ_ONLY notification)
+    // 3. Notify IT department (IT_READ_ONLY notification)
     const itMembers = await db.user.findMany({
       where: {
-        companyId,
+        companyId: pendingUser.companyId,
         role: "IT_DEPARTMENT",
         isArchived: false,
         status: "APPROVED"
@@ -377,33 +560,34 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
           id: crypto.randomUUID(),
           userId: itUser.id,
           title: "New Sales Associate Onboarded",
-          message: `${fullName} (${email}) has been successfully onboarded by ${currentUser.name || currentUser.email}.`,
+          message: `${pendingUser.name} (${pendingUser.email}) has been successfully approved and onboarded by ${currentUser.name || currentUser.email}.`,
           type: "IT_READ_ONLY",
           isRead: false
         }
       });
     }
 
-    // Write audit log
+    // 4. Log Action
     await logAction({
       userId: currentUser.id,
       userEmail: currentUser.email || "",
       userRole: currentUser.role,
-      action: "ONBOARD_SALES_ASSOCIATE",
+      action: "APPROVE_ONBOARDING_REQUEST",
       entity: "user",
-      entityId: newUserId,
-      newValue: JSON.stringify({ user: newUser, employee: newEmp })
+      entityId: userId,
+      newValue: JSON.stringify({ user: updatedUser, employee: newEmp })
     });
 
+    revalidatePath("/settings");
     revalidatePath("/employees");
     return { success: true };
   } catch (error: any) {
-    throw new Error(error.message || "Failed to onboard Sales Associate.");
+    throw new Error(error.message || "Failed to approve onboarding request.");
   }
 }
 
 export async function updateUserPasswordAction(newPassword: string) {
-  const currentUser = await enforceAuth();
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
   if (!newPassword || !newPassword.trim()) {
     throw new Error("Password cannot be empty.");
   }
@@ -429,9 +613,65 @@ export async function updateUserPasswordAction(newPassword: string) {
     });
 
     revalidatePath("/");
+    revalidatePath("/settings");
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Failed to update password.");
+  }
+}
+
+const AdminResetPasswordSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+  newPassword: z.string().min(1, "Password cannot be empty"),
+});
+
+export async function adminResetUserPasswordAction(formData: z.infer<typeof AdminResetPasswordSchema>) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+
+  const result = AdminResetPasswordSchema.safeParse(formData);
+  if (!result.success) {
+    throw new Error(result.error.issues.map(e => e.message).join(", "));
+  }
+
+  const { userId, newPassword } = result.data;
+
+  const targetUser = await db.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found.");
+  }
+
+  // Multi-tenant check
+  if (currentUser.role !== "SUPER_ADMIN" && targetUser.companyId !== currentUser.companyId) {
+    throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
+  }
+
+  try {
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        password: newPassword,
+        updatedAt: new Date()
+      }
+    });
+
+    // Write audit log
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "ADMIN_RESET_PASSWORD",
+      entity: "user",
+      entityId: userId,
+      newValue: `Password reset successfully for user: ${targetUser.email}`
+    });
+
+    revalidatePath("/settings");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to reset user password.");
   }
 }
 

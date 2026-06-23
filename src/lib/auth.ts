@@ -14,6 +14,7 @@ export const authOptions: NextAuthOptions = {
       name: "Developer Bypass",
       credentials: {
         email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (process.env.ALLOW_DEV_LOGIN !== "true") {
@@ -27,6 +28,12 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (dbUser) {
+          // Centralized password verification:
+          // If the user has a password in the database, verify it.
+          if (dbUser.password && credentials.password !== dbUser.password) {
+            return null;
+          }
+
           return {
             id: dbUser.id,
             name: dbUser.name,

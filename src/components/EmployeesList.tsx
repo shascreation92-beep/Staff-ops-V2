@@ -108,8 +108,8 @@ export default function EmployeesList({
         const res = await onboardSalesAssociateAction({
           fullName: onboardFullName,
           email: onboardEmail,
-          employeeId: onboardEmployeeId,
-          password: onboardPassword
+          employeeId: isTeamLead ? "" : onboardEmployeeId,
+          password: isTeamLead ? "" : onboardPassword
         });
 
         if (res.success) {
@@ -219,7 +219,7 @@ export default function EmployeesList({
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       
       {/* Search Toolbar */}
-      <div className="glass-panel table-panel" style={{ padding: "1.25rem 1.5rem", marginBottom: 0 }}>
+      <div className="glass-panel table-panel" style={{ padding: "0.6rem 1.25rem", marginBottom: 0 }}>
         <div className="table-toolbar">
           <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", flex: 1 }}>
             <div className="table-search-wrapper" style={{ width: "100%", maxWidth: "360px" }}>
@@ -614,19 +614,21 @@ export default function EmployeesList({
               </div>
             )}
 
-            <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div className="form-group">
-                <label className="form-label">Employee ID (Globally Unique)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. EMP-101"
-                  value={onboardEmployeeId}
-                  onChange={(e) => setOnboardEmployeeId(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
+             <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {!isTeamLead && (
+                <div className="form-group">
+                  <label className="form-label">Employee ID (Globally Unique)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. EMP-101"
+                    value={onboardEmployeeId}
+                    onChange={(e) => setOnboardEmployeeId(e.target.value)}
+                    className="input-gold"
+                    disabled={isPending}
+                  />
+                </div>
+              )}
 
               <div className="form-group">
                 <label className="form-label">Full Name</label>
@@ -654,18 +656,20 @@ export default function EmployeesList({
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Initial Password</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Assign initial password"
-                  value={onboardPassword}
-                  onChange={(e) => setOnboardPassword(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
+              {!isTeamLead && (
+                <div className="form-group">
+                  <label className="form-label">Initial Password</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Assign initial password"
+                    value={onboardPassword}
+                    onChange={(e) => setOnboardPassword(e.target.value)}
+                    className="input-gold"
+                    disabled={isPending}
+                  />
+                </div>
+              )}
 
               <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                 <button

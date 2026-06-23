@@ -173,30 +173,32 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           </div>
         </div>
         <div style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
-          <button
-            onClick={() => {
-              setNewPassword("");
-              setChangePassError(null);
-              setChangePassSuccess(false);
-              setShowChangePassModal(true);
-            }}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              padding: "0.5rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "4px",
-              transition: "all 0.2s ease"
-            }}
-            className="change-pass-btn"
-            title="Change Password"
-          >
-            <Key size={16} />
-          </button>
+          {["SUPER_ADMIN", "COMPANY_OWNER"].includes(user.role) && (
+            <button
+              onClick={() => {
+                setNewPassword("");
+                setChangePassError(null);
+                setChangePassSuccess(false);
+                setShowChangePassModal(true);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--text-muted)",
+                cursor: "pointer",
+                padding: "0.5rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "4px",
+                transition: "all 0.2s ease"
+              }}
+              className="change-pass-btn"
+              title="Change Password"
+            >
+              <Key size={16} />
+            </button>
+          )}
 
           <button
             onClick={() => signOut({ callbackUrl: "/auth/signin" })}

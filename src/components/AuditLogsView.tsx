@@ -43,7 +43,7 @@ export default function AuditLogsView({
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       
       {/* Tab Select & Search bar */}
-      <div className="glass-panel table-panel" style={{ padding: "1.25rem 1.5rem", marginBottom: 0 }}>
+      <div className="glass-panel table-panel" style={{ padding: "0.6rem 1.25rem", marginBottom: 0 }}>
         <div className="table-toolbar">
           <div style={{ display: "flex", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-gold)", borderRadius: "var(--border-radius-sm)", padding: "0.2rem" }}>
             <button

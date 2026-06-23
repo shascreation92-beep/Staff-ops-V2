@@ -161,6 +161,7 @@ export default function SignInPage() {
     try {
       const res = await signIn("developer-login", {
         email: email,
+        password: password,
         callbackUrl: "/",
         redirect: true,
       });
