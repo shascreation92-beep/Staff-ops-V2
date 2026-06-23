@@ -468,14 +468,40 @@ export default function SettingsShard({
                     <HelpCircle size={14} style={{ color: "var(--text-muted)" }} />
                   </span>
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={targetToMaintain}
-                  onChange={(e) => setTargetToMaintain(parseInt(e.target.value, 10) || 0)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.35rem" }}>
+                  <button
+                    type="button"
+                    className="btn-glass"
+                    disabled={isPending || targetToMaintain <= 0}
+                    onClick={() => setTargetToMaintain(v => Math.max(0, v - 1))}
+                    style={{ width: "42px", height: "42px", padding: 0, fontSize: "1.3rem", fontWeight: 700, flexShrink: 0, borderRadius: "6px" }}
+                  >
+                    −
+                  </button>
+                  <div style={{
+                    flex: 1,
+                    textAlign: "center",
+                    fontSize: "1.6rem",
+                    fontWeight: 800,
+                    background: "var(--gold-gradient)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    letterSpacing: "0.04em",
+                    lineHeight: 1,
+                    padding: "0.4rem 0"
+                  }}>
+                    {targetToMaintain}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-gold"
+                    disabled={isPending}
+                    onClick={() => setTargetToMaintain(v => v + 1)}
+                    style={{ width: "42px", height: "42px", padding: 0, fontSize: "1.3rem", fontWeight: 700, flexShrink: 0, borderRadius: "6px" }}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               <div className="form-group">
@@ -485,14 +511,40 @@ export default function SettingsShard({
                     <HelpCircle size={14} style={{ color: "var(--text-muted)" }} />
                   </span>
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={targetToMaintainFB}
-                  onChange={(e) => setTargetToMaintainFB(parseInt(e.target.value, 10) || 0)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.35rem" }}>
+                  <button
+                    type="button"
+                    className="btn-glass"
+                    disabled={isPending || targetToMaintainFB <= 0}
+                    onClick={() => setTargetToMaintainFB(v => Math.max(0, v - 1))}
+                    style={{ width: "42px", height: "42px", padding: 0, fontSize: "1.3rem", fontWeight: 700, flexShrink: 0, borderRadius: "6px" }}
+                  >
+                    −
+                  </button>
+                  <div style={{
+                    flex: 1,
+                    textAlign: "center",
+                    fontSize: "1.6rem",
+                    fontWeight: 800,
+                    background: "var(--gold-gradient)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    letterSpacing: "0.04em",
+                    lineHeight: 1,
+                    padding: "0.4rem 0"
+                  }}>
+                    {targetToMaintainFB}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-gold"
+                    disabled={isPending}
+                    onClick={() => setTargetToMaintainFB(v => v + 1)}
+                    style={{ width: "42px", height: "42px", padding: 0, fontSize: "1.3rem", fontWeight: 700, flexShrink: 0, borderRadius: "6px" }}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               <button

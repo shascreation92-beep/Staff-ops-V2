@@ -396,7 +396,7 @@ export default function AccountsList({
               <Search className="header-search-icon" />
               <input
                 type="text"
-                placeholder="Search serial, ID name, or company..."
+                placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="header-search-input"
@@ -616,8 +616,18 @@ export default function AccountsList({
                                 Request to TL
                               </button>
                             ) : (
-                              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontStyle: "italic" }}>
-                                Need ≥ 4 ads
+                              <span style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                color: "var(--gold-primary)",
+                                background: "rgba(212, 175, 55, 0.08)",
+                                border: "1px solid rgba(212, 175, 55, 0.3)",
+                                borderRadius: "4px",
+                                padding: "0.2rem 0.55rem",
+                                letterSpacing: "0.03em",
+                                whiteSpace: "nowrap"
+                              }}>
+                                Insufficient Ads
                               </span>
                             )
                           ) : (acc.status === "PENDING_TL" && (isTeamLead || isSuperAdmin)) ? (
