@@ -123,14 +123,17 @@ export default function AccountsList({
     });
   };
 
-  const handleITAcknowledge = async (accountId: string) => {
+  const handleITApprove = async (accountId: string) => {
+    if (!confirm("Are you sure you want to approve and finalize this account?")) {
+      return;
+    }
     startTransition(async () => {
       try {
-        const res = await updateAccountStatusAction(accountId, "IT_PENDING", "Acknowledged by IT Department");
+        const res = await updateAccountStatusAction(accountId, "ACTIVE", "Approved and finalized by IT Department");
         if (res.success) {
           router.refresh();
         } else {
-          alert("Failed to acknowledge.");
+          alert("Failed to approve account.");
         }
       } catch (err: any) {
         alert(err.message);
@@ -189,7 +192,7 @@ export default function AccountsList({
     if (acc.status === "FORWARDED_TO_IT") {
       return {
         color: "#A78BFA",
-        text: "Forwarded to IT",
+        text: "Pending IT Approval",
         bg: "rgba(167, 139, 250, 0.08)",
         border: "rgba(167, 139, 250, 0.25)",
         glow: "none"
@@ -216,7 +219,7 @@ export default function AccountsList({
 
     const isVerified = acc.verificationStatus === "Yes";
     const adsCount = acc.adsPublished;
-    const isApproved = ["ACTIVE", "COMPLETED", "APPROVED_BY_TEAM_LEAD"].includes(acc.status);
+    const isApproved = ["ACTIVE", "COMPLETED"].includes(acc.status);
 
     if (acc.status === "REJECTED" || !isVerified) {
       return {
@@ -414,6 +417,8 @@ export default function AccountsList({
               >
                 <option value="ALL">ALL STATUSES</option>
                 <option value="DRAFT">DRAFT</option>
+                <option value="PENDING_TL">PENDING TL APPROVAL</option>
+                <option value="FORWARDED_TO_IT">PENDING IT APPROVAL</option>
                 <option value="SUBMITTED">SUBMITTED</option>
                 <option value="UNDER_REVIEW">UNDER REVIEW</option>
                 <option value="APPROVED_BY_TEAM_LEAD">APPROVED BY TL</option>
@@ -664,12 +669,12 @@ export default function AccountsList({
 
                           {(acc.status === "FORWARDED_TO_IT" && (isIT || isSuperAdmin)) && (
                             <button
-                              onClick={() => handleITAcknowledge(acc.id)}
-                              className="btn-glass"
-                              style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto", border: "1px solid var(--border-gold)" }}
+                              onClick={() => handleITApprove(acc.id)}
+                              className="btn-success"
+                              style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
                               disabled={isPending}
                             >
-                              OK
+                              Approve
                             </button>
                           )}
 
