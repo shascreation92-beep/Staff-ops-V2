@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import DashboardLayout from "@/components/DashboardLayout";
 import AccountsList from "@/components/AccountsList";
 
+export const dynamic = "force-dynamic";
+
 export default async function AccountsPage() {
   const user = await enforceAuth();
   const companyFilter = getCompanyFilter(user);

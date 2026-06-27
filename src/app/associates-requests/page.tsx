@@ -5,6 +5,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import AssociatesRequestsList from "@/components/AssociatesRequestsList";
 import { getPendingTLRequestsAction } from "@/app/actions/accounts";
 
+export const dynamic = "force-dynamic";
+
 export default async function AssociatesRequestsPage() {
   const user = await enforceAuth(["TEAM_LEAD"]);
 

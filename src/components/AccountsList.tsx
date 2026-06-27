@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { 
   createAccountAction, 
   updateAccountStatusAction, 
@@ -48,6 +49,7 @@ export default function AccountsList({
   rules,
   duplicateMap
 }: AccountsListProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -98,6 +100,7 @@ export default function AccountsList({
         );
         if (res.success) {
           alert("Your request has been forwarded to your Team Lead successfully.");
+          router.refresh();
         }
       } catch (err: any) {
         toast.error(err.message || "Failed to submit request.");
@@ -109,7 +112,11 @@ export default function AccountsList({
     startTransition(async () => {
       try {
         const res = await updateAccountStatusAction(accountId, "FORWARDED_TO_IT", "Approved by Team Lead");
-        if (!res.success) alert("Failed to approve.");
+        if (res.success) {
+          router.refresh();
+        } else {
+          alert("Failed to approve.");
+        }
       } catch (err: any) {
         alert(err.message);
       }
@@ -120,7 +127,11 @@ export default function AccountsList({
     startTransition(async () => {
       try {
         const res = await updateAccountStatusAction(accountId, "IT_PENDING", "Acknowledged by IT Department");
-        if (!res.success) alert("Failed to acknowledge.");
+        if (res.success) {
+          router.refresh();
+        } else {
+          alert("Failed to acknowledge.");
+        }
       } catch (err: any) {
         alert(err.message);
       }
@@ -131,7 +142,11 @@ export default function AccountsList({
     startTransition(async () => {
       try {
         const res = await updateAccountStatusAction(accountId, "SORTED", "Sorted and resolved by IT Department");
-        if (!res.success) alert("Failed to resolve.");
+        if (res.success) {
+          router.refresh();
+        } else {
+          alert("Failed to resolve.");
+        }
       } catch (err: any) {
         alert(err.message);
       }

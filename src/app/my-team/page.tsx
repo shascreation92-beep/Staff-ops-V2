@@ -5,6 +5,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import MyTeamDirectory from "@/components/MyTeamDirectory";
 import { getTLTeamMembersAction } from "@/app/actions/accounts";
 
+export const dynamic = "force-dynamic";
+
 export default async function MyTeamPage() {
   const user = await enforceAuth(["TEAM_LEAD"]);
 
