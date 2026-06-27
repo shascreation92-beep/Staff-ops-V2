@@ -97,7 +97,7 @@ export default function AccountsList({
           "Request to TL submitted by Associate"
         );
         if (res.success) {
-          toast.success("Request successfully forwarded to your Team Lead!");
+          alert("Your request has been forwarded to your Team Lead successfully.");
         }
       } catch (err: any) {
         toast.error(err.message || "Failed to submit request.");

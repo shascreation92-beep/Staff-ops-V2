@@ -159,6 +159,15 @@ export async function updateAccountStatusAction(
     if (!validTo.includes(toStatus)) {
       throw new Error("Invalid transition: Team Leads can only Approve, Forward to IT, Reject, or hold Under Review.");
     }
+
+    // STRICT CROSS-TL PRIVACY CHECK
+    const creatorUser = await db.user.findUnique({
+      where: { id: account.createdById },
+      select: { teamLeadId: true }
+    });
+    if (creatorUser?.teamLeadId !== user.id) {
+      throw new Error("UNAUTHORIZED: You can only view, approve, or access requests belonging to your own associates.");
+    }
   }
 
   if (user.role === "IT_DEPARTMENT") {
@@ -180,6 +189,15 @@ export async function updateAccountStatusAction(
     };
     if (finalAssociateId) {
       dataUpdate.associateId = finalAssociateId.trim();
+    }
+    if (toStatus === "PENDING_TL") {
+      const associateUser = await db.user.findUnique({
+        where: { id: user.id },
+        select: { teamLeadId: true }
+      });
+      if (associateUser?.teamLeadId) {
+        dataUpdate.teamLeadId = associateUser.teamLeadId;
+      }
     }
 
     const updatedAccount = await db.account.update({
@@ -356,6 +374,17 @@ export async function verifyAccountAction(accountId: string, verify: boolean) {
     throw new Error("UNAUTHORIZED");
   }
 
+  // STRICT CROSS-TL PRIVACY CHECK
+  if (user.role === "TEAM_LEAD") {
+    const creatorUser = await db.user.findUnique({
+      where: { id: account.createdById },
+      select: { teamLeadId: true }
+    });
+    if (creatorUser?.teamLeadId !== user.id) {
+      throw new Error("UNAUTHORIZED: You can only verify accounts belonging to your own associates.");
+    }
+  }
+
   const newStatus = verify ? "Yes" : "No";
 
   try {
@@ -401,6 +430,17 @@ export async function updateAccountAdsAction(accountId: string, adsCount: number
     throw new Error("UNAUTHORIZED: Access to another company's account is forbidden.");
   }
 
+  // STRICT CROSS-TL PRIVACY CHECK
+  if (user.role === "TEAM_LEAD") {
+    const creatorUser = await db.user.findUnique({
+      where: { id: account.createdById },
+      select: { teamLeadId: true }
+    });
+    if (creatorUser?.teamLeadId !== user.id) {
+      throw new Error("UNAUTHORIZED: You can only edit ads count for accounts belonging to your own associates.");
+    }
+  }
+
   try {
     const updatedAccount = await db.account.update({
       where: { id: accountId },
@@ -438,9 +478,7 @@ export async function getPendingTLRequestsCountAction() {
     where: {
       status: "PENDING_TL",
       isArchived: false,
-      user_account_createdByIdTouser: {
-        teamLeadId: user.id
-      }
+      teamLeadId: user.id
     }
   });
   return count;
@@ -474,9 +512,7 @@ export async function getPendingTLRequestsAction() {
     where: {
       status: "PENDING_TL",
       isArchived: false,
-      user_account_createdByIdTouser: {
-        teamLeadId: user.id
-      }
+      teamLeadId: user.id
     },
     include: {
       platform: true,

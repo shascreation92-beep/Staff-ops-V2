@@ -25,6 +25,7 @@ model account {
   companyId                      String
   createdById                    String
   updatedById                    String
+  teamLeadId                     String?
   company                        company          @relation(fields: [companyId], references: [id], map: "Account_companyId_fkey")
   user_account_createdByIdTouser user             @relation("account_createdByIdTouser", fields: [createdById], references: [id], map: "Account_createdById_fkey")
   platform                       platform         @relation(fields: [platformId], references: [id], map: "Account_platformId_fkey")
