@@ -4,9 +4,9 @@ import React, { useState, useTransition } from "react";
 import { 
   addPlatformAction, 
   archivePlatformAction, 
-  createAnnouncementAction, 
-  updateCompanyRuleAction 
+  createAnnouncementAction 
 } from "@/app/actions/settings";
+import { RuleForm } from "@/components/settings/RuleForm";
 import { 
   sendInvitationAction,
   declineInvitationAction,
@@ -55,16 +55,14 @@ export default function SettingsShard({
   users
 }: SettingsShardProps) {
   const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState<"RULES" | "PLATFORMS" | "ANNOUNCEMENTS" | "INVITATIONS" | "USERS">("RULES");
+  const [activeTab, setActiveTab] = useState<"RULES" | "PLATFORMS" | "ANNOUNCEMENTS" | "INVITATIONS" | "USERS">(
+    currentUser.role === "IT_DEPARTMENT" ? "USERS" : "RULES"
+  );
 
   // State for target company selection (Super Admin override)
   const [targetCompanyId, setTargetCompanyId] = useState(
     currentUser.companyId || (companies[0]?.id || "")
   );
-
-  // Platform manager state
-  const [newPlatformName, setNewPlatformName] = useState("");
-  const [platformError, setPlatformError] = useState<string | null>(null);
 
   // Rule engine state
   const [minAds, setMinAds] = useState(parseInt(rules["minAds"] || "10", 10));
@@ -77,7 +75,7 @@ export default function SettingsShard({
   const [targetToMaintainFB, setTargetToMaintainFB] = useState(
     parseInt(rules["targetToMaintainFB"] || "15", 10)
   );
-  const [ruleSuccessMsg, setRuleSuccessMsg] = useState<string | null>(null);
+  // Removed rule success message state (handled within RuleForm)
 
   // Announcements state
   const [annTitle, setAnnTitle] = useState("");
@@ -229,43 +227,7 @@ export default function SettingsShard({
   const isCompanyOwner = currentUser.role === "COMPANY_OWNER";
 
   // Dynamic Rule change handler
-  const handleUpdateRules = (e: React.FormEvent) => {
-    e.preventDefault();
-    setRuleSuccessMsg(null);
-
-    startTransition(async () => {
-      try {
-        await updateCompanyRuleAction({
-          key: "minAds",
-          value: minAds.toString(),
-          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
-        });
-
-        await updateCompanyRuleAction({
-          key: "requireVerification",
-          value: requireVerification,
-          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
-        });
-
-        await updateCompanyRuleAction({
-          key: "targetToMaintain",
-          value: targetToMaintain.toString(),
-          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
-        });
-
-        await updateCompanyRuleAction({
-          key: "targetToMaintainFB",
-          value: targetToMaintainFB.toString(),
-          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
-        });
-
-        setRuleSuccessMsg("Threshold rules synchronized successfully.");
-        setTimeout(() => setRuleSuccessMsg(null), 3000);
-      } catch (err: any) {
-        alert(err.message);
-      }
-    });
-  };
+  // Updated rule handling moved to RuleForm component
 
   const handleAddPlatform = (e: React.FormEvent) => {
     e.preventDefault();
@@ -351,25 +313,25 @@ export default function SettingsShard({
           </button>
 
           {(isSuperAdmin || isCompanyOwner) && (
-            <>
-              <button
-                onClick={() => setActiveTab("INVITATIONS")}
-                className={`sidebar-item ${activeTab === "INVITATIONS" ? "active" : ""}`}
-                style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-              >
-                <Users className="sidebar-icon" size={16} />
-                <span>Team Invitations</span>
-              </button>
+            <button
+              onClick={() => setActiveTab("INVITATIONS")}
+              className={`sidebar-item ${activeTab === "INVITATIONS" ? "active" : ""}`}
+              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
+            >
+              <Users className="sidebar-icon" size={16} />
+              <span>Team Invitations</span>
+            </button>
+          )}
 
-              <button
-                onClick={() => setActiveTab("USERS")}
-                className={`sidebar-item ${activeTab === "USERS" ? "active" : ""}`}
-                style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-              >
-                <Users className="sidebar-icon" size={16} />
-                <span>User Accounts</span>
-              </button>
-            </>
+          {(isSuperAdmin || isCompanyOwner || currentUser.role === "IT_DEPARTMENT") && (
+            <button
+              onClick={() => setActiveTab("USERS")}
+              className={`sidebar-item ${activeTab === "USERS" ? "active" : ""}`}
+              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
+            >
+              <Users className="sidebar-icon" size={16} />
+              <span>User Accounts</span>
+            </button>
           )}
 
           {isSuperAdmin && (
@@ -399,247 +361,20 @@ export default function SettingsShard({
       {/* Content pane */}
       <div style={{ padding: "2rem", overflowY: "auto" }}>
         
-        {/* Tab 1: Rule Engine */}
-        {activeTab === "RULES" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            <div>
-              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>DYNAMIC RULE ENGINE</h2>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                Adjust operational requirements and verification statuses.
-              </p>
-            </div>
-
-            {ruleSuccessMsg && (
-              <div style={{ background: "rgba(34, 197, 94, 0.08)", border: "1px solid rgba(34, 197, 94, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-success)", fontSize: "0.85rem" }}>
-                {ruleSuccessMsg}
-              </div>
-            )}
-
-            <form onSubmit={handleUpdateRules} style={{ display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: "460px" }}>
-              {isSuperAdmin && (
-                <div className="form-group">
-                  <label className="form-label">Active Shard Target Company</label>
-                  <select
-                    value={targetCompanyId}
-                    onChange={(e) => setTargetCompanyId(e.target.value)}
-                    className="select-gold"
-                  >
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                  <span>Minimum Ads Required</span>
-                  <span title="Sets the threshold for warning flags on ads published" style={{ display: "inline-flex", cursor: "help" }}>
-                    <HelpCircle size={14} style={{ color: "var(--text-muted)" }} />
-                  </span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={minAds}
-                  onChange={(e) => setMinAds(parseInt(e.target.value, 10) || 0)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Require Document Verification</label>
-                <select
-                  value={requireVerification}
-                  onChange={(e) => setRequireVerification(e.target.value)}
-                  className="select-gold"
-                  disabled={isPending}
-                >
-                  <option value="true">Yes (Flag unverified accounts red)</option>
-                  <option value="false">No (Accept unverified accounts)</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                  <span>Global Target to Maintain</span>
-                  <span title="Overall target count for operational accounts to maintain" style={{ display: "inline-flex", cursor: "help" }}>
-                    <HelpCircle size={14} style={{ color: "var(--text-muted)" }} />
-                  </span>
-                </label>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.35rem" }}>
-                  <button
-                    type="button"
-                    className="btn-glass"
-                    disabled={isPending || targetToMaintain <= 0}
-                    onClick={() => setTargetToMaintain(v => Math.max(0, v - 1))}
-                    style={{ width: "42px", height: "42px", padding: 0, fontSize: "1.3rem", fontWeight: 700, flexShrink: 0, borderRadius: "6px" }}
-                  >
-                    −
-                  </button>
-                  <div style={{
-                    flex: 1,
-                    textAlign: "center",
-                    fontSize: "1.6rem",
-                    fontWeight: 800,
-                    background: "var(--gold-gradient)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    letterSpacing: "0.04em",
-                    lineHeight: 1,
-                    padding: "0.4rem 0"
-                  }}>
-                    {targetToMaintain}
-                  </div>
-                  <button
-                    type="button"
-                    className="btn-gold"
-                    disabled={isPending}
-                    onClick={() => setTargetToMaintain(v => v + 1)}
-                    style={{ width: "42px", height: "42px", padding: 0, fontSize: "1.3rem", fontWeight: 700, flexShrink: 0, borderRadius: "6px" }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                  <span>FB Target to Maintain</span>
-                  <span title="Target count for operational Facebook accounts to maintain" style={{ display: "inline-flex", cursor: "help" }}>
-                    <HelpCircle size={14} style={{ color: "var(--text-muted)" }} />
-                  </span>
-                </label>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.35rem" }}>
-                  <button
-                    type="button"
-                    className="btn-glass"
-                    disabled={isPending || targetToMaintainFB <= 0}
-                    onClick={() => setTargetToMaintainFB(v => Math.max(0, v - 1))}
-                    style={{ width: "42px", height: "42px", padding: 0, fontSize: "1.3rem", fontWeight: 700, flexShrink: 0, borderRadius: "6px" }}
-                  >
-                    −
-                  </button>
-                  <div style={{
-                    flex: 1,
-                    textAlign: "center",
-                    fontSize: "1.6rem",
-                    fontWeight: 800,
-                    background: "var(--gold-gradient)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    letterSpacing: "0.04em",
-                    lineHeight: 1,
-                    padding: "0.4rem 0"
-                  }}>
-                    {targetToMaintainFB}
-                  </div>
-                  <button
-                    type="button"
-                    className="btn-gold"
-                    disabled={isPending}
-                    onClick={() => setTargetToMaintainFB(v => v + 1)}
-                    style={{ width: "42px", height: "42px", padding: 0, fontSize: "1.3rem", fontWeight: 700, flexShrink: 0, borderRadius: "6px" }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="btn-gold"
-                style={{ width: "100%", height: "42px", marginTop: "1rem" }}
-                disabled={isPending}
-              >
-                {isPending ? "Syncing Rules..." : "SYNC RULES"}
-              </button>
-            </form>
-          </div>
-        )}
+        <RuleForm
+  currentUserRole={currentUser.role}
+  companies={companies}
+  initialValues={{
+    minAds,
+    requireVerification: requireVerification as 'true' | 'false',
+    targetToMaintain,
+    targetToMaintainFB,
+  }}
+  targetCompanyId={isSuperAdmin ? targetCompanyId : undefined}
+/>
 
         {/* Tab 2: Platform Manager */}
-        {activeTab === "PLATFORMS" && isSuperAdmin && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            <div>
-              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>PLATFORM MANAGER</h2>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                Add, manage, and archive account platform directories.
-              </p>
-            </div>
-
-            {platformError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
-                {platformError}
-              </div>
-            )}
-
-            {/* Add Platform Form */}
-            <form onSubmit={handleAddPlatform} style={{ display: "flex", gap: "0.75rem", maxWidth: "460px" }}>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Gumtree"
-                value={newPlatformName}
-                onChange={(e) => setNewPlatformName(e.target.value)}
-                className="input-gold"
-                style={{ flex: 1, height: "42px" }}
-                disabled={isPending}
-              />
-              <button
-                type="submit"
-                className="btn-gold"
-                style={{ height: "42px" }}
-                disabled={isPending}
-              >
-                <Plus size={16} />
-                <span>Add</span>
-              </button>
-            </form>
-
-            {/* Platform Table list */}
-            <div className="table-container-outer" style={{ maxWidth: "550px", marginTop: "1rem" }}>
-              <table className="premium-table">
-                <thead>
-                  <tr>
-                    <th>Platform Name</th>
-                    <th>Created At</th>
-                    <th style={{ textAlign: "right" }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {platforms.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem" }}>
-                        No platforms configured.
-                      </td>
-                    </tr>
-                  ) : (
-                    platforms.map(p => (
-                      <tr key={p.id}>
-                        <td style={{ fontWeight: 600 }}>{p.name.toUpperCase()}</td>
-                        <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem" }}>
-                          {new Date(p.createdAt).toLocaleDateString()}
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          <button
-                            onClick={() => handleArchivePlatform(p.id, p.name)}
-                            className="btn-danger"
-                            style={{ padding: "0.25rem 0.5rem", height: "auto" }}
-                            title="Archive Platform"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        <PlatformManager platforms={platforms} isPending={isPending} />
 
         {/* Tab 3: System Announcements */}
         {activeTab === "ANNOUNCEMENTS" && isSuperAdmin && (
@@ -856,7 +591,7 @@ export default function SettingsShard({
         )}
 
         {/* Tab 5: User Accounts Directory */}
-        {activeTab === "USERS" && (isSuperAdmin || isCompanyOwner) && (
+        {activeTab === "USERS" && (isSuperAdmin || isCompanyOwner || currentUser.role === "IT_DEPARTMENT") && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             <div>
               <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER ACCOUNTS DIRECTORY</h2>

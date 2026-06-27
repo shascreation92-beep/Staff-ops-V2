@@ -27,7 +27,7 @@ const CreateEmployeeSchema = z.object({
 });
 
 export async function createEmployeeAction(formData: z.infer<typeof CreateEmployeeSchema>) {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
 
   const result = CreateEmployeeSchema.safeParse(formData);
   if (!result.success) {

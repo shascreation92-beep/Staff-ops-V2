@@ -281,6 +281,7 @@ const OnboardSalesAssociateSchema = z.object({
   email: z.string().email("Invalid email format"),
   employeeId: z.string().optional(),
   password: z.string().optional(),
+  teamLeadId: z.string().optional(),
 });
 
 export async function onboardSalesAssociateAction(formData: z.infer<typeof OnboardSalesAssociateSchema>) {
@@ -291,7 +292,7 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { fullName, email, employeeId, password } = result.data;
+  const { fullName, email, employeeId, password, teamLeadId } = result.data;
 
   // Determine Company ID
   let companyId = currentUser.companyId;
@@ -315,167 +316,207 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
   }
 
   const isTL = currentUser.role === "TEAM_LEAD";
+  const targetTeamLeadId = isTL ? currentUser.id : (teamLeadId || null);
 
-  if (isTL || !employeeId || !password) {
-    // Team Lead Onboarding Request Flow (Pending status, no password assigned yet)
-    try {
-      const newUserId = crypto.randomUUID();
+  try {
+    const newUserId = crypto.randomUUID();
 
-      // Create User (Pending)
-      const newUser = await db.user.create({
-        data: {
-          id: newUserId,
-          email,
-          name: fullName,
-          role: "SALES_ASSOCIATE",
-          status: "PENDING",
-          companyId,
-          teamLeadId: isTL ? currentUser.id : null,
-          updatedAt: new Date(),
-        }
-      });
-
-      // Notify IT department (IT_READ_ONLY notification)
-      const itMembers = await db.user.findMany({
-        where: {
-          companyId,
-          role: "IT_DEPARTMENT",
-          isArchived: false,
-          status: "APPROVED"
-        }
-      });
-
-      for (const itUser of itMembers) {
-        await db.notification.create({
-          data: {
-            id: crypto.randomUUID(),
-            userId: itUser.id,
-            title: "New Onboarding Request Submitted",
-            message: `New Onboarding Request Submitted: Sales Associate ${fullName} (${email}) has been submitted for onboarding by Team Lead ${currentUser.name || currentUser.email}.`,
-            type: "IT_READ_ONLY",
-            isRead: false
-          }
-        });
+    // Create User (Pending) - STRICTLY set to 'PENDING'
+    const newUser = await db.user.create({
+      data: {
+        id: newUserId,
+        email,
+        name: fullName,
+        role: "SALES_ASSOCIATE",
+        status: "PENDING", // STRICTLY FORCE PENDING STATUS
+        companyId,
+        teamLeadId: targetTeamLeadId,
+        password: (password && password.trim()) ? password.trim() : null,
+        updatedAt: new Date(),
       }
-
-      // Write audit log
-      await logAction({
-        userId: currentUser.id,
-        userEmail: currentUser.email || "",
-        userRole: currentUser.role,
-        action: "SUBMIT_ONBOARDING_REQUEST",
-        entity: "user",
-        entityId: newUserId,
-        newValue: JSON.stringify({ user: newUser })
-      });
-
-      revalidatePath("/employees");
-      revalidatePath("/settings");
-      return { success: true };
-    } catch (error: any) {
-      throw new Error(error.message || "Failed to submit onboarding request.");
-    }
-  } else {
-    // Direct Onboarding Flow (for Super Admin / Company Owner who provides employeeId and password)
-    // Check unique email and employeeId in employee table
-    const existingEmail = await db.employee.findUnique({
-      where: { email },
     });
-    if (existingEmail) {
-      throw new Error("An employee with this email already exists.");
-    }
 
-    const existingId = await db.employee.findUnique({
-      where: { employeeId },
-    });
-    if (existingId) {
-      throw new Error(`Employee ID "${employeeId}" is already in use.`);
-    }
-
-    try {
-      const newUserId = crypto.randomUUID();
-      const newEmployeeId = crypto.randomUUID();
-
-      // Create User (Approved)
-      const newUser = await db.user.create({
-        data: {
-          id: newUserId,
-          email,
-          name: fullName,
-          role: "SALES_ASSOCIATE",
-          status: "APPROVED",
-          password,
-          companyId,
-          teamLeadId: null,
-          updatedAt: new Date(),
-        }
-      });
-
-      // Create Employee
-      const newEmp = await db.employee.create({
-        data: {
-          id: newEmployeeId,
-          employeeId,
-          fullName,
-          email,
-          status: "ACTIVE",
-          companyId,
-          userId: newUserId,
-          updatedAt: new Date(),
-        }
-      });
-
-      // Notify IT department (IT_READ_ONLY notification)
-      const itMembers = await db.user.findMany({
-        where: {
-          companyId,
-          role: "IT_DEPARTMENT",
-          isArchived: false,
-          status: "APPROVED"
-        }
-      });
-
-      for (const itUser of itMembers) {
-        await db.notification.create({
-          data: {
-            id: crypto.randomUUID(),
-            userId: itUser.id,
-            title: "New Sales Associate Onboarded",
-            message: `${fullName} (${email}) has been successfully onboarded by ${currentUser.name || currentUser.email}.`,
-            type: "IT_READ_ONLY",
-            isRead: false
-          }
-        });
+    // Notify IT department (IT_READ_ONLY notification)
+    const itMembers = await db.user.findMany({
+      where: {
+        companyId,
+        role: "IT_DEPARTMENT",
+        isArchived: false,
+        status: "APPROVED"
       }
+    });
 
-      // Write audit log
-      await logAction({
-        userId: currentUser.id,
-        userEmail: currentUser.email || "",
-        userRole: currentUser.role,
-        action: "ONBOARD_SALES_ASSOCIATE",
-        entity: "user",
-        entityId: newUserId,
-        newValue: JSON.stringify({ user: newUser, employee: newEmp })
+    for (const itUser of itMembers) {
+      await db.notification.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: itUser.id,
+          title: "New Onboarding Request Submitted",
+          message: `New Onboarding Request Submitted: Sales Associate ${fullName} (${email}) has been submitted for onboarding by ${currentUser.name || currentUser.email}.`,
+          type: "IT_READ_ONLY",
+          isRead: false
+        }
       });
-
-      revalidatePath("/employees");
-      revalidatePath("/settings");
-      return { success: true };
-    } catch (error: any) {
-      throw new Error(error.message || "Failed to onboard Sales Associate.");
     }
+
+    // Write audit log
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "SUBMIT_ONBOARDING_REQUEST",
+      entity: "user",
+      entityId: newUserId,
+      newValue: JSON.stringify({ user: newUser })
+    });
+
+    revalidatePath("/employees");
+    revalidatePath("/settings");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to submit onboarding request.");
+  }
+}
+
+const OnboardTeamLeadSchema = z.object({
+  fullName: z.string().min(1, "Full Name is required"),
+  email: z.string().email("Invalid email format"),
+  employeeId: z.string().min(1, "Employee ID is required"),
+  password: z.string().min(1, "Password is required"),
+  companyId: z.string().optional(),
+});
+
+export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeamLeadSchema>) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+
+  const result = OnboardTeamLeadSchema.safeParse(formData);
+  if (!result.success) {
+    throw new Error(result.error.issues.map(e => e.message).join(", "));
+  }
+
+  const { fullName, email, employeeId, password, companyId } = result.data;
+
+  // Determine Company ID
+  let targetCompanyId = currentUser.companyId;
+  if (currentUser.role === "SUPER_ADMIN" || (currentUser.role === "COMPANY_OWNER" && companyId)) {
+    targetCompanyId = companyId || currentUser.companyId;
+  }
+
+  if (!targetCompanyId) {
+    throw new Error("No company context found to assign Team Lead.");
+  }
+
+  const companyIdValue = targetCompanyId; // Assign to a stable variable for database queries
+
+  // Check unique email in user table
+  const existingUser = await db.user.findUnique({
+    where: { email },
+  });
+  if (existingUser) {
+    throw new Error("A user with this email already exists.");
+  }
+
+  // Check unique email and employeeId in employee table
+  const existingEmail = await db.employee.findUnique({
+    where: { email },
+  });
+  if (existingEmail) {
+    throw new Error("An employee with this email already exists.");
+  }
+
+  const existingId = await db.employee.findUnique({
+    where: { employeeId },
+  });
+  if (existingId) {
+    throw new Error(`Employee ID "${employeeId}" is already in use.`);
+  }
+
+  try {
+    const newUserId = crypto.randomUUID();
+    const newEmployeeId = crypto.randomUUID();
+
+    // Create User (Approved/Active Team Lead)
+    const newUser = await db.user.create({
+      data: {
+        id: newUserId,
+        email,
+        name: fullName,
+        role: "TEAM_LEAD",
+        status: "APPROVED", // Directly active
+        password,
+        companyId: companyIdValue,
+        teamLeadId: null,
+        updatedAt: new Date(),
+      }
+    });
+
+    // Create Employee
+    const newEmp = await db.employee.create({
+      data: {
+        id: newEmployeeId,
+        employeeId,
+        fullName,
+        email,
+        status: "ACTIVE",
+        companyId: companyIdValue,
+        userId: newUserId,
+        updatedAt: new Date(),
+      }
+    });
+
+    // Notify IT department (IT_READ_ONLY notification)
+    const itMembers = await db.user.findMany({
+      where: {
+        companyId: companyIdValue,
+        role: "IT_DEPARTMENT",
+        isArchived: false,
+        status: "APPROVED"
+      }
+    });
+
+    for (const itUser of itMembers) {
+      await db.notification.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: itUser.id,
+          title: "New Team Lead Onboarded",
+          message: `Team Lead ${fullName} (${email}) has been successfully onboarded by ${currentUser.name || currentUser.email}.`,
+          type: "IT_READ_ONLY",
+          isRead: false
+        }
+      });
+    }
+
+    // Write audit log
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "ONBOARD_TEAM_LEAD",
+      entity: "user",
+      entityId: newUserId,
+      newValue: JSON.stringify({ user: newUser, employee: newEmp })
+    });
+
+    revalidatePath("/employees");
+    revalidatePath("/settings");
+    revalidatePath("/team-leads");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to onboard Team Lead.");
   }
 }
 
 const ApproveSalesAssociateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  employeeId: z.string().min(1, "Employee ID is required"),
+  employeeId: z.string().optional(),
   password: z.string().min(1, "Password is required"),
 });
 
 export async function approveSalesAssociateAction(formData: z.infer<typeof ApproveSalesAssociateSchema>) {
-  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   const result = ApproveSalesAssociateSchema.safeParse(formData);
   if (!result.success) {
@@ -502,7 +543,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
     throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
   }
 
-  // Check unique email and employeeId in employee table
+  // Check unique email in employee table
   const existingEmail = await db.employee.findUnique({
     where: { email: pendingUser.email },
   });
@@ -510,11 +551,26 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
     throw new Error("An employee with this email already exists.");
   }
 
-  const existingId = await db.employee.findUnique({
-    where: { employeeId },
-  });
-  if (existingId) {
-    throw new Error(`Employee ID "${employeeId}" is already in use.`);
+  // Auto-generate or validate Employee ID
+  let targetEmployeeId = employeeId;
+  if (!targetEmployeeId || !targetEmployeeId.trim()) {
+    let isUnique = false;
+    while (!isUnique) {
+      targetEmployeeId = `EMP-${Math.floor(1000 + Math.random() * 9000)}`;
+      const existing = await db.employee.findUnique({
+        where: { employeeId: targetEmployeeId }
+      });
+      if (!existing) {
+        isUnique = true;
+      }
+    }
+  } else {
+    const existingId = await db.employee.findUnique({
+      where: { employeeId: targetEmployeeId },
+    });
+    if (existingId) {
+      throw new Error(`Employee ID "${targetEmployeeId}" is already in use.`);
+    }
   }
 
   try {
@@ -534,7 +590,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
     const newEmp = await db.employee.create({
       data: {
         id: newEmployeeId,
-        employeeId,
+        employeeId: targetEmployeeId,
         fullName: pendingUser.name || "Sales Associate",
         email: pendingUser.email,
         status: "ACTIVE",
@@ -580,6 +636,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
 
     revalidatePath("/settings");
     revalidatePath("/employees");
+    revalidatePath("/");
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Failed to approve onboarding request.");
@@ -741,5 +798,58 @@ export async function updateTeamLeadNameAction(userId: string, newName: string) 
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Failed to update Team Lead profile.");
+  }
+}
+
+export async function rejectSalesAssociateAction(userId: string) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+
+  if (!userId) {
+    throw new Error("User ID is required.");
+  }
+
+  const pendingUser = await db.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!pendingUser) {
+    throw new Error("User not found.");
+  }
+
+  if (pendingUser.status !== "PENDING" || pendingUser.role !== "SALES_ASSOCIATE") {
+    throw new Error("Target user is not a pending Sales Associate.");
+  }
+
+  // Multi-tenant check
+  if (currentUser.role !== "SUPER_ADMIN" && pendingUser.companyId !== currentUser.companyId) {
+    throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
+  }
+
+  try {
+    const updatedUser = await db.user.update({
+      where: { id: userId },
+      data: {
+        status: "REJECTED",
+        updatedAt: new Date()
+      }
+    });
+
+    // Write audit log
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "REJECT_ONBOARDING_REQUEST",
+      entity: "user",
+      entityId: userId,
+      newValue: JSON.stringify(updatedUser)
+    });
+
+    revalidatePath("/employees");
+    revalidatePath("/settings");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to reject onboarding request.");
   }
 }

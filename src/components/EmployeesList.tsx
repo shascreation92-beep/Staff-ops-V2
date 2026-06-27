@@ -6,7 +6,7 @@ import {
   updateEmployeeITAction, 
   archiveEmployeeAction 
 } from "@/app/actions/employees";
-import { onboardSalesAssociateAction } from "@/app/actions/users";
+import { onboardSalesAssociateAction, onboardTeamLeadAction } from "@/app/actions/users";
 import { 
   Search, 
   Plus, 
@@ -20,7 +20,10 @@ import {
   User,
   Key,
   ShieldAlert,
-  UserCheck
+  UserCheck,
+  Eye,
+  EyeOff,
+  Users
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 
@@ -32,27 +35,35 @@ interface EmployeesListProps {
   };
   employees: any[];
   companies: any[];
+  teamLeads?: any[];
 }
 
 export default function EmployeesList({
   currentUser,
   employees,
-  companies
+  companies,
+  teamLeads = []
 }: EmployeesListProps) {
   const [isPending, startTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const [brandFilter, setBrandFilter] = useState("ALL");
 
-  // Onboard Associate modal state
-  const [showOnboardModal, setShowOnboardModal] = useState(false);
+  // Unified modal state
+  const [showUnifiedModal, setShowUnifiedModal] = useState(false);
+  const [unifiedTab, setUnifiedTab] = useState<"EMPLOYEE" | "ASSOCIATE">(
+    currentUser.role === "TEAM_LEAD" ? "ASSOCIATE" : "EMPLOYEE"
+  );
+
+  // Onboard Associate form state
   const [onboardFullName, setOnboardFullName] = useState("");
   const [onboardEmail, setOnboardEmail] = useState("");
   const [onboardEmployeeId, setOnboardEmployeeId] = useState("");
   const [onboardPassword, setOnboardPassword] = useState("");
+  const [onboardTeamLeadId, setOnboardTeamLeadId] = useState("");
+  const [onboardRole, setOnboardRole] = useState<"SALES_ASSOCIATE" | "TEAM_LEAD">("SALES_ASSOCIATE");
   const [onboardError, setOnboardError] = useState<string | null>(null);
 
-  // Create Employee modal state
-  const [showAddModal, setShowAddModal] = useState(false);
+  // Create Employee form state
   const [employeeId, setEmployeeId] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -66,8 +77,14 @@ export default function EmployeesList({
   const [addVpnCredentials, setAddVpnCredentials] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
 
-  // Edit IT specifications modal state
+  // IT modal
   const [showITModal, setShowITModal] = useState(false);
+
+  // Show/hide password toggles
+  const [showLaptopPass, setShowLaptopPass] = useState(false);
+  const [showVpnCreds, setShowVpnCreds] = useState(false);
+  const [showITLaptopPass, setShowITLaptopPass] = useState(false);
+  const [showITVpnCreds, setShowITVpnCreds] = useState(false);
   const [activeEmp, setActiveEmp] = useState<any | null>(null);
   const [laptopBrand, setLaptopBrand] = useState<"HP" | "Dell" | "ThinkPad" | "">("");
   const [laptopModel, setLaptopModel] = useState("");
@@ -105,22 +122,46 @@ export default function EmployeesList({
 
     startTransition(async () => {
       try {
-        const res = await onboardSalesAssociateAction({
-          fullName: onboardFullName,
-          email: onboardEmail,
-          employeeId: isTeamLead ? "" : onboardEmployeeId,
-          password: isTeamLead ? "" : onboardPassword
-        });
+        if (onboardRole === "TEAM_LEAD") {
+          if (!onboardEmployeeId.trim() || !onboardPassword.trim()) {
+            setOnboardError("Employee ID and Password are required to onboard a Team Lead.");
+            return;
+          }
+          const res = await onboardTeamLeadAction({
+            fullName: onboardFullName,
+            email: onboardEmail,
+            employeeId: onboardEmployeeId.trim(),
+            password: onboardPassword.trim()
+          });
 
-        if (res.success) {
-          setShowOnboardModal(false);
-          setOnboardFullName("");
-          setOnboardEmail("");
-          setOnboardEmployeeId("");
-          setOnboardPassword("");
+          if (res.success) {
+            setShowUnifiedModal(false);
+            setOnboardFullName("");
+            setOnboardEmail("");
+            setOnboardEmployeeId("");
+            setOnboardPassword("");
+            setOnboardRole("SALES_ASSOCIATE");
+          }
+        } else {
+          const res = await onboardSalesAssociateAction({
+            fullName: onboardFullName,
+            email: onboardEmail,
+            employeeId: isTeamLead ? "" : onboardEmployeeId,
+            password: isTeamLead ? "" : onboardPassword,
+            teamLeadId: isTeamLead ? "" : onboardTeamLeadId
+          });
+
+          if (res.success) {
+            setShowUnifiedModal(false);
+            setOnboardFullName("");
+            setOnboardEmail("");
+            setOnboardEmployeeId("");
+            setOnboardPassword("");
+            setOnboardTeamLeadId("");
+          }
         }
       } catch (err: any) {
-        setOnboardError(err.message || "Failed to onboard Sales Associate.");
+        setOnboardError(err.message || "Failed to onboard operator.");
       }
     });
   };
@@ -147,7 +188,7 @@ export default function EmployeesList({
         });
 
         if (res.success) {
-          setShowAddModal(false);
+          setShowUnifiedModal(false);
           setEmployeeId("");
           setFullName("");
           setEmail("");
@@ -247,17 +288,16 @@ export default function EmployeesList({
           </div>
 
           {canCreate && (
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <button className="btn-gold" onClick={() => setShowOnboardModal(true)}>
-                <UserCheck size={16} />
-                <span>ONBOARD ASSOCIATE</span>
-              </button>
-              <button className="btn-gold" onClick={() => setShowAddModal(true)}>
-                <Plus size={16} />
-                <span>ADD EMPLOYEE</span>
-              </button>
-            </div>
+            <button className="btn-gold" onClick={() => { setUnifiedTab(currentUser.role === "TEAM_LEAD" ? "ASSOCIATE" : "EMPLOYEE"); setShowUnifiedModal(true); }}>
+              <Plus size={16} />
+              <span>ADD / ONBOARD</span>
+            </button>
           )}
+
+          {/* Row Count */}
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>
+            {filteredEmployees.length} / {employees.length} records
+          </span>
         </div>
       </div>
 
@@ -281,8 +321,14 @@ export default function EmployeesList({
             <tbody>
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 9 : 8} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                    No employees cataloged in this shard.
+                  <td colSpan={isSuperAdmin ? 9 : 8} style={{ padding: "3rem 1rem" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
+                      <div style={{ width: "3rem", height: "3rem", borderRadius: "50%", background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--gold-primary)" }}>
+                        <Users size={22} />
+                      </div>
+                      <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>No Employees Found</span>
+                      <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", textAlign: "center", maxWidth: "280px", lineHeight: 1.5 }}>No employees match your current filters. Try clearing the search or use the <strong style={{ color: "var(--gold-primary)" }}>ADD / ONBOARD</strong> button to add one.</span>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -371,8 +417,8 @@ export default function EmployeesList({
         </div>
       </div>
 
-      {/* Add Employee Modal */}
-      {showAddModal && (
+      {/* Unified Add / Onboard Modal */}
+      {showUnifiedModal && (
         <div style={{
           position: "fixed",
           top: 0,
@@ -399,298 +445,220 @@ export default function EmployeesList({
             maxHeight: "90vh",
             overflowY: "auto"
           }}>
-            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>ADD NEW EMPLOYEE</h2>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>ADD / ONBOARD</h2>
+              <button
+                type="button"
+                onClick={() => setShowUnifiedModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "0.25rem" }}
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-            {addError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
-                {addError}
+            {/* Tab Switcher */}
+            {currentUser.role !== "TEAM_LEAD" && (
+              <div style={{ display: "flex", gap: "0", background: "rgba(255,255,255,0.03)", borderRadius: "6px", border: "1px solid var(--border-dim)", overflow: "hidden" }}>
+                <button
+                  type="button"
+                  onClick={() => setUnifiedTab("EMPLOYEE")}
+                  style={{
+                    flex: 1,
+                    padding: "0.55rem 1rem",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "0.8rem",
+                    letterSpacing: "0.05em",
+                    transition: "all 0.2s",
+                    background: unifiedTab === "EMPLOYEE" ? "var(--gold-gradient)" : "transparent",
+                    color: unifiedTab === "EMPLOYEE" ? "var(--bg-primary)" : "var(--text-secondary)"
+                  }}
+                >
+                  ADD EMPLOYEE
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUnifiedTab("ASSOCIATE")}
+                  style={{
+                    flex: 1,
+                    padding: "0.55rem 1rem",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "0.8rem",
+                    letterSpacing: "0.05em",
+                    transition: "all 0.2s",
+                    background: unifiedTab === "ASSOCIATE" ? "var(--gold-gradient)" : "transparent",
+                    color: unifiedTab === "ASSOCIATE" ? "var(--bg-primary)" : "var(--text-secondary)"
+                  }}
+                >
+                  ONBOARD ASSOCIATE
+                </button>
               </div>
             )}
 
-            <form onSubmit={handleAddEmployee} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {isSuperAdmin && (
-                <div className="form-group">
-                  <label className="form-label">Tenant Company</label>
-                  <select
-                    value={targetCompanyId}
-                    onChange={(e) => setTargetCompanyId(e.target.value)}
-                    className="select-gold"
-                  >
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label">Employee ID (Globally Unique)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. EMP-9304"
-                  value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
-                  className="input-gold"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Sarah Connor"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="input-gold"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. sarah@acme.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input-gold"
-                />
-              </div>
-
-              <div style={{ flex: 1, height: "1px", background: "var(--border-dim)", margin: "0.5rem 0" }}></div>
-              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--gold-premium)" }}>Laptop & Credentials Setup (Team Lead Exclusive)</h3>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div className="form-group">
-                  <label className="form-label">Laptop Brand</label>
-                  <select
-                    value={addLaptopBrand}
-                    onChange={(e) => setAddLaptopBrand(e.target.value as any)}
-                    className="select-gold"
-                  >
-                    <option value="">Unassigned</option>
-                    <option value="HP">HP</option>
-                    <option value="Dell">Dell</option>
-                    <option value="ThinkPad">ThinkPad</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Windows Version</label>
-                  <select
-                    value={addWindowsVersion}
-                    onChange={(e) => setAddWindowsVersion(e.target.value as any)}
-                    className="select-gold"
-                  >
-                    <option value="">N/A</option>
-                    <option value="Windows_10">Windows 10</option>
-                    <option value="Windows_11">Windows 11</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div className="form-group">
-                  <label className="form-label">Laptop Model</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Latitude 5420"
-                    value={addLaptopModel}
-                    onChange={(e) => setAddLaptopModel(e.target.value)}
-                    className="input-gold"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Laptop Serial S/N</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. TAG-23091A"
-                    value={addLaptopSerialNumber}
-                    onChange={(e) => setAddLaptopSerialNumber(e.target.value)}
-                    className="input-gold"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Laptop Administrator Password</label>
-                <input
-                  type="text"
-                  placeholder="Specify strong password"
-                  value={addLaptopPassword}
-                  onChange={(e) => setAddLaptopPassword(e.target.value)}
-                  className="input-gold"
-                />
-              </div>
-
-              <div style={{ flex: 1, height: "1px", background: "var(--border-dim)", margin: "0.5rem 0" }}></div>
-
-              <div className="form-group">
-                <label className="form-label">VPN Provider</label>
-                <select
-                  value={addVpnProvider}
-                  onChange={(e) => setAddVpnProvider(e.target.value as any)}
-                  className="select-gold"
-                >
-                  <option value="">No VPN</option>
-                  <option value="Surfshark">Surfshark</option>
-                  <option value="ExpressVPN">ExpressVPN</option>
-                  <option value="NordVPN">NordVPN</option>
-                  <option value="ProtonVPN">ProtonVPN</option>
-                  <option value="PureVPN">PureVPN</option>
-                  <option value="HideMe">HideMe</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">VPN Security Credentials</label>
-                <input
-                  type="text"
-                  placeholder="e.g. User token or login keys"
-                  value={addVpnCredentials}
-                  onChange={(e) => setAddVpnCredentials(e.target.value)}
-                  className="input-gold"
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="btn-glass"
-                  style={{ flex: 1 }}
-                  disabled={isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-gold"
-                  style={{ flex: 1 }}
-                  disabled={isPending}
-                >
-                  {isPending ? "Adding..." : "Add Employee"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Onboard Sales Associate Modal */}
-      {showOnboardModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0,0,0,0.85)",
-          backdropFilter: "blur(6px)",
-          zIndex: 1000,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "1.5rem"
-        }}>
-          <div className="glass-panel" style={{
-            maxWidth: "500px",
-            width: "100%",
-            padding: "2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.25rem"
-          }}>
-            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>ONBOARD SALES ASSOCIATE</h2>
-
-            {onboardError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
-                {onboardError}
-              </div>
+            {/* ── TAB: ADD EMPLOYEE ── */}
+            {unifiedTab === "EMPLOYEE" && (
+              <>
+                {addError && (
+                  <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                    {addError}
+                  </div>
+                )}
+                <form onSubmit={handleAddEmployee} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  {isSuperAdmin && (
+                    <div className="form-group">
+                      <label className="form-label">Tenant Company</label>
+                      <select value={targetCompanyId} onChange={(e) => setTargetCompanyId(e.target.value)} className="select-gold">
+                        {companies.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                      </select>
+                    </div>
+                  )}
+                  <div className="form-group">
+                    <label className="form-label">Employee ID (Globally Unique)</label>
+                    <input type="text" required placeholder="e.g. EMP-9304" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} className="input-gold" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input type="text" required placeholder="e.g. Sarah Connor" value={fullName} onChange={(e) => setFullName(e.target.value)} className="input-gold" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input type="email" required placeholder="e.g. sarah@acme.com" value={email} onChange={(e) => setEmail(e.target.value)} className="input-gold" />
+                  </div>
+                  <div style={{ height: "1px", background: "var(--border-dim)", margin: "0.25rem 0" }}></div>
+                  <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--gold-premium)" }}>Laptop & Credentials Setup</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div className="form-group">
+                      <label className="form-label">Laptop Brand</label>
+                      <select value={addLaptopBrand} onChange={(e) => setAddLaptopBrand(e.target.value as any)} className="select-gold">
+                        <option value="">Unassigned</option>
+                        <option value="HP">HP</option>
+                        <option value="Dell">Dell</option>
+                        <option value="ThinkPad">ThinkPad</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Windows Version</label>
+                      <select value={addWindowsVersion} onChange={(e) => setAddWindowsVersion(e.target.value as any)} className="select-gold">
+                        <option value="">N/A</option>
+                        <option value="Windows_10">Windows 10</option>
+                        <option value="Windows_11">Windows 11</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div className="form-group">
+                      <label className="form-label">Laptop Model</label>
+                      <input type="text" placeholder="e.g. Latitude 5420" value={addLaptopModel} onChange={(e) => setAddLaptopModel(e.target.value)} className="input-gold" />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Laptop Serial S/N</label>
+                      <input type="text" placeholder="e.g. TAG-23091A" value={addLaptopSerialNumber} onChange={(e) => setAddLaptopSerialNumber(e.target.value)} className="input-gold" />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Laptop Administrator Password</label>
+                    <div style={{ position: "relative" }}>
+                      <input type={showLaptopPass ? "text" : "password"} placeholder="Specify strong password" value={addLaptopPassword} onChange={(e) => setAddLaptopPassword(e.target.value)} className="input-gold" style={{ paddingRight: "2.5rem" }} />
+                      <button type="button" onClick={() => setShowLaptopPass(v => !v)} style={{ position: "absolute", right: "0.6rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                        {showLaptopPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ height: "1px", background: "var(--border-dim)", margin: "0.25rem 0" }}></div>
+                  <div className="form-group">
+                    <label className="form-label">VPN Provider</label>
+                    <select value={addVpnProvider} onChange={(e) => setAddVpnProvider(e.target.value as any)} className="select-gold">
+                      <option value="">No VPN</option>
+                      <option value="Surfshark">Surfshark</option>
+                      <option value="ExpressVPN">ExpressVPN</option>
+                      <option value="NordVPN">NordVPN</option>
+                      <option value="ProtonVPN">ProtonVPN</option>
+                      <option value="PureVPN">PureVPN</option>
+                      <option value="HideMe">HideMe</option>
+                    </select>
+                  </div>
+                  <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+                    <button type="button" onClick={() => setShowUnifiedModal(false)} className="btn-glass" style={{ flex: 1 }} disabled={isPending}>Cancel</button>
+                    <button type="submit" className="btn-gold" style={{ flex: 1 }} disabled={isPending}>{isPending ? "Adding..." : "Add Employee"}</button>
+                  </div>
+                </form>
+              </>
             )}
 
-             <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {!isTeamLead && (
-                <div className="form-group">
-                  <label className="form-label">Employee ID (Globally Unique)</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. EMP-101"
-                    value={onboardEmployeeId}
-                    onChange={(e) => setOnboardEmployeeId(e.target.value)}
-                    className="input-gold"
-                    disabled={isPending}
-                  />
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Alice Margatroid"
-                  value={onboardFullName}
-                  onChange={(e) => setOnboardFullName(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. alice@company.com"
-                  value={onboardEmail}
-                  onChange={(e) => setOnboardEmail(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
-              {!isTeamLead && (
-                <div className="form-group">
-                  <label className="form-label">Initial Password</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Assign initial password"
-                    value={onboardPassword}
-                    onChange={(e) => setOnboardPassword(e.target.value)}
-                    className="input-gold"
-                    disabled={isPending}
-                  />
-                </div>
-              )}
-
-              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                <button
-                  type="button"
-                  onClick={() => setShowOnboardModal(false)}
-                  className="btn-glass"
-                  style={{ flex: 1 }}
-                  disabled={isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-gold"
-                  style={{ flex: 1 }}
-                  disabled={isPending}
-                >
-                  {isPending ? "Onboarding..." : "Onboard Associate"}
-                </button>
-              </div>
-            </form>
+            {/* ── TAB: ONBOARD ASSOCIATE / TEAM LEAD ── */}
+            {unifiedTab === "ASSOCIATE" && (
+              <>
+                {onboardError && (
+                  <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                    {onboardError}
+                  </div>
+                )}
+                <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  {currentUser.role !== "TEAM_LEAD" && (
+                    <div className="form-group">
+                      <label className="form-label">Onboarding Role</label>
+                      <select
+                        value={onboardRole}
+                        onChange={(e) => setOnboardRole(e.target.value as any)}
+                        className="select-gold"
+                        disabled={isPending}
+                      >
+                        <option value="SALES_ASSOCIATE">Sales Associate</option>
+                        <option value="TEAM_LEAD">Team Leader</option>
+                      </select>
+                    </div>
+                  )}
+                  {(!isTeamLead || onboardRole === "TEAM_LEAD") && (
+                    <div className="form-group">
+                      <label className="form-label">Employee ID (Globally Unique)</label>
+                      <input type="text" required placeholder="e.g. EMP-101" value={onboardEmployeeId} onChange={(e) => setOnboardEmployeeId(e.target.value)} className="input-gold" disabled={isPending} />
+                    </div>
+                  )}
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input type="text" required placeholder="e.g. Alice Margatroid" value={onboardFullName} onChange={(e) => setOnboardFullName(e.target.value)} className="input-gold" disabled={isPending} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input type="email" required placeholder="e.g. alice@company.com" value={onboardEmail} onChange={(e) => setOnboardEmail(e.target.value)} className="input-gold" disabled={isPending} />
+                  </div>
+                  {(!isTeamLead || onboardRole === "TEAM_LEAD") && (
+                    <div className="form-group">
+                      <label className="form-label">Initial Password</label>
+                      <input type="text" required placeholder="Assign initial password" value={onboardPassword} onChange={(e) => setOnboardPassword(e.target.value)} className="input-gold" disabled={isPending} />
+                    </div>
+                  )}
+                  {!isTeamLead && onboardRole === "SALES_ASSOCIATE" && teamLeads.length > 0 && (
+                    <div className="form-group">
+                      <label className="form-label">Assign to Team Lead</label>
+                      <select
+                        value={onboardTeamLeadId}
+                        onChange={(e) => setOnboardTeamLeadId(e.target.value)}
+                        className="select-gold"
+                        disabled={isPending}
+                      >
+                        <option value="">Unassigned (None)</option>
+                        {teamLeads.map((tl) => (
+                          <option key={tl.id} value={tl.id}>
+                            {tl.name || tl.email}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+                    <button type="button" onClick={() => setShowUnifiedModal(false)} className="btn-glass" style={{ flex: 1 }} disabled={isPending}>Cancel</button>
+                    <button type="submit" className="btn-gold" style={{ flex: 1 }} disabled={isPending}>
+                      {isPending ? "Onboarding..." : (onboardRole === "TEAM_LEAD" ? "Onboard Team Lead" : "Onboard Associate")}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -830,17 +798,6 @@ export default function EmployeesList({
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">VPN Security Credentials</label>
-                <input
-                  type="text"
-                  placeholder="e.g. User token or login keys"
-                  value={vpnCredentials}
-                  onChange={(e) => setVpnCredentials(e.target.value)}
-                  className="input-gold"
-                />
-              </div>
-
               <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                 <button
                   type="button"
@@ -849,7 +806,7 @@ export default function EmployeesList({
                   style={{ flex: 1 }}
                   disabled={isPending}
                 >
-                  Close
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -857,10 +814,9 @@ export default function EmployeesList({
                   style={{ flex: 1 }}
                   disabled={isPending}
                 >
-                  {isPending ? "Deploying..." : "Deploy Specs"}
+                  {isPending ? "Saving Specs..." : "Save IT Specifications"}
                 </button>
               </div>
-
             </form>
           </div>
         </div>

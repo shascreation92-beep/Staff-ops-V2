@@ -17,12 +17,13 @@ export default async function AccountsPage() {
     companyName = company?.name;
   }
 
-  // Fetch accounts scoped to company
+  // Fetch accounts scoped to company (or personal if Team Lead / Sales Associate)
+  const accountsFilter = (user.role === "TEAM_LEAD" || user.role === "SALES_ASSOCIATE")
+    ? { createdById: user.id, isArchived: false }
+    : { ...companyFilter, isArchived: false };
+
   const accounts = await db.account.findMany({
-    where: {
-      ...companyFilter,
-      isArchived: false
-    },
+    where: accountsFilter,
     include: {
       platform: true,
       company: {
@@ -74,10 +75,7 @@ export default async function AccountsPage() {
   // Calculate duplicate ID Name counts across current records
   const idNameCounts = await db.account.groupBy({
     by: ['idName'],
-    where: {
-      ...companyFilter,
-      isArchived: false
-    },
+    where: accountsFilter,
     _count: {
       idName: true
     }

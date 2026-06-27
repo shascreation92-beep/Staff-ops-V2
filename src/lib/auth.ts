@@ -28,6 +28,9 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (dbUser) {
+          if (dbUser.status === "PENDING") {
+            throw new Error("Your account is pending approval by Company or IT Department.");
+          }
           // Centralized password verification:
           // If the user has a password in the database, verify it.
           if (dbUser.password && credentials.password !== dbUser.password) {
@@ -86,6 +89,10 @@ export const authOptions: NextAuthOptions = {
               isRead: false,
             },
           });
+
+          return false; // Block initial login
+        } else if (existingUser.status === "PENDING") {
+          return false; // Block subsequent login attempts
         }
       }
       return true;

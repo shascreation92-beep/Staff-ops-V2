@@ -5,8 +5,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import SettingsShard from "@/components/SettingsShard";
 
 export default async function SettingsPage() {
-  // Restrict access: Only Super Admin and Company Owner are allowed in settings
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+  // Restrict access: Allow Super Admin, Company Owner and IT Department in settings/User Management
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   let companyName = null;
   if (user.companyId) {

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { account_status, user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
+import { toast } from "react-hot-toast";
 
 interface AccountsListProps {
   currentUser: {
@@ -84,35 +85,22 @@ export default function AccountsList({
   const [targetStatus, setTargetStatus] = useState<account_status>("SUBMITTED");
   const [transitionNotes, setTransitionNotes] = useState("");
 
-  // Request to TL state
-  const [showRequestModal, setShowRequestModal] = useState(false);
-  const [requestAccountId, setRequestAccountId] = useState("");
-  const [associateIdInput, setAssociateIdInput] = useState("");
-  const [requestError, setRequestError] = useState<string | null>(null);
-
-  const handleRequestToTL = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRequestError(null);
-    if (!associateIdInput.trim()) {
-      setRequestError("Associate ID is required.");
+  const handleDirectRequestToTL = async (accountId: string) => {
+    if (!confirm("Are you sure you want to submit this account request to your Team Lead?")) {
       return;
     }
-
     startTransition(async () => {
       try {
         const res = await updateAccountStatusAction(
-          requestAccountId,
+          accountId,
           "PENDING_TL",
-          "Request to TL submitted by Associate",
-          associateIdInput.trim()
+          "Request to TL submitted by Associate"
         );
         if (res.success) {
-          setShowRequestModal(false);
-          setRequestAccountId("");
-          setAssociateIdInput("");
+          toast.success("Request successfully forwarded to your Team Lead!");
         }
       } catch (err: any) {
-        setRequestError(err.message || "Failed to submit request.");
+        toast.error(err.message || "Failed to submit request.");
       }
     });
   };
@@ -603,12 +591,7 @@ export default function AccountsList({
                           {isSalesAssociate && ["DRAFT", "REJECTED"].includes(acc.status) ? (
                             acc.adsPublished >= 4 ? (
                               <button
-                                onClick={() => {
-                                  setRequestAccountId(acc.id);
-                                  setAssociateIdInput("");
-                                  setRequestError(null);
-                                  setShowRequestModal(true);
-                                }}
+                                onClick={() => handleDirectRequestToTL(acc.id)}
                                 className="btn-gold"
                                 style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
                                 disabled={isPending}
@@ -925,83 +908,7 @@ export default function AccountsList({
         </div>
       )}
 
-      {/* Request to TL Modal */}
-      {showRequestModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0,0,0,0.85)",
-          backdropFilter: "blur(6px)",
-          zIndex: 1000,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "1.5rem"
-        }}>
-          <div className="glass-panel" style={{
-            maxWidth: "460px",
-            width: "100%",
-            padding: "2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
-            boxShadow: "var(--shadow-premium), var(--shadow-gold-glow-hover)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.25rem"
-          }}>
-            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>SUBMIT TO TEAM LEADER</h2>
-            
-            {requestError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
-                {requestError}
-              </div>
-            )}
-
-            <form onSubmit={handleRequestToTL} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div className="form-group">
-                <label className="form-label">Associate ID</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enter your Associate_ID..."
-                  value={associateIdInput}
-                  onChange={(e) => setAssociateIdInput(e.target.value)}
-                  className="input-gold"
-                  autoFocus
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowRequestModal(false);
-                    setRequestAccountId("");
-                    setAssociateIdInput("");
-                    setRequestError(null);
-                  }}
-                  className="btn-glass"
-                  style={{ flex: 1 }}
-                  disabled={isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-gold"
-                  style={{ flex: 1 }}
-                  disabled={isPending}
-                >
-                  {isPending ? "Submitting..." : "Submit"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modal code removed as it is now automated */}
 
       {/* Guided Add Account Wizard Modal */}
       {showAddWizard && (

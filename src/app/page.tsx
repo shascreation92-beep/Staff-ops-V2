@@ -1,6 +1,8 @@
 import React from "react";
 import { enforceAuth, getCompanyFilter } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 import DashboardLayout from "@/components/DashboardLayout";
 import { 
   Database, 
@@ -16,6 +18,7 @@ import {
   Target
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import PendingOnboardingList from "@/components/PendingOnboardingList";
 
 export default async function DashboardPage() {
   // Enforce server-side authentication and status checks
@@ -86,6 +89,29 @@ export default async function DashboardPage() {
     });
   }
 
+  // Fetch pending onboarding requests (status is PENDING, role is SALES_ASSOCIATE)
+  let pendingUsers: any[] = [];
+  if (["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"].includes(user.role)) {
+    pendingUsers = await db.user.findMany({
+      where: {
+        status: "PENDING",
+        role: "SALES_ASSOCIATE",
+        companyId: user.role === "SUPER_ADMIN" ? undefined : (user.companyId || "")
+      },
+      include: {
+        company: {
+          select: { name: true }
+        },
+        user: { // team lead relation
+          select: { name: true }
+        }
+      },
+      orderBy: {
+        createdAt: "desc"
+      }
+    });
+  }
+
   // Sales Associate specific metrics
   // Load platform-specific counts for Sales Associate
   let saTotalAccounts = 0;
@@ -101,17 +127,14 @@ export default async function DashboardPage() {
   let gumtreeTotal = 0, gumtreeVerified = 0, gumtreeUnverified = 0, gumtreeSuspended = 0;
 
   if (user.role === "SALES_ASSOCIATE") {
-    const rulesList = await db.rule.findMany({
-      where: { companyId: user.companyId || "" }
-    });
+    const [rulesList, dbPlatforms] = await Promise.all([
+      db.rule.findMany({ where: { companyId: user.companyId || "" } }),
+      db.platform.findMany({ where: { isArchived: false } })
+    ]);
 
     const targetRuleFB = rulesList.find(r => r.key === "targetToMaintainFB");
     const targetRuleGlobal = rulesList.find(r => r.key === "targetToMaintain");
     fbTarget = targetRuleFB ? (parseInt(targetRuleFB.value, 10) || 15) : (targetRuleGlobal ? (parseInt(targetRuleGlobal.value, 10) || 15) : 15);
-
-    const dbPlatforms = await db.platform.findMany({
-      where: { isArchived: false }
-    });
 
     const fbPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("facebook"));
     const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
@@ -121,61 +144,35 @@ export default async function DashboardPage() {
     const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted", mode: "insensitive" as any } } };
     const gumtreeWhere = gumtreePlatform ? { platformId: gumtreePlatform.id } : { platform: { name: { contains: "gumtree", mode: "insensitive" as any } } };
 
-    // Overall Total Accounts
-    saTotalAccounts = await db.account.count({
-      where: { createdById: user.id, isArchived: false }
-    });
+    const [
+      _saTotalAccounts,
+      _fbTotal, _fbActive, _fbVerified, _fbUnverified, _fbMarketplace, _fbIdentity, _fbSuspended,
+      _vintedTotal, _vintedVerified, _vintedUnverified, _vintedSuspended,
+      _gumtreeTotal, _gumtreeVerified, _gumtreeUnverified, _gumtreeSuspended
+    ] = await Promise.all([
+      db.account.count({ where: { createdById: user.id, isArchived: false } }),
+      db.account.count({ where: { createdById: user.id, isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "ACTIVE", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "REJECTED", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "UNDER_REVIEW", verificationStatus: "No", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "REJECTED", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "REJECTED", isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: user.id, isArchived: false, ...gumtreeWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...gumtreeWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...gumtreeWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "REJECTED", isArchived: false, ...gumtreeWhere } }),
+    ]);
 
-    // Facebook
-    fbTotal = await db.account.count({
-      where: { createdById: user.id, isArchived: false, ...fbWhere }
-    });
-    fbActive = await db.account.count({
-      where: { createdById: user.id, status: "ACTIVE", isArchived: false, ...fbWhere }
-    });
-    fbVerified = await db.account.count({
-      where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...fbWhere }
-    });
-    fbUnverified = await db.account.count({
-      where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...fbWhere }
-    });
-    fbMarketplace = await db.account.count({
-      where: { createdById: user.id, status: "REJECTED", isArchived: false, ...fbWhere }
-    });
-    fbIdentity = await db.account.count({
-      where: { createdById: user.id, status: "UNDER_REVIEW", verificationStatus: "No", isArchived: false, ...fbWhere }
-    });
-    fbSuspended = await db.account.count({
-      where: { createdById: user.id, status: "REJECTED", isArchived: false, ...fbWhere }
-    });
-
-    // Vinted
-    vintedTotal = await db.account.count({
-      where: { createdById: user.id, isArchived: false, ...vintedWhere }
-    });
-    vintedVerified = await db.account.count({
-      where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...vintedWhere }
-    });
-    vintedUnverified = await db.account.count({
-      where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...vintedWhere }
-    });
-    vintedSuspended = await db.account.count({
-      where: { createdById: user.id, status: "REJECTED", isArchived: false, ...vintedWhere }
-    });
-
-    // Gumtree
-    gumtreeTotal = await db.account.count({
-      where: { createdById: user.id, isArchived: false, ...gumtreeWhere }
-    });
-    gumtreeVerified = await db.account.count({
-      where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...gumtreeWhere }
-    });
-    gumtreeUnverified = await db.account.count({
-      where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...gumtreeWhere }
-    });
-    gumtreeSuspended = await db.account.count({
-      where: { createdById: user.id, status: "REJECTED", isArchived: false, ...gumtreeWhere }
-    });
+    saTotalAccounts = _saTotalAccounts;
+    fbTotal = _fbTotal; fbActive = _fbActive; fbVerified = _fbVerified; fbUnverified = _fbUnverified;
+    fbMarketplace = _fbMarketplace; fbIdentity = _fbIdentity; fbSuspended = _fbSuspended;
+    vintedTotal = _vintedTotal; vintedVerified = _vintedVerified; vintedUnverified = _vintedUnverified; vintedSuspended = _vintedSuspended;
+    gumtreeTotal = _gumtreeTotal; gumtreeVerified = _gumtreeVerified; gumtreeUnverified = _gumtreeUnverified; gumtreeSuspended = _gumtreeSuspended;
   }
 
   return (
@@ -321,8 +318,18 @@ export default async function DashboardPage() {
                   <div className="kpi-icon-wrapper"><Target size={18} style={{ color: "var(--gold-premium)" }} /></div>
                 </div>
                 <div className="kpi-value">{fbTarget}</div>
-                <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+                <div className="kpi-footer" style={{ color: "var(--text-muted)", flexDirection: "column", alignItems: "flex-start", gap: "0.4rem" }}>
                   <span>Monthly FB quota target</span>
+                  <div style={{ width: "100%", height: "5px", background: "rgba(255,255,255,0.05)", borderRadius: "99px", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${Math.min(100, fbTarget > 0 ? Math.round((fbActive / fbTarget) * 100) : 0)}%`,
+                      background: fbActive >= fbTarget ? "var(--color-success)" : "var(--gold-gradient)",
+                      borderRadius: "99px",
+                      transition: "width 0.6s ease"
+                    }}></div>
+                  </div>
+                  <span style={{ fontSize: "0.7rem" }}>{fbActive}/{fbTarget} active ({fbTarget > 0 ? Math.round((fbActive / fbTarget) * 100) : 0}%)</span>
                 </div>
               </div>
 
@@ -538,6 +545,10 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
+      )}
+
+      {["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"].includes(user.role) && (
+        <PendingOnboardingList pendingUsers={pendingUsers} />
       )}
     </DashboardLayout>
   );

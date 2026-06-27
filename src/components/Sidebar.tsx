@@ -19,9 +19,12 @@ import {
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
 import { updateUserPasswordAction } from "@/app/actions/users";
+import { getPendingTLRequestsCountAction } from "@/app/actions/accounts";
+import { useEffect } from "react";
 
 interface SidebarProps {
   user: {
+    id: string;
     name?: string | null;
     email?: string | null;
     role: user_role;
@@ -41,6 +44,23 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const [changePassSuccess, setChangePassSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  // Dynamic notification count for TL requests
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (user.role !== "TEAM_LEAD") return;
+
+    const fetchCount = () => {
+      getPendingTLRequestsCountAction()
+        .then(count => setPendingRequestsCount(count))
+        .catch(err => console.error("Failed to fetch pending requests count", err));
+    };
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 15000); // refresh every 15 seconds
+    return () => clearInterval(interval);
+  }, [user.role]);
+
   const handleChangePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setChangePassError(null);
@@ -48,6 +68,11 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
     if (!newPassword.trim()) {
       setChangePassError("Password cannot be empty.");
+      return;
+    }
+
+    if (newPassword.trim().length < 8) {
+      setChangePassError("Password must be at least 8 characters.");
       return;
     }
 
@@ -79,17 +104,38 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     },
     { 
       id: "accounts", 
-      label: "User Data", 
+      label: user.role === "TEAM_LEAD" ? "My Data / Add Account" : "User Data", 
       path: "/accounts", 
       icon: Database,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
+    },
+    { 
+      id: "associates-requests", 
+      label: "Associates Requests", 
+      path: "/associates-requests", 
+      icon: Users,
+      roles: ["TEAM_LEAD"] 
+    },
+    { 
+      id: "my-team", 
+      label: "My Team", 
+      path: "/my-team", 
+      icon: UserCheck,
+      roles: ["TEAM_LEAD"] 
     },
     { 
       id: "employees", 
       label: "Employees DB", 
       path: "/employees", 
       icon: Laptop,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"] 
+      roles: ["SUPER_ADMIN", "TEAM_LEAD", "IT_DEPARTMENT"] 
+    },
+    { 
+      id: "team-leads", 
+      label: "Team Leads", 
+      path: "/team-leads", 
+      icon: UserCheck,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
     },
     { 
       id: "chat", 
@@ -100,10 +146,10 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     },
     { 
       id: "settings", 
-      label: user.role === "SUPER_ADMIN" ? "Platform Shard" : "Rule Engine", 
+      label: user.role === "SUPER_ADMIN" ? "Platform Shard" : (user.role === "IT_DEPARTMENT" ? "User Management" : "Rule Engine"), 
       path: "/settings", 
       icon: Sliders,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
     { 
       id: "audit-logs", 
@@ -134,9 +180,31 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               href={item.path}
               className={`sidebar-item ${isActive ? 'active' : ''}`}
               onClick={() => setIsOpen(false)}
+              style={{ display: "flex", alignItems: "center", position: "relative" }}
             >
               <Icon className="sidebar-icon" size={20} />
               <span>{item.label}</span>
+              {item.id === "associates-requests" && pendingRequestsCount > 0 && (
+                <span 
+                  style={{
+                    marginLeft: "auto",
+                    background: "linear-gradient(135deg, #ff4d4d, #cc0000)",
+                    color: "white",
+                    borderRadius: "9999px",
+                    padding: "0.15rem 0.5rem",
+                    fontSize: "0.7rem",
+                    fontWeight: "bold",
+                    lineHeight: 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 0 8px rgba(239, 68, 68, 0.4)",
+                    animation: "pulse 2s infinite"
+                  }}
+                >
+                  🔴 {pendingRequestsCount}
+                </span>
+              )}
               {isActive && (
                 <div 
                   style={{
@@ -163,7 +231,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               {user.name || "Operator"}
             </span>
             <span className="sidebar-user-role" style={{ fontSize: "0.7rem", color: "var(--gold-primary)" }}>
-              {user.role.replace("_", " ")}
+              {user.role.replaceAll("_", " ")}
             </span>
             {user.companyName && (
               <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

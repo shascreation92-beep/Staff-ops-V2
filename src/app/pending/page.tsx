@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { ShieldAlert, LogOut, Loader2, Mail } from "lucide-react";
 import { 
@@ -10,6 +11,7 @@ import {
 } from "@/app/actions/users";
 
 export default function PendingPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState("");
   const [status, setStatus] = useState("");
@@ -28,7 +30,7 @@ export default function PendingPage() {
       }
       
       if (res.status === "APPROVED") {
-        window.location.href = "/";
+        router.push("/");
         return;
       }
 
@@ -49,10 +51,10 @@ export default function PendingPage() {
   useEffect(() => {
     Promise.resolve().then(() => fetchStatus(true));
     
-    // Poll status every 5 seconds
+    // Poll status every 15 seconds
     const interval = setInterval(() => {
       fetchStatus(false);
-    }, 5000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, []);
@@ -68,7 +70,7 @@ export default function PendingPage() {
     try {
       const res = await acceptJoinAction(userId);
       if (res.success) {
-        window.location.href = "/";
+        router.push("/");
       }
     } catch (err: any) {
       setError(err.message || "Failed to accept invitation.");

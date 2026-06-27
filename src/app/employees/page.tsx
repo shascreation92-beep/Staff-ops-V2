@@ -6,7 +6,7 @@ import EmployeesList from "@/components/EmployeesList";
 
 export default async function EmployeesPage() {
   // Restrict access: Sales Associates are excluded in middleware, reinforced here
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "TEAM_LEAD", "IT_DEPARTMENT"]);
   const companyFilter = getCompanyFilter(user);
 
   let companyName = null;
@@ -19,11 +19,24 @@ export default async function EmployeesPage() {
   }
 
   // Fetch employees
-  const employees = await db.employee.findMany({
-    where: {
+  let employeeFilter: any = {
+    ...companyFilter,
+    isArchived: false
+  };
+
+  if (user.role === "TEAM_LEAD") {
+    employeeFilter = {
       ...companyFilter,
-      isArchived: false
-    },
+      isArchived: false,
+      user: {
+        teamLeadId: user.id,
+        role: "SALES_ASSOCIATE"
+      }
+    };
+  }
+
+  const employees = await db.employee.findMany({
+    where: employeeFilter,
     include: {
       company: {
         select: { name: true }
@@ -31,6 +44,24 @@ export default async function EmployeesPage() {
     },
     orderBy: {
       createdAt: "desc"
+    }
+  });
+
+  // Fetch active Team Leads for assignment dropdown
+  const teamLeads = await db.user.findMany({
+    where: {
+      companyId: user.role === "SUPER_ADMIN" ? undefined : (user.companyId || ""),
+      role: "TEAM_LEAD",
+      status: "APPROVED",
+      isArchived: false,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true
+    },
+    orderBy: {
+      name: "asc"
     }
   });
 
@@ -55,6 +86,7 @@ export default async function EmployeesPage() {
         currentUser={user}
         employees={employees}
         companies={companies}
+        teamLeads={teamLeads}
       />
     </DashboardLayout>
   );

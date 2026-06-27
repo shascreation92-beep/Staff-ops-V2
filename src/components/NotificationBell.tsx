@@ -3,6 +3,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bell, Check, Archive, RefreshCw } from "lucide-react";
 
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 interface Notification {
   id: string;
   title: string;
@@ -50,6 +60,15 @@ export default function NotificationBell() {
     // Poll notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowNotifications(false);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const handleMarkAsRead = async (id: string) => {
@@ -191,8 +210,11 @@ export default function NotificationBell() {
                     )}
                   </div>
                   <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>{n.message}</p>
-                  <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-                    {new Date(n.createdAt).toLocaleTimeString()}
+                  <span
+                    title={new Date(n.createdAt).toLocaleString()}
+                    style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", cursor: "help" }}
+                  >
+                    {timeAgo(n.createdAt)}
                   </span>
                 </div>
               ))}

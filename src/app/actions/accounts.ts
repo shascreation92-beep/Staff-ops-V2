@@ -123,15 +123,23 @@ export async function updateAccountStatusAction(
 
   const fromStatus = account.status;
 
+  let finalAssociateId = associateId;
+
   // Workflow State Validation based on roles
   if (user.role === "SALES_ASSOCIATE") {
     if (toStatus === "PENDING_TL") {
       if (fromStatus !== "DRAFT" && fromStatus !== "REJECTED") {
         throw new Error("UNAUTHORIZED: Sales Associates can only submit Draft or Rejected accounts for TL approval.");
       }
-      if (!associateId || !associateId.trim()) {
-        throw new Error("Associate ID is required to submit request to TL.");
+      // Automate fetch of Associate's Name and mapped TL_ID
+      const associateUser = await db.user.findUnique({
+        where: { id: user.id },
+        select: { name: true, teamLeadId: true }
+      });
+      if (!associateUser?.teamLeadId) {
+        throw new Error("You are not mapped to any Team Lead. Please contact administration.");
       }
+      finalAssociateId = associateUser.name || user.name || "N/A";
     } else {
       if (fromStatus !== "DRAFT" && fromStatus !== "REJECTED") {
         throw new Error("UNAUTHORIZED: Sales Associates can only submit Draft or Rejected accounts.");
@@ -170,8 +178,8 @@ export async function updateAccountStatusAction(
       updatedById: user.id,
       updatedAt: new Date()
     };
-    if (associateId) {
-      dataUpdate.associateId = associateId.trim();
+    if (finalAssociateId) {
+      dataUpdate.associateId = finalAssociateId.trim();
     }
 
     const updatedAccount = await db.account.update({
@@ -187,7 +195,7 @@ export async function updateAccountStatusAction(
         fromStatus,
         toStatus,
         changedById: user.id,
-        notes: notes || `Status updated from ${fromStatus} to ${toStatus}${associateId ? ` (Associate ID: ${associateId})` : ""}.`
+        notes: notes || `Status updated from ${fromStatus} to ${toStatus}${finalAssociateId ? ` (Associate Name: ${finalAssociateId})` : ""}.`
       }
     });
 
@@ -205,26 +213,45 @@ export async function updateAccountStatusAction(
 
     // Trigger Notification for transitions
     if (toStatus === "PENDING_TL") {
-      // Find Team Leads in the company to notify
-      const tlUsers = await db.user.findMany({
-        where: {
-          companyId: account.companyId,
-          role: "TEAM_LEAD",
-          status: "APPROVED"
-        }
+      const associateUser = await db.user.findUnique({
+        where: { id: user.id },
+        select: { name: true, teamLeadId: true }
       });
+      const associateName = associateUser?.name || user.name || "N/A";
+      const targetTlId = associateUser?.teamLeadId;
 
-      for (const tlUser of tlUsers) {
+      if (targetTlId) {
         await db.notification.create({
           data: {
             id: crypto.randomUUID(),
-            userId: tlUser.id,
+            userId: targetTlId,
             title: "New Ad Request Pending Approval",
-            message: `Account serial ${account.serialCode} has been submitted by Sales Associate (ID: ${associateId || "N/A"}) and is pending your approval.`,
+            message: `Account serial ${account.serialCode} has been submitted by Sales Associate ${associateName} and is pending your approval.`,
             type: "TL Approval Pending",
             isRead: false
           }
         });
+      } else {
+        const tlUsers = await db.user.findMany({
+          where: {
+            companyId: account.companyId,
+            role: "TEAM_LEAD",
+            status: "APPROVED"
+          }
+        });
+
+        for (const tlUser of tlUsers) {
+          await db.notification.create({
+            data: {
+              id: crypto.randomUUID(),
+              userId: tlUser.id,
+              title: "New Ad Request Pending Approval",
+              message: `Account serial ${account.serialCode} has been submitted by Sales Associate ${associateName} and is pending your approval.`,
+              type: "TL Approval Pending",
+              isRead: false
+            }
+          });
+        }
       }
     } else if (toStatus === "FORWARDED_TO_IT" || toStatus === "APPROVED_BY_TEAM_LEAD") {
       // Find IT users in the company to notify
@@ -400,4 +427,69 @@ export async function updateAccountAdsAction(accountId: string, adsCount: number
   } catch (error: any) {
     throw new Error(error.message || "Failed to update ads count.");
   }
+}
+
+export async function getPendingTLRequestsCountAction() {
+  const user = await enforceAuth();
+  if (user.role !== "TEAM_LEAD") {
+    return 0;
+  }
+  const count = await db.account.count({
+    where: {
+      status: "PENDING_TL",
+      isArchived: false,
+      user_account_createdByIdTouser: {
+        teamLeadId: user.id
+      }
+    }
+  });
+  return count;
+}
+
+export async function getTLTeamMembersAction() {
+  const user = await enforceAuth(["TEAM_LEAD"]);
+  const members = await db.user.findMany({
+    where: {
+      teamLeadId: user.id,
+      role: "SALES_ASSOCIATE",
+      isArchived: false
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      status: true,
+      lastActiveAt: true
+    },
+    orderBy: {
+      name: "asc"
+    }
+  });
+  return members;
+}
+
+export async function getPendingTLRequestsAction() {
+  const user = await enforceAuth(["TEAM_LEAD"]);
+  const requests = await db.account.findMany({
+    where: {
+      status: "PENDING_TL",
+      isArchived: false,
+      user_account_createdByIdTouser: {
+        teamLeadId: user.id
+      }
+    },
+    include: {
+      platform: true,
+      user_account_createdByIdTouser: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+  return requests;
 }
