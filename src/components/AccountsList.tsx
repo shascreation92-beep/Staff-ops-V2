@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   createAccountAction, 
@@ -27,6 +27,7 @@ import {
 import { account_status, user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
 import { toast } from "react-hot-toast";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface AccountsListProps {
   currentUser: {
@@ -51,6 +52,26 @@ export default function AccountsList({
 }: AccountsListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [router]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [platformFilter, setPlatformFilter] = useState("ALL");
@@ -87,71 +108,103 @@ export default function AccountsList({
   const [targetStatus, setTargetStatus] = useState<account_status>("SUBMITTED");
   const [transitionNotes, setTransitionNotes] = useState("");
 
-  const handleDirectRequestToTL = async (accountId: string) => {
-    if (!confirm("Are you sure you want to submit this account request to your Team Lead?")) {
-      return;
-    }
-    startTransition(async () => {
-      try {
-        const res = await updateAccountStatusAction(
-          accountId,
-          "PENDING_TL",
-          "Request to TL submitted by Associate"
-        );
-        if (res.success) {
-          alert("Your request has been forwarded to your Team Lead successfully.");
-          router.refresh();
-        }
-      } catch (err: any) {
-        toast.error(err.message || "Failed to submit request.");
+  const handleDirectRequestToTL = (accountId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Submit Request to Team Lead",
+      message: "Are you sure you want to submit this account request to your Team Lead?",
+      onConfirm: () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        setSubmittingId(accountId);
+        startTransition(async () => {
+          try {
+            const res = await updateAccountStatusAction(
+              accountId,
+              "PENDING_TL",
+              "Request to TL submitted by Associate"
+            );
+            if (res.success) {
+              alert("Your request has been forwarded to your Team Lead successfully.");
+              router.refresh();
+            }
+          } catch (err: any) {
+            alert("Error submitting request: " + (err.message || "Unknown error"));
+            toast.error(err.message || "Failed to submit request.");
+          } finally {
+            setSubmittingId(null);
+          }
+        });
       }
     });
   };
 
-  const handleTLApprove = async (accountId: string) => {
-    startTransition(async () => {
-      try {
-        const res = await updateAccountStatusAction(accountId, "FORWARDED_TO_IT", "Approved by Team Lead");
-        if (res.success) {
-          router.refresh();
-        } else {
-          alert("Failed to approve.");
-        }
-      } catch (err: any) {
-        alert(err.message);
+  const handleTLApprove = (accountId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Approve Request",
+      message: "Are you sure you want to approve this request?",
+      onConfirm: () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        startTransition(async () => {
+          try {
+            const res = await updateAccountStatusAction(accountId, "FORWARDED_TO_IT", "Approved by Team Lead");
+            if (res.success) {
+              alert("Approved successfully!");
+              router.refresh();
+            } else {
+              alert("Failed to approve.");
+            }
+          } catch (err: any) {
+            alert(err.message);
+          }
+        });
       }
     });
   };
 
-  const handleITApprove = async (accountId: string) => {
-    if (!confirm("Are you sure you want to approve and finalize this account?")) {
-      return;
-    }
-    startTransition(async () => {
-      try {
-        const res = await updateAccountStatusAction(accountId, "ACTIVE", "Approved and finalized by IT Department");
-        if (res.success) {
-          router.refresh();
-        } else {
-          alert("Failed to approve account.");
-        }
-      } catch (err: any) {
-        alert(err.message);
+  const handleITAccept = (accountId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Accept Request",
+      message: "Are you sure you want to accept this request?",
+      onConfirm: () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        startTransition(async () => {
+          try {
+            const res = await updateAccountStatusAction(accountId, "IT_PENDING", "Accepted by IT Department");
+            if (res.success) {
+              alert("Request accepted successfully!");
+              router.refresh();
+            } else {
+              alert("Failed to accept account.");
+            }
+          } catch (err: any) {
+            alert(err.message);
+          }
+        });
       }
     });
   };
 
-  const handleITResolve = async (accountId: string) => {
-    startTransition(async () => {
-      try {
-        const res = await updateAccountStatusAction(accountId, "SORTED", "Sorted and resolved by IT Department");
-        if (res.success) {
-          router.refresh();
-        } else {
-          alert("Failed to resolve.");
-        }
-      } catch (err: any) {
-        alert(err.message);
+  const handleITSort = (accountId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Sort Account",
+      message: "Are you sure you want to sort and resolve this account?",
+      onConfirm: () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        startTransition(async () => {
+          try {
+            const res = await updateAccountStatusAction(accountId, "SORTED", "Sorted and resolved by IT Department");
+            if (res.success) {
+              router.refresh();
+            } else {
+              alert("Failed to sort account.");
+            }
+          } catch (err: any) {
+            alert(err.message);
+          }
+        });
       }
     });
   };
@@ -183,16 +236,17 @@ export default function AccountsList({
     if (acc.status === "PENDING_TL") {
       return {
         color: "#60A5FA",
-        text: "Pending TL Approval",
+        text: "Requested to TL",
         bg: "rgba(96, 165, 250, 0.08)",
         border: "rgba(96, 165, 250, 0.25)",
         glow: "none"
       };
     }
     if (acc.status === "FORWARDED_TO_IT") {
+      const tlName = acc.user_account_updatedByIdTouser?.name || "Udeen";
       return {
         color: "#A78BFA",
-        text: "Pending IT Approval",
+        text: `Approved by TL (${tlName})`,
         bg: "rgba(167, 139, 250, 0.08)",
         border: "rgba(167, 139, 250, 0.25)",
         glow: "none"
@@ -216,18 +270,27 @@ export default function AccountsList({
         glow: "0 0 12px rgba(34, 197, 94, 0.3)"
       };
     }
+    if (acc.status === "REJECTED") {
+      return {
+        color: "var(--color-danger)",
+        text: "Rejected by TL",
+        bg: "rgba(239, 68, 68, 0.1)",
+        border: "rgba(239, 68, 68, 0.3)",
+        glow: "0 0 10px rgba(239, 68, 68, 0.15)"
+      };
+    }
 
     const isVerified = acc.verificationStatus === "Yes";
     const adsCount = acc.adsPublished;
     const isApproved = ["ACTIVE", "COMPLETED"].includes(acc.status);
 
-    if (acc.status === "REJECTED" || !isVerified) {
+    if (!isVerified) {
       return {
         color: "var(--color-danger)",
-        text: "Rejected / Unverified",
+        text: "Unverified",
         bg: "rgba(239, 68, 68, 0.1)",
         border: "rgba(239, 68, 68, 0.3)",
-        glow: "0 0 10px rgba(239, 68, 68, 0.15)"
+        glow: "none"
       };
     }
 
@@ -614,7 +677,7 @@ export default function AccountsList({
                                 onClick={() => handleDirectRequestToTL(acc.id)}
                                 className="btn-gold"
                                 style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
-                                disabled={isPending}
+                                disabled={isPending || submittingId === acc.id}
                               >
                                 Request to TL
                               </button>
@@ -668,24 +731,34 @@ export default function AccountsList({
                           </span>
 
                           {(acc.status === "FORWARDED_TO_IT" && (isIT || isSuperAdmin)) && (
-                            <button
-                              onClick={() => handleITApprove(acc.id)}
-                              className="btn-success"
-                              style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
-                              disabled={isPending}
-                            >
-                              Approve
-                            </button>
+                            <div style={{ display: "flex", gap: "0.35rem" }}>
+                              <button
+                                onClick={() => handleITAccept(acc.id)}
+                                className="btn-gold"
+                                style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
+                                disabled={isPending}
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => handleITSort(acc.id)}
+                                className="btn-success"
+                                style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
+                                disabled={isPending}
+                              >
+                                Sort
+                              </button>
+                            </div>
                           )}
 
                           {(acc.status === "IT_PENDING" && (isIT || isSuperAdmin)) && (
                             <button
-                              onClick={() => handleITResolve(acc.id)}
+                              onClick={() => handleITSort(acc.id)}
                               className="btn-success"
                               style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
                               disabled={isPending}
                             >
-                              Done
+                              Sort
                             </button>
                           )}
 
@@ -1234,6 +1307,14 @@ export default function AccountsList({
         </div>
       )}
       
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        isPending={isPending}
+      />
     </div>
   );
 }

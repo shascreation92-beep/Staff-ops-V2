@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { useTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateAccountStatusAction } from "@/app/actions/accounts";
 import { Check, X, ShieldAlert, AlertCircle, Database, Calendar } from "lucide-react";
 import { toast } from "react-hot-toast";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface AssociatesRequestsListProps {
   requests: any[];
@@ -13,21 +14,47 @@ interface AssociatesRequestsListProps {
 export default function AssociatesRequestsList({ requests }: AssociatesRequestsListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   const handleAction = (accountId: string, status: "FORWARDED_TO_IT" | "REJECTED", actionName: string) => {
     const confirmMessage = `Are you sure you want to ${actionName.toLowerCase()} this request?`;
-    if (!confirm(confirmMessage)) return;
-
-    startTransition(async () => {
-      try {
-        const notes = `${actionName} by Team Lead`;
-        const res = await updateAccountStatusAction(accountId, status, notes);
-        if (res.success) {
-          toast.success(`Request ${actionName.toLowerCase()}ed successfully!`);
-          router.refresh();
-        }
-      } catch (err: any) {
-        toast.error(err.message || `Failed to ${actionName.toLowerCase()} request.`);
+    setConfirmConfig({
+      isOpen: true,
+      title: `${actionName} Request`,
+      message: confirmMessage,
+      onConfirm: () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        startTransition(async () => {
+          try {
+            const notes = `${actionName} by Team Lead`;
+            const res = await updateAccountStatusAction(accountId, status, notes);
+            if (res.success) {
+              alert(`Request ${actionName.toLowerCase()}ed successfully!`);
+              toast.success(`Request ${actionName.toLowerCase()}ed successfully!`);
+              router.refresh();
+            }
+          } catch (err: any) {
+            alert("Error executing action: " + (err.message || "Unknown error"));
+            toast.error(err.message || `Failed to ${actionName.toLowerCase()} request.`);
+          }
+        });
       }
     });
   };
@@ -149,6 +176,14 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
           </tbody>
         </table>
       </div>
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        isPending={isPending}
+      />
     </div>
   );
 }

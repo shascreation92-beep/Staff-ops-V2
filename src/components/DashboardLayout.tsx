@@ -20,6 +20,7 @@ interface DashboardLayoutProps {
     email?: string | null;
     role: user_role;
     companyName?: string | null;
+    teamLeadName?: string | null;
   };
 }
 

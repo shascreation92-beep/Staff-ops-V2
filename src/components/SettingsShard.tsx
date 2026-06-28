@@ -2,11 +2,10 @@
 
 import React, { useState, useTransition } from "react";
 import { 
-  addPlatformAction, 
-  archivePlatformAction, 
   createAnnouncementAction 
 } from "@/app/actions/settings";
 import { RuleForm } from "@/components/settings/RuleForm";
+import PlatformManager from "@/components/settings/PlatformManager";
 import { 
   sendInvitationAction,
   declineInvitationAction,
@@ -229,31 +228,7 @@ export default function SettingsShard({
   // Dynamic Rule change handler
   // Updated rule handling moved to RuleForm component
 
-  const handleAddPlatform = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPlatformError(null);
 
-    if (!newPlatformName.trim()) return;
-
-    startTransition(async () => {
-      try {
-        await addPlatformAction({ name: newPlatformName });
-        setNewPlatformName("");
-      } catch (err: any) {
-        setPlatformError(err.message);
-      }
-    });
-  };
-
-  const handleArchivePlatform = async (id: string, name: string) => {
-    if (confirm(`Are you sure you wish to archive platform "${name}"? Existing accounts using this platform will remain.`)) {
-      try {
-        await archivePlatformAction(id);
-      } catch (err: any) {
-        alert(err.message);
-      }
-    }
-  };
 
   const handleSendAnnouncement = (e: React.FormEvent) => {
     e.preventDefault();
@@ -361,20 +336,25 @@ export default function SettingsShard({
       {/* Content pane */}
       <div style={{ padding: "2rem", overflowY: "auto" }}>
         
-        <RuleForm
-  currentUserRole={currentUser.role}
-  companies={companies}
-  initialValues={{
-    minAds,
-    requireVerification: requireVerification as 'true' | 'false',
-    targetToMaintain,
-    targetToMaintainFB,
-  }}
-  targetCompanyId={isSuperAdmin ? targetCompanyId : undefined}
-/>
+        {/* Tab 1: Threshold Rules */}
+        {activeTab === "RULES" && (
+          <RuleForm
+            currentUserRole={currentUser.role}
+            companies={companies}
+            initialValues={{
+              minAds,
+              requireVerification: requireVerification as 'true' | 'false',
+              targetToMaintain,
+              targetToMaintainFB,
+            }}
+            targetCompanyId={isSuperAdmin ? targetCompanyId : undefined}
+          />
+        )}
 
         {/* Tab 2: Platform Manager */}
-        <PlatformManager platforms={platforms} isPending={isPending} />
+        {activeTab === "PLATFORMS" && isSuperAdmin && (
+          <PlatformManager platforms={platforms} isPending={isPending} />
+        )}
 
         {/* Tab 3: System Announcements */}
         {activeTab === "ANNOUNCEMENTS" && isSuperAdmin && (

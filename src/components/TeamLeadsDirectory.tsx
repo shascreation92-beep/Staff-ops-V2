@@ -134,7 +134,7 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
         <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>
           <Users size={48} style={{ margin: "0 auto 1rem", color: "var(--text-muted)" }} />
           <h3 style={{ fontWeight: 700, color: "var(--text-primary)" }}>No Team Leads Found</h3>
-          <p style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>Use the "ADD TL" button to onboard Team Leads.</p>
+          <p style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>Use the &quot;ADD TL&quot; button to onboard Team Leads.</p>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(440px, 1fr))", gap: "1.5rem" }}>

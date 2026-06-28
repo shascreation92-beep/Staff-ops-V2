@@ -29,6 +29,7 @@ interface SidebarProps {
     email?: string | null;
     role: user_role;
     companyName?: string | null;
+    teamLeadName?: string | null;
   };
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -165,10 +166,29 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
   return (
     <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
-      <div className="sidebar-logo">
+      <div className="sidebar-logo" style={{ marginBottom: user.role === "SALES_ASSOCIATE" && user.teamLeadName ? "0.75rem" : "1.5rem" }}>
         <Shield className="sidebar-logo-icon" size={24} />
         <span className="sidebar-logo-text">STAFFOPS</span>
       </div>
+
+      {user.role === "SALES_ASSOCIATE" && user.teamLeadName && (
+        <div style={{
+          padding: "0.5rem 0.75rem",
+          margin: "0 1rem 1rem 1rem",
+          borderRadius: "6px",
+          background: "rgba(251, 191, 36, 0.04)",
+          border: "1px solid rgba(251, 191, 36, 0.12)",
+          fontSize: "0.75rem",
+          color: "var(--gold-premium)",
+          fontWeight: 600,
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.15rem"
+        }}>
+          <span style={{ color: "var(--text-muted)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Reporting To</span>
+          <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>{user.teamLeadName}</span>
+        </div>
+      )}
 
       <nav className="sidebar-menu">
         {filteredItems.map((item) => {

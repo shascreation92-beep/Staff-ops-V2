@@ -26,7 +26,7 @@ export const RuleForm: React.FC<{
   targetCompanyId?: string;
 }> = ({ currentUserRole, companies, initialValues, targetCompanyId }) => {
   const [isPending, startTransition] = useTransition();
-  const { mutateAsync: updateRule, isLoading } = useRules();
+  const { mutateAsync: updateRule } = useRules();
   const [form, setForm] = useState<RuleFormValues>(initialValues);
   const [activeCompany, setActiveCompany] = useState<string>(targetCompanyId || (companies[0]?.id ?? ''));
 

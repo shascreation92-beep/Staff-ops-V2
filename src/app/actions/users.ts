@@ -552,19 +552,22 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
   }
 
   // Auto-generate or validate Employee ID
-  let targetEmployeeId = employeeId;
-  if (!targetEmployeeId || !targetEmployeeId.trim()) {
+  let targetEmployeeId: string;
+  if (!employeeId || !employeeId.trim()) {
     let isUnique = false;
+    let generatedId = "";
     while (!isUnique) {
-      targetEmployeeId = `EMP-${Math.floor(1000 + Math.random() * 9000)}`;
+      generatedId = `EMP-${Math.floor(1000 + Math.random() * 9000)}`;
       const existing = await db.employee.findUnique({
-        where: { employeeId: targetEmployeeId }
+        where: { employeeId: generatedId }
       });
       if (!existing) {
         isUnique = true;
       }
     }
+    targetEmployeeId = generatedId;
   } else {
+    targetEmployeeId = employeeId;
     const existingId = await db.employee.findUnique({
       where: { employeeId: targetEmployeeId },
     });
