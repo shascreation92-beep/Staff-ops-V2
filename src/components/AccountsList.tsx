@@ -602,7 +602,7 @@ export default function AccountsList({
                                 padding: "0.05rem 0.4rem", 
                                 background: "rgba(245, 158, 11, 0.08)", 
                                 border: "1px solid rgba(245, 158, 11, 0.2)", 
-                                color: "#fbbf24", 
+                                color: "var(--color-warning)", 
                                 fontSize: "0.65rem" 
                               }}
                             >
@@ -797,7 +797,7 @@ export default function AccountsList({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.85)",
+          background: "rgba(15, 23, 42, 0.3)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
           display: "flex",
@@ -809,9 +809,9 @@ export default function AccountsList({
             maxWidth: "500px",
             width: "100%",
             padding: "2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
-            boxShadow: "var(--shadow-premium), var(--shadow-gold-glow-hover)",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            boxShadow: "var(--shadow-premium)",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem"
@@ -934,7 +934,7 @@ export default function AccountsList({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.85)",
+          background: "rgba(15, 23, 42, 0.3)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
           display: "flex",
@@ -946,11 +946,12 @@ export default function AccountsList({
             maxWidth: "460px",
             width: "100%",
             padding: "2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
             display: "flex",
             flexDirection: "column",
-            gap: "1.25rem"
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>WORKFLOW PIPELINE TRANSITION</h2>
             
@@ -1011,7 +1012,7 @@ export default function AccountsList({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.85)",
+          background: "rgba(255, 255, 255, 0.7)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
           display: "flex",
@@ -1023,9 +1024,9 @@ export default function AccountsList({
             maxWidth: "500px",
             width: "100%",
             padding: "2.5rem 2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
-            boxShadow: "var(--shadow-premium), var(--shadow-gold-glow-hover)",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            boxShadow: "var(--shadow-premium)",
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",

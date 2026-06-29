@@ -69,7 +69,7 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
                   position: "relative",
                   transition: "all 0.3s ease",
                   border: "1px solid var(--border-dim)",
-                  background: "rgba(10, 10, 10, 0.6)",
+                  background: "#FFFFFF",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>

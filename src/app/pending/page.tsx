@@ -131,9 +131,9 @@ export default function PendingPage() {
         alignItems: "center",
         textAlign: "center",
         gap: "1.5rem",
-        border: "1px solid var(--border-gold)",
-        boxShadow: "var(--shadow-premium), var(--shadow-gold-glow)",
-        background: "rgba(10, 10, 10, 0.95)"
+        border: "1px solid var(--border-dim)",
+        boxShadow: "var(--shadow-premium)",
+        background: "#FFFFFF"
       }}>
         {error && (
           <div style={{

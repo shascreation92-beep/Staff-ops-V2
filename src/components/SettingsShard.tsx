@@ -259,10 +259,11 @@ export default function SettingsShard({
       display: "grid",
       gridTemplateColumns: "240px 1fr",
       minHeight: "550px",
-      background: "rgba(10, 10, 10, 0.95)",
-      border: "1px solid var(--border-gold)",
+      background: "#FFFFFF",
+      border: "1px solid var(--border-dim)",
       borderRadius: "var(--border-radius-md)",
-      overflow: "hidden"
+      overflow: "hidden",
+      boxShadow: "var(--shadow-premium)"
     }}>
       
       {/* Sidebar options */}
@@ -270,7 +271,7 @@ export default function SettingsShard({
         borderRight: "1px solid var(--border-dim)",
         display: "flex",
         flexDirection: "column",
-        background: "rgba(5, 5, 5, 0.4)",
+        background: "#F9FAFB",
         padding: "1rem"
       }}>
         <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 0.5rem 1rem 0.5rem", borderBottom: "1px solid var(--border-dim)" }}>
@@ -702,7 +703,7 @@ export default function SettingsShard({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.85)",
+          background: "rgba(15, 23, 42, 0.3)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
           display: "flex",
@@ -714,11 +715,12 @@ export default function SettingsShard({
             maxWidth: "420px",
             width: "100%",
             padding: "2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
             display: "flex",
             flexDirection: "column",
-            gap: "1.25rem"
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>EDIT TEAM LEAD PROFILE</h2>
 
@@ -774,7 +776,7 @@ export default function SettingsShard({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.85)",
+          background: "rgba(15, 23, 42, 0.3)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
           display: "flex",
@@ -786,11 +788,12 @@ export default function SettingsShard({
             maxWidth: "450px",
             width: "100%",
             padding: "2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
             display: "flex",
             flexDirection: "column",
-            gap: "1.25rem"
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>APPROVE ONBOARDING REQUEST</h2>
             <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
@@ -862,7 +865,7 @@ export default function SettingsShard({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.85)",
+          background: "rgba(15, 23, 42, 0.3)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
           display: "flex",
@@ -874,11 +877,12 @@ export default function SettingsShard({
             maxWidth: "420px",
             width: "100%",
             padding: "2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
             display: "flex",
             flexDirection: "column",
-            gap: "1.25rem"
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>RESET USER PASSWORD</h2>
             <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>

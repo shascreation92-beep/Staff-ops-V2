@@ -85,9 +85,9 @@ export default function SignInPage() {
         if (!ctx) return;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(251, 191, 36, ${this.opacity})`; // Golden tint
+        ctx.fillStyle = `rgba(16, 185, 129, ${this.opacity})`; // Emerald tint
         ctx.shadowBlur = this.size * 3;
-        ctx.shadowColor = "rgba(251, 191, 36, 0.6)";
+        ctx.shadowColor = "rgba(16, 185, 129, 0.4)";
         ctx.fill();
       }
     }
@@ -103,7 +103,7 @@ export default function SignInPage() {
 
       // Draw subtle grid network lines
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = "rgba(251, 191, 36, 0.02)";
+      ctx.strokeStyle = "rgba(16, 185, 129, 0.03)";
       ctx.lineWidth = 1;
       const gridSize = 70;
 
@@ -191,7 +191,7 @@ export default function SignInPage() {
       padding: "1.5rem",
       position: "relative",
       overflow: "hidden",
-      backgroundColor: "#000000"
+      background: "linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)"
     }}>
       {/* Animated canvas starfield */}
       <canvas
@@ -214,9 +214,9 @@ export default function SignInPage() {
         display: "flex",
         flexDirection: "column",
         gap: "1.25rem",
-        border: "1px solid var(--border-gold)",
-        boxShadow: "var(--shadow-premium), var(--shadow-gold-glow)",
-        background: "rgba(10, 10, 10, 0.95)",
+        border: "1px solid var(--border-dim)",
+        boxShadow: "0 10px 30px rgba(16, 185, 129, 0.1), 0 1px 3px rgba(16, 185, 129, 0.05)",
+        background: "#FFFFFF",
         position: "relative",
         zIndex: 1,
         borderRadius: "16px"
@@ -227,28 +227,27 @@ export default function SignInPage() {
             width: "4.5rem",
             height: "4.5rem",
             borderRadius: "50%",
-            backgroundColor: "#FBBF24",
+            backgroundColor: "var(--gold-primary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 0 20px rgba(251, 191, 36, 0.45)",
-            border: "2px solid #FFD700"
+            boxShadow: "0 0 20px rgba(0, 176, 116, 0.25)",
+            border: "2px solid var(--gold-glow)"
           }}>
-            <Shield size={34} style={{ color: "#000000" }} />
+            <Shield size={34} style={{ color: "#FFFFFF" }} />
           </div>
           <h1 style={{
             fontSize: "1.9rem",
             fontWeight: 800,
-            color: "#FBBF24",
+            color: "var(--gold-primary)",
             letterSpacing: "0.08em",
-            marginTop: "0.6rem",
-            textShadow: "0 0 10px rgba(251, 191, 36, 0.3)"
+            marginTop: "0.6rem"
           }}>
             STAFFOPS
           </h1>
           <span style={{ 
             fontSize: "0.75rem", 
-            color: "#888888", 
+            color: "var(--text-secondary)", 
             letterSpacing: "0.18em", 
             textTransform: "uppercase",
             fontWeight: 600
@@ -281,11 +280,11 @@ export default function SignInPage() {
             height: "46px",
             fontSize: "0.9rem",
             fontWeight: 700,
-            color: "#000000",
-            backgroundColor: "#FBBF24",
+            color: "#FFFFFF",
+            backgroundColor: "var(--gold-primary)",
             border: "none",
             borderRadius: "6px",
-            boxShadow: "0 4px 15px rgba(251, 191, 36, 0.3)",
+            boxShadow: "0 4px 15px rgba(0, 176, 116, 0.2)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -407,12 +406,12 @@ export default function SignInPage() {
               height: "44px",
               fontSize: "0.9rem",
               fontWeight: 700,
-              color: "#000000",
-              backgroundColor: "#FBBF24",
+              color: "#FFFFFF",
+              backgroundColor: "var(--gold-primary)",
               border: "none",
               borderRadius: "6px",
               cursor: "pointer",
-              boxShadow: "0 3px 10px rgba(251, 191, 36, 0.2)",
+              boxShadow: "0 4px 15px rgba(0, 176, 116, 0.2)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

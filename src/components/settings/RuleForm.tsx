@@ -64,11 +64,11 @@ export const RuleForm: React.FC<{
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-lg">
       {isSuperAdmin && (
         <div className="form-group">
-          <label className="block text-sm font-medium text-gray-200 mb-1">Active Shard Target Company</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Active Shard Target Company</label>
           <select
             value={activeCompany}
             onChange={e => setActiveCompany(e.target.value)}
-            className="w-full rounded-md bg-gray-800 border border-gray-600 text-gray-100 p-2"
+            className="select-gold"
           >
             {companies.map(c => (
               <option key={c.id} value={c.id}>
@@ -80,7 +80,7 @@ export const RuleForm: React.FC<{
       )}
 
       <div className="form-group">
-        <label className="flex items-center gap-1 text-sm font-medium text-gray-200 mb-1">
+        <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
           Minimum Ads Required
           <HelpCircle size={14} className="text-gray-400" />
         </label>
@@ -96,7 +96,7 @@ export const RuleForm: React.FC<{
       </div>
 
       <div className="form-group">
-        <label className="block text-sm font-medium text-gray-200 mb-1">Require Document Verification</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Require Document Verification</label>
         <select
           name="requireVerification"
           value={form.requireVerification}
@@ -110,7 +110,7 @@ export const RuleForm: React.FC<{
       </div>
 
       <div className="form-group">
-        <label className="flex items-center gap-1 text-sm font-medium text-gray-200 mb-1">
+        <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
           Global Target to Maintain
           <HelpCircle size={14} className="text-gray-400" />
         </label>
@@ -138,7 +138,7 @@ export const RuleForm: React.FC<{
       </div>
 
       <div className="form-group">
-        <label className="flex items-center gap-1 text-sm font-medium text-gray-200 mb-1">
+        <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
           FB Target to Maintain
           <HelpCircle size={14} className="text-gray-400" />
         </label>

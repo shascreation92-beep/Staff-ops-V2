@@ -148,10 +148,11 @@ export default function ChatShard({
       display: "grid",
       gridTemplateColumns: "280px 1fr",
       height: "calc(100vh - var(--header-height) - 7.5rem)",
-      background: "rgba(10, 10, 10, 0.95)",
-      border: "1px solid var(--border-gold)",
+      background: "#FFFFFF",
+      border: "1px solid var(--border-dim)",
       borderRadius: "var(--border-radius-md)",
-      overflow: "hidden"
+      overflow: "hidden",
+      boxShadow: "var(--shadow-premium)"
     }}>
       
       {/* Sidebar: Teammates List */}
@@ -159,7 +160,7 @@ export default function ChatShard({
         borderRight: "1px solid var(--border-dim)",
         display: "flex",
         flexDirection: "column",
-        background: "rgba(5, 5, 5, 0.4)"
+        background: "#F9FAFB"
       }}>
         {/* Search */}
         <div style={{ padding: "1rem", borderBottom: "1px solid var(--border-dim)" }}>
@@ -209,15 +210,15 @@ export default function ChatShard({
                     alignItems: "center",
                     gap: "0.75rem",
                     padding: "0.6rem 0.75rem",
-                    background: isActive ? "rgba(255, 215, 0, 0.04)" : "transparent"
+                    background: isActive ? "rgba(0, 176, 116, 0.08)" : "transparent"
                   }}
                 >
                   <div className="user-avatar-gold" style={{
                     width: "2rem",
                     height: "2rem",
                     fontSize: "0.75rem",
-                    background: isActive ? "var(--gold-gradient)" : "rgba(255, 255, 255, 0.03)",
-                    color: isActive ? "var(--bg-primary)" : "var(--gold-primary)",
+                    background: isActive ? "var(--gold-gradient)" : "rgba(0, 0, 0, 0.02)",
+                    color: isActive ? "#FFFFFF" : "var(--gold-primary)",
                     border: isActive ? "1px solid var(--gold-glow)" : "1px solid var(--border-gold)"
                   }}>
                     {initials}
@@ -246,7 +247,7 @@ export default function ChatShard({
       </div>
 
       {/* Main Chat Board */}
-      <div style={{ display: "flex", flexDirection: "column", background: "rgba(5, 5, 5, 0.2)" }}>
+      <div style={{ display: "flex", flexDirection: "column", background: "#FFFFFF" }}>
         {activeContact ? (
           <>
             {/* Header info */}
@@ -256,7 +257,7 @@ export default function ChatShard({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              background: "rgba(10, 10, 10, 0.5)"
+              background: "#F9FAFB"
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 <div className="user-avatar-gold" style={{ width: "2.25rem", height: "2.25rem", fontSize: "0.85rem" }}>
@@ -308,14 +309,14 @@ export default function ChatShard({
                         maxWidth: "60%"
                       }}>
                         <div style={{
-                          background: isOwn ? "var(--gold-gradient)" : "rgba(255, 255, 255, 0.03)",
-                          border: isOwn ? "none" : "1px solid var(--border-gold)",
-                          color: isOwn ? "var(--bg-primary)" : "var(--text-primary)",
+                          background: isOwn ? "var(--gold-gradient)" : "#F3F4F6",
+                          border: isOwn ? "none" : "1px solid var(--border-dim)",
+                          color: isOwn ? "#FFFFFF" : "var(--text-primary)",
                           padding: "0.75rem 1rem",
                           borderRadius: isOwn ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
                           fontSize: "0.9rem",
                           lineHeight: "1.4",
-                          boxShadow: isOwn ? "0 4px 15px rgba(212, 175, 55, 0.15)" : "none"
+                          boxShadow: isOwn ? "0 4px 12px rgba(0, 176, 116, 0.15)" : "none"
                         }}>
                           {m.message}
                         </div>
@@ -349,7 +350,7 @@ export default function ChatShard({
             <form onSubmit={handleSendMessage} style={{
               padding: "1rem 1.5rem",
               borderTop: "1px solid var(--border-dim)",
-              background: "rgba(10, 10, 10, 0.5)",
+              background: "#F9FAFB",
               display: "flex",
               alignItems: "center",
               gap: "0.75rem",
@@ -376,7 +377,7 @@ export default function ChatShard({
                     display: "flex",
                     gap: "0.35rem",
                     zIndex: 100,
-                    background: "#0a0a0a"
+                    background: "#FFFFFF"
                   }}>
                     {emojis.map(e => (
                       <button

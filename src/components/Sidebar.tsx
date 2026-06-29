@@ -318,7 +318,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(0,0,0,0.85)",
+          background: "rgba(15, 23, 42, 0.3)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
           display: "flex",
@@ -330,11 +330,12 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             maxWidth: "400px",
             width: "100%",
             padding: "2rem",
-            background: "rgba(10,10,10,0.98)",
-            border: "1px solid var(--border-gold)",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
             display: "flex",
             flexDirection: "column",
-            gap: "1.25rem"
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>CHANGE PASSWORD</h2>
 

@@ -28,7 +28,7 @@ export default function ConfirmationModal({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        backgroundColor: "rgba(15, 23, 42, 0.3)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         display: "flex",
@@ -47,17 +47,17 @@ export default function ConfirmationModal({
           display: "flex",
           flexDirection: "column",
           gap: "1.5rem",
-          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(212, 175, 55, 0.15)",
+          boxShadow: "var(--shadow-premium)",
           borderRadius: "12px",
           position: "relative",
-          background: "linear-gradient(135deg, rgba(20, 20, 20, 0.85) 0%, rgba(10, 10, 10, 0.95) 100%)",
-          border: "1px solid rgba(212, 175, 55, 0.25)"
+          background: "#FFFFFF",
+          border: "1px solid var(--border-dim)"
         }}
       >
         <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
           <div
             style={{
-              background: "rgba(212, 175, 55, 0.1)",
+              background: "rgba(16, 185, 129, 0.1)",
               borderRadius: "50%",
               padding: "0.75rem",
               display: "flex",
