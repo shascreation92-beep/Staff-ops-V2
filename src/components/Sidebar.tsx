@@ -164,29 +164,66 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const filteredItems = menuItems.filter(item => item.roles.includes(user.role));
   const userInitials = user.name ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "OP";
 
+  const getDesignation = (role: user_role) => {
+    switch (role) {
+      case "SUPER_ADMIN":
+        return "Super Admin";
+      case "COMPANY_OWNER":
+        return "Company Owner";
+      case "TEAM_LEAD":
+        return "Team Lead";
+      case "SALES_ASSOCIATE":
+        return "Sales Associate";
+      case "IT_DEPARTMENT":
+        return "IT Operations";
+      default:
+        return "Member";
+    }
+  };
+
   return (
     <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
-      <div className="sidebar-logo" style={{ marginBottom: user.role === "SALES_ASSOCIATE" && user.teamLeadName ? "0.75rem" : "1.5rem" }}>
-        <Shield className="sidebar-logo-icon" size={24} />
-        <span className="sidebar-logo-text">STAFFOPS</span>
+      {/* User Profile Header (Top) */}
+      <div className="sidebar-profile">
+        {/* Change Password Button */}
+        {["SUPER_ADMIN", "COMPANY_OWNER"].includes(user.role) && (
+          <button
+            onClick={() => {
+              setNewPassword("");
+              setChangePassError(null);
+              setChangePassSuccess(false);
+              setShowChangePassModal(true);
+            }}
+            className="profile-key-btn"
+            title="Change Password"
+          >
+            <Key size={14} />
+          </button>
+        )}
+
+        <div className="profile-avatar-container">
+          <div className="profile-avatar-circle">
+            {userInitials}
+          </div>
+        </div>
+
+        <div className="profile-info">
+          <span className="profile-name" title={`${user.name || "Operator"} - ${getDesignation(user.role)}`}>
+            {user.name || "Operator"}{" "}
+            <span style={{ opacity: 0.65, fontWeight: 500, fontSize: "0.85em" }}>
+              - {getDesignation(user.role)}
+            </span>
+          </span>
+          <span className="profile-email" title={user.email || ""}>
+            {user.email || ""}
+          </span>
+        </div>
       </div>
 
       {user.role === "SALES_ASSOCIATE" && user.teamLeadName && (
-        <div style={{
-          padding: "0.5rem 0.75rem",
-          margin: "0 1rem 1rem 1rem",
-          borderRadius: "6px",
-          background: "rgba(251, 191, 36, 0.04)",
-          border: "1px solid rgba(251, 191, 36, 0.12)",
-          fontSize: "0.75rem",
-          color: "var(--gold-premium)",
-          fontWeight: 600,
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.15rem"
-        }}>
-          <span style={{ color: "var(--text-muted)", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Reporting To</span>
-          <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>{user.teamLeadName}</span>
+        <div className="sidebar-reporting-badge">
+          <span className="reporting-label">Reporting To</span>
+          <span className="reporting-name">{user.teamLeadName}</span>
         </div>
       )}
 
@@ -200,7 +237,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               href={item.path}
               className={`sidebar-item ${isActive ? 'active' : ''}`}
               onClick={() => setIsOpen(false)}
-              style={{ display: "flex", alignItems: "center", position: "relative" }}
             >
               <Icon className="sidebar-icon" size={20} />
               <span>{item.label}</span>
@@ -225,89 +261,19 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                   🔴 {pendingRequestsCount}
                 </span>
               )}
-              {isActive && (
-                <div 
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    width: "3px",
-                    height: "60%",
-                    background: "var(--gold-gradient)",
-                    borderRadius: "0 4px 4px 0",
-                    boxShadow: "0 0 10px var(--gold-glow)"
-                  }}
-                />
-              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="sidebar-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0, flex: 1 }}>
-          <div className="user-avatar-gold" style={{ flexShrink: 0 }}>{userInitials}</div>
-          <div className="sidebar-user-info" style={{ minWidth: 0, flex: 1 }}>
-            <span className="sidebar-user-name" title={user.name || "User"}>
-              {user.name || "Operator"}
-            </span>
-            <span className="sidebar-user-role" style={{ fontSize: "0.7rem", color: "var(--gold-primary)" }}>
-              {user.role.replaceAll("_", " ")}
-            </span>
-            {user.companyName && (
-              <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {user.companyName}
-              </span>
-            )}
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
-          {["SUPER_ADMIN", "COMPANY_OWNER"].includes(user.role) && (
-            <button
-              onClick={() => {
-                setNewPassword("");
-                setChangePassError(null);
-                setChangePassSuccess(false);
-                setShowChangePassModal(true);
-              }}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--text-muted)",
-                cursor: "pointer",
-                padding: "0.5rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "4px",
-                transition: "all 0.2s ease"
-              }}
-              className="change-pass-btn"
-              title="Change Password"
-            >
-              <Key size={16} />
-            </button>
-          )}
-
-          <button
-            onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              padding: "0.5rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "4px",
-              transition: "all 0.2s ease"
-            }}
-            className="signout-btn"
-            title="Sign Out"
-          >
-            <LogOut size={18} />
-          </button>
-        </div>
+      <div className="sidebar-footer-wrap">
+        <button
+          onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+          className="sidebar-logout-btn"
+        >
+          <LogOut size={18} />
+          <span>Logout</span>
+        </button>
       </div>
 
       {/* Change Password Modal */}

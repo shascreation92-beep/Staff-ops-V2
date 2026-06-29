@@ -179,33 +179,36 @@ export default async function DashboardPage() {
   return (
     <DashboardLayout user={{ ...user, companyName }}>
       {/* Welcome Area */}
-      <div className="glass-panel" style={{
-        padding: "1.75rem 2rem",
-        marginBottom: "2rem",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexWrap: "wrap",
-        gap: "1rem",
-        position: "relative",
-        zIndex: 50
-      }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 800 }} className="text-gold-gradient">
-            WELCOME BACK, {user.name?.toUpperCase() || "OPERATOR"}
-          </h1>
-          <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-            Current node operations running at normal threshold parameters.
-          </span>
+      {user.role !== "SALES_ASSOCIATE" && (
+        <div className="glass-panel" style={{
+          padding: "1.75rem 2rem",
+          marginBottom: "2rem",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "1rem",
+          position: "relative",
+          zIndex: 50
+        }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 800 }} className="text-gold-gradient">
+              WELCOME BACK, {user.name?.toUpperCase() || "OPERATOR"}
+            </h1>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              Current node operations running at normal threshold parameters.
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <NotificationBell />
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <NotificationBell />
-        </div>
-      </div>
+      )}
 
       {/* KPI Cards Grid */}
       {user.role === "SALES_ASSOCIATE" ? (
         <SalesAssociateDashboard 
+          userName={user.name || "OPERATOR"}
           initialStats={{
             saTotalAccounts,
             fbTotal,
@@ -228,31 +231,31 @@ export default async function DashboardPage() {
         />
       ) : (
         <div className="kpi-grid">
-          <div className="glass-panel kpi-card">
+          <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
             <div className="kpi-value">{totalAccounts}</div>
-            <div className="kpi-footer kpi-trend-up">
+            <div className="kpi-footer">
               <span>Scoped shard db records</span>
             </div>
           </div>
 
-          <div className="glass-panel kpi-card">
+          <div className="glass-panel kpi-card kpi-success">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Verified Accounts</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
             <div className="kpi-value">{verifiedAccounts}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Verification rate: {totalAccounts > 0 ? Math.round((verifiedAccounts / totalAccounts) * 100) : 0}%</span>
             </div>
           </div>
 
-          <div className="glass-panel kpi-card">
+          <div className="glass-panel kpi-card kpi-warning">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Pending Reviews</span>
@@ -264,39 +267,39 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="glass-panel kpi-card">
+          <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Active Employees</span>
               <div className="kpi-icon-wrapper"><Users size={18} /></div>
             </div>
             <div className="kpi-value">{activeEmployees}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Hardware/VPN catalog items</span>
             </div>
           </div>
 
           {user.role === "SUPER_ADMIN" ? (
-            <div className="glass-panel kpi-card">
+            <div className="glass-panel kpi-card kpi-info">
               <div className="kpi-card-glow"></div>
               <div className="kpi-header">
                 <span className="kpi-title">Total Companies</span>
                 <div className="kpi-icon-wrapper"><Building size={18} /></div>
               </div>
               <div className="kpi-value">{companyCount}</div>
-              <div className="kpi-footer kpi-trend-up">
+              <div className="kpi-footer">
                 <span>SaaS tenant company count</span>
               </div>
             </div>
           ) : (
-            <div className="glass-panel kpi-card">
+            <div className="glass-panel kpi-card kpi-info">
               <div className="kpi-card-glow"></div>
               <div className="kpi-header">
                 <span className="kpi-title">Teammates</span>
                 <div className="kpi-icon-wrapper"><UserCheck size={18} /></div>
               </div>
               <div className="kpi-value">{totalSystemUsers}</div>
-              <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+              <div className="kpi-footer">
                 <span>Users in company registry</span>
               </div>
             </div>

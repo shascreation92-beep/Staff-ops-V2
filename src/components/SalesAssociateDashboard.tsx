@@ -10,6 +10,7 @@ import {
   HelpCircle, 
   Target 
 } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 interface Stats {
   saTotalAccounts: number;
@@ -33,9 +34,10 @@ interface Stats {
 
 interface SalesAssociateDashboardProps {
   initialStats: Stats;
+  userName: string;
 }
 
-export default function SalesAssociateDashboard({ initialStats }: SalesAssociateDashboardProps) {
+export default function SalesAssociateDashboard({ initialStats, userName }: SalesAssociateDashboardProps) {
   const [stats, setStats] = useState<Stats>(initialStats);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -60,46 +62,70 @@ export default function SalesAssociateDashboard({ initialStats }: SalesAssociate
   }, []);
 
   const renderLiveStatus = () => (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-      <div 
-        className="animate-pulse"
-        style={{
-          width: "7px",
-          height: "7px",
-          background: "#10B981",
-          borderRadius: "50%",
-          boxShadow: "0 0 8px #10B981"
-        }}
-      ></div>
-      <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-        {isSyncing ? "Syncing..." : "Live Connected"}
-      </span>
-    </div>
+    <div 
+      className="animate-pulse"
+      style={{
+        width: "7px",
+        height: "7px",
+        background: "#10B981",
+        borderRadius: "50%",
+        boxShadow: "0 0 8px #10B981",
+        cursor: "help"
+      }}
+      title={isSyncing ? "Syncing..." : "Live Connected"}
+    ></div>
   );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
       
-      {/* Section 1: Overall Operations */}
-      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
-          <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>
-            Overall Operations
-          </h2>
-          {renderLiveStatus()}
+      {/* Relocated Welcome Area & Overall Operations Card */}
+      <div className="glass-panel" style={{
+        padding: "1.75rem 2rem",
+        marginBottom: "0.5rem",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: "1.5rem",
+        position: "relative",
+        zIndex: 50,
+        background: "#FFFFFF"
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+          <h1 className="text-gold-gradient" style={{ fontSize: "1.5rem", fontWeight: 800, margin: 0 }}>
+            WELCOME BACK, {userName.toUpperCase()}
+          </h1>
+          <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+            Current node operations running at normal threshold parameters.
+          </span>
         </div>
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
-            <div className="kpi-card-glow" style={{ opacity: 0.15 }}></div>
-            <div className="kpi-header">
-              <span className="kpi-title">Total Account</span>
-              <div className="kpi-icon-wrapper"><Database size={18} /></div>
-            </div>
-            <div className="kpi-value">{stats.saTotalAccounts}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
-              <span>Total registered accounts across all platforms</span>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+          {/* Compact Total Account Card */}
+          <div className="glass-panel" style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            padding: "0.5rem 1rem",
+            background: "rgba(16, 185, 129, 0.05)",
+            border: "1px solid rgba(16, 185, 129, 0.15)",
+            borderRadius: "8px",
+            boxShadow: "0 0 10px rgba(16, 185, 129, 0.05)",
+            height: "46px"
+          }}>
+            <Database size={15} style={{ color: "#10B981" }} />
+            <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.2" }}>
+              <span style={{ fontSize: "0.6rem", color: "var(--text-muted)", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Total Account</span>
+              <span style={{ fontSize: "1rem", color: "#10B981", fontWeight: 800 }}>{stats.saTotalAccounts}</span>
             </div>
           </div>
+
+          {/* Pulsing Live Sync status */}
+          {renderLiveStatus()}
+
+          {/* Notification Bell */}
+          <NotificationBell />
         </div>
       </div>
 
@@ -113,63 +139,63 @@ export default function SalesAssociateDashboard({ initialStats }: SalesAssociate
         </div>
         <div className="kpi-grid">
           {/* Card 1: FB Total Accounts */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">FB Total Acc.</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
             <div className="kpi-value">{stats.fbTotal}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Facebook registered accounts</span>
             </div>
           </div>
 
           {/* Card 2: FB Active Acc. */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-success">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">FB Active Acc.</span>
-              <div className="kpi-icon-wrapper"><CheckCircle size={18} style={{ color: "var(--color-success)" }} /></div>
+              <div className="kpi-icon-wrapper"><CheckCircle size={18} /></div>
             </div>
             <div className="kpi-value">{stats.fbActive}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Live operational nodes</span>
             </div>
           </div>
 
           {/* Card 3: FB Verified Acc. */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-success">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">FB Verified Acc.</span>
-              <div className="kpi-icon-wrapper"><ShieldCheck size={18} style={{ color: "var(--gold-premium)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
             <div className="kpi-value">{stats.fbVerified}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Verification rate: {stats.fbTotal > 0 ? Math.round((stats.fbVerified / stats.fbTotal) * 100) : 0}%</span>
             </div>
           </div>
 
           {/* Card 4: FB Unverified Acc. */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-warning">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">FB Unverified Acc.</span>
-              <div className="kpi-icon-wrapper"><ShieldAlert size={18} style={{ color: "var(--orange-accent)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
             <div className="kpi-value">{stats.fbUnverified}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
           </div>
 
           {/* Card 5: FB Marketplace Issue */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-danger">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">FB Marketplace Issue</span>
-              <div className="kpi-icon-wrapper"><AlertCircle size={18} style={{ color: "var(--color-danger)" }} /></div>
+              <div className="kpi-icon-wrapper"><AlertCircle size={18} /></div>
             </div>
             <div className="kpi-value">{stats.fbMarketplace}</div>
             <div className="kpi-footer" style={{ color: stats.fbMarketplace > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
@@ -178,47 +204,51 @@ export default function SalesAssociateDashboard({ initialStats }: SalesAssociate
           </div>
 
           {/* Card 6: FB Identity Issue */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-danger">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">FB Identity Issue</span>
-              <div className="kpi-icon-wrapper"><HelpCircle size={18} style={{ color: "var(--color-warning)" }} /></div>
+              <div className="kpi-icon-wrapper"><HelpCircle size={18} /></div>
             </div>
             <div className="kpi-value">{stats.fbIdentity}</div>
-            <div className="kpi-footer" style={{ color: stats.fbIdentity > 0 ? "var(--color-warning)" : "var(--text-muted)" }}>
+            <div className="kpi-footer" style={{ color: stats.fbIdentity > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Verification hold status</span>
             </div>
           </div>
 
           {/* Card 7: Target to Maintain FB */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-warning">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Target to Maintain</span>
-              <div className="kpi-icon-wrapper"><Target size={18} style={{ color: "var(--gold-premium)" }} /></div>
+              <div className="kpi-icon-wrapper"><Target size={18} /></div>
             </div>
             <div className="kpi-value">{stats.fbTarget}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)", flexDirection: "column", alignItems: "flex-start", gap: "0.4rem" }}>
+            <div className="kpi-footer" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.25rem", width: "100%" }}>
               <span>Monthly FB quota target</span>
-              <div style={{ width: "100%", height: "5px", background: "rgba(255,255,255,0.05)", borderRadius: "99px", overflow: "hidden" }}>
-                <div style={{
-                  height: "100%",
-                  width: `${Math.min(100, stats.fbTarget > 0 ? Math.round((stats.fbActive / stats.fbTarget) * 100) : 0)}%`,
-                  background: stats.fbActive >= stats.fbTarget ? "var(--color-success)" : "var(--gold-gradient)",
-                  borderRadius: "99px",
-                  transition: "width 0.6s ease"
-                }}></div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%" }}>
+                <div style={{ flex: 1, height: "5px", background: "rgba(0,0,0,0.06)", borderRadius: "99px", overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%",
+                    width: `${Math.min(100, stats.fbTarget > 0 ? Math.round((stats.fbActive / stats.fbTarget) * 100) : 0)}%`,
+                    background: stats.fbActive >= stats.fbTarget ? "#10B981" : "#F59E0B",
+                    borderRadius: "99px",
+                    transition: "width 0.6s ease"
+                  }}></div>
+                </div>
+                <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700, whiteSpace: "nowrap" }}>
+                  {stats.fbActive}/{stats.fbTarget} ({stats.fbTarget > 0 ? Math.round((stats.fbActive / stats.fbTarget) * 100) : 0}%)
+                </span>
               </div>
-              <span style={{ fontSize: "0.7rem" }}>{stats.fbActive}/{stats.fbTarget} active ({stats.fbTarget > 0 ? Math.round((stats.fbActive / stats.fbTarget) * 100) : 0}%)</span>
             </div>
           </div>
 
           {/* Card 8: FB Total Suspended */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-danger">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Total Suspended Acc.</span>
-              <div className="kpi-icon-wrapper"><ShieldAlert size={18} style={{ color: "var(--color-danger)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
             <div className="kpi-value">{stats.fbSuspended}</div>
             <div className="kpi-footer" style={{ color: stats.fbSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
@@ -238,50 +268,50 @@ export default function SalesAssociateDashboard({ initialStats }: SalesAssociate
         </div>
         <div className="kpi-grid">
           {/* Card 1: Vinted Total */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Vinted Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
             <div className="kpi-value">{stats.vintedTotal}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Vinted registered accounts</span>
             </div>
           </div>
 
           {/* Card 2: Vinted Verified */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-success">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Vinted Verified</span>
-              <div className="kpi-icon-wrapper"><ShieldCheck size={18} style={{ color: "var(--gold-premium)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
             <div className="kpi-value">{stats.vintedVerified}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Verification rate: {stats.vintedTotal > 0 ? Math.round((stats.vintedVerified / stats.vintedTotal) * 100) : 0}%</span>
             </div>
           </div>
 
           {/* Card 3: Vinted Unverified */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-warning">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Vinted Unverified</span>
-              <div className="kpi-icon-wrapper"><ShieldAlert size={18} style={{ color: "var(--orange-accent)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
             <div className="kpi-value">{stats.vintedUnverified}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
           </div>
 
           {/* Card 4: Vinted Suspended */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-danger">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Vinted Suspended Accounts</span>
-              <div className="kpi-icon-wrapper"><ShieldAlert size={18} style={{ color: "var(--color-danger)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
             <div className="kpi-value">{stats.vintedSuspended}</div>
             <div className="kpi-footer" style={{ color: stats.vintedSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
@@ -301,50 +331,50 @@ export default function SalesAssociateDashboard({ initialStats }: SalesAssociate
         </div>
         <div className="kpi-grid">
           {/* Card 1: Gumtree Total */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Gumtree Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
             <div className="kpi-value">{stats.gumtreeTotal}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Gumtree registered accounts</span>
             </div>
           </div>
 
           {/* Card 2: Gumtree Verified */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-success">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Gumtree Verified</span>
-              <div className="kpi-icon-wrapper"><ShieldCheck size={18} style={{ color: "var(--gold-premium)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
             <div className="kpi-value">{stats.gumtreeVerified}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Verification rate: {stats.gumtreeTotal > 0 ? Math.round((stats.gumtreeVerified / stats.gumtreeTotal) * 100) : 0}%</span>
             </div>
           </div>
 
           {/* Card 3: Gumtree Unverified */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-warning">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Gumtree Unverified</span>
-              <div className="kpi-icon-wrapper"><ShieldAlert size={18} style={{ color: "var(--orange-accent)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
             <div className="kpi-value">{stats.gumtreeUnverified}</div>
-            <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
           </div>
 
           {/* Card 4: Gumtree Suspended */}
-          <div className="glass-panel kpi-card" style={{ background: "rgba(255, 255, 255, 0.01)" }}>
+          <div className="glass-panel kpi-card kpi-danger">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Gumtree Suspended Accounts</span>
-              <div className="kpi-icon-wrapper"><ShieldAlert size={18} style={{ color: "var(--color-danger)" }} /></div>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
             <div className="kpi-value">{stats.gumtreeSuspended}</div>
             <div className="kpi-footer" style={{ color: stats.gumtreeSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
