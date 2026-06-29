@@ -117,7 +117,16 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
                       {req.serialCode}
                     </td>
-                    <td>{req.idName}</td>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+                        <span style={{ fontWeight: 600 }}>{req.idName}</span>
+                        {req.comment && (
+                          <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic" }} title="Associate comment">
+                            💬 {req.comment}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td style={{ fontWeight: 600 }}>{req.adsPublished}</td>
                     <td>
                       <span

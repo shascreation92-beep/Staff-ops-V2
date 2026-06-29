@@ -17,6 +17,8 @@ model account {
   status                         account_status   @default(DRAFT)
   associateId                    String?
   itNotes                        String?          @db.Text
+  comment                        String?          @db.Text
+  issueType                      String?          @default("Active")
   isArchived                     Boolean          @default(false)
   archivedAt                     DateTime?
   archivedBy                     String?

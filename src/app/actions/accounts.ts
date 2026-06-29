@@ -14,7 +14,8 @@ const CreateAccountSchema = z.object({
   adsPublished: z.number().nonnegative("Ads count must be non-negative"),
   verificationStatus: z.enum(["Yes", "No"]),
   targetCompanyId: z.string().optional(), // For Super Admin
-  submissionDate: z.string().optional() // New field
+  submissionDate: z.string().optional(), // New field
+  comment: z.string().optional()
 });
 
 export async function createAccountAction(formData: z.infer<typeof CreateAccountSchema>) {
@@ -26,7 +27,7 @@ export async function createAccountAction(formData: z.infer<typeof CreateAccount
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { platformId, serialCode, idName, adsPublished, verificationStatus, targetCompanyId, submissionDate } = result.data;
+  const { platformId, serialCode, idName, adsPublished, verificationStatus, targetCompanyId, submissionDate, comment } = result.data;
 
   // Determine Company ID based on role
   let companyId = user.companyId;
@@ -62,6 +63,8 @@ export async function createAccountAction(formData: z.infer<typeof CreateAccount
         adsPublished,
         verificationStatus,
         status: "DRAFT",
+        comment,
+        issueType: "Active",
         companyId,
         createdById: user.id,
         updatedById: user.id,
@@ -187,6 +190,10 @@ export async function updateAccountStatusAction(
       updatedById: user.id,
       updatedAt: new Date()
     };
+    if (toStatus === "SORTED") {
+      dataUpdate.verificationStatus = "Yes";
+      dataUpdate.issueType = "Active";
+    }
     if (finalAssociateId) {
       dataUpdate.associateId = finalAssociateId.trim();
     }
@@ -528,4 +535,47 @@ export async function getPendingTLRequestsAction() {
     }
   });
   return requests;
+}
+
+export async function updateAccountIssueAction(accountId: string, issueType: string) {
+  const user = await enforceAuth(["SALES_ASSOCIATE"]);
+
+  const account = await db.account.findUnique({
+    where: { id: accountId }
+  });
+
+  if (!account) {
+    throw new Error("Account not found.");
+  }
+
+  if (account.createdById !== user.id) {
+    throw new Error("UNAUTHORIZED: You can only update issue options for your own accounts.");
+  }
+
+  try {
+    await db.account.update({
+      where: { id: accountId },
+      data: {
+        issueType,
+        updatedById: user.id,
+        updatedAt: new Date()
+      }
+    });
+
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "",
+      userRole: user.role,
+      action: "UPDATE_ISSUE_TYPE",
+      entity: "account",
+      entityId: accountId,
+      oldValue: account.issueType || "Active",
+      newValue: issueType
+    });
+
+    revalidatePath("/accounts");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update issue status.");
+  }
 }

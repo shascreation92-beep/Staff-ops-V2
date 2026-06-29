@@ -6,7 +6,8 @@ import {
   createAccountAction, 
   updateAccountStatusAction, 
   verifyAccountAction,
-  updateAccountAdsAction
+  updateAccountAdsAction,
+  updateAccountIssueAction
 } from "@/app/actions/accounts";
 import { 
   Search, 
@@ -84,6 +85,7 @@ export default function AccountsList({
   const [adsPublished, setAdsPublished] = useState(0);
   const [verificationStatus, setVerificationStatus] = useState<"Yes" | "No">("No");
   const [targetCompanyId, setTargetCompanyId] = useState(companies[0]?.id || "");
+  const [comment, setComment] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Guided Add Account Wizard State
@@ -96,6 +98,7 @@ export default function AccountsList({
   const [wizardAdsPublished, setWizardAdsPublished] = useState(0);
   const [wizardVerificationStatus, setWizardVerificationStatus] = useState<"Yes" | "No">("No");
   const [wizardSubmissionDate, setWizardSubmissionDate] = useState(new Date().toISOString().split("T")[0]);
+  const [wizardComment, setWizardComment] = useState("");
   const [wizardErrorMsg, setWizardErrorMsg] = useState<string | null>(null);
 
   // Inline ads editing state
@@ -209,6 +212,21 @@ export default function AccountsList({
     });
   };
 
+  const handleUpdateIssue = (accountId: string, issueType: string) => {
+    startTransition(async () => {
+      try {
+        const res = await updateAccountIssueAction(accountId, issueType);
+        if (res.success) {
+          router.refresh();
+        } else {
+          alert("Failed to update issue status.");
+        }
+      } catch (err: any) {
+        alert(err.message);
+      }
+    });
+  };
+
   const isSuperAdmin = currentUser.role === "SUPER_ADMIN";
   const isCompanyOwner = currentUser.role === "COMPANY_OWNER";
   const isTeamLead = currentUser.role === "TEAM_LEAD";
@@ -262,12 +280,13 @@ export default function AccountsList({
       };
     }
     if (acc.status === "SORTED") {
+      const isIssue = ["Marketplace Issue", "Identity Issue", "Suspended"].includes(acc.issueType);
       return {
-        color: "#22C55E",
-        text: "Sorted",
-        bg: "rgba(34, 197, 94, 0.08)",
-        border: "rgba(34, 197, 94, 0.3)",
-        glow: "0 0 12px rgba(34, 197, 94, 0.3)"
+        color: isIssue ? "var(--color-danger)" : "#22C55E",
+        text: acc.issueType || "Active",
+        bg: isIssue ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.08)",
+        border: isIssue ? "rgba(239, 68, 68, 0.3)" : "rgba(34, 197, 94, 0.3)",
+        glow: isIssue ? "0 0 10px rgba(239, 68, 68, 0.15)" : "0 0 12px rgba(34, 197, 94, 0.3)"
       };
     }
     if (acc.status === "REJECTED") {
@@ -335,7 +354,8 @@ export default function AccountsList({
           idName,
           adsPublished,
           verificationStatus,
-          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined
+          targetCompanyId: isSuperAdmin ? targetCompanyId : undefined,
+          comment
         });
 
         if (res.success) {
@@ -344,6 +364,7 @@ export default function AccountsList({
           setIdName("");
           setAdsPublished(0);
           setVerificationStatus("No");
+          setComment("");
         }
       } catch (err: any) {
         setErrorMsg(err.message || "Failed to provision account.");
@@ -434,7 +455,8 @@ export default function AccountsList({
           idName: `${wizardFirstName.trim()} ${wizardSecondName.trim()}`,
           adsPublished: wizardAdsPublished,
           verificationStatus: wizardVerificationStatus,
-          submissionDate: wizardSubmissionDate
+          submissionDate: wizardSubmissionDate,
+          comment: wizardComment
         });
 
         if (res.success) {
@@ -446,6 +468,7 @@ export default function AccountsList({
           setWizardAdsPublished(0);
           setWizardVerificationStatus("No");
           setWizardSubmissionDate(new Date().toISOString().split("T")[0]);
+          setWizardComment("");
         }
       } catch (err: any) {
         setWizardErrorMsg(err.message || "Failed to create account.");
@@ -592,21 +615,28 @@ export default function AccountsList({
                         {acc.serialCode}
                       </td>
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <span>{acc.idName}</span>
-                          {duplicates > 1 && (
-                            <span 
-                              title={`${duplicates} duplicate records use this ID name`}
-                              className="badge" 
-                              style={{ 
-                                padding: "0.05rem 0.4rem", 
-                                background: "rgba(245, 158, 11, 0.08)", 
-                                border: "1px solid rgba(245, 158, 11, 0.2)", 
-                                color: "var(--color-warning)", 
-                                fontSize: "0.65rem" 
-                              }}
-                            >
-                              x{duplicates}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <span style={{ fontWeight: 600 }}>{acc.idName}</span>
+                            {duplicates > 1 && (
+                              <span 
+                                title={`${duplicates} duplicate records use this ID name`}
+                                className="badge" 
+                                style={{ 
+                                  padding: "0.05rem 0.4rem", 
+                                  background: "rgba(245, 158, 11, 0.08)", 
+                                  border: "1px solid rgba(245, 158, 11, 0.2)", 
+                                  color: "var(--color-warning)", 
+                                  fontSize: "0.65rem" 
+                                }}
+                              >
+                                x{duplicates}
+                              </span>
+                            )}
+                          </div>
+                          {acc.comment && (
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic" }} title="Associate comment">
+                              💬 {acc.comment}
                             </span>
                           )}
                         </div>
@@ -719,16 +749,42 @@ export default function AccountsList({
                       </td>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <span className="badge" style={{
-                            background: rule.bg,
-                            border: `1px solid ${rule.border}`,
-                            color: rule.color,
-                            boxShadow: rule.glow,
-                            fontSize: "0.7rem",
-                            letterSpacing: "0.02em"
-                          }}>
-                            {rule.text}
-                          </span>
+                          {acc.status === "SORTED" && isSalesAssociate ? (
+                            <select
+                              value={acc.issueType || "Active"}
+                              onChange={(e) => handleUpdateIssue(acc.id, e.target.value)}
+                              style={{
+                                background: rule.bg,
+                                border: `1px solid ${rule.border}`,
+                                color: rule.color,
+                                boxShadow: rule.glow,
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                borderRadius: "999px",
+                                padding: "0.2rem 0.5rem",
+                                cursor: "pointer",
+                                outline: "none",
+                                width: "auto",
+                                textAlign: "center"
+                              }}
+                            >
+                              <option value="Active" style={{ color: "#22C55E", background: "#FFFFFF" }}>Active</option>
+                              <option value="Marketplace Issue" style={{ color: "var(--color-danger)", background: "#FFFFFF" }}>Marketplace Issue</option>
+                              <option value="Identity Issue" style={{ color: "var(--color-danger)", background: "#FFFFFF" }}>Identity Issue</option>
+                              <option value="Suspended" style={{ color: "var(--color-danger)", background: "#FFFFFF" }}>Suspended</option>
+                            </select>
+                          ) : (
+                            <span className="badge" style={{
+                              background: rule.bg,
+                              border: `1px solid ${rule.border}`,
+                              color: rule.color,
+                              boxShadow: rule.glow,
+                              fontSize: "0.7rem",
+                              letterSpacing: "0.02em"
+                            }}>
+                              {rule.text}
+                            </span>
+                          )}
 
                           {(acc.status === "FORWARDED_TO_IT" && (isIT || isSuperAdmin)) && (
                             <div style={{ display: "flex", gap: "0.35rem" }}>
@@ -902,6 +958,18 @@ export default function AccountsList({
                 </div>
               </div>
 
+              <div className="form-group">
+                <label className="form-label">Submission Comments / Notes (Optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Request fast IT setup, or specific browser login requirements..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="input-gold"
+                  style={{ resize: "none", fontFamily: "inherit" }}
+                />
+              </div>
+
               <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                 <button
                   type="button"
@@ -1038,7 +1106,7 @@ export default function AccountsList({
             <div className="kpi-header" style={{ borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem", marginBottom: "0.5rem" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontSize: "0.75rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                  STEP {wizardStep} OF 6
+                  STEP {wizardStep} OF 7
                 </span>
                 <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>
                   {wizardStep === 1 && "Platform Selection"}
@@ -1047,6 +1115,7 @@ export default function AccountsList({
                   {wizardStep === 4 && "Ads Published Count"}
                   {wizardStep === 5 && "Verification Status"}
                   {wizardStep === 6 && "Submission Date"}
+                  {wizardStep === 7 && "Comments / Notes"}
                 </h2>
               </div>
               <div className="kpi-icon-wrapper">
@@ -1224,11 +1293,37 @@ export default function AccountsList({
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
-                        handleWizardSubmit();
+                        if (wizardSubmissionDate) {
+                          setWizardStep(7);
+                          setWizardErrorMsg(null);
+                        } else {
+                          setWizardErrorMsg("Date of submission is required.");
+                        }
                       }
                     }}
                     className="input-gold"
                     style={{ width: "100%" }}
+                  />
+                </div>
+              )}
+
+              {wizardStep === 7 && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Submission Comments / Notes (Optional)</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Type comments to forward with this request..."
+                    value={wizardComment}
+                    onChange={(e) => setWizardComment(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleWizardSubmit();
+                      }
+                    }}
+                    className="input-gold"
+                    style={{ width: "100%", resize: "none", fontFamily: "inherit" }}
+                    autoFocus
                   />
                 </div>
               )}
@@ -1288,6 +1383,12 @@ export default function AccountsList({
                     }
                     setWizardStep(6);
                   } else if (wizardStep === 6) {
+                    if (!wizardSubmissionDate) {
+                      setWizardErrorMsg("Date of submission is required.");
+                      return;
+                    }
+                    setWizardStep(7);
+                  } else if (wizardStep === 7) {
                     handleWizardSubmit();
                   }
                 }}
@@ -1297,7 +1398,7 @@ export default function AccountsList({
               >
                 {isPending ? (
                   "Processing..."
-                ) : wizardStep === 6 ? (
+                ) : wizardStep === 7 ? (
                   "Submit"
                 ) : (
                   "Next"
