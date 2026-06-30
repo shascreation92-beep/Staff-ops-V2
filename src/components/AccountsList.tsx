@@ -423,7 +423,8 @@ export default function AccountsList({
   const handleOpenCommentModal = (acc: any) => {
     setCommentAccountId(acc.id);
     setCommentText(acc.comment || "");
-    setIsCommentReadOnly(currentUser.role !== "SALES_ASSOCIATE");
+    const isOwnerOrAssociate = currentUser.role === "SALES_ASSOCIATE" || (currentUser.role === "TEAM_LEAD" && acc.createdById === currentUser.id);
+    setIsCommentReadOnly(!isOwnerOrAssociate);
     setShowCommentModal(true);
   };
 

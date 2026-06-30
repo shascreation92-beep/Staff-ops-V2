@@ -396,12 +396,15 @@ export async function verifyAccountAction(accountId: string, verify: boolean) {
 
   // STRICT CROSS-TL PRIVACY CHECK
   if (user.role === "TEAM_LEAD") {
-    const creatorUser = await db.user.findUnique({
-      where: { id: account.createdById },
-      select: { teamLeadId: true }
-    });
-    if (creatorUser?.teamLeadId !== user.id) {
-      throw new Error("UNAUTHORIZED: You can only verify accounts belonging to your own associates.");
+    const isPersonalAccount = account.createdById === user.id;
+    if (!isPersonalAccount) {
+      const creatorUser = await db.user.findUnique({
+        where: { id: account.createdById },
+        select: { teamLeadId: true }
+      });
+      if (creatorUser?.teamLeadId !== user.id) {
+        throw new Error("UNAUTHORIZED: You can only verify accounts belonging to your own associates.");
+      }
     }
   }
 
@@ -452,12 +455,15 @@ export async function updateAccountAdsAction(accountId: string, adsCount: number
 
   // STRICT CROSS-TL PRIVACY CHECK
   if (user.role === "TEAM_LEAD") {
-    const creatorUser = await db.user.findUnique({
-      where: { id: account.createdById },
-      select: { teamLeadId: true }
-    });
-    if (creatorUser?.teamLeadId !== user.id) {
-      throw new Error("UNAUTHORIZED: You can only edit ads count for accounts belonging to your own associates.");
+    const isPersonalAccount = account.createdById === user.id;
+    if (!isPersonalAccount) {
+      const creatorUser = await db.user.findUnique({
+        where: { id: account.createdById },
+        select: { teamLeadId: true }
+      });
+      if (creatorUser?.teamLeadId !== user.id) {
+        throw new Error("UNAUTHORIZED: You can only edit ads count for accounts belonging to your own associates.");
+      }
     }
   }
 
@@ -608,8 +614,9 @@ export async function updateAccountCommentAction(accountId: string, comment: str
     throw new Error("UNAUTHORIZED: You can only update comments on your own accounts.");
   }
 
-  if (user.role !== "SALES_ASSOCIATE") {
-    throw new Error("UNAUTHORIZED: Only Sales Associates can edit comments.");
+  const isPersonalAccount = account.createdById === user.id;
+  if (user.role !== "SALES_ASSOCIATE" && !(user.role === "TEAM_LEAD" && isPersonalAccount)) {
+    throw new Error("UNAUTHORIZED: Only Sales Associates and Team Leads on their personal accounts can edit comments.");
   }
 
   try {
