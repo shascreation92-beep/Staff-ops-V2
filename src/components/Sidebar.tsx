@@ -183,7 +183,25 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
   return (
     <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
-      {/* User Profile Header (Top) */}
+      {/* Omagie/Boltz Logo Container */}
+      <div className="sidebar-logo-container">
+        <div className="sidebar-logo-brand">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="14" fill="#EAE3D2" />
+            <path d="M17 5L9 17H16L15 27L23 15H16L17 5Z" fill="#7D8F69" />
+          </svg>
+          <span className="sidebar-logo-text">StaffOps</span>
+        </div>
+        <button className="sidebar-toggle-btn" onClick={() => setIsOpen(false)} title="Close Sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" x2="20" y1="12" y2="12"></line>
+            <line x1="4" x2="20" y1="6" y2="6"></line>
+            <line x1="4" x2="20" y1="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      {/* User Profile Header (Top-ish, below Logo) */}
       <div className="sidebar-profile">
         {/* Change Password Button */}
         {["SUPER_ADMIN", "COMPANY_OWNER"].includes(user.role) && (
@@ -197,7 +215,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             className="profile-key-btn"
             title="Change Password"
           >
-            <Key size={14} />
+            <Key size={13} />
           </button>
         )}
 
@@ -208,11 +226,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         </div>
 
         <div className="profile-info">
-          <span className="profile-name" title={`${user.name || "Operator"} - ${getDesignation(user.role)}`}>
-            {user.name || "Operator"}{" "}
-            <span style={{ opacity: 0.65, fontWeight: 500, fontSize: "0.85em" }}>
-              - {getDesignation(user.role)}
-            </span>
+          <span className="profile-name">
+            Hello, <strong>{user.name || "Operator"}</strong>
           </span>
           <span className="profile-email" title={user.email || ""}>
             {user.email || ""}
@@ -274,6 +289,12 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           <LogOut size={18} />
           <span>Logout</span>
         </button>
+      </div>
+
+      {/* Clean minimal footer credits */}
+      <div className="sidebar-credit-footer">
+        <span>StaffOps Console</span>
+        <span>© 2026 All Rights Reserved</span>
       </div>
 
       {/* Change Password Modal */}
