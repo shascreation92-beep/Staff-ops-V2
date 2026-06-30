@@ -316,6 +316,15 @@ body {
   width: 100%;
 }
 
+.profile-greeting {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.1rem;
+}
+
 .profile-name {
   font-size: 0.95rem;
   color: var(--text-secondary);
@@ -327,6 +336,12 @@ body {
 .profile-name strong {
   color: var(--text-primary);
   font-weight: 700;
+}
+
+.profile-designation {
+  font-size: 0.8rem;
+  color: var(--gold-primary);
+  font-weight: 500;
 }
 
 .profile-email {

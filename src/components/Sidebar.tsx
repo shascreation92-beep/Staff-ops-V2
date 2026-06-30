@@ -213,8 +213,9 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         </div>
 
         <div className="profile-info">
-          <span className="profile-name">
-            Hello, <strong>{user.name || "Operator"}</strong>
+          <span className="profile-greeting">HELLO</span>
+          <span className="profile-name" title={`${user.name || "Operator"} - ${getDesignation(user.role)}`}>
+            <strong>{user.name || "Operator"}</strong> - <span className="profile-designation">{getDesignation(user.role)}</span>
           </span>
           <span className="profile-email" title={user.email || ""}>
             {user.email || ""}
