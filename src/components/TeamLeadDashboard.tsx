@@ -261,11 +261,14 @@ export default function TeamLeadDashboard({
       </div>
 
       {/* Row 2: Facebook Team Operations */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <h3 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0 }}>
-          🔵 Facebook Team Operations
-        </h3>
-        <div className="kpi-grid">
+      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+          <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>
+            Facebook Team Operations
+          </h2>
+          {renderLiveStatus()}
+        </div>
+        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           {/* Card 1: FB Total Combined */}
           <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
@@ -347,11 +350,14 @@ export default function TeamLeadDashboard({
       </div>
 
       {/* Row 3: Vinted Team Operations */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <h3 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0 }}>
-          🟢 Vinted Team Operations
-        </h3>
-        <div className="kpi-grid">
+      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+          <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>
+            Vinted Team Operations
+          </h2>
+          {renderLiveStatus()}
+        </div>
+        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           {/* Card 1: Vinted Total Combined */}
           <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
