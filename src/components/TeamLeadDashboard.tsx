@@ -550,37 +550,38 @@ export default function TeamLeadDashboard({
         </div>
       </div>
 
-      {/* 3. Visual Separator */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        margin: "1rem 0",
-        position: "relative"
-      }}>
-        <div style={{ flex: 1, height: "1px", background: "var(--border-dim)" }}></div>
+      {/* 3. Bottom Personal Workspace wrapped in a tighter flex container */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        {/* Visual Separator */}
         <div style={{
-          padding: "0.5rem 1.5rem",
-          background: "var(--gold-primary)",
-          color: "#FFFFFF",
-          borderRadius: "999px",
-          fontSize: "0.85rem",
-          fontWeight: 700,
-          boxShadow: "0 4px 12px rgba(212, 175, 55, 0.2)",
-          margin: "0 1rem",
-          letterSpacing: "0.03em",
           display: "flex",
           alignItems: "center",
-          gap: "0.5rem"
+          justifyContent: "center",
+          margin: "0.25rem 0",
+          position: "relative"
         }}>
-          <span>🛠️ My Personal Workspace (میری ذاتی آئی ڈیز)</span>
+          <div style={{ flex: 1, height: "1px", background: "var(--border-dim)" }}></div>
+          <div style={{
+            padding: "0.3rem 1.2rem",
+            background: "var(--gold-primary)",
+            color: "#FFFFFF",
+            borderRadius: "999px",
+            fontSize: "0.78rem",
+            fontWeight: 700,
+            boxShadow: "0 4px 12px rgba(212, 175, 55, 0.2)",
+            margin: "0 1rem",
+            letterSpacing: "0.03em",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}>
+            <span>🛠️ My Personal Workspace (میری ذاتی آئی ڈیز)</span>
+          </div>
+          <div style={{ flex: 1, height: "1px", background: "var(--border-dim)" }}></div>
         </div>
-        <div style={{ flex: 1, height: "1px", background: "var(--border-dim)" }}></div>
-      </div>
 
-      {/* 4. Bottom Personal Workspace (Identical to Sales Associate Dashboard) */}
-      {/* Section 2: Facebook Operations */}
-      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative" }}>
+        {/* Section 2: Facebook Operations */}
+        <div className="glass-panel" style={{ padding: "1.5rem", position: "relative" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
           <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>
             Facebook Operations
@@ -834,6 +835,7 @@ export default function TeamLeadDashboard({
         </div>
       </div>
 
+      </div> {/* Closing personal workspace wrapper */}
     </div>
   );
 }
