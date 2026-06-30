@@ -182,13 +182,36 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
             <div className="bg-blob blob-3"></div>
           </div>
 
+          {/* Mobile menu trigger */}
+          <button 
+            onClick={() => setSidebarOpen(true)}
+            className="mobile-sidebar-toggle"
+            style={{
+              position: "fixed",
+              bottom: "1.5rem",
+              right: "1.5rem",
+              width: "3.5rem",
+              height: "3.5rem",
+              borderRadius: "50%",
+              background: "var(--gold-primary)",
+              color: "white",
+              border: "none",
+              boxShadow: "0 4px 14px rgba(0, 119, 182, 0.4)",
+              display: "none",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 80,
+              cursor: "pointer"
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+
           <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10 }}>
-            {!hideHeader && (
-              <Header 
-                user={user} 
-                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-              />
-            )}
             {children}
           </div>
         </main>

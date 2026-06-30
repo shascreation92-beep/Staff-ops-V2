@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { UserCheck, Users, Mail, Award, Plus, X, AlertCircle } from "lucide-react";
 import { onboardTeamLeadAction } from "@/app/actions/users";
 import { toast } from "react-hot-toast";
+import NotificationBell from "./NotificationBell";
 
 interface Associate {
   id: string;
@@ -85,6 +86,7 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginLeft: "auto" }}>
+          <NotificationBell />
           {/* ADD TL Button */}
           <button
             onClick={() => {

@@ -11,6 +11,7 @@ import {
   Monitor,
   Eye
 } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 interface AuditLogsViewProps {
   auditLogs: any[];
@@ -60,15 +61,18 @@ export default function AuditLogsView({
             </button>
           </div>
 
-          <div className="table-search-wrapper" style={{ width: "280px" }}>
-            <Search className="header-search-icon" />
-            <input
-              type="text"
-              placeholder="Search logs..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="header-search-input"
-            />
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginLeft: "auto" }}>
+            <div className="table-search-wrapper" style={{ width: "280px" }}>
+              <Search className="header-search-icon" />
+              <input
+                type="text"
+                placeholder="Search logs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="header-search-input"
+              />
+            </div>
+            <NotificationBell />
           </div>
         </div>
       </div>

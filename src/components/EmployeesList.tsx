@@ -26,6 +26,7 @@ import {
   Users
 } from "lucide-react";
 import { user_role } from "@prisma/client";
+import NotificationBell from "./NotificationBell";
 
 interface EmployeesListProps {
   currentUser: {
@@ -294,10 +295,13 @@ export default function EmployeesList({
             </button>
           )}
 
-          {/* Row Count */}
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>
-            {filteredEmployees.length} / {employees.length} records
-          </span>
+          {/* Row Count & Notification Bell */}
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginLeft: "auto" }}>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>
+              {filteredEmployees.length} / {employees.length} records
+            </span>
+            <NotificationBell />
+          </div>
         </div>
       </div>
 

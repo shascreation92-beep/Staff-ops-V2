@@ -1342,3 +1342,9 @@ body {
     border-radius: 50%;
   }
 }
+
+@media (max-width: 1024px) {
+  .mobile-sidebar-toggle {
+    display: flex !important;
+  }
+}

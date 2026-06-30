@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Users, Mail, Clock, ShieldCheck, ShieldAlert, AlertCircle } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 interface TeamMember {
   id: string;
@@ -18,13 +19,18 @@ interface MyTeamDirectoryProps {
 export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative" }}>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">
-          MY TEAM DIRECTORY
-        </h2>
-        <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-          Read-only directory of Sales Associates currently mapped to your node operations.
-        </p>
+      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">
+            MY TEAM DIRECTORY
+          </h2>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+            Read-only directory of Sales Associates currently mapped to your node operations.
+          </p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <NotificationBell />
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem" }}>

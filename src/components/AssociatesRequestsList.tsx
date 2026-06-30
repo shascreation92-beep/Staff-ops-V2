@@ -6,6 +6,7 @@ import { updateAccountStatusAction } from "@/app/actions/accounts";
 import { Check, X, ShieldAlert, AlertCircle, Database, Calendar, MessageSquare } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ConfirmationModal from "./ConfirmationModal";
+import NotificationBell from "./NotificationBell";
 
 interface AssociatesRequestsListProps {
   requests: any[];
@@ -69,13 +70,18 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative" }}>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">
-          ASSOCIATES ACCOUNT REQUESTS
-        </h2>
-        <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-          Review and approve or reject incoming account/ID requests forwarded by your Sales Associates.
-        </p>
+      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">
+            ASSOCIATES ACCOUNT REQUESTS
+          </h2>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+            Review and approve or reject incoming account/ID requests forwarded by your Sales Associates.
+          </p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <NotificationBell />
+        </div>
       </div>
 
       <div className="table-container-outer" style={{ width: "100%" }}>
