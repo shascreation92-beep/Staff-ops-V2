@@ -1358,3 +1358,25 @@ body {
     display: flex !important;
   }
 }
+
+/* Team Lead Dashboard Custom Grids */
+.fb-team-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.vinted-team-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .fb-team-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .vinted-team-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

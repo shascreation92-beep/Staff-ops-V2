@@ -268,7 +268,7 @@ export default function TeamLeadDashboard({
           </h2>
           {renderLiveStatus()}
         </div>
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <div className="fb-team-grid">
           {/* Card 1: FB Total Combined */}
           <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
@@ -357,7 +357,7 @@ export default function TeamLeadDashboard({
           </h2>
           {renderLiveStatus()}
         </div>
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <div className="vinted-team-grid">
           {/* Card 1: Vinted Total Combined */}
           <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
