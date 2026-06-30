@@ -57,6 +57,13 @@ export default function AccountsList({
 }: AccountsListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [localAccounts, setLocalAccounts] = useState(accounts);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  useEffect(() => {
+    setLocalAccounts(accounts);
+  }, [accounts]);
+
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -279,7 +286,7 @@ export default function AccountsList({
   const requireVerificationRule = rules["requireVerification"] !== "false";
 
   // Filter accounts
-  const filteredAccounts = accounts.filter(acc => {
+  const filteredAccounts = localAccounts.filter(acc => {
     const matchesSearch = 
       acc.serialCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       acc.idName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -294,6 +301,16 @@ export default function AccountsList({
 
     return matchesSearch && matchesStatus && matchesPlatform && matchesTeamLead;
   });
+
+  const sortedAccounts = [...filteredAccounts].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+  });
+
+  const toggleTimeSort = () => {
+    setSortOrder(prev => prev === "desc" ? "asc" : "desc");
+  };
 
   const getStatusStyle = (acc: any) => {
     if (acc.status === "PENDING_TL") {
@@ -460,6 +477,10 @@ export default function AccountsList({
           setAdsPublished(0);
           setVerificationStatus("No");
           setComment("");
+          if (res.account) {
+            setLocalAccounts(prev => [res.account, ...prev]);
+          }
+          router.refresh();
         }
       } catch (err: any) {
         setErrorMsg(err.message || "Failed to provision account.");
@@ -588,6 +609,10 @@ export default function AccountsList({
           setWizardVerificationStatus("No");
           setWizardSubmissionDate(new Date().toISOString().split("T")[0]);
           setWizardComment("");
+          if (res.account) {
+            setLocalAccounts(prev => [res.account, ...prev]);
+          }
+          router.refresh();
         }
       } catch (err: any) {
         setWizardErrorMsg(err.message || "Failed to create account.");
@@ -715,21 +740,23 @@ export default function AccountsList({
                 <th>ID Name</th>
                 <th>Ads Pub.</th>
                 <th>Verified</th>
-                <th>date of entry</th>
+                <th onClick={toggleTimeSort} style={{ cursor: "pointer", userSelect: "none" }}>
+                  Time of Entry {sortOrder === "desc" ? "↓" : "↑"}
+                </th>
                 <th>Comments</th>
                 <th>Request to TL</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {filteredAccounts.length === 0 ? (
+              {sortedAccounts.length === 0 ? (
                 <tr>
                   <td colSpan={isSuperAdmin ? 10 : 9} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
                     No operational accounts cataloged.
                   </td>
                 </tr>
               ) : (
-                filteredAccounts.map((acc) => {
+                sortedAccounts.map((acc) => {
                   const rule = getStatusStyle(acc);
                   const duplicates = duplicateMap[acc.idName] || 1;
 
@@ -842,7 +869,12 @@ export default function AccountsList({
                         </button>
                       </td>
                       <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                        {new Date(acc.createdAt).toISOString().split("T")[0]}
+                        {(() => {
+                          const d = new Date(acc.createdAt);
+                          const datePart = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                          const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                          return `${datePart} ${timePart}`;
+                        })()}
                       </td>
                       <td>
                         <button

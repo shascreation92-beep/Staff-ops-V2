@@ -66,6 +66,7 @@ export default function TeamLeadDashboard({
   const router = useRouter();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     const pollInterval = setInterval(() => {
@@ -450,7 +451,9 @@ export default function TeamLeadDashboard({
                 <th>Ads</th>
                 <th>Verified</th>
                 <th>Status</th>
-                <th>Date of Entry</th>
+                <th onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")} style={{ cursor: "pointer", userSelect: "none" }}>
+                  Date of Entry {sortOrder === "desc" ? "↓" : "↑"}
+                </th>
                 <th>Owner</th>
               </tr>
             </thead>
@@ -462,7 +465,13 @@ export default function TeamLeadDashboard({
                   </td>
                 </tr>
               ) : (
-                globalFeed.map((acc) => {
+                (() => {
+                  const sortedFeed = [...globalFeed].sort((a, b) => {
+                    const dateA = new Date(a.createdAt).getTime();
+                    const dateB = new Date(b.createdAt).getTime();
+                    return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+                  });
+                  return sortedFeed.map((acc) => {
                   const style = getStatusStyle(acc);
                   const isTL = acc.user_account_createdByIdTouser?.role === "TEAM_LEAD";
                   
@@ -503,7 +512,12 @@ export default function TeamLeadDashboard({
                         </span>
                       </td>
                       <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                        {new Date(acc.createdAt).toISOString().split("T")[0]}
+                        {(() => {
+                          const d = new Date(acc.createdAt);
+                          const datePart = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                          const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                          return `${datePart} ${timePart}`;
+                        })()}
                       </td>
                       <td>
                         <div style={{ display: "flex", alignItems: "center" }}>
@@ -523,8 +537,9 @@ export default function TeamLeadDashboard({
                       </td>
                     </tr>
                   );
-                })
-              )}
+                });
+              })()
+            )}
             </tbody>
           </table>
         </div>

@@ -29,6 +29,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
 
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const handleOpenCommentModal = (text: string) => {
     setCommentText(text);
@@ -94,7 +95,9 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
               <th>ID Name</th>
               <th>Ads Published</th>
               <th>Verification</th>
-              <th>Submitted Date</th>
+              <th onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")} style={{ cursor: "pointer", userSelect: "none" }}>
+                Submitted Date {sortOrder === "desc" ? "↓" : "↑"}
+              </th>
               <th>Comments</th>
               <th style={{ textAlign: "right" }}>Actions</th>
             </tr>
@@ -111,13 +114,18 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                 </td>
               </tr>
             ) : (
-              requests.map((req) => {
-                const associateName = req.user_account_createdByIdTouser?.name || "Unknown Associate";
-                const createdDate = new Date(req.createdAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
+              (() => {
+                const sortedRequests = [...requests].sort((a, b) => {
+                  const dateA = new Date(a.createdAt).getTime();
+                  const dateB = new Date(b.createdAt).getTime();
+                  return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
                 });
+                return sortedRequests.map((req) => {
+                  const associateName = req.user_account_createdByIdTouser?.name || "Unknown Associate";
+                  const d = new Date(req.createdAt);
+                  const datePart = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                  const createdDate = `${datePart} ${timePart}`;
 
                 return (
                   <tr key={req.id}>
@@ -223,7 +231,8 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                     </td>
                   </tr>
                 );
-              })
+              });
+            })()
             )}
           </tbody>
         </table>

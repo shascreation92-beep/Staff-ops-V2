@@ -96,8 +96,24 @@ export async function createAccountAction(formData: z.infer<typeof CreateAccount
       }
     });
 
+    const createdAccount = await db.account.findUnique({
+      where: { id: accountId },
+      include: {
+        platform: true,
+        company: {
+          select: { name: true }
+        },
+        user_account_createdByIdTouser: {
+          select: { name: true, email: true, role: true }
+        },
+        user_account_updatedByIdTouser: {
+          select: { name: true, email: true }
+        }
+      }
+    });
+
     revalidatePath("/accounts");
-    return { success: true, accountId };
+    return { success: true, accountId, account: createdAccount };
   } catch (error: any) {
     throw new Error(error.message || "Failed to create account.");
   }
