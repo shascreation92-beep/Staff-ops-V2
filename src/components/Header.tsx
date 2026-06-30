@@ -19,9 +19,12 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
   const getPageTitle = () => {
     if (pathname === "/") return "Dashboard";
     if (pathname.startsWith("/accounts")) return "User Data";
+    if (pathname.startsWith("/associates-requests")) return "Associates Requests";
     if (pathname.startsWith("/employees")) return "Asset Registry (Laptops/VPNs)";
-    if (pathname.startsWith("/chat")) return "Chat Box";
+    if (pathname.startsWith("/my-team")) return "My Team";
+    if (pathname.startsWith("/pending")) return "Pending Onboarding";
     if (pathname.startsWith("/settings")) return "Global Platform Rule Engine";
+    if (pathname.startsWith("/team-leads")) return "Team Leads";
     if (pathname.startsWith("/audit-logs")) return "SOC2 System Audit Logs";
     return "StaffOps Console";
   };
