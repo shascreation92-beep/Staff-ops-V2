@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 import DashboardLayout from "@/components/DashboardLayout";
 import SalesAssociateDashboard from "@/components/SalesAssociateDashboard";
+import TeamLeadDashboard from "@/components/TeamLeadDashboard";
 import { 
   Database, 
   ShieldCheck, 
@@ -113,6 +114,36 @@ export default async function DashboardPage() {
     });
   }
 
+  // Team Lead specific metrics
+  let combinedStats = {
+    totalCombinedAccounts: 0,
+    fbActiveCombined: 0,
+    vintedActiveCombined: 0,
+    gumtreeActiveCombined: 0
+  };
+
+  let tlPersonalStats = {
+    saTotalAccounts: 0,
+    fbTotal: 0,
+    fbActive: 0,
+    fbVerified: 0,
+    fbUnverified: 0,
+    fbMarketplace: 0,
+    fbIdentity: 0,
+    fbSuspended: 0,
+    fbTarget: 15,
+    vintedTotal: 0,
+    vintedVerified: 0,
+    vintedUnverified: 0,
+    vintedSuspended: 0,
+    gumtreeTotal: 0,
+    gumtreeVerified: 0,
+    gumtreeUnverified: 0,
+    gumtreeSuspended: 0
+  };
+
+  let tlGlobalFeed: any[] = [];
+
   // Sales Associate specific metrics
   // Load platform-specific counts for Sales Associate
   let saTotalAccounts = 0;
@@ -126,6 +157,103 @@ export default async function DashboardPage() {
   
   // Gumtree metrics
   let gumtreeTotal = 0, gumtreeVerified = 0, gumtreeUnverified = 0, gumtreeSuspended = 0;
+
+  if (user.role === "TEAM_LEAD") {
+    const [rulesList, dbPlatforms, teamMembers] = await Promise.all([
+      db.rule.findMany({ where: { companyId: user.companyId || "" } }),
+      db.platform.findMany({ where: { isArchived: false } }),
+      db.user.findMany({ where: { teamLeadId: user.id, isArchived: false }, select: { id: true } })
+    ]);
+
+    const teamUserIds = [user.id, ...teamMembers.map(m => m.id)];
+
+    const targetRuleFB = rulesList.find(r => r.key === "targetToMaintainFB");
+    const targetRuleGlobal = rulesList.find(r => r.key === "targetToMaintain");
+    const fbTarget = targetRuleFB ? (parseInt(targetRuleFB.value, 10) || 15) : (targetRuleGlobal ? (parseInt(targetRuleGlobal.value, 10) || 15) : 15);
+
+    const fbPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("facebook"));
+    const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
+    const gumtreePlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("gumtree"));
+
+    const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook", mode: "insensitive" as any } } };
+    const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted", mode: "insensitive" as any } } };
+    const gumtreeWhere = gumtreePlatform ? { platformId: gumtreePlatform.id } : { platform: { name: { contains: "gumtree", mode: "insensitive" as any } } };
+
+    const [
+      _totalCombinedAccounts,
+      _fbActiveCombined,
+      _vintedActiveCombined,
+      _gumtreeActiveCombined,
+
+      _saTotalAccounts,
+      _fbTotal, _fbActive, _fbVerified, _fbUnverified, _fbMarketplace, _fbIdentity, _fbSuspended,
+      _vintedTotal, _vintedVerified, _vintedUnverified, _vintedSuspended,
+      _gumtreeTotal, _gumtreeVerified, _gumtreeUnverified, _gumtreeSuspended,
+
+      feed
+    ] = await Promise.all([
+      db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended"] }, isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: { notIn: ["Suspended"] }, isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: { notIn: ["Suspended"] }, isArchived: false, ...gumtreeWhere } }),
+
+      db.account.count({ where: { createdById: user.id, isArchived: false } }),
+      db.account.count({ where: { createdById: user.id, isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended"] }, isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Suspended", isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: user.id, isArchived: false, ...gumtreeWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...gumtreeWhere } }),
+      db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...gumtreeWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Suspended", isArchived: false, ...gumtreeWhere } }),
+
+      db.account.findMany({
+        where: { createdById: { in: teamUserIds }, isArchived: false },
+        include: {
+          platform: { select: { name: true } },
+          user_account_createdByIdTouser: { select: { name: true, role: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 15
+      })
+    ]);
+
+    combinedStats = {
+      totalCombinedAccounts: _totalCombinedAccounts,
+      fbActiveCombined: _fbActiveCombined,
+      vintedActiveCombined: _vintedActiveCombined,
+      gumtreeActiveCombined: _gumtreeActiveCombined
+    };
+
+    tlPersonalStats = {
+      saTotalAccounts: _saTotalAccounts,
+      fbTotal: _fbTotal,
+      fbActive: _fbActive,
+      fbVerified: _fbVerified,
+      fbUnverified: _fbUnverified,
+      fbMarketplace: _fbMarketplace,
+      fbIdentity: _fbIdentity,
+      fbSuspended: _fbSuspended,
+      fbTarget,
+      vintedTotal: _vintedTotal,
+      vintedVerified: _vintedVerified,
+      vintedUnverified: _vintedUnverified,
+      vintedSuspended: _vintedSuspended,
+      gumtreeTotal: _gumtreeTotal,
+      gumtreeVerified: _gumtreeVerified,
+      gumtreeUnverified: _gumtreeUnverified,
+      gumtreeSuspended: _gumtreeSuspended
+    };
+
+    tlGlobalFeed = feed;
+  }
 
   if (user.role === "SALES_ASSOCIATE") {
     const [rulesList, dbPlatforms] = await Promise.all([
@@ -179,7 +307,7 @@ export default async function DashboardPage() {
   return (
     <DashboardLayout user={{ ...user, companyName }}>
       {/* Welcome Area */}
-      {user.role !== "SALES_ASSOCIATE" && (
+      {user.role !== "SALES_ASSOCIATE" && user.role !== "TEAM_LEAD" && (
         <div className="glass-panel" style={{
           padding: "1.75rem 2rem",
           marginBottom: "2rem",
@@ -205,7 +333,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* KPI Cards Grid */}
+      {/* KPI Cards Grid / Dashboards */}
       {user.role === "SALES_ASSOCIATE" ? (
         <SalesAssociateDashboard 
           userName={user.name || "OPERATOR"}
@@ -228,6 +356,13 @@ export default async function DashboardPage() {
             gumtreeUnverified,
             gumtreeSuspended
           }}
+        />
+      ) : user.role === "TEAM_LEAD" ? (
+        <TeamLeadDashboard 
+          userName={user.name || "OPERATOR"}
+          combinedStats={combinedStats}
+          personalStats={tlPersonalStats}
+          globalFeed={tlGlobalFeed}
         />
       ) : (
         <div className="kpi-grid">
