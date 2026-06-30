@@ -106,19 +106,20 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
           <div className="glass-panel" style={{
             display: "flex",
             alignItems: "center",
-            gap: "0.75rem",
-            padding: "0.5rem 1rem",
-            background: "rgba(16, 185, 129, 0.05)",
-            border: "1px solid rgba(16, 185, 129, 0.15)",
+            gap: "0.5rem",
+            padding: "0.4rem 0.85rem",
+            background: "rgba(0, 119, 182, 0.08)",
+            border: "1px solid rgba(0, 119, 182, 0.2)",
             borderRadius: "8px",
-            boxShadow: "0 0 10px rgba(16, 185, 129, 0.05)",
-            height: "46px"
+            height: "36px"
           }}>
-            <Database size={15} style={{ color: "#10B981" }} />
-            <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.2" }}>
-              <span style={{ fontSize: "0.6rem", color: "var(--text-muted)", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>Total Account</span>
-              <span style={{ fontSize: "1rem", color: "#10B981", fontWeight: 800 }}>{stats.saTotalAccounts}</span>
-            </div>
+            <Database size={14} style={{ color: "var(--gold-primary)" }} />
+            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>
+              Total Accounts :{" "}
+              <span style={{ color: "var(--gold-primary)", fontWeight: 800 }}>
+                {stats.saTotalAccounts}
+              </span>
+            </span>
           </div>
 
           {/* Pulsing Live Sync status */}

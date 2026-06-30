@@ -3,34 +3,34 @@
 
 :root {
   /* Colors */
-  --bg-primary: #caf0f8;
+  --bg-primary: #CAF0F8;
   --bg-secondary: #FFFFFF;
   --card-bg: #FFFFFF;
-  --glass-bg: rgba(234, 227, 210, 0.15);
-  --glass-bg-hover: rgba(234, 227, 210, 0.35);
+  --glass-bg: rgba(173, 232, 244, 0.15);
+  --glass-bg-hover: rgba(173, 232, 244, 0.35);
   
-  --gold-primary: #7D8F69;
-  --gold-premium: #7D8F69;
-  --gold-glow: #5C6E4A;
-  --orange-accent: #D0B8A8;
+  --gold-primary: #0077B6;
+  --gold-premium: #023E8A;
+  --gold-glow: #0096C7;
+  --orange-accent: #48CAE4;
   
-  --color-success: #7D8F69;
-  --color-warning: #D0B8A8;
-  --color-danger: #B85A5A;
+  --color-success: #2EC4B6;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
   
-  --text-primary: #2B2625;
-  --text-secondary: rgba(43, 38, 37, 0.75);
-  --text-muted: rgba(43, 38, 37, 0.5);
+  --text-primary: #03045E;
+  --text-secondary: rgba(3, 4, 94, 0.75);
+  --text-muted: rgba(3, 4, 94, 0.5);
   
-  --border-gold: rgba(125, 143, 105, 0.15);
-  --border-gold-hover: rgba(125, 143, 105, 0.3);
-  --border-dim: #EAE3D2;
+  --border-gold: rgba(0, 119, 182, 0.15);
+  --border-gold-hover: rgba(0, 119, 182, 0.3);
+  --border-dim: #ADE8F4;
   
   /* Gradients */
-  --gold-gradient: linear-gradient(135deg, #7D8F69 0%, #5C6E4A 100%);
-  --dark-gradient: linear-gradient(180deg, #caf0f8 0%, #EAE3D2 100%);
-  --glow-gradient: radial-gradient(circle, rgba(125, 143, 105, 0.08) 0%, transparent 70%);
-  --card-gradient: linear-gradient(135deg, #FFFFFF 0%, #caf0f8 100%);
+  --gold-gradient: linear-gradient(135deg, #0077B6 0%, #023E8A 100%);
+  --dark-gradient: linear-gradient(180deg, #CAF0F8 0%, #ADE8F4 100%);
+  --glow-gradient: radial-gradient(circle, rgba(0, 119, 182, 0.08) 0%, transparent 70%);
+  --card-gradient: linear-gradient(135deg, #FFFFFF 0%, #CAF0F8 100%);
   
   /* Shadows */
   --shadow-premium: 0 4px 20px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
@@ -298,8 +298,8 @@ body {
   width: 4.5rem;
   height: 4.5rem;
   border-radius: 50%;
-  background: #F0F4EC;
-  color: #3B4533;
+  background: #ADE8F4;
+  color: #03045E;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -397,8 +397,8 @@ body {
 
 /* Curved active corner tab design */
 .sidebar-item.active {
-  color: #3B4533 !important;
-  background: rgba(125, 143, 105, 0.1) !important; /* Blends into main app layout */
+  color: #0077B6 !important;
+  background: rgba(0, 119, 182, 0.1) !important; /* Blends into main app layout */
   font-weight: 700;
   border-radius: 12px;
   position: relative;
@@ -406,7 +406,7 @@ body {
 }
 
 .sidebar-item.active .sidebar-icon {
-  color: #3B4533 !important;
+  color: #0077B6 !important;
 }
 
 /* Corner curve elements */

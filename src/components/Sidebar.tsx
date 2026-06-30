@@ -187,8 +187,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       <div className="sidebar-logo-container">
         <div className="sidebar-logo-brand">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="16" cy="16" r="14" fill="#EAE3D2" />
-            <path d="M17 5L9 17H16L15 27L23 15H16L17 5Z" fill="#7D8F69" />
+            <circle cx="16" cy="16" r="14" fill="var(--border-dim)" />
+            <path d="M17 5L9 17H16L15 27L23 15H16L17 5Z" fill="var(--gold-primary)" />
           </svg>
           <span className="sidebar-logo-text">StaffOps</span>
         </div>
