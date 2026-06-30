@@ -17,9 +17,17 @@ import NotificationBell from "@/components/NotificationBell";
 
 interface CombinedStats {
   totalCombinedAccounts: number;
+  combinedFbTarget: number;
+  fbTotalCombined: number;
   fbActiveCombined: number;
-  vintedActiveCombined: number;
-  gumtreeActiveCombined: number;
+  fbVerifiedCombined: number;
+  fbUnverifiedCombined: number;
+  fbMarketplaceCombined: number;
+  fbIdentityCombined: number;
+  vintedTotalCombined: number;
+  vintedVerifiedCombined: number;
+  vintedUnverifiedCombined: number;
+  vintedSuspendedCombined: number;
 }
 
 interface PersonalStats {
@@ -203,53 +211,197 @@ export default function TeamLeadDashboard({
         </div>
       </div>
 
-      {/* 1. Top Combined KPI Cards */}
-      <div className="kpi-grid">
-        <div className="glass-panel kpi-card kpi-info">
-          <div className="kpi-card-glow"></div>
-          <div className="kpi-header">
-            <span className="kpi-title">Total Combined Accounts</span>
-            <div className="kpi-icon-wrapper"><Database size={18} /></div>
+      {/* 1. Top Combined KPI Cards Panel */}
+      {/* Row 1: Overview & Goals */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <h3 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0 }}>
+          📊 Team Overview & Goals
+        </h3>
+        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+          {/* Card 1: Total Combined Accounts */}
+          <div className="glass-panel kpi-card kpi-info">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Total Combined Accounts</span>
+              <div className="kpi-icon-wrapper"><Database size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.totalCombinedAccounts}</div>
+            <div className="kpi-footer">
+              <span>Collective team-wide accounts</span>
+            </div>
           </div>
-          <div className="kpi-value">{combinedStats.totalCombinedAccounts}</div>
-          <div className="kpi-footer">
-            <span>Aggregated TL & Team accounts</span>
+
+          {/* Card 2: Combined FB Target */}
+          <div className="glass-panel kpi-card kpi-warning">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Total Target to Maintain</span>
+              <div className="kpi-icon-wrapper"><Target size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.combinedFbTarget}</div>
+            <div className="kpi-footer" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.25rem", width: "100%" }}>
+              <span>Combined FB active target progress</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%" }}>
+                <div style={{ flex: 1, height: "5px", background: "rgba(0,0,0,0.06)", borderRadius: "99px", overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%",
+                    width: `${Math.min(100, combinedStats.combinedFbTarget > 0 ? Math.round((combinedStats.fbActiveCombined / combinedStats.combinedFbTarget) * 100) : 0)}%`,
+                    background: combinedStats.fbActiveCombined >= combinedStats.combinedFbTarget ? "#10B981" : "#F59E0B",
+                    borderRadius: "99px",
+                    transition: "width 0.6s ease"
+                  }}></div>
+                </div>
+                <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700, whiteSpace: "nowrap" }}>
+                  {combinedStats.fbActiveCombined}/{combinedStats.combinedFbTarget} ({combinedStats.combinedFbTarget > 0 ? Math.round((combinedStats.fbActiveCombined / combinedStats.combinedFbTarget) * 100) : 0}%)
+                </span>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="glass-panel kpi-card kpi-success">
-          <div className="kpi-card-glow"></div>
-          <div className="kpi-header">
-            <span className="kpi-title">Total Active Facebook</span>
-            <div className="kpi-icon-wrapper"><CheckCircle size={18} /></div>
+      {/* Row 2: Facebook Team Operations */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <h3 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0 }}>
+          🔵 Facebook Team Operations
+        </h3>
+        <div className="kpi-grid">
+          {/* Card 1: FB Total Combined */}
+          <div className="glass-panel kpi-card kpi-info">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Total Accounts</span>
+              <div className="kpi-icon-wrapper"><Database size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.fbTotalCombined}</div>
+            <div className="kpi-footer">
+              <span>Team Facebook registered accounts</span>
+            </div>
           </div>
-          <div className="kpi-value">{combinedStats.fbActiveCombined}</div>
-          <div className="kpi-footer">
-            <span>Active Facebook team accounts</span>
+
+          {/* Card 2: FB Active Combined */}
+          <div className="glass-panel kpi-card kpi-success">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Active Accounts</span>
+              <div className="kpi-icon-wrapper"><CheckCircle size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.fbActiveCombined}</div>
+            <div className="kpi-footer">
+              <span>Active operational team accounts</span>
+            </div>
+          </div>
+
+          {/* Card 3: FB Verified Combined */}
+          <div className="glass-panel kpi-card kpi-success">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Verified Accounts</span>
+              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.fbVerifiedCombined}</div>
+            <div className="kpi-footer">
+              <span>Verification rate: {combinedStats.fbTotalCombined > 0 ? Math.round((combinedStats.fbVerifiedCombined / combinedStats.fbTotalCombined) * 100) : 0}%</span>
+            </div>
+          </div>
+
+          {/* Card 4: FB Unverified Combined */}
+          <div className="glass-panel kpi-card kpi-warning">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Unverified Accounts</span>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.fbUnverifiedCombined}</div>
+            <div className="kpi-footer">
+              <span>Awaiting verification submit</span>
+            </div>
+          </div>
+
+          {/* Card 5: FB Marketplace Issue Combined */}
+          <div className="glass-panel kpi-card kpi-danger">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Marketplace Issue</span>
+              <div className="kpi-icon-wrapper"><AlertCircle size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.fbMarketplaceCombined}</div>
+            <div className="kpi-footer" style={{ color: combinedStats.fbMarketplaceCombined > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
+              <span>Platform level rejections</span>
+            </div>
+          </div>
+
+          {/* Card 6: FB Identity Issue Combined */}
+          <div className="glass-panel kpi-card kpi-danger">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Identity Issue</span>
+              <div className="kpi-icon-wrapper"><HelpCircle size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.fbIdentityCombined}</div>
+            <div className="kpi-footer" style={{ color: combinedStats.fbIdentityCombined > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
+              <span>Verification hold status</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="glass-panel kpi-card kpi-success">
-          <div className="kpi-card-glow"></div>
-          <div className="kpi-header">
-            <span className="kpi-title">Total Active Vinted</span>
-            <div className="kpi-icon-wrapper"><CheckCircle size={18} /></div>
+      {/* Row 3: Vinted Team Operations */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <h3 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0 }}>
+          🟢 Vinted Team Operations
+        </h3>
+        <div className="kpi-grid">
+          {/* Card 1: Vinted Total Combined */}
+          <div className="glass-panel kpi-card kpi-info">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Vinted Total Accounts</span>
+              <div className="kpi-icon-wrapper"><Database size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.vintedTotalCombined}</div>
+            <div className="kpi-footer">
+              <span>Vinted team registered accounts</span>
+            </div>
           </div>
-          <div className="kpi-value">{combinedStats.vintedActiveCombined}</div>
-          <div className="kpi-footer">
-            <span>Active Vinted team accounts</span>
-          </div>
-        </div>
 
-        <div className="glass-panel kpi-card kpi-success">
-          <div className="kpi-card-glow"></div>
-          <div className="kpi-header">
-            <span className="kpi-title">Total Active Gumtree</span>
-            <div className="kpi-icon-wrapper"><CheckCircle size={18} /></div>
+          {/* Card 2: Vinted Verified Combined */}
+          <div className="glass-panel kpi-card kpi-success">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Vinted Verified</span>
+              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.vintedVerifiedCombined}</div>
+            <div className="kpi-footer">
+              <span>Verification rate: {combinedStats.vintedTotalCombined > 0 ? Math.round((combinedStats.vintedVerifiedCombined / combinedStats.vintedTotalCombined) * 100) : 0}%</span>
+            </div>
           </div>
-          <div className="kpi-value">{combinedStats.gumtreeActiveCombined}</div>
-          <div className="kpi-footer">
-            <span>Active Gumtree team accounts</span>
+
+          {/* Card 3: Vinted Unverified Combined */}
+          <div className="glass-panel kpi-card kpi-warning">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Vinted Unverified</span>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.vintedUnverifiedCombined}</div>
+            <div className="kpi-footer">
+              <span>Awaiting verification submit</span>
+            </div>
+          </div>
+
+          {/* Card 4: Vinted Suspended Combined */}
+          <div className="glass-panel kpi-card kpi-danger">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">Vinted Suspended Accounts</span>
+              <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
+            </div>
+            <div className="kpi-value">{combinedStats.vintedSuspendedCombined}</div>
+            <div className="kpi-footer" style={{ color: combinedStats.vintedSuspendedCombined > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
+              <span>Active database suspensions</span>
+            </div>
           </div>
         </div>
       </div>

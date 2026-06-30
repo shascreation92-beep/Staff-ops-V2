@@ -117,9 +117,19 @@ export default async function DashboardPage() {
   // Team Lead specific metrics
   let combinedStats = {
     totalCombinedAccounts: 0,
+    combinedFbTarget: 0,
+
+    fbTotalCombined: 0,
     fbActiveCombined: 0,
-    vintedActiveCombined: 0,
-    gumtreeActiveCombined: 0
+    fbVerifiedCombined: 0,
+    fbUnverifiedCombined: 0,
+    fbMarketplaceCombined: 0,
+    fbIdentityCombined: 0,
+
+    vintedTotalCombined: 0,
+    vintedVerifiedCombined: 0,
+    vintedUnverifiedCombined: 0,
+    vintedSuspendedCombined: 0
   };
 
   let tlPersonalStats = {
@@ -170,6 +180,7 @@ export default async function DashboardPage() {
     const targetRuleFB = rulesList.find(r => r.key === "targetToMaintainFB");
     const targetRuleGlobal = rulesList.find(r => r.key === "targetToMaintain");
     const fbTarget = targetRuleFB ? (parseInt(targetRuleFB.value, 10) || 15) : (targetRuleGlobal ? (parseInt(targetRuleGlobal.value, 10) || 15) : 15);
+    const combinedFbTarget = fbTarget * teamUserIds.length;
 
     const fbPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("facebook"));
     const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
@@ -181,9 +192,16 @@ export default async function DashboardPage() {
 
     const [
       _totalCombinedAccounts,
+      _fbTotalCombined,
       _fbActiveCombined,
-      _vintedActiveCombined,
-      _gumtreeActiveCombined,
+      _fbVerifiedCombined,
+      _fbUnverifiedCombined,
+      _fbMarketplaceCombined,
+      _fbIdentityCombined,
+      _vintedTotalCombined,
+      _vintedVerifiedCombined,
+      _vintedUnverifiedCombined,
+      _vintedSuspendedCombined,
 
       _saTotalAccounts,
       _fbTotal, _fbActive, _fbVerified, _fbUnverified, _fbMarketplace, _fbIdentity, _fbSuspended,
@@ -193,9 +211,16 @@ export default async function DashboardPage() {
       feed
     ] = await Promise.all([
       db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended"] }, isArchived: false, ...fbWhere } }),
-      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: { notIn: ["Suspended"] }, isArchived: false, ...vintedWhere } }),
-      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: { notIn: ["Suspended"] }, isArchived: false, ...gumtreeWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...vintedWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Suspended", isArchived: false, ...vintedWhere } }),
 
       db.account.count({ where: { createdById: user.id, isArchived: false } }),
       db.account.count({ where: { createdById: user.id, isArchived: false, ...fbWhere } }),
@@ -227,9 +252,17 @@ export default async function DashboardPage() {
 
     combinedStats = {
       totalCombinedAccounts: _totalCombinedAccounts,
+      combinedFbTarget,
+      fbTotalCombined: _fbTotalCombined,
       fbActiveCombined: _fbActiveCombined,
-      vintedActiveCombined: _vintedActiveCombined,
-      gumtreeActiveCombined: _gumtreeActiveCombined
+      fbVerifiedCombined: _fbVerifiedCombined,
+      fbUnverifiedCombined: _fbUnverifiedCombined,
+      fbMarketplaceCombined: _fbMarketplaceCombined,
+      fbIdentityCombined: _fbIdentityCombined,
+      vintedTotalCombined: _vintedTotalCombined,
+      vintedVerifiedCombined: _vintedVerifiedCombined,
+      vintedUnverifiedCombined: _vintedUnverifiedCombined,
+      vintedSuspendedCombined: _vintedSuspendedCombined
     };
 
     tlPersonalStats = {
