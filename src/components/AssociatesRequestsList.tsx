@@ -123,9 +123,8 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                 return sortedRequests.map((req) => {
                   const associateName = req.user_account_createdByIdTouser?.name || "Unknown Associate";
                   const d = new Date(req.createdAt);
-                  const datePart = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  const datePart = `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()}`;
                   const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
-                  const createdDate = `${datePart} ${timePart}`;
 
                 return (
                   <tr key={req.id}>
@@ -152,10 +151,10 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                         {req.verificationStatus === "Yes" ? "Verified" : "Unverified"}
                       </span>
                     </td>
-                     <td style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                       <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                         <Calendar size={12} />
-                         <span>{createdDate}</span>
+                     <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: "1.2" }}>
+                       <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                         <span style={{ fontWeight: 600 }}>{datePart}</span>
+                         <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{timePart}</span>
                        </div>
                      </td>
                      <td>

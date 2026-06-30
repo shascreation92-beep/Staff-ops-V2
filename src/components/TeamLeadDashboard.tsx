@@ -511,12 +511,17 @@ export default function TeamLeadDashboard({
                           {style.text}
                         </span>
                       </td>
-                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: "1.2" }}>
                         {(() => {
                           const d = new Date(acc.createdAt);
-                          const datePart = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                          const datePart = `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()}`;
                           const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
-                          return `${datePart} ${timePart}`;
+                          return (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                              <span style={{ fontWeight: 600 }}>{datePart}</span>
+                              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{timePart}</span>
+                            </div>
+                          );
                         })()}
                       </td>
                       <td>
