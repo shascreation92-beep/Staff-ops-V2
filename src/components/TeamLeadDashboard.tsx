@@ -181,6 +181,26 @@ export default function TeamLeadDashboard({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .fb-team-grid-forced {
+          display: grid !important;
+          grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+          gap: 1.25rem !important;
+        }
+        .vinted-team-grid-forced {
+          display: grid !important;
+          grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+          gap: 1.25rem !important;
+        }
+        @media (min-width: 768px) {
+          .fb-team-grid-forced {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          }
+          .vinted-team-grid-forced {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          }
+        }
+      `}} />
       
       {/* Welcome Area & Live Sync status */}
       <div className="glass-panel" style={{
@@ -268,7 +288,7 @@ export default function TeamLeadDashboard({
           </h2>
           {renderLiveStatus()}
         </div>
-        <div className="fb-team-grid">
+        <div className="fb-team-grid-forced">
           {/* Card 1: FB Total Combined */}
           <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
@@ -357,7 +377,7 @@ export default function TeamLeadDashboard({
           </h2>
           {renderLiveStatus()}
         </div>
-        <div className="vinted-team-grid">
+        <div className="vinted-team-grid-forced">
           {/* Card 1: Vinted Total Combined */}
           <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
