@@ -138,13 +138,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       icon: UserCheck,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
     },
-    { 
-      id: "chat", 
-      label: "Chat Box", 
-      path: "/chat", 
-      icon: MessageSquare,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
-    },
+
     { 
       id: "settings", 
       label: user.role === "SUPER_ADMIN" ? "Platform Shard" : (user.role === "IT_DEPARTMENT" ? "User Management" : "Rule Engine"), 
