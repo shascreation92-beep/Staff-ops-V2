@@ -174,14 +174,21 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         )}
 
         {/* Main Viewport */}
-        <main className="main-content">
-          {!hideHeader && (
-            <Header 
-              user={user} 
-              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-            />
-          )}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <main className="main-content" style={{ position: "relative", overflow: "hidden" }}>
+          {/* Animated Background Blobs */}
+          <div className="bg-blobs-container">
+            <div className="bg-blob blob-1"></div>
+            <div className="bg-blob blob-2"></div>
+            <div className="bg-blob blob-3"></div>
+          </div>
+
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10 }}>
+            {!hideHeader && (
+              <Header 
+                user={user} 
+                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
+              />
+            )}
             {children}
           </div>
         </main>

@@ -1262,3 +1262,83 @@ body {
   border-color: var(--gold-premium) !important;
   box-shadow: 0 0 10px rgba(212, 175, 55, 0.2) !important;
 }
+
+/* Animated Background Blobs styling */
+.bg-blobs-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.12; /* Ultra-subtle & premium */
+  pointer-events: none;
+}
+
+.blob-1 {
+  width: 500px;
+  height: 500px;
+  background: var(--gold-primary); /* Royal Blue */
+  top: -100px;
+  left: -100px;
+  animation: drift 25s infinite alternate ease-in-out;
+}
+
+.blob-2 {
+  width: 600px;
+  height: 600px;
+  background: var(--orange-accent); /* Vibrant Turquoise */
+  bottom: -150px;
+  right: -100px;
+  animation: drift 35s infinite alternate-reverse ease-in-out;
+}
+
+.blob-3 {
+  width: 450px;
+  height: 450px;
+  background: #03045E; /* Deep Navy */
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: morph 30s infinite alternate ease-in-out;
+}
+
+/* Animations */
+@keyframes drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(80px, 50px) scale(1.1);
+  }
+  100% {
+    transform: translate(-40px, 90px) scale(0.95);
+  }
+}
+
+@keyframes morph {
+  0% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    border-radius: 50%;
+  }
+  33% {
+    transform: translate(-45%, -45%) scale(1.05) rotate(120deg);
+    border-radius: 40% 60% 60% 40% / 50% 60% 40% 50%;
+  }
+  66% {
+    transform: translate(-55%, -55%) scale(0.95) rotate(240deg);
+    border-radius: 60% 40% 50% 50% / 40% 50% 60% 50%;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(360deg);
+    border-radius: 50%;
+  }
+}
