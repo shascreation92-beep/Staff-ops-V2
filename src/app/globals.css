@@ -875,8 +875,10 @@ body {
 
 .table-container-outer {
   overflow-x: auto;
+  overflow-y: hidden;
   border-radius: var(--border-radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-dim);
+  background: #FFFFFF;
 }
 
 .premium-table {
@@ -909,8 +911,16 @@ body {
   transition: all 0.2s ease;
 }
 
+.premium-table tbody tr {
+  background: #FFFFFF;
+}
+
+.premium-table tbody tr:nth-child(even) {
+  background: #CAF0F8;
+}
+
 .premium-table tbody tr:hover {
-  background: rgba(234, 227, 210, 0.25) !important;
+  background: #ADE8F4 !important;
   box-shadow: inset 3px 0 0 var(--gold-primary) !important;
 }
 
