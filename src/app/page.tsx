@@ -246,7 +246,7 @@ export default async function DashboardPage() {
           user_account_createdByIdTouser: { select: { name: true, role: true } }
         },
         orderBy: { createdAt: "desc" },
-        take: 15
+        take: 5
       })
     ]);
 
