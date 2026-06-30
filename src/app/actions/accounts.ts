@@ -579,3 +579,50 @@ export async function updateAccountIssueAction(accountId: string, issueType: str
     throw new Error(error.message || "Failed to update issue status.");
   }
 }
+
+export async function updateAccountCommentAction(accountId: string, comment: string) {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]);
+
+  const account = await db.account.findUnique({
+    where: { id: accountId }
+  });
+
+  if (!account) {
+    throw new Error("Account not found.");
+  }
+
+  if (user.role === "SALES_ASSOCIATE" && account.createdById !== user.id) {
+    throw new Error("UNAUTHORIZED: You can only update comments on your own accounts.");
+  }
+
+  if (user.role !== "SALES_ASSOCIATE") {
+    throw new Error("UNAUTHORIZED: Only Sales Associates can edit comments.");
+  }
+
+  try {
+    await db.account.update({
+      where: { id: accountId },
+      data: {
+        comment: comment.trim() || null,
+        updatedById: user.id,
+        updatedAt: new Date()
+      }
+    });
+
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "",
+      userRole: user.role,
+      action: "UPDATE_COMMENT",
+      entity: "account",
+      entityId: accountId,
+      oldValue: account.comment || "",
+      newValue: comment
+    });
+
+    revalidatePath("/accounts");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update comment.");
+  }
+}

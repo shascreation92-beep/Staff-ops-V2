@@ -3,7 +3,7 @@
 import React, { useTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateAccountStatusAction } from "@/app/actions/accounts";
-import { Check, X, ShieldAlert, AlertCircle, Database, Calendar } from "lucide-react";
+import { Check, X, ShieldAlert, AlertCircle, Database, Calendar, MessageSquare } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ConfirmationModal from "./ConfirmationModal";
 
@@ -25,6 +25,14 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
     message: "",
     onConfirm: () => {}
   });
+
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [commentText, setCommentText] = useState("");
+
+  const handleOpenCommentModal = (text: string) => {
+    setCommentText(text);
+    setShowCommentModal(true);
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -81,13 +89,14 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
               <th>Ads Published</th>
               <th>Verification</th>
               <th>Submitted Date</th>
+              <th>Comments</th>
               <th style={{ textAlign: "right" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {requests.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: "center", color: "var(--text-muted)", padding: "3rem" }}>
+                <td colSpan={9} style={{ textAlign: "center", color: "var(--text-muted)", padding: "3rem" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
                     <ShieldAlert size={36} style={{ color: "var(--text-muted)", opacity: 0.5 }} />
                     <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>No incoming requests pending.</span>
@@ -118,14 +127,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                       {req.serialCode}
                     </td>
                     <td>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-                        <span style={{ fontWeight: 600 }}>{req.idName}</span>
-                        {req.comment && (
-                          <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic" }} title="Associate comment">
-                            💬 {req.comment}
-                          </span>
-                        )}
-                      </div>
+                       <span style={{ fontWeight: 600 }}>{req.idName}</span>
                     </td>
                     <td style={{ fontWeight: 600 }}>{req.adsPublished}</td>
                     <td>
@@ -136,12 +138,47 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                         {req.verificationStatus === "Yes" ? "Verified" : "Unverified"}
                       </span>
                     </td>
-                    <td style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                        <Calendar size={12} />
-                        <span>{createdDate}</span>
-                      </div>
-                    </td>
+                     <td style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                       <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                         <Calendar size={12} />
+                         <span>{createdDate}</span>
+                       </div>
+                     </td>
+                     <td>
+                       <button
+                         onClick={() => handleOpenCommentModal(req.comment || "")}
+                         style={{
+                           background: "none",
+                           border: "none",
+                           cursor: "pointer",
+                           padding: "0.25rem",
+                           display: "flex",
+                           alignItems: "center",
+                           justifyContent: "center",
+                           transition: "transform 0.2s ease"
+                         }}
+                         title={req.comment ? `Comment: "${req.comment}"` : "No comment"}
+                       >
+                         {req.comment ? (
+                           <MessageSquare 
+                             size={18} 
+                             style={{ 
+                               fill: "#10B981", 
+                               color: "#10B981",
+                               filter: "drop-shadow(0 0 2px rgba(16, 185, 129, 0.3))" 
+                             }} 
+                           />
+                         ) : (
+                           <MessageSquare 
+                             size={18} 
+                             style={{ 
+                               color: "var(--text-muted)", 
+                               opacity: 0.5 
+                             }} 
+                           />
+                         )}
+                       </button>
+                     </td>
                     <td style={{ textAlign: "right" }}>
                       <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
                         <button
@@ -193,6 +230,77 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
         isPending={isPending}
       />
+
+      {showCommentModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(255, 255, 255, 0.7)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel kpi-card" style={{
+            maxWidth: "450px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            boxShadow: "var(--shadow-premium)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            position: "relative"
+          }}>
+            <div className="kpi-card-glow"></div>
+            
+            <div className="kpi-header" style={{ borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+                  ACCOUNT COMMENTS
+                </span>
+                <h2 className="text-gold-gradient" style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0 }}>
+                  View Comments
+                </h2>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Submission Notes / Comments</label>
+              <div style={{
+                padding: "1rem",
+                background: "var(--bg-primary)",
+                border: "1px solid var(--border-dim)",
+                borderRadius: "8px",
+                fontSize: "0.9rem",
+                color: "var(--text-primary)",
+                minHeight: "80px",
+                fontStyle: commentText ? "normal" : "italic",
+                whiteSpace: "pre-wrap"
+              }}>
+                {commentText || "No comments cataloged for this request."}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button
+                type="button"
+                onClick={() => setShowCommentModal(false)}
+                className="btn-glass"
+                style={{ flex: 1 }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,7 +7,8 @@ import {
   updateAccountStatusAction, 
   verifyAccountAction,
   updateAccountAdsAction,
-  updateAccountIssueAction
+  updateAccountIssueAction,
+  updateAccountCommentAction
 } from "@/app/actions/accounts";
 import { 
   Search, 
@@ -23,7 +24,8 @@ import {
   Building,
   CheckCircle,
   XCircle,
-  Eye
+  Eye,
+  MessageSquare
 } from "lucide-react";
 import { account_status, user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
@@ -100,6 +102,12 @@ export default function AccountsList({
   const [wizardSubmissionDate, setWizardSubmissionDate] = useState(new Date().toISOString().split("T")[0]);
   const [wizardComment, setWizardComment] = useState("");
   const [wizardErrorMsg, setWizardErrorMsg] = useState<string | null>(null);
+
+  // Comment Modal state
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [commentAccountId, setCommentAccountId] = useState("");
+  const [commentText, setCommentText] = useState("");
+  const [isCommentReadOnly, setIsCommentReadOnly] = useState(false);
 
   // Inline ads editing state
   const [editingAdsId, setEditingAdsId] = useState<string | null>(null);
@@ -372,6 +380,29 @@ export default function AccountsList({
     });
   };
 
+  const handleOpenCommentModal = (acc: any) => {
+    setCommentAccountId(acc.id);
+    setCommentText(acc.comment || "");
+    setIsCommentReadOnly(currentUser.role !== "SALES_ASSOCIATE");
+    setShowCommentModal(true);
+  };
+
+  const handleSaveComment = async () => {
+    if (isCommentReadOnly) return;
+    startTransition(async () => {
+      try {
+        const res = await updateAccountCommentAction(commentAccountId, commentText);
+        if (res.success) {
+          setShowCommentModal(false);
+          toast.success("Comment updated successfully.");
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to update comment.");
+      }
+    });
+  };
+
   const triggerStatusTransition = (acc: any, status: account_status) => {
     setActiveAccount(acc);
     setTargetStatus(status);
@@ -583,6 +614,7 @@ export default function AccountsList({
                 <th>Ads Pub.</th>
                 <th>Verified</th>
                 <th>date of entry</th>
+                <th>Comments</th>
                 <th>Request to TL</th>
                 <th>Status</th>
               </tr>
@@ -590,7 +622,7 @@ export default function AccountsList({
             <tbody>
               {filteredAccounts.length === 0 ? (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 9 : 8} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                  <td colSpan={isSuperAdmin ? 10 : 9} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
                     No operational accounts cataloged.
                   </td>
                 </tr>
@@ -615,28 +647,21 @@ export default function AccountsList({
                         {acc.serialCode}
                       </td>
                       <td>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <span style={{ fontWeight: 600 }}>{acc.idName}</span>
-                            {duplicates > 1 && (
-                              <span 
-                                title={`${duplicates} duplicate records use this ID name`}
-                                className="badge" 
-                                style={{ 
-                                  padding: "0.05rem 0.4rem", 
-                                  background: "rgba(245, 158, 11, 0.08)", 
-                                  border: "1px solid rgba(245, 158, 11, 0.2)", 
-                                  color: "var(--color-warning)", 
-                                  fontSize: "0.65rem" 
-                                }}
-                              >
-                                x{duplicates}
-                              </span>
-                            )}
-                          </div>
-                          {acc.comment && (
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic" }} title="Associate comment">
-                              💬 {acc.comment}
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <span style={{ fontWeight: 600 }}>{acc.idName}</span>
+                          {duplicates > 1 && (
+                            <span 
+                              title={`${duplicates} duplicate records use this ID name`}
+                              className="badge" 
+                              style={{ 
+                                padding: "0.05rem 0.4rem", 
+                                background: "rgba(245, 158, 11, 0.08)", 
+                                border: "1px solid rgba(245, 158, 11, 0.2)", 
+                                color: "var(--color-warning)", 
+                                fontSize: "0.65rem" 
+                              }}
+                            >
+                              x{duplicates}
                             </span>
                           )}
                         </div>
@@ -698,6 +723,41 @@ export default function AccountsList({
                       </td>
                       <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
                         {new Date(acc.createdAt).toISOString().split("T")[0]}
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleOpenCommentModal(acc)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "0.25rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "transform 0.2s ease"
+                          }}
+                          title={acc.comment ? `Comment: "${acc.comment}"` : "No comment"}
+                        >
+                          {acc.comment ? (
+                            <MessageSquare 
+                              size={18} 
+                              style={{ 
+                                fill: "#10B981", 
+                                color: "#10B981",
+                                filter: "drop-shadow(0 0 2px rgba(16, 185, 129, 0.3))" 
+                              }} 
+                            />
+                          ) : (
+                            <MessageSquare 
+                              size={18} 
+                              style={{ 
+                                color: "var(--text-muted)", 
+                                opacity: 0.5 
+                              }} 
+                            />
+                          )}
+                        </button>
                       </td>
                       <td>
                         <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", alignItems: "flex-start" }}>
@@ -958,17 +1018,7 @@ export default function AccountsList({
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Submission Comments / Notes (Optional)</label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Request fast IT setup, or specific browser login requirements..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  className="input-gold"
-                  style={{ resize: "none", fontFamily: "inherit" }}
-                />
-              </div>
+
 
               <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                 <button
@@ -1106,7 +1156,7 @@ export default function AccountsList({
             <div className="kpi-header" style={{ borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem", marginBottom: "0.5rem" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontSize: "0.75rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                  STEP {wizardStep} OF 7
+                  STEP {wizardStep} OF 6
                 </span>
                 <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>
                   {wizardStep === 1 && "Platform Selection"}
@@ -1115,7 +1165,6 @@ export default function AccountsList({
                   {wizardStep === 4 && "Ads Published Count"}
                   {wizardStep === 5 && "Verification Status"}
                   {wizardStep === 6 && "Submission Date"}
-                  {wizardStep === 7 && "Comments / Notes"}
                 </h2>
               </div>
               <div className="kpi-icon-wrapper">
@@ -1294,8 +1343,7 @@ export default function AccountsList({
                       if (e.key === "Enter") {
                         e.preventDefault();
                         if (wizardSubmissionDate) {
-                          setWizardStep(7);
-                          setWizardErrorMsg(null);
+                          handleWizardSubmit();
                         } else {
                           setWizardErrorMsg("Date of submission is required.");
                         }
@@ -1303,27 +1351,6 @@ export default function AccountsList({
                     }}
                     className="input-gold"
                     style={{ width: "100%" }}
-                  />
-                </div>
-              )}
-
-              {wizardStep === 7 && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Submission Comments / Notes (Optional)</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Type comments to forward with this request..."
-                    value={wizardComment}
-                    onChange={(e) => setWizardComment(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleWizardSubmit();
-                      }
-                    }}
-                    className="input-gold"
-                    style={{ width: "100%", resize: "none", fontFamily: "inherit" }}
-                    autoFocus
                   />
                 </div>
               )}
@@ -1387,8 +1414,6 @@ export default function AccountsList({
                       setWizardErrorMsg("Date of submission is required.");
                       return;
                     }
-                    setWizardStep(7);
-                  } else if (wizardStep === 7) {
                     handleWizardSubmit();
                   }
                 }}
@@ -1398,7 +1423,7 @@ export default function AccountsList({
               >
                 {isPending ? (
                   "Processing..."
-                ) : wizardStep === 7 ? (
+                ) : wizardStep === 6 ? (
                   "Submit"
                 ) : (
                   "Next"
@@ -1417,6 +1442,103 @@ export default function AccountsList({
         onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
         isPending={isPending}
       />
+
+      {showCommentModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(255, 255, 255, 0.7)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel kpi-card" style={{
+            maxWidth: "450px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            boxShadow: "var(--shadow-premium)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            position: "relative"
+          }}>
+            <div className="kpi-card-glow"></div>
+            
+            <div className="kpi-header" style={{ borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+                  ACCOUNT COMMENTS
+                </span>
+                <h2 className="text-gold-gradient" style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0 }}>
+                  {isCommentReadOnly ? "View Comments" : "Edit Comments"}
+                </h2>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Submission Notes / Comments</label>
+              {isCommentReadOnly ? (
+                <div style={{
+                  padding: "1rem",
+                  background: "var(--bg-primary)",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "8px",
+                  fontSize: "0.9rem",
+                  color: "var(--text-primary)",
+                  minHeight: "80px",
+                  fontStyle: commentText ? "normal" : "italic",
+                  whiteSpace: "pre-wrap"
+                }}>
+                  {commentText || "No comments cataloged for this account."}
+                </div>
+              ) : (
+                <textarea
+                  rows={4}
+                  maxLength={500}
+                  placeholder="e.g. Request fast IT setup, or specific browser login requirements..."
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  className="input-gold"
+                  style={{ width: "100%", resize: "none", fontFamily: "inherit" }}
+                  autoFocus
+                />
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button
+                type="button"
+                onClick={() => setShowCommentModal(false)}
+                className="btn-glass"
+                style={{ flex: 1 }}
+                disabled={isPending}
+              >
+                {isCommentReadOnly ? "Close" : "Cancel"}
+              </button>
+
+              {!isCommentReadOnly && (
+                <button
+                  type="button"
+                  onClick={handleSaveComment}
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Saving..." : "Save Comment"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
