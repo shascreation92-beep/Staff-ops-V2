@@ -334,11 +334,51 @@ export default function AccountsList({
       };
     }
     if (acc.status === "SORTED") {
-      const isIssue = ["Marketplace Issue", "Identity Issue", "Suspended"].includes(acc.issueType);
       const isTLPersonal = acc.user_account_createdByIdTouser?.role === "TEAM_LEAD";
+      if (isTLPersonal) {
+        const issue = acc.issueType || "Active";
+        if (issue === "Active") {
+          return {
+            color: "#22C55E",
+            text: "Active",
+            bg: "rgba(34, 197, 94, 0.08)",
+            border: "rgba(34, 197, 94, 0.3)",
+            glow: "0 0 12px rgba(34, 197, 94, 0.3)"
+          };
+        }
+        if (issue === "Marketplace Issue") {
+          return {
+            color: "var(--color-warning)",
+            text: "Marketplace Issue",
+            bg: "rgba(245, 158, 11, 0.08)",
+            border: "rgba(245, 158, 11, 0.25)",
+            glow: "none"
+          };
+        }
+        if (issue === "Suspended" || issue === "Suspension Issue") {
+          return {
+            color: "var(--color-danger)",
+            text: "Suspension Issue",
+            bg: "rgba(239, 68, 68, 0.1)",
+            border: "rgba(239, 68, 68, 0.3)",
+            glow: "0 0 10px rgba(239, 68, 68, 0.15)"
+          };
+        }
+        if (issue === "Identity Issue") {
+          return {
+            color: "#0250A1",
+            text: "Identity Issue",
+            bg: "rgba(2, 80, 161, 0.08)",
+            border: "rgba(2, 80, 161, 0.25)",
+            glow: "none"
+          };
+        }
+      }
+
+      const isIssue = ["Marketplace Issue", "Identity Issue", "Suspended"].includes(acc.issueType);
       return {
         color: isIssue ? "var(--color-danger)" : "#22C55E",
-        text: isTLPersonal ? "Sorted" : (acc.issueType || "Active"),
+        text: acc.issueType || "Active",
         bg: isIssue ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.08)",
         border: isIssue ? "rgba(239, 68, 68, 0.3)" : "rgba(34, 197, 94, 0.3)",
         glow: isIssue ? "0 0 10px rgba(239, 68, 68, 0.15)" : "0 0 12px rgba(34, 197, 94, 0.3)"
@@ -900,7 +940,9 @@ export default function AccountsList({
                       </td>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          {acc.status === "SORTED" && isSalesAssociate ? (
+                          {/* Dropdown select for Sales Associate (own account), Team Lead (own account), or IT (on TL personal accounts) */}
+                          {(acc.status === "SORTED" && (isSalesAssociate || (isTeamLead && acc.createdById === currentUser.id))) ||
+                           ((acc.status === "FORWARDED_TO_IT" || acc.status === "SORTED") && (isIT || isSuperAdmin) && acc.user_account_createdByIdTouser?.role === "TEAM_LEAD") ? (
                             <select
                               value={acc.issueType || "Active"}
                               onChange={(e) => handleUpdateIssue(acc.id, e.target.value)}
@@ -912,7 +954,7 @@ export default function AccountsList({
                                 fontSize: "0.7rem",
                                 fontWeight: 600,
                                 borderRadius: "999px",
-                                padding: "0.2rem 0.5rem",
+                                padding: "0.2rem 0.55rem",
                                 cursor: "pointer",
                                 outline: "none",
                                 width: "auto",
@@ -920,9 +962,9 @@ export default function AccountsList({
                               }}
                             >
                               <option value="Active" style={{ color: "#22C55E", background: "#FFFFFF" }}>Active</option>
-                              <option value="Marketplace Issue" style={{ color: "var(--color-danger)", background: "#FFFFFF" }}>Marketplace Issue</option>
-                              <option value="Identity Issue" style={{ color: "var(--color-danger)", background: "#FFFFFF" }}>Identity Issue</option>
-                              <option value="Suspended" style={{ color: "var(--color-danger)", background: "#FFFFFF" }}>Suspended</option>
+                              <option value="Marketplace Issue" style={{ color: "var(--color-warning)", background: "#FFFFFF" }}>Marketplace Issue</option>
+                              <option value="Identity Issue" style={{ color: "#0250A1", background: "#FFFFFF" }}>Identity Issue</option>
+                              <option value="Suspended" style={{ color: "var(--color-danger)", background: "#FFFFFF" }}>Suspension Issue</option>
                             </select>
                           ) : (
                             <span className="badge" style={{
@@ -937,7 +979,8 @@ export default function AccountsList({
                             </span>
                           )}
 
-                          {(acc.status === "FORWARDED_TO_IT" && (isIT || isSuperAdmin)) && (
+                          {/* Normal IT Accept / Sort buttons (only for Associates, meaning NOT TL Personal accounts) */}
+                          {(acc.status === "FORWARDED_TO_IT" && (isIT || isSuperAdmin) && acc.user_account_createdByIdTouser?.role !== "TEAM_LEAD") && (
                             <div style={{ display: "flex", gap: "0.35rem" }}>
                               <button
                                 onClick={() => handleITAccept(acc.id)}
@@ -958,7 +1001,8 @@ export default function AccountsList({
                             </div>
                           )}
 
-                          {(acc.status === "IT_PENDING" && (isIT || isSuperAdmin)) && (
+                          {/* Normal IT Pending Sort button (only for Associates) */}
+                          {(acc.status === "IT_PENDING" && (isIT || isSuperAdmin) && acc.user_account_createdByIdTouser?.role !== "TEAM_LEAD") && (
                             <button
                               onClick={() => handleITSort(acc.id)}
                               className="btn-success"

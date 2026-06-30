@@ -557,7 +557,7 @@ export async function getPendingTLRequestsAction() {
 }
 
 export async function updateAccountIssueAction(accountId: string, issueType: string) {
-  const user = await enforceAuth(["SALES_ASSOCIATE"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT", "SUPER_ADMIN"]);
 
   const account = await db.account.findUnique({
     where: { id: accountId }
@@ -567,18 +567,26 @@ export async function updateAccountIssueAction(accountId: string, issueType: str
     throw new Error("Account not found.");
   }
 
-  if (account.createdById !== user.id) {
+  const isITOrAdmin = ["IT_DEPARTMENT", "SUPER_ADMIN"].includes(user.role);
+  if (!isITOrAdmin && account.createdById !== user.id) {
     throw new Error("UNAUTHORIZED: You can only update issue options for your own accounts.");
   }
 
   try {
+    const dataUpdate: any = {
+      issueType,
+      updatedById: user.id,
+      updatedAt: new Date()
+    };
+
+    if (account.status !== "SORTED") {
+      dataUpdate.status = "SORTED";
+      dataUpdate.verificationStatus = "Yes";
+    }
+
     await db.account.update({
       where: { id: accountId },
-      data: {
-        issueType,
-        updatedById: user.id,
-        updatedAt: new Date()
-      }
+      data: dataUpdate
     });
 
     await logAction({
