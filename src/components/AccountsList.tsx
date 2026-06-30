@@ -43,6 +43,7 @@ interface AccountsListProps {
   companies: any[];
   rules: Record<string, string>;
   duplicateMap: Record<string, number>;
+  teamLeads?: any[];
 }
 
 export default function AccountsList({
@@ -51,7 +52,8 @@ export default function AccountsList({
   platforms,
   companies,
   rules,
-  duplicateMap
+  duplicateMap,
+  teamLeads = []
 }: AccountsListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -78,6 +80,7 @@ export default function AccountsList({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [platformFilter, setPlatformFilter] = useState("ALL");
+  const [teamLeadFilter, setTeamLeadFilter] = useState("ALL");
 
   // Provision modal state
   const [showModal, setShowModal] = useState(false);
@@ -285,7 +288,11 @@ export default function AccountsList({
     const matchesStatus = statusFilter === "ALL" || acc.status === statusFilter;
     const matchesPlatform = platformFilter === "ALL" || acc.platformId === platformFilter;
 
-    return matchesSearch && matchesStatus && matchesPlatform;
+    const matchesTeamLead = teamLeadFilter === "ALL" ||
+      acc.teamLeadId === teamLeadFilter ||
+      acc.createdById === teamLeadFilter;
+
+    return matchesSearch && matchesStatus && matchesPlatform && matchesTeamLead;
   });
 
   const getStatusStyle = (acc: any) => {
@@ -597,6 +604,20 @@ export default function AccountsList({
                   <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
                 ))}
               </select>
+
+              {(isIT || isSuperAdmin) && teamLeads && teamLeads.length > 0 && (
+                <select
+                  value={teamLeadFilter}
+                  onChange={(e) => setTeamLeadFilter(e.target.value)}
+                  className="table-select-filter"
+                  style={{ minWidth: "160px" }}
+                >
+                  <option value="ALL">ALL TEAM LEADS</option>
+                  {teamLeads.map(tl => (
+                    <option key={tl.id} value={tl.id}>TL: {tl.name || tl.email}</option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 
@@ -718,9 +739,9 @@ export default function AccountsList({
                                 padding: "0.1rem 0.45rem",
                                 borderRadius: "4px"
                               }}
-                              title="Direct submission from Team Lead"
+                              title={`Direct submission from Team Lead ${acc.user_account_createdByIdTouser?.name}`}
                             >
-                              👤 Source: Team Lead
+                              👤 TL: {acc.user_account_createdByIdTouser?.name || "N/A"}
                             </span>
                           )}
                         </div>

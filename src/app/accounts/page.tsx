@@ -91,6 +91,24 @@ export default async function AccountsPage() {
     duplicateMap[item.idName] = item._count.idName;
   });
 
+  // Fetch active team leads in the company (or globally if super admin)
+  const teamLeads = await db.user.findMany({
+    where: {
+      role: "TEAM_LEAD",
+      isArchived: false,
+      status: "APPROVED",
+      ...(user.role === "SUPER_ADMIN" ? {} : { companyId: user.companyId || "" })
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true
+    },
+    orderBy: {
+      name: "asc"
+    }
+  });
+
   return (
     <DashboardLayout user={{ ...user, companyName }}>
       <AccountsList
@@ -100,6 +118,7 @@ export default async function AccountsPage() {
         companies={companies}
         rules={rulesMap}
         duplicateMap={duplicateMap}
+        teamLeads={teamLeads}
       />
     </DashboardLayout>
   );
