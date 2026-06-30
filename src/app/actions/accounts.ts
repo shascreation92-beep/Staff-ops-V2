@@ -154,22 +154,35 @@ export async function updateAccountStatusAction(
   }
 
   if (user.role === "TEAM_LEAD") {
-    const validFrom = ["PENDING_TL", "SUBMITTED", "UNDER_REVIEW"];
-    if (!validFrom.includes(fromStatus)) {
-      throw new Error("Invalid transition: Team Leads can only review pending, submitted, or under-review accounts.");
-    }
-    const validTo = ["APPROVED_BY_TEAM_LEAD", "FORWARDED_TO_IT", "REJECTED", "UNDER_REVIEW"];
-    if (!validTo.includes(toStatus)) {
-      throw new Error("Invalid transition: Team Leads can only Approve, Forward to IT, Reject, or hold Under Review.");
-    }
+    const isPersonalAccount = account.createdById === user.id;
 
-    // STRICT CROSS-TL PRIVACY CHECK
-    const creatorUser = await db.user.findUnique({
-      where: { id: account.createdById },
-      select: { teamLeadId: true }
-    });
-    if (creatorUser?.teamLeadId !== user.id) {
-      throw new Error("UNAUTHORIZED: You can only view, approve, or access requests belonging to your own associates.");
+    if (isPersonalAccount) {
+      const validFrom = ["DRAFT", "REJECTED"];
+      if (!validFrom.includes(fromStatus)) {
+        throw new Error("Invalid transition: Team Leads can only submit Draft or Rejected personal accounts.");
+      }
+      const validTo = ["FORWARDED_TO_IT"];
+      if (!validTo.includes(toStatus)) {
+        throw new Error("Invalid transition: Team Leads can only submit personal accounts directly to IT.");
+      }
+    } else {
+      const validFrom = ["PENDING_TL", "SUBMITTED", "UNDER_REVIEW"];
+      if (!validFrom.includes(fromStatus)) {
+        throw new Error("Invalid transition: Team Leads can only review pending, submitted, or under-review accounts.");
+      }
+      const validTo = ["APPROVED_BY_TEAM_LEAD", "FORWARDED_TO_IT", "REJECTED", "UNDER_REVIEW"];
+      if (!validTo.includes(toStatus)) {
+        throw new Error("Invalid transition: Team Leads can only Approve, Forward to IT, Reject, or hold Under Review.");
+      }
+
+      // STRICT CROSS-TL PRIVACY CHECK
+      const creatorUser = await db.user.findUnique({
+        where: { id: account.createdById },
+        select: { teamLeadId: true }
+      });
+      if (creatorUser?.teamLeadId !== user.id) {
+        throw new Error("UNAUTHORIZED: You can only view, approve, or access requests belonging to your own associates.");
+      }
     }
   }
 

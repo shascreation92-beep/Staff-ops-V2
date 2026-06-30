@@ -31,6 +31,9 @@ export default async function AccountsPage() {
       company: {
         select: { name: true }
       },
+      user_account_createdByIdTouser: {
+        select: { name: true, email: true, role: true }
+      },
       user_account_updatedByIdTouser: {
         select: { name: true, email: true }
       }

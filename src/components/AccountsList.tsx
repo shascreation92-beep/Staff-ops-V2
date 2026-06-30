@@ -149,6 +149,36 @@ export default function AccountsList({
     });
   };
 
+  const handleDirectRequestToIT = (accountId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Submit Request to IT Department",
+      message: "Are you sure you want to submit this personal account request directly to the IT Department?",
+      onConfirm: () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        setSubmittingId(accountId);
+        startTransition(async () => {
+          try {
+            const res = await updateAccountStatusAction(
+              accountId,
+              "FORWARDED_TO_IT",
+              "Direct submission to IT by Team Lead (TL Personal Account)"
+            );
+            if (res.success) {
+              alert("Your request has been forwarded directly to the IT Department.");
+              router.refresh();
+            }
+          } catch (err: any) {
+            alert("Error submitting request: " + (err.message || "Unknown error"));
+            toast.error(err.message || "Failed to submit request.");
+          } finally {
+            setSubmittingId(null);
+          }
+        });
+      }
+    });
+  };
+
   const handleTLApprove = (accountId: string) => {
     setConfirmConfig({
       isOpen: true,
@@ -269,6 +299,15 @@ export default function AccountsList({
       };
     }
     if (acc.status === "FORWARDED_TO_IT") {
+      if (acc.user_account_createdByIdTouser?.role === "TEAM_LEAD") {
+        return {
+          color: "#A78BFA",
+          text: "Direct to IT",
+          bg: "rgba(167, 139, 250, 0.08)",
+          border: "rgba(167, 139, 250, 0.25)",
+          glow: "none"
+        };
+      }
       const tlName = acc.user_account_updatedByIdTouser?.name || "Udeen";
       return {
         color: "#A78BFA",
@@ -289,9 +328,10 @@ export default function AccountsList({
     }
     if (acc.status === "SORTED") {
       const isIssue = ["Marketplace Issue", "Identity Issue", "Suspended"].includes(acc.issueType);
+      const isTLPersonal = acc.user_account_createdByIdTouser?.role === "TEAM_LEAD";
       return {
         color: isIssue ? "var(--color-danger)" : "#22C55E",
-        text: acc.issueType || "Active",
+        text: isTLPersonal ? "Sorted" : (acc.issueType || "Active"),
         bg: isIssue ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.08)",
         border: isIssue ? "rgba(239, 68, 68, 0.3)" : "rgba(34, 197, 94, 0.3)",
         glow: isIssue ? "0 0 10px rgba(239, 68, 68, 0.15)" : "0 0 12px rgba(34, 197, 94, 0.3)"
@@ -647,7 +687,7 @@ export default function AccountsList({
                         {acc.serialCode}
                       </td>
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                           <span style={{ fontWeight: 600 }}>{acc.idName}</span>
                           {duplicates > 1 && (
                             <span 
@@ -662,6 +702,24 @@ export default function AccountsList({
                               }}
                             >
                               x{duplicates}
+                            </span>
+                          )}
+                          {acc.user_account_createdByIdTouser?.role === "TEAM_LEAD" && (
+                            <span 
+                              className="badge" 
+                              style={{ 
+                                background: "rgba(2, 80, 161, 0.08)", 
+                                border: "1px solid rgba(2, 80, 161, 0.25)", 
+                                color: "#0250A1", 
+                                fontSize: "0.65rem",
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                padding: "0.1rem 0.45rem",
+                                borderRadius: "4px"
+                              }}
+                              title="Direct submission from Team Lead"
+                            >
+                              👤 Source: Team Lead
                             </span>
                           )}
                         </div>
@@ -761,16 +819,27 @@ export default function AccountsList({
                       </td>
                       <td>
                         <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", alignItems: "flex-start" }}>
-                          {isSalesAssociate && ["DRAFT", "REJECTED"].includes(acc.status) ? (
+                          {(isSalesAssociate || isTeamLead) && ["DRAFT", "REJECTED"].includes(acc.status) ? (
                             acc.adsPublished >= 4 ? (
-                              <button
-                                onClick={() => handleDirectRequestToTL(acc.id)}
-                                className="btn-gold"
-                                style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
-                                disabled={isPending || submittingId === acc.id}
-                              >
-                                Request to TL
-                              </button>
+                              isSalesAssociate ? (
+                                <button
+                                  onClick={() => handleDirectRequestToTL(acc.id)}
+                                  className="btn-gold"
+                                  style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
+                                  disabled={isPending || submittingId === acc.id}
+                                >
+                                  Request to TL
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleDirectRequestToIT(acc.id)}
+                                  className="btn-gold"
+                                  style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", height: "auto" }}
+                                  disabled={isPending || submittingId === acc.id}
+                                >
+                                  Request to IT
+                                </button>
+                              )
                             ) : (
                               <span style={{
                                 fontSize: "0.7rem",
