@@ -14,7 +14,8 @@ import {
   FileText,
   UserCheck,
   LogOut,
-  Key
+  Key,
+  ClipboardCheck
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -121,7 +122,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       id: "associates-requests", 
       label: "Associates Requests", 
       path: "/associates-requests", 
-      icon: Users,
+      icon: ClipboardCheck,
       roles: ["TEAM_LEAD"] 
     },
     { 
