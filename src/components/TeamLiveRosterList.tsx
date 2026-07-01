@@ -59,6 +59,9 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
   const [isSyncing, setIsSyncing] = useState(false);
   const [accountsList, setAccountsList] = useState<Account[]>(initialAccounts);
 
+  // Local map to track visual selection state for controlled dropdowns
+  const [selectedOwnerIds, setSelectedOwnerIds] = useState<{ [accId: string]: string }>({});
+
   // Filters State
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("ALL");
@@ -76,7 +79,15 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
 
   // Sync data with incoming server-side updates on refresh
   useEffect(() => {
+    console.log("[SHIFT ACCOUNT FRONTEND] Syncing local accounts list with initialAccounts:", initialAccounts.length);
     setAccountsList(initialAccounts);
+    
+    // Build initial owner IDs map
+    const ownerIdsMap: { [accId: string]: string } = {};
+    initialAccounts.forEach(acc => {
+      ownerIdsMap[acc.id] = acc.createdById;
+    });
+    setSelectedOwnerIds(ownerIdsMap);
   }, [initialAccounts]);
 
   // Real-time synchronization polling every 5 seconds
@@ -93,18 +104,28 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
 
   // Handle shift account ownership
   const handleShiftAccount = async (accountId: string, newAssociateId: string, currentOwnerName: string) => {
+    console.log("[SHIFT ACCOUNT FRONTEND] handleShiftAccount triggered:", { accountId, newAssociateId, currentOwnerName });
     const targetAssoc = activeAssociates.find(a => a.id === newAssociateId);
-    if (!targetAssoc) return;
+    if (!targetAssoc) {
+      console.error("[SHIFT ACCOUNT FRONTEND] Target associate not found in activeAssociates:", newAssociateId);
+      return;
+    }
     const targetName = targetAssoc.name || targetAssoc.email;
+
+    // Instantly update visual state to avoid visual lag
+    setSelectedOwnerIds(prev => ({ ...prev, [accountId]: newAssociateId }));
 
     if (confirm(`Are you sure you want to shift this account from ${currentOwnerName} to ${targetName}?`)) {
       startTransition(async () => {
         try {
+          console.log("[SHIFT ACCOUNT FRONTEND] Dispatching server action...");
           const res = await shiftAccountOwnershipAction(accountId, newAssociateId);
-          if (res.success) {
+          console.log("[SHIFT ACCOUNT FRONTEND] Server action response:", res);
+          
+          if (res && res.success) {
             toast.success(`Account shifted to ${targetName} successfully!`);
             
-            // Instantly update local state to reflect ownership shift
+            // Update local state directly so it is instant
             setAccountsList(prev => prev.map(acc => {
               if (acc.id === accountId) {
                 return {
@@ -120,11 +141,23 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
             }));
 
             router.refresh();
+          } else {
+            throw new Error("Failed to process reassignment.");
           }
         } catch (err: any) {
+          console.error("[SHIFT ACCOUNT FRONTEND] Error caught:", err);
           toast.error(err.message || "Failed to shift account ownership.");
+          
+          // Revert visual selector value on failure
+          const originalOwner = accountsList.find(a => a.id === accountId)?.createdById || "";
+          setSelectedOwnerIds(prev => ({ ...prev, [accountId]: originalOwner }));
         }
       });
+    } else {
+      console.log("[SHIFT ACCOUNT FRONTEND] Shifting cancelled by user. Reverting visual dropdown...");
+      // Revert visual selector value on cancel
+      const originalOwner = accountsList.find(a => a.id === accountId)?.createdById || "";
+      setSelectedOwnerIds(prev => ({ ...prev, [accountId]: originalOwner }));
     }
   };
 
@@ -338,6 +371,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
               ) : (
                 filteredAccounts.map((acc) => {
                   const creatorName = acc.user_account_createdByIdTouser?.name || "N/A";
+                  const currentOwnerValue = selectedOwnerIds[acc.id] || acc.createdById;
                   
                   return (
                     <tr key={acc.id}>
@@ -375,7 +409,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
                       <td>
                         <div style={{ position: "relative", width: "100%" }}>
                           <select
-                            value={acc.createdById}
+                            value={currentOwnerValue}
                             onChange={(e) => handleShiftAccount(acc.id, e.target.value, creatorName)}
                             className="input-gold"
                             style={{
@@ -388,16 +422,15 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
                             }}
                             disabled={isPending}
                           >
-                            {/* Always include current owner first */}
-                            <option value={acc.createdById}>{creatorName}</option>
-                            {activeAssociates
-                              .filter(assoc => assoc.id !== acc.createdById)
-                              .map(assoc => (
-                                <option key={assoc.id} value={assoc.id}>
-                                  {assoc.name || assoc.email}
-                                </option>
-                              ))
-                            }
+                            {/* Always render current visual owner first */}
+                            {activeAssociates.some(assoc => assoc.id === currentOwnerValue) ? null : (
+                              <option value={currentOwnerValue}>{creatorName}</option>
+                            )}
+                            {activeAssociates.map(assoc => (
+                              <option key={assoc.id} value={assoc.id}>
+                                {assoc.name || assoc.email}
+                              </option>
+                            ))}
                           </select>
                           <ChevronDown size={12} style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", opacity: 0.5 }} />
                         </div>

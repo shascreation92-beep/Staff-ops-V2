@@ -672,39 +672,46 @@ export async function updateAccountCommentAction(accountId: string, comment: str
 }
 
 export async function shiftAccountOwnershipAction(accountId: string, newAssociateId: string) {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]);
-
-  const account = await db.account.findUnique({
-    where: { id: accountId }
-  });
-
-  if (!account) {
-    throw new Error("Account not found.");
-  }
-
-  const newAssociate = await db.user.findUnique({
-    where: { id: newAssociateId }
-  });
-
-  if (!newAssociate) {
-    throw new Error("Target associate not found.");
-  }
-
-  if (user.role !== "SUPER_ADMIN") {
-    if (account.companyId !== user.companyId || newAssociate.companyId !== user.companyId) {
-      throw new Error("UNAUTHORIZED: Cannot shift account outside your company.");
-    }
-  }
-
-  if (user.role === "TEAM_LEAD") {
-    if (newAssociate.teamLeadId !== user.id) {
-      throw new Error("UNAUTHORIZED: You can only shift accounts to associates you manage.");
-    }
-  }
-
-  const oldOwnerId = account.createdById;
-
+  console.log("[SHIFT ACCOUNT BACKEND] Received request:", { accountId, newAssociateId });
   try {
+    const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]);
+    console.log("[SHIFT ACCOUNT BACKEND] Authenticated user:", { userId: user.id, role: user.role });
+
+    const account = await db.account.findUnique({
+      where: { id: accountId }
+    });
+
+    if (!account) {
+      console.error("[SHIFT ACCOUNT BACKEND] Account not found:", accountId);
+      throw new Error("Account not found.");
+    }
+
+    const newAssociate = await db.user.findUnique({
+      where: { id: newAssociateId }
+    });
+
+    if (!newAssociate) {
+      console.error("[SHIFT ACCOUNT BACKEND] Target associate not found:", newAssociateId);
+      throw new Error("Target associate not found.");
+    }
+
+    if (user.role !== "SUPER_ADMIN") {
+      if (account.companyId !== user.companyId || newAssociate.companyId !== user.companyId) {
+        console.error("[SHIFT ACCOUNT BACKEND] Company mismatch error:", { accountCompanyId: account.companyId, associateCompanyId: newAssociate.companyId, userCompanyId: user.companyId });
+        throw new Error("UNAUTHORIZED: Cannot shift account outside your company.");
+      }
+    }
+
+    if (user.role === "TEAM_LEAD") {
+      if (newAssociate.teamLeadId !== user.id) {
+        console.error("[SHIFT ACCOUNT BACKEND] Team Lead mismatch error:", { associateTeamLeadId: newAssociate.teamLeadId, loggedInTLId: user.id });
+        throw new Error("UNAUTHORIZED: You can only shift accounts to associates you manage.");
+      }
+    }
+
+    const oldOwnerId = account.createdById;
+    console.log("[SHIFT ACCOUNT BACKEND] Shifting from oldOwnerId:", oldOwnerId, "to newAssociateId:", newAssociateId);
+
     const updatedAccount = await db.account.update({
       where: { id: accountId },
       data: {
@@ -715,6 +722,8 @@ export async function shiftAccountOwnershipAction(accountId: string, newAssociat
         updatedAt: new Date()
       }
     });
+
+    console.log("[SHIFT ACCOUNT BACKEND] Database update successful:", updatedAccount);
 
     await logAction({
       userId: user.id,
@@ -738,10 +747,13 @@ export async function shiftAccountOwnershipAction(accountId: string, newAssociat
       }
     });
 
+    console.log("[SHIFT ACCOUNT BACKEND] Roster revalidating paths...");
     revalidatePath("/accounts");
     revalidatePath("/team-live-roster");
+    
     return { success: true };
   } catch (error: any) {
+    console.error("[SHIFT ACCOUNT BACKEND] Error encountered:", error);
     throw new Error(error.message || "Failed to shift account ownership.");
   }
 }
