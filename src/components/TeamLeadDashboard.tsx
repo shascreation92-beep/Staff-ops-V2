@@ -562,20 +562,20 @@ export default function TeamLeadDashboard({
         }}>
           <div style={{ flex: 1, height: "1px", background: "var(--border-dim)" }}></div>
           <div style={{
-            padding: "0.3rem 1.2rem",
+            padding: "0.45rem 1.6rem",
             background: "var(--gold-primary)",
             color: "#FFFFFF",
             borderRadius: "999px",
-            fontSize: "0.78rem",
-            fontWeight: 700,
-            boxShadow: "0 4px 12px rgba(212, 175, 55, 0.2)",
+            fontSize: "0.92rem",
+            fontWeight: 800,
+            boxShadow: "0 4px 12px rgba(2, 80, 161, 0.15)",
             margin: "0 1rem",
-            letterSpacing: "0.03em",
+            letterSpacing: "0.06em",
             display: "flex",
             alignItems: "center",
             gap: "0.5rem"
           }}>
-            <span>🛠️ My Personal Workspace (میری ذاتی آئی ڈیز)</span>
+            <span>PERSONAL WORKSPACE</span>
           </div>
           <div style={{ flex: 1, height: "1px", background: "var(--border-dim)" }}></div>
         </div>
