@@ -748,8 +748,12 @@ export async function shiftAccountOwnershipAction(accountId: string, newAssociat
     });
 
     console.log("[SHIFT ACCOUNT BACKEND] Roster revalidating paths...");
-    revalidatePath("/accounts");
-    revalidatePath("/team-live-roster");
+    try {
+      revalidatePath("/accounts");
+      revalidatePath("/team-live-roster");
+    } catch (revalErr: any) {
+      console.warn("[SHIFT ACCOUNT BACKEND] Non-fatal revalidation warning:", revalErr.message || revalErr);
+    }
     
     return { success: true };
   } catch (error: any) {
