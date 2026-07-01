@@ -60,6 +60,14 @@ export default function AccountsList({
   const [localAccounts, setLocalAccounts] = useState(accounts);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
+  const formatNumber = (num: number | string | null | undefined): string => {
+    if (num === null || num === undefined) return "00";
+    const n = typeof num === "string" ? parseInt(num, 10) : num;
+    if (isNaN(n)) return num.toString();
+    if (n < 0) return n.toString();
+    return n < 10 ? `0${n}` : n.toString();
+  };
+
   useEffect(() => {
     setLocalAccounts(accounts);
   }, [accounts]);
@@ -840,7 +848,7 @@ export default function AccountsList({
                             style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "0.35rem" }}
                             title="Click to edit ads count"
                           >
-                            <span>{acc.adsPublished} ads</span>
+                            <span>{formatNumber(acc.adsPublished)} ads</span>
                             <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", opacity: 0.6 }}>✏️</span>
                           </div>
                         )}
@@ -1328,7 +1336,7 @@ export default function AccountsList({
             <div className="kpi-header" style={{ borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem", marginBottom: "0.5rem" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontSize: "0.75rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                  STEP {wizardStep} OF 6
+                  STEP {formatNumber(wizardStep)} OF {formatNumber(6)}
                 </span>
                 <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>
                   {wizardStep === 1 && "Platform Selection"}

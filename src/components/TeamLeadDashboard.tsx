@@ -68,6 +68,14 @@ export default function TeamLeadDashboard({
   const [isPending, startTransition] = useTransition();
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
+  const formatNumber = (num: number | string | null | undefined): string => {
+    if (num === null || num === undefined) return "00";
+    const n = typeof num === "string" ? parseInt(num, 10) : num;
+    if (isNaN(n)) return num.toString();
+    if (n < 0) return n.toString();
+    return n < 10 ? `0${n}` : n.toString();
+  };
+
   useEffect(() => {
     const pollInterval = setInterval(() => {
       setIsSyncing(true);
@@ -246,7 +254,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Total Combined Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.totalCombinedAccounts}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.totalCombinedAccounts)}</div>
             <div className="kpi-footer">
               <span>Collective team-wide accounts</span>
             </div>
@@ -259,7 +267,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Total Target to Maintain</span>
               <div className="kpi-icon-wrapper"><Target size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.combinedFbTarget}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.combinedFbTarget)}</div>
             <div className="kpi-footer" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.25rem", width: "100%" }}>
               <span>Combined FB active target progress</span>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%" }}>
@@ -273,7 +281,7 @@ export default function TeamLeadDashboard({
                   }}></div>
                 </div>
                 <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700, whiteSpace: "nowrap" }}>
-                  {combinedStats.fbActiveCombined}/{combinedStats.combinedFbTarget} ({combinedStats.combinedFbTarget > 0 ? Math.round((combinedStats.fbActiveCombined / combinedStats.combinedFbTarget) * 100) : 0}%)
+                  {formatNumber(combinedStats.fbActiveCombined)}/{formatNumber(combinedStats.combinedFbTarget)} ({combinedStats.combinedFbTarget > 0 ? Math.round((combinedStats.fbActiveCombined / combinedStats.combinedFbTarget) * 100) : 0}%)
                 </span>
               </div>
             </div>
@@ -297,7 +305,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.fbTotalCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.fbTotalCombined)}</div>
             <div className="kpi-footer">
               <span>Team Facebook registered accounts</span>
             </div>
@@ -310,7 +318,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Active Accounts</span>
               <div className="kpi-icon-wrapper"><CheckCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.fbActiveCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.fbActiveCombined)}</div>
             <div className="kpi-footer">
               <span>Active operational team accounts</span>
             </div>
@@ -323,7 +331,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Verified Accounts</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.fbVerifiedCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.fbVerifiedCombined)}</div>
             <div className="kpi-footer">
               <span>Verification rate: {combinedStats.fbTotalCombined > 0 ? Math.round((combinedStats.fbVerifiedCombined / combinedStats.fbTotalCombined) * 100) : 0}%</span>
             </div>
@@ -336,7 +344,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Unverified Accounts</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.fbUnverifiedCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.fbUnverifiedCombined)}</div>
             <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
@@ -349,7 +357,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Marketplace Issue</span>
               <div className="kpi-icon-wrapper"><AlertCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.fbMarketplaceCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.fbMarketplaceCombined)}</div>
             <div className="kpi-footer" style={{ color: combinedStats.fbMarketplaceCombined > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Platform level rejections</span>
             </div>
@@ -362,7 +370,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Identity Issue</span>
               <div className="kpi-icon-wrapper"><HelpCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.fbIdentityCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.fbIdentityCombined)}</div>
             <div className="kpi-footer" style={{ color: combinedStats.fbIdentityCombined > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Verification hold status</span>
             </div>
@@ -386,7 +394,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Vinted Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.vintedTotalCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.vintedTotalCombined)}</div>
             <div className="kpi-footer">
               <span>Vinted team registered accounts</span>
             </div>
@@ -399,7 +407,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Vinted Verified</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.vintedVerifiedCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.vintedVerifiedCombined)}</div>
             <div className="kpi-footer">
               <span>Verification rate: {combinedStats.vintedTotalCombined > 0 ? Math.round((combinedStats.vintedVerifiedCombined / combinedStats.vintedTotalCombined) * 100) : 0}%</span>
             </div>
@@ -412,7 +420,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Vinted Unverified</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.vintedUnverifiedCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.vintedUnverifiedCombined)}</div>
             <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
@@ -425,7 +433,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Vinted Suspended Accounts</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{combinedStats.vintedSuspendedCombined}</div>
+            <div className="kpi-value">{formatNumber(combinedStats.vintedSuspendedCombined)}</div>
             <div className="kpi-footer" style={{ color: combinedStats.vintedSuspendedCombined > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Active database suspensions</span>
             </div>
@@ -487,7 +495,7 @@ export default function TeamLeadDashboard({
                       </td>
                       <td style={{ fontWeight: 600 }}>{acc.idName}</td>
                       <td style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>
-                        {acc.adsPublished} ads
+                        {formatNumber(acc.adsPublished)} ads
                       </td>
                       <td>
                         {acc.verificationStatus === "Yes" ? (
@@ -596,7 +604,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Total Acc.</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.fbTotal}</div>
+            <div className="kpi-value">{formatNumber(personalStats.fbTotal)}</div>
             <div className="kpi-footer">
               <span>Facebook registered accounts</span>
             </div>
@@ -609,7 +617,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Active Acc.</span>
               <div className="kpi-icon-wrapper"><CheckCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.fbActive}</div>
+            <div className="kpi-value">{formatNumber(personalStats.fbActive)}</div>
             <div className="kpi-footer">
               <span>Live operational nodes</span>
             </div>
@@ -622,7 +630,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Verified Acc.</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.fbVerified}</div>
+            <div className="kpi-value">{formatNumber(personalStats.fbVerified)}</div>
             <div className="kpi-footer">
               <span>Verification rate: {personalStats.fbTotal > 0 ? Math.round((personalStats.fbVerified / personalStats.fbTotal) * 100) : 0}%</span>
             </div>
@@ -635,7 +643,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Unverified Acc.</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.fbUnverified}</div>
+            <div className="kpi-value">{formatNumber(personalStats.fbUnverified)}</div>
             <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
@@ -648,7 +656,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Marketplace Issue</span>
               <div className="kpi-icon-wrapper"><AlertCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.fbMarketplace}</div>
+            <div className="kpi-value">{formatNumber(personalStats.fbMarketplace)}</div>
             <div className="kpi-footer" style={{ color: personalStats.fbMarketplace > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Platform level rejections</span>
             </div>
@@ -661,7 +669,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">FB Identity Issue</span>
               <div className="kpi-icon-wrapper"><HelpCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.fbIdentity}</div>
+            <div className="kpi-value">{formatNumber(personalStats.fbIdentity)}</div>
             <div className="kpi-footer" style={{ color: personalStats.fbIdentity > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Verification hold status</span>
             </div>
@@ -674,7 +682,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Target to Maintain</span>
               <div className="kpi-icon-wrapper"><Target size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.fbTarget}</div>
+            <div className="kpi-value">{formatNumber(personalStats.fbTarget)}</div>
             <div className="kpi-footer" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.25rem", width: "100%" }}>
               <span>Monthly FB quota target</span>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%" }}>
@@ -688,7 +696,7 @@ export default function TeamLeadDashboard({
                   }}></div>
                 </div>
                 <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700, whiteSpace: "nowrap" }}>
-                  {personalStats.fbActive}/{personalStats.fbTarget} ({personalStats.fbTarget > 0 ? Math.round((personalStats.fbActive / personalStats.fbTarget) * 100) : 0}%)
+                  {formatNumber(personalStats.fbActive)}/{formatNumber(personalStats.fbTarget)} ({personalStats.fbTarget > 0 ? Math.round((personalStats.fbActive / personalStats.fbTarget) * 100) : 0}%)
                 </span>
               </div>
             </div>
@@ -701,7 +709,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Total Suspended Acc.</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.fbSuspended}</div>
+            <div className="kpi-value">{formatNumber(personalStats.fbSuspended)}</div>
             <div className="kpi-footer" style={{ color: personalStats.fbSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Active database suspensions</span>
             </div>
@@ -725,7 +733,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Vinted Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.vintedTotal}</div>
+            <div className="kpi-value">{formatNumber(personalStats.vintedTotal)}</div>
             <div className="kpi-footer">
               <span>Vinted registered accounts</span>
             </div>
@@ -738,7 +746,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Vinted Verified</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.vintedVerified}</div>
+            <div className="kpi-value">{formatNumber(personalStats.vintedVerified)}</div>
             <div className="kpi-footer">
               <span>Verification rate: {personalStats.vintedTotal > 0 ? Math.round((personalStats.vintedVerified / personalStats.vintedTotal) * 100) : 0}%</span>
             </div>
@@ -751,7 +759,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Vinted Unverified</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.vintedUnverified}</div>
+            <div className="kpi-value">{formatNumber(personalStats.vintedUnverified)}</div>
             <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
@@ -764,7 +772,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Vinted Suspended Accounts</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.vintedSuspended}</div>
+            <div className="kpi-value">{formatNumber(personalStats.vintedSuspended)}</div>
             <div className="kpi-footer" style={{ color: personalStats.vintedSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Active database suspensions</span>
             </div>
@@ -788,7 +796,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Gumtree Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.gumtreeTotal}</div>
+            <div className="kpi-value">{formatNumber(personalStats.gumtreeTotal)}</div>
             <div className="kpi-footer">
               <span>Gumtree registered accounts</span>
             </div>
@@ -801,7 +809,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Gumtree Verified</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.gumtreeVerified}</div>
+            <div className="kpi-value">{formatNumber(personalStats.gumtreeVerified)}</div>
             <div className="kpi-footer">
               <span>Verification rate: {personalStats.gumtreeTotal > 0 ? Math.round((personalStats.gumtreeVerified / personalStats.gumtreeTotal) * 100) : 0}%</span>
             </div>
@@ -814,7 +822,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Gumtree Unverified</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.gumtreeUnverified}</div>
+            <div className="kpi-value">{formatNumber(personalStats.gumtreeUnverified)}</div>
             <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
@@ -827,7 +835,7 @@ export default function TeamLeadDashboard({
               <span className="kpi-title">Gumtree Suspended Accounts</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{personalStats.gumtreeSuspended}</div>
+            <div className="kpi-value">{formatNumber(personalStats.gumtreeSuspended)}</div>
             <div className="kpi-footer" style={{ color: personalStats.gumtreeSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Active database suspensions</span>
             </div>

@@ -41,6 +41,14 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
   const [stats, setStats] = useState<Stats>(initialStats);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const formatNumber = (num: number | string | null | undefined): string => {
+    if (num === null || num === undefined) return "00";
+    const n = typeof num === "string" ? parseInt(num, 10) : num;
+    if (isNaN(n)) return num.toString();
+    if (n < 0) return n.toString();
+    return n < 10 ? `0${n}` : n.toString();
+  };
+
   useEffect(() => {
     const pollInterval = setInterval(async () => {
       try {
@@ -117,7 +125,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
             <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>
               Total Accounts :{" "}
               <span style={{ color: "var(--gold-primary)", fontWeight: 800 }}>
-                {stats.saTotalAccounts}
+                {formatNumber(stats.saTotalAccounts)}
               </span>
             </span>
           </div>
@@ -146,7 +154,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">FB Total Acc.</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.fbTotal}</div>
+            <div className="kpi-value">{formatNumber(stats.fbTotal)}</div>
             <div className="kpi-footer">
               <span>Facebook registered accounts</span>
             </div>
@@ -159,7 +167,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">FB Active Acc.</span>
               <div className="kpi-icon-wrapper"><CheckCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.fbActive}</div>
+            <div className="kpi-value">{formatNumber(stats.fbActive)}</div>
             <div className="kpi-footer">
               <span>Live operational nodes</span>
             </div>
@@ -172,7 +180,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">FB Verified Acc.</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.fbVerified}</div>
+            <div className="kpi-value">{formatNumber(stats.fbVerified)}</div>
             <div className="kpi-footer">
               <span>Verification rate: {stats.fbTotal > 0 ? Math.round((stats.fbVerified / stats.fbTotal) * 100) : 0}%</span>
             </div>
@@ -185,7 +193,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">FB Unverified Acc.</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.fbUnverified}</div>
+            <div className="kpi-value">{formatNumber(stats.fbUnverified)}</div>
             <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
@@ -198,7 +206,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">FB Marketplace Issue</span>
               <div className="kpi-icon-wrapper"><AlertCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.fbMarketplace}</div>
+            <div className="kpi-value">{formatNumber(stats.fbMarketplace)}</div>
             <div className="kpi-footer" style={{ color: stats.fbMarketplace > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Platform level rejections</span>
             </div>
@@ -211,7 +219,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">FB Identity Issue</span>
               <div className="kpi-icon-wrapper"><HelpCircle size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.fbIdentity}</div>
+            <div className="kpi-value">{formatNumber(stats.fbIdentity)}</div>
             <div className="kpi-footer" style={{ color: stats.fbIdentity > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Verification hold status</span>
             </div>
@@ -224,7 +232,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Target to Maintain</span>
               <div className="kpi-icon-wrapper"><Target size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.fbTarget}</div>
+            <div className="kpi-value">{formatNumber(stats.fbTarget)}</div>
             <div className="kpi-footer" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.25rem", width: "100%" }}>
               <span>Monthly FB quota target</span>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%" }}>
@@ -238,7 +246,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
                   }}></div>
                 </div>
                 <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700, whiteSpace: "nowrap" }}>
-                  {stats.fbActive}/{stats.fbTarget} ({stats.fbTarget > 0 ? Math.round((stats.fbActive / stats.fbTarget) * 100) : 0}%)
+                  {formatNumber(stats.fbActive)}/{formatNumber(stats.fbTarget)} ({stats.fbTarget > 0 ? Math.round((stats.fbActive / stats.fbTarget) * 100) : 0}%)
                 </span>
               </div>
             </div>
@@ -251,7 +259,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Total Suspended Acc.</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.fbSuspended}</div>
+            <div className="kpi-value">{formatNumber(stats.fbSuspended)}</div>
             <div className="kpi-footer" style={{ color: stats.fbSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Active database suspensions</span>
             </div>
@@ -275,7 +283,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Vinted Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.vintedTotal}</div>
+            <div className="kpi-value">{formatNumber(stats.vintedTotal)}</div>
             <div className="kpi-footer">
               <span>Vinted registered accounts</span>
             </div>
@@ -288,7 +296,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Vinted Verified</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.vintedVerified}</div>
+            <div className="kpi-value">{formatNumber(stats.vintedVerified)}</div>
             <div className="kpi-footer">
               <span>Verification rate: {stats.vintedTotal > 0 ? Math.round((stats.vintedVerified / stats.vintedTotal) * 100) : 0}%</span>
             </div>
@@ -301,7 +309,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Vinted Unverified</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.vintedUnverified}</div>
+            <div className="kpi-value">{formatNumber(stats.vintedUnverified)}</div>
             <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
@@ -314,7 +322,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Vinted Suspended Accounts</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.vintedSuspended}</div>
+            <div className="kpi-value">{formatNumber(stats.vintedSuspended)}</div>
             <div className="kpi-footer" style={{ color: stats.vintedSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Active database suspensions</span>
             </div>
@@ -338,7 +346,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Gumtree Total Accounts</span>
               <div className="kpi-icon-wrapper"><Database size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.gumtreeTotal}</div>
+            <div className="kpi-value">{formatNumber(stats.gumtreeTotal)}</div>
             <div className="kpi-footer">
               <span>Gumtree registered accounts</span>
             </div>
@@ -351,7 +359,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Gumtree Verified</span>
               <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.gumtreeVerified}</div>
+            <div className="kpi-value">{formatNumber(stats.gumtreeVerified)}</div>
             <div className="kpi-footer">
               <span>Verification rate: {stats.gumtreeTotal > 0 ? Math.round((stats.gumtreeVerified / stats.gumtreeTotal) * 100) : 0}%</span>
             </div>
@@ -364,7 +372,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Gumtree Unverified</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.gumtreeUnverified}</div>
+            <div className="kpi-value">{formatNumber(stats.gumtreeUnverified)}</div>
             <div className="kpi-footer">
               <span>Awaiting verification submit</span>
             </div>
@@ -377,7 +385,7 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
               <span className="kpi-title">Gumtree Suspended Accounts</span>
               <div className="kpi-icon-wrapper"><ShieldAlert size={18} /></div>
             </div>
-            <div className="kpi-value">{stats.gumtreeSuspended}</div>
+            <div className="kpi-value">{formatNumber(stats.gumtreeSuspended)}</div>
             <div className="kpi-footer" style={{ color: stats.gumtreeSuspended > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Active database suspensions</span>
             </div>
