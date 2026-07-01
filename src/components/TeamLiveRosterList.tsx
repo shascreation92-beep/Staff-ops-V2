@@ -4,15 +4,12 @@ import React, { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Search, 
-  Database, 
-  ShieldCheck, 
-  ShieldX, 
   SlidersHorizontal,
-  ChevronDown
+  ChevronDown,
+  X,
+  MessageSquare
 } from "lucide-react";
-import { toast } from "react-hot-toast";
 import NotificationBell from "./NotificationBell";
-import { shiftAccountOwnershipAction } from "@/app/actions/accounts";
 
 interface Account {
   id: string;
@@ -24,7 +21,9 @@ interface Account {
   status: string;
   associateId: string | null;
   comment: string | null;
+  itNotes?: string | null;
   createdAt: string | Date;
+  updatedAt: string | Date;
   createdById: string;
   platform?: {
     id: string;
@@ -59,8 +58,9 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
   const [isSyncing, setIsSyncing] = useState(false);
   const [accountsList, setAccountsList] = useState<Account[]>(initialAccounts);
 
-  // Local map to track visual selection state for controlled dropdowns
-  const [selectedOwnerIds, setSelectedOwnerIds] = useState<{ [accId: string]: string }>({});
+  // Modal State for Read-Only IT Comment View
+  const [selectedITCommentAccount, setSelectedITCommentAccount] = useState<Account | null>(null);
+  const [showITCommentModal, setShowITCommentModal] = useState(false);
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,15 +79,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
 
   // Sync data with incoming server-side updates on refresh
   useEffect(() => {
-    console.log("[SHIFT ACCOUNT FRONTEND] Syncing local accounts list with initialAccounts:", initialAccounts.length);
     setAccountsList(initialAccounts);
-    
-    // Build initial owner IDs map
-    const ownerIdsMap: { [accId: string]: string } = {};
-    initialAccounts.forEach(acc => {
-      ownerIdsMap[acc.id] = acc.createdById;
-    });
-    setSelectedOwnerIds(ownerIdsMap);
   }, [initialAccounts]);
 
   // Real-time synchronization polling every 5 seconds
@@ -101,65 +93,6 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
     }, 5000);
     return () => clearInterval(interval);
   }, [router]);
-
-  // Handle shift account ownership
-  const handleShiftAccount = async (accountId: string, newAssociateId: string, currentOwnerName: string) => {
-    console.log("[SHIFT ACCOUNT FRONTEND] handleShiftAccount triggered:", { accountId, newAssociateId, currentOwnerName });
-    const targetAssoc = activeAssociates.find(a => a.id === newAssociateId);
-    if (!targetAssoc) {
-      console.error("[SHIFT ACCOUNT FRONTEND] Target associate not found in activeAssociates:", newAssociateId);
-      return;
-    }
-    const targetName = targetAssoc.name || targetAssoc.email;
-
-    // Instantly update visual state to avoid visual lag
-    setSelectedOwnerIds(prev => ({ ...prev, [accountId]: newAssociateId }));
-
-    if (confirm(`Are you sure you want to shift this account from ${currentOwnerName} to ${targetName}?`)) {
-      startTransition(async () => {
-        try {
-          console.log("[SHIFT ACCOUNT FRONTEND] Dispatching server action...");
-          const res = await shiftAccountOwnershipAction(accountId, newAssociateId);
-          console.log("[SHIFT ACCOUNT FRONTEND] Server action response:", res);
-          
-          if (res && res.success) {
-            toast.success(`Account shifted to ${targetName} successfully!`);
-            
-            // Update local state directly so it is instant
-            setAccountsList(prev => prev.map(acc => {
-              if (acc.id === accountId) {
-                return {
-                  ...acc,
-                  createdById: newAssociateId,
-                  user_account_createdByIdTouser: {
-                    name: targetAssoc.name || null,
-                    email: targetAssoc.email
-                  }
-                };
-              }
-              return acc;
-            }));
-
-            router.refresh();
-          } else {
-            throw new Error("Failed to process reassignment.");
-          }
-        } catch (err: any) {
-          console.error("[SHIFT ACCOUNT FRONTEND] Error caught:", err);
-          toast.error(err.message || "Failed to shift account ownership.");
-          
-          // Revert visual selector value on failure
-          const originalOwner = accountsList.find(a => a.id === accountId)?.createdById || "";
-          setSelectedOwnerIds(prev => ({ ...prev, [accountId]: originalOwner }));
-        }
-      });
-    } else {
-      console.log("[SHIFT ACCOUNT FRONTEND] Shifting cancelled by user. Reverting visual dropdown...");
-      // Revert visual selector value on cancel
-      const originalOwner = accountsList.find(a => a.id === accountId)?.createdById || "";
-      setSelectedOwnerIds(prev => ({ ...prev, [accountId]: originalOwner }));
-    }
-  };
 
   // Dynamic values for filters
   const platformOptions = Array.from(
@@ -358,7 +291,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
                 <th>Ads Pub.</th>
                 <th>Time of Entry</th>
                 <th>Status</th>
-                <th style={{ minWidth: "180px" }}>Shift Account</th>
+                <th>IT Comments</th>
               </tr>
             </thead>
             <tbody>
@@ -371,7 +304,6 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
               ) : (
                 filteredAccounts.map((acc) => {
                   const creatorName = acc.user_account_createdByIdTouser?.name || "N/A";
-                  const currentOwnerValue = selectedOwnerIds[acc.id] || acc.createdById;
                   
                   return (
                     <tr key={acc.id}>
@@ -406,34 +338,32 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
                           {acc.status}
                         </span>
                       </td>
-                      <td>
-                        <div style={{ position: "relative", width: "100%" }}>
-                          <select
-                            value={currentOwnerValue}
-                            onChange={(e) => handleShiftAccount(acc.id, e.target.value, creatorName)}
-                            className="input-gold"
-                            style={{
-                              padding: "0.35rem 1.75rem 0.35rem 0.65rem",
-                              fontSize: "0.82rem",
-                              width: "100%",
-                              appearance: "none",
-                              cursor: "pointer",
-                              border: "1px solid var(--border-dim)"
-                            }}
-                            disabled={isPending}
-                          >
-                            {/* Always render current visual owner first */}
-                            {activeAssociates.some(assoc => assoc.id === currentOwnerValue) ? null : (
-                              <option value={currentOwnerValue}>{creatorName}</option>
-                            )}
-                            {activeAssociates.map(assoc => (
-                              <option key={assoc.id} value={assoc.id}>
-                                {assoc.name || assoc.email}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown size={12} style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", opacity: 0.5 }} />
-                        </div>
+                      <td 
+                        onClick={() => {
+                          if (acc.itNotes) {
+                            setSelectedITCommentAccount(acc);
+                            setShowITCommentModal(true);
+                          }
+                        }}
+                        style={{
+                          cursor: acc.itNotes ? "pointer" : "default",
+                          color: acc.itNotes ? "var(--gold-premium)" : "inherit",
+                          fontWeight: acc.itNotes ? 600 : "normal",
+                          maxWidth: "180px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}
+                        title={acc.itNotes ? "Click to view full IT comment" : "No IT comment left"}
+                      >
+                        {acc.itNotes ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                            <MessageSquare size={12} style={{ opacity: 0.8 }} />
+                            {acc.itNotes.length > 25 ? `${acc.itNotes.slice(0, 25)}...` : acc.itNotes}
+                          </span>
+                        ) : (
+                          <span style={{ opacity: 0.35 }}>—</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -443,6 +373,101 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
           </table>
         </div>
       </div>
+
+      {/* 4. Read-Only IT Comment Modal Popup */}
+      {showITCommentModal && selectedITCommentAccount && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(255, 255, 255, 0.7)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel kpi-card" style={{
+            maxWidth: "500px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            boxShadow: "var(--shadow-premium)",
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem"
+          }}>
+            <div className="kpi-card-glow"></div>
+
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase" }}>
+                  IT Department Remarks
+                </span>
+                <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0 }}>
+                  {selectedITCommentAccount.serialCode} - {selectedITCommentAccount.idName}
+                </h2>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowITCommentModal(false);
+                  setSelectedITCommentAccount(null);
+                }} 
+                style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Textarea */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              <textarea
+                readOnly
+                rows={5}
+                value={selectedITCommentAccount.itNotes || ""}
+                className="input-gold"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  fontSize: "0.85rem",
+                  background: "var(--bg-primary)",
+                  border: "1px solid var(--border-dim)",
+                  resize: "none",
+                  color: "var(--text-primary)",
+                  cursor: "not-allowed"
+                }}
+              />
+              {/* Timestamp Subtitle */}
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontStyle: "italic", alignSelf: "flex-end" }}>
+                Last Updated by IT: {(() => {
+                  const d = new Date(selectedITCommentAccount.updatedAt || selectedITCommentAccount.createdAt);
+                  return `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()} ${d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+                })()}
+              </span>
+            </div>
+
+            {/* Close Button */}
+            <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-dim)", paddingTop: "0.75rem" }}>
+              <button
+                onClick={() => {
+                  setShowITCommentModal(false);
+                  setSelectedITCommentAccount(null);
+                }}
+                className="btn-glass"
+                style={{ padding: "0.45rem 1.25rem", fontSize: "0.85rem" }}
+              >
+                Close Remarks
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
