@@ -22,6 +22,7 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
     if (pathname.startsWith("/associates-requests")) return "Associates Requests";
     if (pathname.startsWith("/employees")) return "Asset Registry (Laptops/VPNs)";
     if (pathname.startsWith("/my-team")) return "My Team";
+    if (pathname.startsWith("/team-live-roster")) return "Team Live Roster";
     if (pathname.startsWith("/pending")) return "Pending Onboarding";
     if (pathname.startsWith("/settings")) return "Global Platform Rule Engine";
     if (pathname.startsWith("/team-leads")) return "Team Leads";
