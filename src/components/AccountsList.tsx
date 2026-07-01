@@ -25,7 +25,8 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  MessageSquare
+  MessageSquare,
+  X
 } from "lucide-react";
 import { account_status, user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
@@ -126,6 +127,27 @@ export default function AccountsList({
   const [commentAccountId, setCommentAccountId] = useState("");
   const [commentText, setCommentText] = useState("");
   const [isCommentReadOnly, setIsCommentReadOnly] = useState(false);
+
+  // Read-Only IT Comment Modal State
+  const [showITCommentModal, setShowITCommentModal] = useState(false);
+  const [selectedITNotes, setSelectedITNotes] = useState("");
+  const [selectedITNotesAccountSerial, setSelectedITNotesAccountSerial] = useState("");
+  const [selectedITNotesAccountIdName, setSelectedITNotesAccountIdName] = useState("");
+  const [selectedITNotesTimestamp, setSelectedITNotesTimestamp] = useState<string | Date>("");
+  const [seenITComments, setSeenITComments] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("seen_it_comments");
+        if (stored) {
+          setSeenITComments(JSON.parse(stored));
+        }
+      } catch (e) {
+        console.error("Failed to load seen_it_comments", e);
+      }
+    }
+  }, []);
 
   // Inline ads editing state
   const [editingAdsId, setEditingAdsId] = useState<string | null>(null);
@@ -753,13 +775,14 @@ export default function AccountsList({
                 </th>
                 <th>Comments</th>
                 <th>Request to TL</th>
+                <th>IT Comments</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {sortedAccounts.length === 0 ? (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 10 : 9} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                  <td colSpan={isSuperAdmin ? 11 : 10} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
                     No operational accounts cataloged.
                   </td>
                 </tr>
@@ -982,6 +1005,53 @@ export default function AccountsList({
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td 
+                        onClick={() => {
+                          if (acc.itNotes) {
+                            setSelectedITNotes(acc.itNotes);
+                            setSelectedITNotesAccountSerial(acc.serialCode);
+                            setSelectedITNotesAccountIdName(acc.idName);
+                            setSelectedITNotesTimestamp(acc.updatedAt || acc.createdAt);
+                            setShowITCommentModal(true);
+
+                            const nextSeen = { ...seenITComments, [acc.id]: acc.itNotes };
+                            setSeenITComments(nextSeen);
+                            localStorage.setItem("seen_it_comments", JSON.stringify(nextSeen));
+                          }
+                        }}
+                        style={{
+                          cursor: acc.itNotes ? "pointer" : "default",
+                          color: acc.itNotes ? "var(--gold-premium)" : "inherit",
+                          fontWeight: acc.itNotes ? 600 : "normal",
+                          maxWidth: "180px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}
+                        title={acc.itNotes ? "Click to view full IT comments" : "No IT remarks left"}
+                      >
+                        {acc.itNotes ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", position: "relative" }}>
+                            {seenITComments[acc.id] !== acc.itNotes && (
+                              <span 
+                                style={{
+                                  width: "6px",
+                                  height: "6px",
+                                  background: "#EF4444",
+                                  borderRadius: "50%",
+                                  display: "inline-block",
+                                  boxShadow: "0 0 4px #EF4444"
+                                }}
+                                title="New IT Comment!"
+                              />
+                            )}
+                            <MessageSquare size={12} style={{ opacity: 0.8 }} />
+                            {acc.itNotes.length > 25 ? `${acc.itNotes.slice(0, 25)}...` : acc.itNotes}
+                          </span>
+                        ) : (
+                          <span style={{ opacity: 0.35 }}>—</span>
+                        )}
                       </td>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -1715,6 +1785,100 @@ export default function AccountsList({
                   {isPending ? "Saving..." : "Save Comment"}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showITCommentModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(255, 255, 255, 0.7)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel kpi-card" style={{
+            maxWidth: "500px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            boxShadow: "var(--shadow-premium)",
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem"
+          }}>
+            <div className="kpi-card-glow"></div>
+
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase" }}>
+                  IT Department Remarks
+                </span>
+                <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0 }}>
+                  {selectedITNotesAccountSerial} - {selectedITNotesAccountIdName}
+                </h2>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowITCommentModal(false);
+                  setSelectedITNotes("");
+                }} 
+                style={{ background: "none", border: "none", cursor: "pointer", opacity: 0.6 }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Textarea */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              <textarea
+                readOnly
+                rows={5}
+                value={selectedITNotes}
+                className="input-gold"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  fontSize: "0.85rem",
+                  background: "var(--bg-primary)",
+                  border: "1px solid var(--border-dim)",
+                  resize: "none",
+                  color: "var(--text-primary)",
+                  cursor: "not-allowed"
+                }}
+              />
+              {/* Timestamp Subtitle */}
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontStyle: "italic", alignSelf: "flex-end" }}>
+                Last Updated by IT: {(() => {
+                  const d = new Date(selectedITNotesTimestamp);
+                  return `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()} ${d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+                })()}
+              </span>
+            </div>
+
+            {/* Close Button */}
+            <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-dim)", paddingTop: "0.75rem" }}>
+              <button
+                onClick={() => {
+                  setShowITCommentModal(false);
+                  setSelectedITNotes("");
+                }}
+                className="btn-glass"
+                style={{ padding: "0.45rem 1.25rem", fontSize: "0.85rem" }}
+              >
+                Close Remarks
+              </button>
             </div>
           </div>
         </div>
