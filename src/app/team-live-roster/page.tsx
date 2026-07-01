@@ -65,9 +65,32 @@ export default async function TeamLiveRosterPage() {
     });
   }
 
+  // Fetch active Sales Associates for shift reassignment dropdown
+  const activeAssociates = await db.user.findMany({
+    where: {
+      role: "SALES_ASSOCIATE",
+      status: "APPROVED",
+      isArchived: false,
+      ...(user.role === "SUPER_ADMIN" ? {} : { companyId: user.companyId || "" }),
+      ...(user.role === "TEAM_LEAD" ? { teamLeadId: user.id } : {})
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true
+    },
+    orderBy: {
+      name: "asc"
+    }
+  });
+
   return (
     <DashboardLayout user={{ ...user, companyName }}>
-      <TeamLiveRosterList initialAccounts={accounts} user={user} />
+      <TeamLiveRosterList 
+        initialAccounts={accounts} 
+        user={user} 
+        activeAssociates={activeAssociates}
+      />
     </DashboardLayout>
   );
 }

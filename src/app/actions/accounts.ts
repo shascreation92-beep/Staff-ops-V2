@@ -670,3 +670,78 @@ export async function updateAccountCommentAction(accountId: string, comment: str
     throw new Error(error.message || "Failed to update comment.");
   }
 }
+
+export async function shiftAccountOwnershipAction(accountId: string, newAssociateId: string) {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]);
+
+  const account = await db.account.findUnique({
+    where: { id: accountId }
+  });
+
+  if (!account) {
+    throw new Error("Account not found.");
+  }
+
+  const newAssociate = await db.user.findUnique({
+    where: { id: newAssociateId }
+  });
+
+  if (!newAssociate) {
+    throw new Error("Target associate not found.");
+  }
+
+  if (user.role !== "SUPER_ADMIN") {
+    if (account.companyId !== user.companyId || newAssociate.companyId !== user.companyId) {
+      throw new Error("UNAUTHORIZED: Cannot shift account outside your company.");
+    }
+  }
+
+  if (user.role === "TEAM_LEAD") {
+    if (newAssociate.teamLeadId !== user.id) {
+      throw new Error("UNAUTHORIZED: You can only shift accounts to associates you manage.");
+    }
+  }
+
+  const oldOwnerId = account.createdById;
+
+  try {
+    const updatedAccount = await db.account.update({
+      where: { id: accountId },
+      data: {
+        createdById: newAssociate.id,
+        associateId: newAssociate.name || newAssociate.email || "N/A",
+        teamLeadId: newAssociate.teamLeadId,
+        updatedById: user.id,
+        updatedAt: new Date()
+      }
+    });
+
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "",
+      userRole: user.role,
+      action: "SHIFT_OWNERSHIP",
+      entity: "account",
+      entityId: accountId,
+      oldValue: oldOwnerId,
+      newValue: newAssociate.id
+    });
+
+    await db.accounthistory.create({
+      data: {
+        id: crypto.randomUUID(),
+        accountId,
+        fromStatus: account.status,
+        toStatus: account.status,
+        changedById: user.id,
+        notes: `Account ownership shifted from ${oldOwnerId} to ${newAssociate.id} (${newAssociate.name || newAssociate.email}).`
+      }
+    });
+
+    revalidatePath("/accounts");
+    revalidatePath("/team-live-roster");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to shift account ownership.");
+  }
+}
