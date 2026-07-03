@@ -18,13 +18,41 @@ export default async function PersonalNotesPage() {
     companyName = company?.name;
   }
 
-  const notes = await db.personalnote.findMany({
+  const rawNotes = await db.personalnote.findMany({
     where: { userId: user.id },
     orderBy: [
+      { isGlobalPinned: "desc" },
       { isPinned: "desc" },
       { updatedAt: "desc" }
     ]
   });
+
+  const notes = await Promise.all(
+    rawNotes.map(async (note) => {
+      if (note.isSharedByMe) {
+        const clones = await db.personalnote.findMany({
+          where: { sharedFromNoteId: note.id },
+          select: {
+            isAcknowledged: true,
+            user: { select: { name: true } }
+          }
+        });
+        const readClones = clones.filter(c => c.isAcknowledged);
+        return {
+          ...note,
+          sharesCount: clones.length,
+          readCount: readClones.length,
+          readByNames: readClones.map(c => c.user.name || "Sales Associate")
+        };
+      }
+      return {
+        ...note,
+        sharesCount: 0,
+        readCount: 0,
+        readByNames: [] as string[]
+      };
+    })
+  );
 
   return (
     <DashboardLayout user={{ ...user, companyName }}>

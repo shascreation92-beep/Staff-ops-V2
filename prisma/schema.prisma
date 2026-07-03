@@ -349,14 +349,17 @@ model personalnote {
   isPinned             Boolean  @default(false)
   color                String   @default("default")
   isChecklist          Boolean  @default(false)
-  isSharedAnnouncement Boolean  @default(false)
-  isSharedByMe         Boolean  @default(false)
+  isSharedAnnouncement Boolean   @default(false)
+  isSharedByMe         Boolean   @default(false)
+  isGlobalPinned       Boolean   @default(false)
+  timerExpiresAt       DateTime?
+  isAcknowledged       Boolean   @default(false)
   sharedFromTlName     String?
   sharedFromNoteId     String?
-  category             String?  @default("Work")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  user                 user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category             String?   @default("Work")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 user      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "PersonalNote_userId_fkey")
   @@map("personal_notes")

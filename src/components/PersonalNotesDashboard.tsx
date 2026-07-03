@@ -30,7 +30,9 @@ import {
   updatePersonalNoteAction, 
   deletePersonalNoteAction, 
   sharePersonalNoteWithTeamAction,
-  cloneSharedAnnouncementAction
+  cloneSharedAnnouncementAction,
+  updateNoteTimerAction,
+  acknowledgeSharedAnnouncementAction
 } from "@/app/actions/personalNotes";
 import NotificationBell from "./NotificationBell";
 
@@ -44,11 +46,17 @@ interface PersonalNote {
   isChecklist: boolean;
   isSharedAnnouncement: boolean;
   isSharedByMe: boolean;
+  isGlobalPinned: boolean;
+  timerExpiresAt: string | Date | null;
+  isAcknowledged: boolean;
   sharedFromTlName: string | null;
   sharedFromNoteId: string | null;
   category: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
+  sharesCount?: number;
+  readCount?: number;
+  readByNames?: string[];
 }
 
 interface PersonalNotesDashboardProps {
@@ -252,9 +260,10 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
 
   const handleShareWithTeam = async (id: string) => {
     if (!confirm("Are you sure you want to share this note as an announcement with all your assigned Sales Associates?")) return;
+    const isGlobalPinned = confirm("Would you like to PIN this announcement permanently at the top of the Associates' workspace?\n(If enabled, associates cannot delete it until you unpin it)");
     startTransition(async () => {
       try {
-        const res = await sharePersonalNoteWithTeamAction(id);
+        const res = await sharePersonalNoteWithTeamAction(id, isGlobalPinned);
         if (res.success) {
           toast.success(`Note shared! Cloned into ${res.count} associates' workspaces.`);
           router.refresh();
@@ -389,6 +398,7 @@ interface NoteCardProps {
 }
 
 function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: NoteCardProps) {
+  const router = useRouter();
   const [localTitle, setLocalTitle] = useState(note.title === "Untitled Note" ? "" : note.title);
   const [localContent, setLocalContent] = useState(note.content);
   const [localColor, setLocalColor] = useState(note.color);
@@ -398,6 +408,84 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
   const [isCopied, setIsCopied] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [reminderTime, setReminderTime] = useState<number | null>(null);
+
+  // Read Acknowledgments State
+  const [showAckDropdown, setShowAckDropdown] = useState(false);
+
+  // Countdown Timer State
+  const [timeLeft, setTimeLeft] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!note.timerExpiresAt) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const expiresTime = new Date(note.timerExpiresAt).getTime();
+    
+    const updateCountdown = () => {
+      const now = Date.now();
+      const diff = expiresTime - now;
+      if (diff <= 0) {
+        setTimeLeft("⚠️ Expired");
+        return;
+      }
+      const totalSecs = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSecs / 3600);
+      const mins = Math.floor((totalSecs % 3600) / 60);
+      const secs = totalSecs % 60;
+      
+      const formatted = [
+        hours > 0 ? String(hours).padStart(2, '0') : null,
+        String(mins).padStart(2, '0'),
+        String(secs).padStart(2, '0')
+      ].filter(Boolean).join(":");
+      
+      setTimeLeft(`⏱️ ${formatted}`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [note.timerExpiresAt]);
+
+  const handleSetCountdown = async () => {
+    if (isLocked) return;
+    const minsStr = prompt("Append action countdown timer (minutes) - e.g. 15, 30, 60.\nEnter 0 or leave empty to clear current timer.");
+    if (minsStr === null) return;
+    
+    const mins = minsStr.trim() === "" ? 0 : parseFloat(minsStr);
+    if (isNaN(mins) || mins < 0) {
+      toast.error("Please enter a valid positive number.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await updateNoteTimerAction(note.id, mins === 0 ? null : mins);
+        if (res.success) {
+          toast.success(mins === 0 ? "Timer cleared!" : `Urgency countdown set for ${mins} minutes!`);
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to update timer.");
+      }
+    });
+  };
+
+  const handleAcknowledge = async () => {
+    startTransition(async () => {
+      try {
+        const res = await acknowledgeSharedAnnouncementAction(note.id);
+        if (res.success) {
+          toast.success("Announcement acknowledged!");
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to acknowledge.");
+      }
+    });
+  };
 
   // Debounced auto-save effect
   useEffect(() => {
@@ -600,8 +688,8 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         flexDirection: "column",
         minHeight: "340px",
         background: activeTheme.bg,
-        border: `1px solid ${activeTheme.border}`,
-        boxShadow: `0 4px 20px ${activeTheme.glow}`,
+        border: note.isGlobalPinned ? "2px solid #0250A1" : `1px solid ${activeTheme.border}`,
+        boxShadow: note.isGlobalPinned ? "0 4px 20px rgba(2, 80, 161, 0.25)" : `0 4px 20px ${activeTheme.glow}`,
         padding: "1.25rem",
         position: "relative",
         borderRadius: "12px",
@@ -626,7 +714,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
           textTransform: "uppercase",
           letterSpacing: "0.03em"
         }}>
-          📢 Team Announcement
+          📢 Team Announcement {note.isGlobalPinned && "• Pinned to Team"}
         </div>
       )}
 
@@ -663,6 +751,47 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         {/* Header Tools */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
           
+          {/* Live countdown timer display */}
+          {timeLeft && (
+            <span 
+              onClick={handleSetCountdown}
+              style={{ 
+                fontSize: "0.68rem", 
+                fontWeight: 800, 
+                color: timeLeft.includes("Expired") ? "#EF4444" : "var(--gold-premium)", 
+                background: "rgba(0,0,0,0.03)", 
+                padding: "0.1rem 0.35rem", 
+                borderRadius: "4px", 
+                border: "1px solid rgba(0,0,0,0.06)", 
+                display: "inline-flex", 
+                alignItems: "center",
+                cursor: (note.isSharedAnnouncement || isLocked) ? "default" : "pointer"
+              }}
+              title={note.isSharedAnnouncement ? "Time remaining" : "Click to edit countdown timer"}
+            >
+              {timeLeft}
+            </span>
+          )}
+
+          {/* Action Countdown Timer button setter (⏱️) */}
+          {!note.isSharedAnnouncement && (
+            <button
+              onClick={handleSetCountdown}
+              disabled={isLocked}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: isLocked ? "default" : "pointer",
+                padding: "0.2rem",
+                color: note.timerExpiresAt ? "var(--gold-premium)" : "var(--text-muted)",
+                opacity: note.timerExpiresAt ? 1 : 0.4
+              }}
+              title="Set Urgency Countdown Timer (⏱️)"
+            >
+              <span style={{ fontSize: "0.9rem" }}>⏱️</span>
+            </button>
+          )}
+
           {/* Note Edit Lock (🔒) */}
           {!note.isSharedAnnouncement && (
             <button
@@ -858,6 +987,91 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         )}
       </div>
 
+      {/* Associate Read Acknowledgment button */}
+      {note.isSharedAnnouncement && (
+        <div style={{ marginTop: "0.55rem" }}>
+          {note.isAcknowledged ? (
+            <span style={{
+              display: "inline-flex",
+              alignItems: "center",
+              fontSize: "0.75rem",
+              fontWeight: 800,
+              color: "#2EC4B6",
+              gap: "0.25rem"
+            }}>
+              ✓ Read Confirmation Received
+            </span>
+          ) : (
+            <button
+              onClick={handleAcknowledge}
+              className="btn-gold"
+              style={{
+                width: "100%",
+                padding: "0.35rem 0.75rem",
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.25rem",
+                borderRadius: "4px"
+              }}
+            >
+              <span>I Have Read This</span>
+              <Check size={12} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Team Lead acknowledgment dashboard tracker */}
+      {userRole === "TEAM_LEAD" && note.isSharedByMe && (
+        <div style={{ marginTop: "0.55rem" }}>
+          <button
+            onClick={() => setShowAckDropdown(!showAckDropdown)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              color: "var(--gold-premium)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.25rem",
+              padding: 0
+            }}
+          >
+            <span>Read by {note.readCount || 0}/{note.sharesCount || 0} Associates</span>
+            <span style={{ fontSize: "0.55rem" }}>{showAckDropdown ? "▲" : "▼"}</span>
+          </button>
+          {showAckDropdown && (
+            <div style={{
+              marginTop: "0.35rem",
+              background: "rgba(0, 0, 0, 0.03)",
+              borderRadius: "6px",
+              padding: "0.45rem",
+              maxHeight: "100px",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.25rem",
+              border: "1px solid rgba(0, 0, 0, 0.05)"
+            }}>
+              {note.readByNames && note.readByNames.length > 0 ? (
+                note.readByNames.map((name, idx) => (
+                  <span key={idx} style={{ fontSize: "0.68rem", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                    <Check size={10} style={{ color: "#2EC4B6" }} /> {name}
+                  </span>
+                ))
+              ) : (
+                <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontStyle: "italic" }}>No acknowledgments yet.</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Card Footer */}
       <div style={{ 
         display: "flex", 
@@ -1035,21 +1249,23 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
           )}
 
           {/* Delete Card */}
-          <button
-            disabled={isLocked}
-            onClick={() => !isLocked && onDelete(note.id)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: isLocked ? "default" : "pointer",
-              padding: "0.2rem",
-              color: "var(--color-danger)",
-              opacity: isLocked ? 0.4 : 1
-            }}
-            title="Delete Note"
-          >
-            <Trash2 size={14} />
-          </button>
+          {(!note.isSharedAnnouncement || !note.isGlobalPinned) && (
+            <button
+              disabled={isLocked}
+              onClick={() => !isLocked && onDelete(note.id)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: isLocked ? "default" : "pointer",
+                padding: "0.2rem",
+                color: "var(--color-danger)",
+                opacity: isLocked ? 0.4 : 1
+              }}
+              title="Delete Note"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </div>
     </div>

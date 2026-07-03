@@ -130,7 +130,7 @@ export async function deletePersonalNoteAction(noteId: string) {
   }
 }
 
-export async function sharePersonalNoteWithTeamAction(noteId: string) {
+export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPinned: boolean = false) {
   const user = await enforceAuth(["TEAM_LEAD"]);
 
   const note = await db.personalnote.findFirst({
@@ -170,6 +170,8 @@ export async function sharePersonalNoteWithTeamAction(noteId: string) {
           color: note.color,
           isChecklist: note.isChecklist,
           category: note.category,
+          isGlobalPinned: isGlobalPinned,
+          isPinned: isGlobalPinned ? true : existingAnnouncement.isPinned,
           sharedFromTlName: null, // Strict Database Anonymity
           updatedAt: new Date()
         }
@@ -184,6 +186,8 @@ export async function sharePersonalNoteWithTeamAction(noteId: string) {
           isChecklist: note.isChecklist,
           category: note.category,
           isSharedAnnouncement: true,
+          isGlobalPinned: isGlobalPinned,
+          isPinned: isGlobalPinned,
           sharedFromTlName: null, // Strict Database Anonymity
           sharedFromNoteId: note.id
         }
@@ -243,4 +247,59 @@ export async function cloneSharedAnnouncementAction(noteId: string) {
   } catch (error: any) {
     throw new Error(error.message || "Failed to clone announcement.");
   }
+}
+
+export async function updateNoteTimerAction(noteId: string, durationMinutes: number | null) {
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+
+  const note = await db.personalnote.findUnique({
+    where: { id: noteId }
+  });
+
+  if (!note || note.userId !== user.id) {
+    throw new Error("Note not found or unauthorized.");
+  }
+
+  let expiresAt: Date | null = null;
+  if (durationMinutes !== null && durationMinutes > 0) {
+    expiresAt = new Date(Date.now() + durationMinutes * 60 * 1000);
+  }
+
+  const updatedNote = await db.personalnote.update({
+    where: { id: noteId },
+    data: { timerExpiresAt: expiresAt }
+  });
+
+  try {
+    revalidatePath("/personal-notes");
+  } catch (e) {}
+
+  return { success: true, note: updatedNote };
+}
+
+export async function acknowledgeSharedAnnouncementAction(noteId: string) {
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+
+  const announcement = await db.personalnote.findFirst({
+    where: {
+      id: noteId,
+      userId: user.id,
+      isSharedAnnouncement: true
+    }
+  });
+
+  if (!announcement) {
+    throw new Error("Announcement not found or unauthorized.");
+  }
+
+  await db.personalnote.update({
+    where: { id: noteId },
+    data: { isAcknowledged: true }
+  });
+
+  try {
+    revalidatePath("/personal-notes");
+  } catch (e) {}
+
+  return { success: true };
 }
