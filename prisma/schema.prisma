@@ -245,6 +245,7 @@ model user {
   company                                  company?         @relation(fields: [companyId], references: [id], map: "User_companyId_fkey")
   user                                     user?            @relation("userTouser", fields: [teamLeadId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "User_teamLeadId_fkey")
   other_user                               user[]           @relation("userTouser")
+  personalnote                             personalnote[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -338,4 +339,24 @@ enum employee_vpnProvider {
   ProtonVPN
   PureVPN
   HideMe
+}
+
+model personalnote {
+  id                   String   @id @default(uuid())
+  userId               String
+  title                String
+  content              String   @db.Text
+  isPinned             Boolean  @default(false)
+  color                String   @default("default")
+  isChecklist          Boolean  @default(false)
+  isSharedAnnouncement Boolean  @default(false)
+  sharedFromTlName     String?
+  sharedFromNoteId     String?
+  category             String?  @default("Work")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "PersonalNote_userId_fkey")
+  @@map("personal_notes")
 }

@@ -111,6 +111,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       icon: Database,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
+    { 
+      id: "personal-notes", 
+      label: "My Personal Notes", 
+      path: "/personal-notes", 
+      icon: FileText,
+      roles: ["TEAM_LEAD", "SALES_ASSOCIATE"] 
+    },
     {
       id: "team-live-roster",
       label: "Team Live Roster",
