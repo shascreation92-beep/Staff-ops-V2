@@ -8,7 +8,8 @@ import {
   verifyAccountAction,
   updateAccountAdsAction,
   updateAccountIssueAction,
-  updateAccountCommentAction
+  updateAccountCommentAction,
+  updateAccountITNotesAction
 } from "@/app/actions/accounts";
 import { 
   Search, 
@@ -152,6 +153,31 @@ export default function AccountsList({
   // Inline ads editing state
   const [editingAdsId, setEditingAdsId] = useState<string | null>(null);
   const [tempAdsValue, setTempAdsValue] = useState<number>(0);
+
+  // IT Comments Inline Editing State
+  const [savingITCommentId, setSavingITCommentId] = useState<string | null>(null);
+  const [savedITCommentId, setSavedITCommentId] = useState<string | null>(null);
+
+  const handleSaveITCommentInline = (accountId: string, itNotes: string) => {
+    setSavingITCommentId(accountId);
+    setSavedITCommentId(null);
+    startTransition(async () => {
+      try {
+        const res = await updateAccountITNotesAction(accountId, itNotes);
+        if (res.success) {
+          setSavedITCommentId(accountId);
+          setTimeout(() => {
+            setSavedITCommentId(prev => prev === accountId ? null : prev);
+          }, 3000);
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to save IT comment.");
+      } finally {
+        setSavingITCommentId(null);
+      }
+    });
+  };
 
   // Workflow update state
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -774,7 +800,7 @@ export default function AccountsList({
                   Time of Entry {sortOrder === "desc" ? "↓" : "↑"}
                 </th>
                 <th>Comments</th>
-                <th>Request to TL</th>
+                <th>{isIT ? "Requested By" : "Request to TL"}</th>
                 <th>IT Comments</th>
                 <th>Status</th>
               </tr>
@@ -949,7 +975,11 @@ export default function AccountsList({
                       </td>
                       <td>
                         <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", alignItems: "flex-start" }}>
-                          {(isSalesAssociate || isTeamLead) && ["DRAFT", "REJECTED"].includes(acc.status) ? (
+                          {isIT ? (
+                            <span style={{ fontWeight: 600 }}>
+                              {acc.user_account_createdByIdTouser?.name || acc.associateId || "N/A"}
+                            </span>
+                          ) : (isSalesAssociate || isTeamLead) && ["DRAFT", "REJECTED"].includes(acc.status) ? (
                             acc.adsPublished >= 4 ? (
                               isSalesAssociate ? (
                                 <button
@@ -1006,53 +1036,124 @@ export default function AccountsList({
                           )}
                         </div>
                       </td>
-                      <td 
-                        onClick={() => {
-                          if (acc.itNotes) {
-                            setSelectedITNotes(acc.itNotes);
-                            setSelectedITNotesAccountSerial(acc.serialCode);
-                            setSelectedITNotesAccountIdName(acc.idName);
-                            setSelectedITNotesTimestamp(acc.updatedAt || acc.createdAt);
-                            setShowITCommentModal(true);
-
-                            const nextSeen = { ...seenITComments, [acc.id]: acc.itNotes };
-                            setSeenITComments(nextSeen);
-                            localStorage.setItem("seen_it_comments", JSON.stringify(nextSeen));
-                          }
-                        }}
-                        style={{
-                          cursor: acc.itNotes ? "pointer" : "default",
-                          color: acc.itNotes ? "var(--gold-premium)" : "inherit",
-                          fontWeight: acc.itNotes ? 600 : "normal",
-                          maxWidth: "180px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap"
-                        }}
-                        title={acc.itNotes ? "Click to view full IT comments" : "No IT remarks left"}
-                      >
-                        {acc.itNotes ? (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", position: "relative" }}>
-                            {seenITComments[acc.id] !== acc.itNotes && (
+                      {isIT || isSuperAdmin ? (
+                        <td style={{ minWidth: "220px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", position: "relative", width: "100%" }}>
+                            <input
+                              type="text"
+                              placeholder="Type IT comment..."
+                              defaultValue={acc.itNotes || ""}
+                              onBlur={(e) => {
+                                if (e.target.value !== (acc.itNotes || "")) {
+                                  handleSaveITCommentInline(acc.id, e.target.value);
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  (e.target as HTMLInputElement).blur();
+                                }
+                              }}
+                              className="input-gold"
+                              style={{
+                                width: "100%",
+                                padding: "0.3rem 0.5rem",
+                                fontSize: "0.8rem",
+                                background: "var(--bg-primary)",
+                                border: "1px solid var(--border-dim)",
+                                borderRadius: "4px",
+                                color: "var(--text-primary)"
+                              }}
+                              disabled={isPending}
+                            />
+                            {savingITCommentId === acc.id && (
                               <span 
-                                style={{
-                                  width: "6px",
-                                  height: "6px",
-                                  background: "#EF4444",
-                                  borderRadius: "50%",
-                                  display: "inline-block",
-                                  boxShadow: "0 0 4px #EF4444"
+                                style={{ 
+                                  position: "absolute",
+                                  right: "10px",
+                                  fontSize: "0.65rem", 
+                                  color: "var(--gold-premium)", 
+                                  fontWeight: 600,
+                                  background: "rgba(255, 255, 255, 0.95)",
+                                  padding: "0.1rem 0.3rem",
+                                  borderRadius: "3px",
+                                  border: "1px solid var(--border-dim)",
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                                  zIndex: 10
                                 }}
-                                title="New IT Comment!"
-                              />
+                              >
+                                Saving...
+                              </span>
                             )}
-                            <MessageSquare size={12} style={{ opacity: 0.8 }} />
-                            {acc.itNotes.length > 25 ? `${acc.itNotes.slice(0, 25)}...` : acc.itNotes}
-                          </span>
-                        ) : (
-                          <span style={{ opacity: 0.35 }}>—</span>
-                        )}
-                      </td>
+                            {savedITCommentId === acc.id && (
+                              <span 
+                                style={{ 
+                                  position: "absolute",
+                                  right: "10px",
+                                  fontSize: "0.65rem", 
+                                  color: "#10B981", 
+                                  fontWeight: 700,
+                                  background: "rgba(255, 255, 255, 0.95)",
+                                  padding: "0.1rem 0.3rem",
+                                  borderRadius: "3px",
+                                  border: "1px solid rgba(16, 185, 129, 0.2)",
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                                  zIndex: 10
+                                }}
+                              >
+                                ✓ Saved
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      ) : (
+                        <td 
+                          onClick={() => {
+                            if (acc.itNotes) {
+                              setSelectedITNotes(acc.itNotes);
+                              setSelectedITNotesAccountSerial(acc.serialCode);
+                              setSelectedITNotesAccountIdName(acc.idName);
+                              setSelectedITNotesTimestamp(acc.updatedAt || acc.createdAt);
+                              setShowITCommentModal(true);
+
+                              const nextSeen = { ...seenITComments, [acc.id]: acc.itNotes };
+                              setSeenITComments(nextSeen);
+                              localStorage.setItem("seen_it_comments", JSON.stringify(nextSeen));
+                            }
+                          }}
+                          style={{
+                            cursor: acc.itNotes ? "pointer" : "default",
+                            color: acc.itNotes ? "var(--gold-premium)" : "inherit",
+                            fontWeight: acc.itNotes ? 600 : "normal",
+                            maxWidth: "180px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap"
+                          }}
+                          title={acc.itNotes ? "Click to view full IT comments" : "No IT remarks left"}
+                        >
+                          {acc.itNotes ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", position: "relative" }}>
+                              {seenITComments[acc.id] !== acc.itNotes && (
+                                <span 
+                                  style={{
+                                    width: "6px",
+                                    height: "6px",
+                                    background: "#EF4444",
+                                    borderRadius: "50%",
+                                    display: "inline-block",
+                                    boxShadow: "0 0 4px #EF4444"
+                                  }}
+                                  title="New IT Comment!"
+                                />
+                              )}
+                              <MessageSquare size={12} style={{ opacity: 0.8 }} />
+                              {acc.itNotes.length > 25 ? `${acc.itNotes.slice(0, 25)}...` : acc.itNotes}
+                            </span>
+                          ) : (
+                            <span style={{ opacity: 0.35 }}>—</span>
+                          )}
+                        </td>
+                      )}
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                           {/* Dropdown select for Sales Associate (own account), Team Lead (own account), or IT (on TL personal accounts) */}

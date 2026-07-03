@@ -671,3 +671,53 @@ export async function updateAccountCommentAction(accountId: string, comment: str
   }
 }
 
+export async function updateAccountITNotesAction(accountId: string, itNotes: string) {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"]);
+
+  const account = await db.account.findUnique({
+    where: { id: accountId }
+  });
+
+  if (!account) {
+    throw new Error("Account not found.");
+  }
+
+  // Multi-tenant check
+  if (user.role !== "SUPER_ADMIN" && account.companyId !== user.companyId) {
+    throw new Error("UNAUTHORIZED: Access to another company's record is forbidden.");
+  }
+
+  try {
+    const updatedAccount = await db.account.update({
+      where: { id: accountId },
+      data: {
+        itNotes: itNotes.trim() || null,
+        updatedById: user.id,
+        updatedAt: new Date()
+      }
+    });
+
+    // Write audit log
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "",
+      userRole: user.role,
+      action: "UPDATE_IT_NOTES",
+      entity: "account",
+      entityId: accountId,
+      oldValue: account.itNotes || "",
+      newValue: itNotes
+    });
+
+    try {
+      revalidatePath("/accounts");
+      revalidatePath("/team-live-roster");
+    } catch (revalErr: any) {
+      console.warn("Non-fatal revalidation warning:", revalErr.message || revalErr);
+    }
+
+    return { success: true, account: updatedAccount };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update IT comments.");
+  }
+}
