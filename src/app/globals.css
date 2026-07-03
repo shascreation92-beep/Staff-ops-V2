@@ -1380,3 +1380,10 @@ body {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+/* Custom Placeholders Styling */
+input::placeholder,
+textarea::placeholder {
+  color: #9CA3AF !important; /* text-gray-400 equivalent */
+  opacity: 0.8 !important;
+}

@@ -157,7 +157,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
     startTransition(async () => {
       try {
         const res = await createPersonalNoteAction({
-          title: "Untitled Note",
+          title: "",
           content: "",
           isChecklist: false,
           color: "default",
@@ -361,7 +361,7 @@ interface NoteCardProps {
 }
 
 function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: NoteCardProps) {
-  const [localTitle, setLocalTitle] = useState(note.title);
+  const [localTitle, setLocalTitle] = useState(note.title === "Untitled Note" ? "" : note.title);
   const [localContent, setLocalContent] = useState(note.content);
   const [localColor, setLocalColor] = useState(note.color);
   const [localCategory, setLocalCategory] = useState(note.category || "Work");
@@ -744,7 +744,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
             <textarea
               value={localContent}
               onChange={(e) => setLocalContent(e.target.value)}
-              placeholder="Start typing your note remarks here... Use **bold**, *italic*, or __underline__ for formatting."
+              placeholder="Start typing your note here..."
               style={{
                 width: "100%",
                 height: "140px",
@@ -926,7 +926,7 @@ interface FullscreenModalProps {
 }
 
 function FullscreenModal({ note, userRole, onClose, onSave }: FullscreenModalProps) {
-  const [title, setTitle] = useState(note.title);
+  const [title, setTitle] = useState(note.title === "Untitled Note" ? "" : note.title);
   const [content, setContent] = useState(note.content);
   const [category, setCategory] = useState(note.category || "Work");
   const [color, setColor] = useState(note.color);
@@ -1125,7 +1125,7 @@ function FullscreenModal({ note, userRole, onClose, onSave }: FullscreenModalPro
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Start typing long-form notes..."
+                placeholder="Start typing your note here..."
                 style={{
                   width: "100%",
                   height: "90%",
