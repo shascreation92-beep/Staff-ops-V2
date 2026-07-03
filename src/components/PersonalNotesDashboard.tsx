@@ -17,7 +17,8 @@ import {
   AlertCircle,
   HelpCircle,
   Edit2,
-  Check
+  Check,
+  Users
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { 
@@ -38,6 +39,7 @@ interface PersonalNote {
   color: string;
   isChecklist: boolean;
   isSharedAnnouncement: boolean;
+  isSharedByMe: boolean;
   sharedFromTlName: string | null;
   sharedFromNoteId: string | null;
   category: string | null;
@@ -523,7 +525,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
           textTransform: "uppercase",
           letterSpacing: "0.03em"
         }}>
-          📢 TL Announcement: {note.sharedFromTlName || "Team Lead"}
+          📢 Team Announcement
         </div>
       )}
 
@@ -836,19 +838,41 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
 
           {/* Share announcement (Team Lead only) */}
           {userRole === "TEAM_LEAD" && !note.isSharedAnnouncement && (
-            <button
-              onClick={() => onShare(note.id)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "0.2rem",
-                color: "var(--gold-premium)"
-              }}
-              title="Share with Team"
-            >
-              <Share2 size={14} />
-            </button>
+            note.isSharedByMe ? (
+              <span 
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  fontSize: "0.68rem",
+                  fontWeight: 800,
+                  color: "#2EC4B6",
+                  background: "rgba(46, 196, 182, 0.1)",
+                  border: "1px solid rgba(46, 196, 182, 0.25)",
+                  padding: "0.15rem 0.45rem",
+                  borderRadius: "4px",
+                  gap: "0.25rem",
+                  cursor: "default"
+                }}
+                title="This note has been shared with your team."
+              >
+                <Users size={12} />
+                Shared
+              </span>
+            ) : (
+              <button
+                onClick={() => onShare(note.id)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0.2rem",
+                  color: "var(--gold-premium)"
+                }}
+                title="Share with Team"
+              >
+                <Share2 size={14} />
+              </button>
+            )
           )}
 
           {/* Clone shared announcement (Sales Associate only) */}

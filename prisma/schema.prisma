@@ -350,6 +350,7 @@ model personalnote {
   color                String   @default("default")
   isChecklist          Boolean  @default(false)
   isSharedAnnouncement Boolean  @default(false)
+  isSharedByMe         Boolean  @default(false)
   sharedFromTlName     String?
   sharedFromNoteId     String?
   category             String?  @default("Work")

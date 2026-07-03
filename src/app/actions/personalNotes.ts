@@ -170,7 +170,7 @@ export async function sharePersonalNoteWithTeamAction(noteId: string) {
           color: note.color,
           isChecklist: note.isChecklist,
           category: note.category,
-          sharedFromTlName: user.name || "Team Lead",
+          sharedFromTlName: null, // Strict Database Anonymity
           updatedAt: new Date()
         }
       });
@@ -184,13 +184,19 @@ export async function sharePersonalNoteWithTeamAction(noteId: string) {
           isChecklist: note.isChecklist,
           category: note.category,
           isSharedAnnouncement: true,
-          sharedFromTlName: user.name || "Team Lead",
+          sharedFromTlName: null, // Strict Database Anonymity
           sharedFromNoteId: note.id
         }
       });
     }
     shareCount++;
   }
+
+  // Mark the source note as shared by the TL
+  await db.personalnote.update({
+    where: { id: noteId },
+    data: { isSharedByMe: true }
+  });
 
   try {
     revalidatePath("/personal-notes");
