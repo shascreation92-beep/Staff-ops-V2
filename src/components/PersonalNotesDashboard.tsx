@@ -413,11 +413,13 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
   const [showAckDropdown, setShowAckDropdown] = useState(false);
 
   // Countdown Timer State
-  const [timeLeft, setTimeLeft] = useState<string | null>(null);
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState<number | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     if (!note.timerExpiresAt) {
-      setTimeLeft(null);
+      setTimeLeftSeconds(null);
+      setIsExpired(false);
       return;
     }
 
@@ -427,21 +429,13 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
       const now = Date.now();
       const diff = expiresTime - now;
       if (diff <= 0) {
-        setTimeLeft("⚠️ Expired");
+        setTimeLeftSeconds(0);
+        setIsExpired(true);
         return;
       }
-      const totalSecs = Math.floor(diff / 1000);
-      const hours = Math.floor(totalSecs / 3600);
-      const mins = Math.floor((totalSecs % 3600) / 60);
-      const secs = totalSecs % 60;
-      
-      const formatted = [
-        hours > 0 ? String(hours).padStart(2, '0') : null,
-        String(mins).padStart(2, '0'),
-        String(secs).padStart(2, '0')
-      ].filter(Boolean).join(":");
-      
-      setTimeLeft(`⏱️ ${formatted}`);
+      const secs = Math.floor(diff / 1000);
+      setTimeLeftSeconds(secs);
+      setIsExpired(false);
     };
 
     updateCountdown();
@@ -675,6 +669,12 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
 
   const [, startTransition] = useTransition();
 
+  const formatMMSS = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `⏱️ ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} remaining`;
+  };
+
   // Progress calculations
   const totalChecklist = checklistItems.length;
   const completedChecklist = checklistItems.filter(i => i.done).length;
@@ -688,8 +688,9 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         flexDirection: "column",
         minHeight: "340px",
         background: activeTheme.bg,
-        border: note.isGlobalPinned ? "2px solid #0250A1" : `1px solid ${activeTheme.border}`,
+        border: isExpired ? "1.5px solid rgba(239, 68, 68, 0.45)" : note.isGlobalPinned ? "2px solid #0250A1" : `1px solid ${activeTheme.border}`,
         boxShadow: note.isGlobalPinned ? "0 4px 20px rgba(2, 80, 161, 0.25)" : `0 4px 20px ${activeTheme.glow}`,
+        opacity: isExpired ? 0.82 : 1,
         padding: "1.25rem",
         position: "relative",
         borderRadius: "12px",
@@ -752,24 +753,22 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
           
           {/* Live countdown timer display */}
-          {timeLeft && (
+          {note.timerExpiresAt && timeLeftSeconds !== null && (
             <span 
               onClick={handleSetCountdown}
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold transition-all duration-300 ${
+                isExpired ? "" : timeLeftSeconds < 600 ? "animate-pulse" : ""
+              }`}
               style={{ 
-                fontSize: "0.68rem", 
-                fontWeight: 800, 
-                color: timeLeft.includes("Expired") ? "#EF4444" : "var(--gold-premium)", 
-                background: "rgba(0,0,0,0.03)", 
-                padding: "0.1rem 0.35rem", 
-                borderRadius: "4px", 
-                border: "1px solid rgba(0,0,0,0.06)", 
-                display: "inline-flex", 
-                alignItems: "center",
-                cursor: (note.isSharedAnnouncement || isLocked) ? "default" : "pointer"
+                cursor: (note.isSharedAnnouncement || isLocked) ? "default" : "pointer",
+                background: isExpired ? "#EF4444" : timeLeftSeconds < 600 ? "#FEE2E2" : "rgba(0, 0, 0, 0.04)",
+                color: isExpired ? "#FFFFFF" : timeLeftSeconds < 600 ? "#991B1B" : "var(--text-secondary)",
+                border: isExpired ? "1px solid #DC2626" : timeLeftSeconds < 600 ? "1px solid #FCA5A5" : "1px solid rgba(0, 0, 0, 0.08)",
+                fontSize: "0.68rem"
               }}
-              title={note.isSharedAnnouncement ? "Time remaining" : "Click to edit countdown timer"}
+              title={note.isSharedAnnouncement ? "Countdown deadline" : "Click to edit countdown timer"}
             >
-              {timeLeft}
+              {isExpired ? "⏰ Time's Up" : formatMMSS(timeLeftSeconds)}
             </span>
           )}
 

@@ -172,6 +172,7 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
           category: note.category,
           isGlobalPinned: isGlobalPinned,
           isPinned: isGlobalPinned ? true : existingAnnouncement.isPinned,
+          timerExpiresAt: note.timerExpiresAt,
           sharedFromTlName: null, // Strict Database Anonymity
           updatedAt: new Date()
         }
@@ -188,6 +189,7 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
           isSharedAnnouncement: true,
           isGlobalPinned: isGlobalPinned,
           isPinned: isGlobalPinned,
+          timerExpiresAt: note.timerExpiresAt,
           sharedFromTlName: null, // Strict Database Anonymity
           sharedFromNoteId: note.id
         }
@@ -269,6 +271,14 @@ export async function updateNoteTimerAction(noteId: string, durationMinutes: num
     where: { id: noteId },
     data: { timerExpiresAt: expiresAt }
   });
+
+  // Propagate to all cloned notes of the team
+  if (note.isSharedByMe) {
+    await db.personalnote.updateMany({
+      where: { sharedFromNoteId: note.id },
+      data: { timerExpiresAt: expiresAt }
+    });
+  }
 
   try {
     revalidatePath("/personal-notes");
