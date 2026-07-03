@@ -16,7 +16,8 @@ import {
   FileText, 
   AlertCircle,
   HelpCircle,
-  Edit2
+  Edit2,
+  Check
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { 
@@ -106,6 +107,34 @@ const renderMarkdown = (text: string) => {
   html = html.replace(/__(.*?)__/g, "<u>$1</u>");
   
   return html.replace(/\n/g, "<br />");
+};
+
+const executeFallbackCopy = (text: string) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-999999px";
+  textArea.style.top = "-999999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand("copy");
+  } catch (err) {
+    console.error("Fallback copy failed", err);
+  }
+  document.body.removeChild(textArea);
+};
+
+const fallbackCopyToClipboard = (text: string) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).catch(err => {
+      console.warn("navigator.clipboard failed, using fallback", err);
+      executeFallbackCopy(text);
+    });
+  } else {
+    executeFallbackCopy(text);
+  }
 };
 
 export default function PersonalNotesDashboard({ initialNotes, user }: PersonalNotesDashboardProps) {
@@ -447,7 +476,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
     } else {
       copyText = localContent;
     }
-    navigator.clipboard.writeText(`${localTitle}\n\n${copyText}`);
+    fallbackCopyToClipboard(`${localTitle}\n\n${copyText}`);
     setIsCopied(true);
     toast.success("Note content copied!");
     setTimeout(() => setIsCopied(false), 2000);
@@ -793,12 +822,16 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
               border: "none",
               cursor: "pointer",
               padding: "0.2rem",
-              color: "var(--text-muted)",
-              opacity: 0.6
+              color: isCopied ? "#2EC4B6" : "var(--text-muted)",
+              opacity: 0.8
             }}
             title="Copy to Clipboard"
           >
-            <Copy size={14} />
+            {isCopied ? (
+              <Check size={14} style={{ color: "#2EC4B6" }} />
+            ) : (
+              <Copy size={14} />
+            )}
           </button>
 
           {/* Share announcement (Team Lead only) */}
