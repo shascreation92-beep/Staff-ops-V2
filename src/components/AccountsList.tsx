@@ -129,8 +129,9 @@ export default function AccountsList({
   const [commentText, setCommentText] = useState("");
   const [isCommentReadOnly, setIsCommentReadOnly] = useState(false);
 
-  // Read-Only IT Comment Modal State
+  // IT Comment Modal State
   const [showITCommentModal, setShowITCommentModal] = useState(false);
+  const [selectedITCommentAccountId, setSelectedITCommentAccountId] = useState("");
   const [selectedITNotes, setSelectedITNotes] = useState("");
   const [selectedITNotesAccountSerial, setSelectedITNotesAccountSerial] = useState("");
   const [selectedITNotesAccountIdName, setSelectedITNotesAccountIdName] = useState("");
@@ -154,27 +155,19 @@ export default function AccountsList({
   const [editingAdsId, setEditingAdsId] = useState<string | null>(null);
   const [tempAdsValue, setTempAdsValue] = useState<number>(0);
 
-  // IT Comments Inline Editing State
-  const [savingITCommentId, setSavingITCommentId] = useState<string | null>(null);
-  const [savedITCommentId, setSavedITCommentId] = useState<string | null>(null);
-
-  const handleSaveITCommentInline = (accountId: string, itNotes: string) => {
-    setSavingITCommentId(accountId);
-    setSavedITCommentId(null);
+  // IT Comment Modal Save Handler
+  const handleSaveITCommentModal = () => {
+    if (!selectedITCommentAccountId) return;
     startTransition(async () => {
       try {
-        const res = await updateAccountITNotesAction(accountId, itNotes);
+        const res = await updateAccountITNotesAction(selectedITCommentAccountId, selectedITNotes);
         if (res.success) {
-          setSavedITCommentId(accountId);
-          setTimeout(() => {
-            setSavedITCommentId(prev => prev === accountId ? null : prev);
-          }, 3000);
+          toast.success("IT comments updated successfully!");
+          setShowITCommentModal(false);
           router.refresh();
         }
       } catch (err: any) {
-        toast.error(err.message || "Failed to save IT comment.");
-      } finally {
-        setSavingITCommentId(null);
+        toast.error(err.message || "Failed to save comment.");
       }
     });
   };
@@ -1036,103 +1029,34 @@ export default function AccountsList({
                           )}
                         </div>
                       </td>
-                      {isIT || isSuperAdmin ? (
-                        <td style={{ minWidth: "220px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", position: "relative", width: "100%" }}>
-                            <input
-                              type="text"
-                              placeholder="Type IT comment..."
-                              defaultValue={acc.itNotes || ""}
-                              onBlur={(e) => {
-                                if (e.target.value !== (acc.itNotes || "")) {
-                                  handleSaveITCommentInline(acc.id, e.target.value);
-                                }
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  (e.target as HTMLInputElement).blur();
-                                }
-                              }}
-                              className="input-gold"
-                              style={{
-                                width: "100%",
-                                padding: "0.3rem 0.5rem",
-                                fontSize: "0.8rem",
-                                background: "var(--bg-primary)",
-                                border: "1px solid var(--border-dim)",
-                                borderRadius: "4px",
-                                color: "var(--text-primary)"
-                              }}
-                              disabled={isPending}
-                            />
-                            {savingITCommentId === acc.id && (
-                              <span 
-                                style={{ 
-                                  position: "absolute",
-                                  right: "10px",
-                                  fontSize: "0.65rem", 
-                                  color: "var(--gold-premium)", 
-                                  fontWeight: 600,
-                                  background: "rgba(255, 255, 255, 0.95)",
-                                  padding: "0.1rem 0.3rem",
-                                  borderRadius: "3px",
-                                  border: "1px solid var(--border-dim)",
-                                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                                  zIndex: 10
-                                }}
-                              >
-                                Saving...
-                              </span>
-                            )}
-                            {savedITCommentId === acc.id && (
-                              <span 
-                                style={{ 
-                                  position: "absolute",
-                                  right: "10px",
-                                  fontSize: "0.65rem", 
-                                  color: "#10B981", 
-                                  fontWeight: 700,
-                                  background: "rgba(255, 255, 255, 0.95)",
-                                  padding: "0.1rem 0.3rem",
-                                  borderRadius: "3px",
-                                  border: "1px solid rgba(16, 185, 129, 0.2)",
-                                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                                  zIndex: 10
-                                }}
-                              >
-                                ✓ Saved
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      ) : (
-                        <td 
+                      <td style={{ textAlign: "center" }}>
+                        <button
                           onClick={() => {
-                            if (acc.itNotes) {
-                              setSelectedITNotes(acc.itNotes);
-                              setSelectedITNotesAccountSerial(acc.serialCode);
-                              setSelectedITNotesAccountIdName(acc.idName);
-                              setSelectedITNotesTimestamp(acc.updatedAt || acc.createdAt);
-                              setShowITCommentModal(true);
+                            setSelectedITNotes(acc.itNotes || "");
+                            setSelectedITNotesAccountSerial(acc.serialCode);
+                            setSelectedITNotesAccountIdName(acc.idName);
+                            setSelectedITNotesTimestamp(acc.updatedAt || acc.createdAt);
+                            setSelectedITCommentAccountId(acc.id);
+                            setShowITCommentModal(true);
 
-                              const nextSeen = { ...seenITComments, [acc.id]: acc.itNotes };
-                              setSeenITComments(nextSeen);
-                              localStorage.setItem("seen_it_comments", JSON.stringify(nextSeen));
-                            }
+                            const nextSeen = { ...seenITComments, [acc.id]: acc.itNotes || "" };
+                            setSeenITComments(nextSeen);
+                            localStorage.setItem("seen_it_comments", JSON.stringify(nextSeen));
                           }}
                           style={{
-                            cursor: acc.itNotes ? "pointer" : "default",
-                            color: acc.itNotes ? "var(--gold-premium)" : "inherit",
-                            fontWeight: acc.itNotes ? 600 : "normal",
-                            maxWidth: "180px",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap"
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "0.25rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "transform 0.2s ease"
                           }}
-                          title={acc.itNotes ? "Click to view full IT comments" : "No IT remarks left"}
+                          title={acc.itNotes ? `IT Comment: "${acc.itNotes}"` : "No IT comment"}
                         >
                           {acc.itNotes ? (
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", position: "relative" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", position: "relative" }}>
                               {seenITComments[acc.id] !== acc.itNotes && (
                                 <span 
                                   style={{
@@ -1140,20 +1064,34 @@ export default function AccountsList({
                                     height: "6px",
                                     background: "#EF4444",
                                     borderRadius: "50%",
-                                    display: "inline-block",
+                                    position: "absolute",
+                                    top: "-2px",
+                                    right: "-2px",
                                     boxShadow: "0 0 4px #EF4444"
                                   }}
                                   title="New IT Comment!"
                                 />
                               )}
-                              <MessageSquare size={12} style={{ opacity: 0.8 }} />
-                              {acc.itNotes.length > 25 ? `${acc.itNotes.slice(0, 25)}...` : acc.itNotes}
+                              <MessageSquare 
+                                size={18} 
+                                style={{ 
+                                  fill: "#0250A1", 
+                                  color: "#0250A1",
+                                  filter: "drop-shadow(0 0 2px rgba(2, 80, 161, 0.3))" 
+                                }} 
+                              />
                             </span>
                           ) : (
-                            <span style={{ opacity: 0.35 }}>—</span>
+                            <MessageSquare 
+                              size={18} 
+                              style={{ 
+                                color: "var(--text-muted)", 
+                                opacity: 0.5 
+                              }} 
+                            />
                           )}
-                        </td>
-                      )}
+                        </button>
+                      </td>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                           {/* Dropdown select for Sales Associate (own account), Team Lead (own account), or IT (on TL personal accounts) */}
@@ -1943,22 +1881,41 @@ export default function AccountsList({
 
             {/* Textarea */}
             <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-              <textarea
-                readOnly
-                rows={5}
-                value={selectedITNotes}
-                className="input-gold"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  fontSize: "0.85rem",
-                  background: "var(--bg-primary)",
-                  border: "1px solid var(--border-dim)",
-                  resize: "none",
-                  color: "var(--text-primary)",
-                  cursor: "not-allowed"
-                }}
-              />
+              {isIT || isSuperAdmin ? (
+                <textarea
+                  rows={5}
+                  value={selectedITNotes}
+                  onChange={(e) => setSelectedITNotes(e.target.value)}
+                  className="input-gold"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    fontSize: "0.85rem",
+                    background: "#FFFFFF",
+                    border: "1px solid var(--border-dim)",
+                    resize: "none",
+                    color: "var(--text-primary)"
+                  }}
+                  placeholder="Type custom IT update, remarks, or diagnostic notes..."
+                />
+              ) : (
+                <textarea
+                  readOnly
+                  rows={5}
+                  value={selectedITNotes}
+                  className="input-gold"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    fontSize: "0.85rem",
+                    background: "var(--bg-primary)",
+                    border: "1px solid var(--border-dim)",
+                    resize: "none",
+                    color: "var(--text-primary)",
+                    cursor: "not-allowed"
+                  }}
+                />
+              )}
               {/* Timestamp Subtitle */}
               <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontStyle: "italic", alignSelf: "flex-end" }}>
                 Last Updated by IT: {(() => {
@@ -1968,18 +1925,30 @@ export default function AccountsList({
               </span>
             </div>
 
-            {/* Close Button */}
-            <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-dim)", paddingTop: "0.75rem" }}>
+            {/* Actions Footer */}
+            <div style={{ display: "flex", gap: "1rem", borderTop: "1px solid var(--border-dim)", paddingTop: "0.75rem" }}>
               <button
                 onClick={() => {
                   setShowITCommentModal(false);
                   setSelectedITNotes("");
                 }}
                 className="btn-glass"
-                style={{ padding: "0.45rem 1.25rem", fontSize: "0.85rem" }}
+                style={{ flex: 1 }}
+                disabled={isPending}
               >
-                Close Remarks
+                {isIT || isSuperAdmin ? "Cancel" : "Close Remarks"}
               </button>
+
+              {(isIT || isSuperAdmin) && (
+                <button
+                  onClick={handleSaveITCommentModal}
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Saving..." : "Save Comment"}
+                </button>
+              )}
             </div>
           </div>
         </div>
