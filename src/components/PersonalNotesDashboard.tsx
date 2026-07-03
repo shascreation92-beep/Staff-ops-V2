@@ -18,7 +18,11 @@ import {
   HelpCircle,
   Edit2,
   Check,
-  Users
+  Users,
+  Lock,
+  Unlock,
+  Eraser,
+  Clock
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { 
@@ -139,6 +143,50 @@ const fallbackCopyToClipboard = (text: string) => {
   }
 };
 
+const evaluateMathInline = (text: string): string => {
+  const mathRegex = /([\d\s\.\+\-\*\/]+)\s*=\s*$/;
+  const match = text.match(mathRegex);
+  if (match) {
+    const expression = match[1].replace(/\s+/g, ""); // strip spaces
+    if (/^[0-9\.\+\-\*\/]+$/.test(expression)) {
+      try {
+        const result = new Function(`return (${expression})`)();
+        if (typeof result === "number" && !isNaN(result)) {
+          return text + ` ${result}`;
+        }
+      } catch (e) {
+        console.warn("Math evaluation failed", e);
+      }
+    }
+  }
+  return text;
+};
+
+const getWordCount = (text: string) => {
+  if (!text) return 0;
+  let cleanText = text;
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      cleanText = parsed.map(i => i.text).join(" ");
+    }
+  } catch (e) {}
+  const words = cleanText.trim().split(/\s+/).filter(w => w.length > 0);
+  return words.length;
+};
+
+const getCharCount = (text: string) => {
+  if (!text) return 0;
+  let cleanText = text;
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      cleanText = parsed.map(i => i.text).join(" ");
+    }
+  } catch (e) {}
+  return cleanText.length;
+};
+
 export default function PersonalNotesDashboard({ initialNotes, user }: PersonalNotesDashboardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -219,15 +267,10 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
 
   // Filter notes
   const filteredNotes = notes.filter(n => {
-    const matchesSearch = 
+    return (
       n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      n.content.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = 
-      activeCategoryFilter === "ALL" || 
-      n.category === activeCategoryFilter;
-
-    return matchesSearch && matchesCategory;
+      n.content.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   return (
@@ -271,21 +314,6 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
               onChange={(e) => setSearchTerm(e.target.value)}
               className="header-search-input"
             />
-          </div>
-
-          {/* Category Filter buttons */}
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-secondary)" }}>Filter:</span>
-            {["ALL", "Work", "Personal", "Ideas", "Urgent"].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategoryFilter(cat)}
-                className={activeCategoryFilter === cat ? "btn-gold" : "btn-glass"}
-                style={{ padding: "0.3rem 0.75rem", fontSize: "0.75rem", height: "auto" }}
-              >
-                {cat.toUpperCase()}
-              </button>
-            ))}
           </div>
 
           {/* Add New Note Float/Sticky button */}
@@ -364,10 +392,12 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
   const [localTitle, setLocalTitle] = useState(note.title === "Untitled Note" ? "" : note.title);
   const [localContent, setLocalContent] = useState(note.content);
   const [localColor, setLocalColor] = useState(note.color);
-  const [localCategory, setLocalCategory] = useState(note.category || "Work");
+  const [localCategory] = useState(note.category || "Work");
   const [localIsPinned, setLocalIsPinned] = useState(note.isPinned);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [isCopied, setIsCopied] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [reminderTime, setReminderTime] = useState<number | null>(null);
 
   // Debounced auto-save effect
   useEffect(() => {
@@ -375,7 +405,6 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
       localTitle === note.title &&
       localContent === note.content &&
       localColor === note.color &&
-      localCategory === note.category &&
       localIsPinned === note.isPinned
     ) {
       return;
@@ -388,7 +417,6 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
           title: localTitle,
           content: localContent,
           color: localColor,
-          category: localCategory,
           isPinned: localIsPinned
         });
         setSaveStatus("saved");
@@ -400,7 +428,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [localTitle, localContent, localColor, localCategory, localIsPinned]);
+  }, [localTitle, localContent, localColor, localIsPinned]);
 
   const activeTheme = colorThemes[localColor] || colorThemes.default;
 
@@ -415,7 +443,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
   })() : [];
 
   const handleChecklistToggle = (itemId: string, done: boolean) => {
-    if (note.isSharedAnnouncement) return; // read-only
+    if (note.isSharedAnnouncement || isLocked) return;
     const updated = checklistItems.map(item => 
       item.id === itemId ? { ...item, done } : item
     );
@@ -423,32 +451,31 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
   };
 
   const handleAddChecklistItem = (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || isLocked) return;
     const newItem = { id: `item-${Date.now()}-${Math.random()}`, text: text.trim(), done: false };
     const updated = [...checklistItems, newItem];
     setLocalContent(JSON.stringify(updated));
   };
 
   const handleRemoveChecklistItem = (itemId: string) => {
+    if (isLocked) return;
     const updated = checklistItems.filter(item => item.id !== itemId);
     setLocalContent(JSON.stringify(updated));
   };
 
   const handleToggleMode = () => {
-    if (note.isSharedAnnouncement) return; // read-only
+    if (note.isSharedAnnouncement || isLocked) return;
     startTransition(async () => {
       try {
         const nextIsChecklist = !note.isChecklist;
         let nextContent = localContent;
         if (nextIsChecklist) {
-          // Convert plaintext newline list to JSON checklist
           const items = localContent
             .split("\n")
             .filter(line => line.trim().length > 0)
             .map((line, idx) => ({ id: `item-${idx}-${Date.now()}`, text: line, done: false }));
           nextContent = JSON.stringify(items);
         } else {
-          // Convert JSON checklist back to plaintext
           try {
             const parsed = JSON.parse(localContent);
             if (Array.isArray(parsed)) {
@@ -463,7 +490,6 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         });
         setLocalContent(nextContent);
         toast.success(nextIsChecklist ? "Toggled to Checklist Mode" : "Toggled to Standard Text Mode");
-        // Reload component
         window.location.reload();
       } catch (err: any) {
         toast.error(err.message || "Failed to switch mode.");
@@ -482,6 +508,81 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
     setIsCopied(true);
     toast.success("Note content copied!");
     setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleContentChange = (val: string) => {
+    if (isLocked) return;
+    let newContent = val;
+    if (val.endsWith("=")) {
+      newContent = evaluateMathInline(val);
+    }
+    setLocalContent(newContent);
+  };
+
+  const handleClearContent = () => {
+    if (isLocked) return;
+    if (confirm("Are you sure you want to clear all contents of this note?")) {
+      setLocalContent(note.isChecklist ? "[]" : "");
+      toast.success("Note text cleared!");
+    }
+  };
+
+  const handleSetReminder = () => {
+    const minutesStr = prompt("Set a reminder alert in how many minutes? (e.g. 5, 15, 60)");
+    if (!minutesStr) return;
+    const mins = parseFloat(minutesStr);
+    if (isNaN(mins) || mins <= 0) {
+      toast.error("Please enter a valid positive number.");
+      return;
+    }
+
+    const delayMs = mins * 60 * 1000;
+    setReminderTime(Date.now() + delayMs);
+    toast.success(`Reminder scheduled for ${mins} minutes from now!`);
+
+    setTimeout(() => {
+      toast((t) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 800 }}>🔔 NOTE REMINDER</span>
+          <span style={{ fontSize: "0.85rem" }}>Your reminder for "{localTitle || "Untitled Note"}" has arrived!</span>
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+            <button 
+              onClick={() => {
+                toast.dismiss(t.id);
+                onExpand({ ...note, title: localTitle, content: localContent, color: localColor, isPinned: localIsPinned, isSharedByMe: note.isSharedByMe });
+              }}
+              style={{
+                background: "var(--gold-primary)",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                padding: "0.25rem 0.6rem",
+                fontSize: "0.75rem",
+                cursor: "pointer",
+                fontWeight: 700
+              }}
+            >
+              Open Note
+            </button>
+            <button 
+              onClick={() => toast.dismiss(t.id)}
+              style={{
+                background: "rgba(0,0,0,0.05)",
+                color: "var(--text-primary)",
+                border: "none",
+                borderRadius: "4px",
+                padding: "0.25rem 0.6rem",
+                fontSize: "0.75rem",
+                cursor: "pointer"
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ), { duration: 15000 });
+      setReminderTime(null);
+    }, delayMs);
   };
 
   const [, startTransition] = useTransition();
@@ -544,6 +645,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
           <input
             type="text"
             value={localTitle}
+            disabled={isLocked}
             onChange={(e) => setLocalTitle(e.target.value)}
             style={{
               background: "none",
@@ -552,7 +654,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
               fontSize: "0.95rem",
               color: "var(--text-primary)",
               outline: "none",
-              width: "70%"
+              width: "55%"
             }}
             placeholder="Note Title..."
           />
@@ -561,14 +663,33 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         {/* Header Tools */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
           
-          {/* Pinned Status Toggle */}
+          {/* Note Edit Lock (🔒) */}
           {!note.isSharedAnnouncement && (
             <button
-              onClick={() => setLocalIsPinned(!localIsPinned)}
+              onClick={() => setIsLocked(!isLocked)}
               style={{
                 background: "none",
                 border: "none",
                 cursor: "pointer",
+                padding: "0.2rem",
+                color: isLocked ? "#EF4444" : "var(--text-muted)",
+                opacity: isLocked ? 1 : 0.4
+              }}
+              title={isLocked ? "Unlock Note" : "Lock Note (Read Only)"}
+            >
+              {isLocked ? <Lock size={15} /> : <Unlock size={15} />}
+            </button>
+          )}
+
+          {/* Pinned Status Toggle */}
+          {!note.isSharedAnnouncement && (
+            <button
+              onClick={() => !isLocked && setLocalIsPinned(!localIsPinned)}
+              disabled={isLocked}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: isLocked ? "default" : "pointer",
                 padding: "0.2rem",
                 color: localIsPinned ? "#EF4444" : "var(--text-muted)",
                 opacity: localIsPinned ? 1 : 0.4
@@ -581,7 +702,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
 
           {/* Fullscreen expanded */}
           <button
-            onClick={() => onExpand({ ...note, title: localTitle, content: localContent, color: localColor, category: localCategory, isPinned: localIsPinned })}
+            onClick={() => onExpand({ ...note, title: localTitle, content: localContent, color: localColor, category: localCategory, isPinned: localIsPinned, isSharedByMe: note.isSharedByMe })}
             style={{
               background: "none",
               border: "none",
@@ -597,39 +718,12 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         </div>
       </div>
 
-      {/* Category Tag Selection */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.5rem" }}>
-        {note.isSharedAnnouncement ? (
-          <span className="badge developer" style={{ fontSize: "0.62rem", padding: "0.1rem 0.4rem" }}>
-            {localCategory?.toUpperCase() || "WORK"}
-          </span>
-        ) : (
-          <select
-            value={localCategory}
-            onChange={(e) => setLocalCategory(e.target.value)}
-            style={{
-              fontSize: "0.65rem",
-              fontWeight: 700,
-              color: "var(--gold-premium)",
-              background: "rgba(0, 119, 182, 0.05)",
-              border: "1px solid rgba(0, 119, 182, 0.15)",
-              borderRadius: "4px",
-              padding: "0.1rem 0.25rem",
-              outline: "none",
-              cursor: "pointer"
-            }}
-          >
-            <option value="Work">WORK</option>
-            <option value="Personal">PERSONAL</option>
-            <option value="Ideas">IDEAS</option>
-            <option value="Urgent">URGENT</option>
-          </select>
-        )}
-
-        {/* Mode indicator badge click toggle */}
+      {/* Mode toggle row */}
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: "0.5rem" }}>
         {!note.isSharedAnnouncement && (
           <button
-            onClick={handleToggleMode}
+            onClick={() => !isLocked && handleToggleMode()}
+            disabled={isLocked}
             style={{
               fontSize: "0.62rem",
               fontWeight: 700,
@@ -638,9 +732,9 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
               border: note.isChecklist ? "1px solid rgba(46, 196, 182, 0.2)" : "1px solid rgba(2, 62, 138, 0.2)",
               borderRadius: "4px",
               padding: "0.1rem 0.4rem",
-              cursor: "pointer"
+              cursor: isLocked ? "default" : "pointer"
             }}
-            title="Click to toggle standard text / checklist format"
+            title={isLocked ? "Unlock to switch mode" : "Click to toggle standard text / checklist format"}
           >
             {note.isChecklist ? "CHECKLIST MODE" : "TEXT MODE"}
           </button>
@@ -669,11 +763,11 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
               <div key={item.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <button
                   onClick={() => handleChecklistToggle(item.id, !item.done)}
-                  disabled={note.isSharedAnnouncement}
+                  disabled={note.isSharedAnnouncement || isLocked}
                   style={{
                     background: "none",
                     border: "none",
-                    cursor: note.isSharedAnnouncement ? "default" : "pointer",
+                    cursor: (note.isSharedAnnouncement || isLocked) ? "default" : "pointer",
                     padding: 0,
                     color: item.done ? "#2EC4B6" : "var(--text-muted)",
                     display: "flex",
@@ -691,7 +785,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
                 }}>
                   {item.text}
                 </span>
-                {!note.isSharedAnnouncement && (
+                {!note.isSharedAnnouncement && !isLocked && (
                   <button 
                     onClick={() => handleRemoveChecklistItem(item.id)}
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.7rem", opacity: 0.3, marginLeft: "auto" }}
@@ -706,7 +800,8 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
             {!note.isSharedAnnouncement && (
               <input
                 type="text"
-                placeholder="+ Add checklist task..."
+                disabled={isLocked}
+                placeholder={isLocked ? "Unlock to add items..." : "+ Add checklist task..."}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handleAddChecklistItem((e.target as HTMLInputElement).value);
@@ -743,7 +838,8 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
           ) : (
             <textarea
               value={localContent}
-              onChange={(e) => setLocalContent(e.target.value)}
+              onChange={(e) => handleContentChange(e.target.value)}
+              readOnly={isLocked}
               placeholder="Start typing your note here..."
               style={{
                 width: "100%",
@@ -771,18 +867,21 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         paddingTop: "0.6rem",
         marginTop: "0.85rem"
       }}>
-        {/* Timestamp */}
+        {/* Precise Created Timestamp & Live Counter */}
         <div style={{ display: "flex", flexDirection: "column" }}>
           <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontStyle: "italic" }}>
-            Updated: {formatDate(note.updatedAt || note.createdAt)}
+            Created on: {formatDate(note.createdAt)}
+          </span>
+          <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "0.15rem" }}>
+            {getWordCount(localContent)} words | {getCharCount(localContent)} chars
           </span>
           {saveStatus === "saving" && (
-            <span style={{ fontSize: "0.6rem", color: "var(--gold-premium)", fontWeight: 700 }}>
+            <span style={{ fontSize: "0.6rem", color: "var(--gold-premium)", fontWeight: 700, marginTop: "0.15rem" }}>
               Saving...
             </span>
           )}
           {saveStatus === "saved" && (
-            <span style={{ fontSize: "0.6rem", color: "#2EC4B6", fontWeight: 700 }}>
+            <span style={{ fontSize: "0.6rem", color: "#2EC4B6", fontWeight: 700, marginTop: "0.15rem" }}>
               ✓ Saved
             </span>
           )}
@@ -791,12 +890,31 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         {/* Footer Actions */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
           
+          {/* Reminder Alert Clock Icon */}
+          {!note.isSharedAnnouncement && (
+            <button
+              onClick={handleSetReminder}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0.2rem",
+                color: reminderTime ? "#0250A1" : "var(--text-muted)",
+                opacity: reminderTime ? 1 : 0.6
+              }}
+              title={reminderTime ? `Reminder active at ${new Date(reminderTime).toLocaleTimeString()}` : "Set Reminder Timer"}
+            >
+              <Clock size={14} />
+            </button>
+          )}
+
           {/* Color Picker tool */}
           {!note.isSharedAnnouncement && (
-            <div style={{ display: "flex", gap: "0.15rem" }}>
+            <div style={{ display: "flex", gap: "0.15rem", opacity: isLocked ? 0.4 : 1, pointerEvents: isLocked ? "none" : "auto" }}>
               {["default", "yellow", "blue", "green", "red"].map((c) => (
                 <button
                   key={c}
+                  disabled={isLocked}
                   onClick={() => setLocalColor(c)}
                   style={{
                     width: "10px",
@@ -807,7 +925,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
                                 c === "yellow" ? "#FEF08A" : 
                                 c === "blue" ? "#BFDBFE" : 
                                 c === "green" ? "#BBF7D0" : "#FECACA",
-                    cursor: "pointer",
+                    cursor: isLocked ? "default" : "pointer",
                     padding: 0
                   }}
                   title={`pastel ${c}`}
@@ -860,13 +978,15 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
               </span>
             ) : (
               <button
-                onClick={() => onShare(note.id)}
+                disabled={isLocked}
+                onClick={() => !isLocked && onShare(note.id)}
                 style={{
                   background: "none",
                   border: "none",
-                  cursor: "pointer",
+                  cursor: isLocked ? "default" : "pointer",
                   padding: "0.2rem",
-                  color: "var(--gold-premium)"
+                  color: "var(--gold-premium)",
+                  opacity: isLocked ? 0.4 : 1
                 }}
                 title="Share with Team"
               >
@@ -895,15 +1015,36 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
             </button>
           )}
 
+          {/* 🧹 Sweep Clear (Internal) */}
+          {!note.isSharedAnnouncement && (
+            <button
+              disabled={isLocked}
+              onClick={handleClearContent}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: isLocked ? "default" : "pointer",
+                padding: "0.2rem",
+                color: "var(--text-secondary)",
+                opacity: isLocked ? 0.3 : 0.7
+              }}
+              title="Clear Note Text"
+            >
+              <Eraser size={14} />
+            </button>
+          )}
+
           {/* Delete Card */}
           <button
-            onClick={() => onDelete(note.id)}
+            disabled={isLocked}
+            onClick={() => !isLocked && onDelete(note.id)}
             style={{
               background: "none",
               border: "none",
-              cursor: "pointer",
+              cursor: isLocked ? "default" : "pointer",
               padding: "0.2rem",
-              color: "var(--color-danger)"
+              color: "var(--color-danger)",
+              opacity: isLocked ? 0.4 : 1
             }}
             title="Delete Note"
           >
@@ -1016,7 +1157,7 @@ function FullscreenModal({ note, userRole, onClose, onSave }: FullscreenModalPro
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: `1px solid ${activeTheme.headerBorder}`, paddingBottom: "1rem" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", width: "80%" }}>
             <span style={{ fontSize: "0.72rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase" }}>
-              {note.isSharedAnnouncement ? `Announcement: ${note.sharedFromTlName}` : `Fullscreen Focus Mode — ${category}`}
+              {note.isSharedAnnouncement ? "Team Announcement" : "Fullscreen Focus Mode"}
             </span>
             {note.isSharedAnnouncement ? (
               <h2 style={{ fontSize: "1.45rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>{title}</h2>
