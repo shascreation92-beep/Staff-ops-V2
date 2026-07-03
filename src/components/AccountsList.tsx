@@ -365,7 +365,7 @@ export default function AccountsList({
     if (acc.status === "PENDING_TL") {
       return {
         color: "#60A5FA",
-        text: "Requested to TL",
+        text: "PENDING TL",
         bg: "rgba(96, 165, 250, 0.08)",
         border: "rgba(96, 165, 250, 0.25)",
         glow: "none"
@@ -375,7 +375,7 @@ export default function AccountsList({
       if (acc.user_account_createdByIdTouser?.role === "TEAM_LEAD") {
         return {
           color: "#A78BFA",
-          text: "Direct to IT",
+          text: "DIRECT TO IT",
           bg: "rgba(167, 139, 250, 0.08)",
           border: "rgba(167, 139, 250, 0.25)",
           glow: "none"
@@ -384,7 +384,7 @@ export default function AccountsList({
       const tlName = acc.user_account_updatedByIdTouser?.name || "Udeen";
       return {
         color: "#A78BFA",
-        text: `Approved by TL (${tlName})`,
+        text: `APPROVED BY TL (${tlName.toUpperCase()})`,
         bg: "rgba(167, 139, 250, 0.08)",
         border: "rgba(167, 139, 250, 0.25)",
         glow: "none"
@@ -392,8 +392,8 @@ export default function AccountsList({
     }
     if (acc.status === "IT_PENDING") {
       return {
-        color: "#F59E0B",
-        text: "Pending",
+        color: "#D97706",
+        text: "PENDING",
         bg: "rgba(245, 158, 11, 0.08)",
         border: "rgba(245, 158, 11, 0.25)",
         glow: "none"
@@ -406,7 +406,7 @@ export default function AccountsList({
         if (issue === "Active") {
           return {
             color: "#22C55E",
-            text: "Active",
+            text: "ACTIVE",
             bg: "rgba(34, 197, 94, 0.08)",
             border: "rgba(34, 197, 94, 0.3)",
             glow: "0 0 12px rgba(34, 197, 94, 0.3)"
@@ -415,7 +415,7 @@ export default function AccountsList({
         if (issue === "Marketplace Issue") {
           return {
             color: "var(--color-warning)",
-            text: "Marketplace Issue",
+            text: "MARKETPLACE ISSUE",
             bg: "rgba(245, 158, 11, 0.08)",
             border: "rgba(245, 158, 11, 0.25)",
             glow: "none"
@@ -424,7 +424,7 @@ export default function AccountsList({
         if (issue === "Suspended" || issue === "Suspension Issue") {
           return {
             color: "var(--color-danger)",
-            text: "Suspension Issue",
+            text: "SUSPENSION ISSUE",
             bg: "rgba(239, 68, 68, 0.1)",
             border: "rgba(239, 68, 68, 0.3)",
             glow: "0 0 10px rgba(239, 68, 68, 0.15)"
@@ -433,7 +433,7 @@ export default function AccountsList({
         if (issue === "Identity Issue") {
           return {
             color: "#0250A1",
-            text: "Identity Issue",
+            text: "IDENTITY ISSUE",
             bg: "rgba(2, 80, 161, 0.08)",
             border: "rgba(2, 80, 161, 0.25)",
             glow: "none"
@@ -444,7 +444,7 @@ export default function AccountsList({
       const isIssue = ["Marketplace Issue", "Identity Issue", "Suspended"].includes(acc.issueType);
       return {
         color: isIssue ? "var(--color-danger)" : "#22C55E",
-        text: acc.issueType || "Active",
+        text: (acc.issueType || "ACTIVE").toUpperCase(),
         bg: isIssue ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.08)",
         border: isIssue ? "rgba(239, 68, 68, 0.3)" : "rgba(34, 197, 94, 0.3)",
         glow: isIssue ? "0 0 10px rgba(239, 68, 68, 0.15)" : "0 0 12px rgba(34, 197, 94, 0.3)"
@@ -453,7 +453,7 @@ export default function AccountsList({
     if (acc.status === "REJECTED") {
       return {
         color: "var(--color-danger)",
-        text: "Rejected by TL",
+        text: "REJECTED BY TL",
         bg: "rgba(239, 68, 68, 0.1)",
         border: "rgba(239, 68, 68, 0.3)",
         glow: "0 0 10px rgba(239, 68, 68, 0.15)"
@@ -467,7 +467,7 @@ export default function AccountsList({
     if (!isVerified) {
       return {
         color: "var(--color-danger)",
-        text: "Unverified",
+        text: "UNVERIFIED",
         bg: "rgba(239, 68, 68, 0.1)",
         border: "rgba(239, 68, 68, 0.3)",
         glow: "none"
@@ -477,7 +477,7 @@ export default function AccountsList({
     if (adsCount < minAdsRule) {
       return {
         color: "var(--orange-accent)",
-        text: `Below Min Ads (${minAdsRule})`,
+        text: `BELOW MIN ADS (${minAdsRule})`,
         bg: "rgba(255, 138, 0, 0.1)",
         border: "rgba(255, 138, 0, 0.3)",
         glow: "0 0 10px rgba(255, 138, 0, 0.15)"
@@ -487,7 +487,7 @@ export default function AccountsList({
     if (isVerified && adsCount >= minAdsRule && isApproved) {
       return {
         color: "var(--gold-glow)",
-        text: "Verified & Approved",
+        text: "VERIFIED & APPROVED",
         bg: "rgba(255, 215, 0, 0.05)",
         border: "var(--border-gold)",
         glow: "0 0 10px rgba(255, 215, 0, 0.15)"
@@ -496,7 +496,7 @@ export default function AccountsList({
 
     return {
       color: "var(--text-secondary)",
-      text: acc.status.replace(/_/g, " "),
+      text: acc.status.replace("IT_", "").replace(/_/g, " "),
       bg: "rgba(255, 255, 255, 0.02)",
       border: "var(--border-dim)",
       glow: "none"

@@ -138,6 +138,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
       case "PENDING_TL":
       case "SUBMITTED":
       case "UNDER_REVIEW":
+      case "IT_PENDING":
         return "badge pending";
       case "REJECTED":
         return "badge suspended";
@@ -334,8 +335,15 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
                         })()}
                       </td>
                       <td>
-                        <span className={getStatusBadgeClass(acc.status)}>
-                          {acc.status}
+                        <span 
+                          className={getStatusBadgeClass(acc.status)}
+                          style={getStatusBadgeClass(acc.status) === "badge pending" ? {
+                            background: "rgba(245, 158, 11, 0.08)",
+                            border: "1px solid rgba(245, 158, 11, 0.25)",
+                            color: "#D97706"
+                          } : undefined}
+                        >
+                          {acc.status.replace("IT_", "").replace(/_/g, " ")}
                         </span>
                       </td>
                       <td 
