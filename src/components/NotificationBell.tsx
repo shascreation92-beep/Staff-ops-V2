@@ -169,21 +169,23 @@ export default function NotificationBell() {
       </button>
 
       {showNotifications && (
-        <div className="glass-panel" style={{
+        <div style={{
           position: "absolute",
           top: "120%",
           right: 0,
           width: "340px",
-          zIndex: 1000,
+          zIndex: 9999,
           background: "#FFFFFF",
           border: "1px solid var(--border-dim)",
-          boxShadow: "var(--shadow-premium)",
+          boxShadow: "0 15px 40px rgba(0, 0, 0, 0.12)",
+          borderRadius: "12px",
           padding: "1rem",
           display: "flex",
           flexDirection: "column",
           gap: "0.75rem",
           maxHeight: "400px",
-          overflowY: "auto"
+          overflowY: "auto",
+          backdropFilter: "none"
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.5rem" }}>
             <span style={{ fontSize: "0.80rem", fontWeight: 700, color: "var(--gold-primary)", fontFamily: "var(--font-mono)" }}>
