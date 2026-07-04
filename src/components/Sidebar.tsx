@@ -126,6 +126,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       icon: Database,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]
     },
+    {
+      id: "team-live-roster",
+      label: "Team Live Roster",
+      path: "/team-live-roster",
+      icon: Users,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]
+    },
     { 
       id: "associates-requests", 
       label: "Associates Requests", 
