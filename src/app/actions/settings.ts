@@ -88,10 +88,13 @@ export async function archivePlatformAction(id: string) {
 }
 
 // Announcements Actions
+// Announcements Actions
 const AnnouncementSchema = z.object({
   title: z.string().min(1, "Title is required"),
   content: z.string().min(1, "Content is required"),
-  targetCompanyId: z.string().optional() // nullable for global announcements
+  targetCompanyId: z.string().optional(),
+  sender: z.enum(["COMPANY_HQ", "IT_DEPARTMENT"]),
+  type: z.enum(["COMPANY_UPDATE", "URGENT_ALERT", "SALES_CELEBRATION"])
 });
 
 export async function createAnnouncementAction(formData: z.infer<typeof AnnouncementSchema>) {
@@ -102,14 +105,17 @@ export async function createAnnouncementAction(formData: z.infer<typeof Announce
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { title, content, targetCompanyId } = result.data;
+  const { title, content, targetCompanyId, sender, type } = result.data;
   const annId = crypto.randomUUID();
+
+  // Serialize metadata into the title field
+  const serializedTitle = JSON.stringify({ sender, type, text: title });
 
   try {
     const newAnn = await db.announcement.create({
       data: {
         id: annId,
-        title,
+        title: serializedTitle,
         content,
         createdById: user.id,
         companyId: targetCompanyId || null
@@ -136,13 +142,15 @@ export async function createAnnouncementAction(formData: z.infer<typeof Announce
       }
     });
 
+    const senderDisplay = sender === "COMPANY_HQ" ? "🏢 Company HQ" : "💻 IT Department";
+
     for (const targetUser of usersToNotify) {
       await db.notification.create({
         data: {
           id: crypto.randomUUID(),
           userId: targetUser.id,
-          title: `Announcement: ${title}`,
-          message: content.slice(0, 150),
+          title: `📢 New Announcement from [${senderDisplay}]`,
+          message: `${title}: ${content.slice(0, 100)}`,
           type: "Announcement",
           isRead: false
         }
