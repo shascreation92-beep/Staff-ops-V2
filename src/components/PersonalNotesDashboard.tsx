@@ -35,6 +35,7 @@ import {
   acknowledgeSharedAnnouncementAction
 } from "@/app/actions/personalNotes";
 import NotificationBell from "./NotificationBell";
+import { playChimeAlert } from "./AnnouncementProvider";
 
 interface PersonalNote {
   id: string;
@@ -442,6 +443,25 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
   }, [note.timerExpiresAt]);
+
+  // 5 Minutes Remaining Desktop Notification System-level alert
+  useEffect(() => {
+    if (timeLeftSeconds === 300) {
+      playChimeAlert();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        navigator.serviceWorker?.ready.then((registration) => {
+          registration.showNotification("⏰ 5 Minutes Remaining!", {
+            body: `The countdown timer for announcement "${localTitle || 'Untitled Note'}" is at exactly 5 minutes remaining!`,
+            icon: "/logo.png",
+            badge: "/logo.png",
+            data: { noteId: note.id, timerAlert: true },
+            tag: `timer-alert-${note.id}`,
+            requireInteraction: true
+          });
+        });
+      }
+    }
+  }, [timeLeftSeconds, note.id, localTitle]);
 
   const handleSetCountdown = async () => {
     if (isLocked) return;

@@ -29,7 +29,7 @@ export function useAnnouncements() {
 }
 
 // Procedural audio ping synthesis using Web Audio API
-function playChimeAlert() {
+export function playChimeAlert() {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -68,8 +68,50 @@ function playChimeAlert() {
 
 export function AnnouncementProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
-  const [toasts, setToasts] = useState<Toast[]>([]);
   const [activeModalNote, setActiveModalNote] = useState<any>(null);
+
+  // Request native OS notification permissions on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
+  // Register background Service Worker and listen for notification click messages
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => console.log('Service Worker registered with scope:', reg.scope))
+        .catch((err) => console.error('Service Worker registration failed:', err));
+    }
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.action === 'view-note') {
+        const noteId = event.data.noteId;
+        if (noteId) {
+          openAnnouncementById(noteId);
+        }
+      }
+    };
+
+    navigator.serviceWorker?.addEventListener('message', handleMessage);
+    return () => navigator.serviceWorker?.removeEventListener('message', handleMessage);
+  }, []);
+
+  // Check URL parameters on mount to open focused note if redirect occurred from background click
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const openNoteId = params.get('openNoteId');
+      if (openNoteId && session?.user?.id) {
+        openAnnouncementById(openNoteId);
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [session?.user?.id]);
 
   // Poll database notifications for new announcements
   useEffect(() => {
@@ -82,12 +124,12 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
         const data = await res.json();
         if (!Array.isArray(data)) return;
 
-        // Retrieve previously seen announcement toast notifications
+        // Retrieve previously seen announcement desktop notifications
         const seenStr = localStorage.getItem("seen_announcement_toasts");
         const seenIds: string[] = seenStr ? JSON.parse(seenStr) : [];
 
         let playSound = false;
-        const newToasts: Toast[] = [];
+        let triggeredCount = 0;
 
         for (const notif of data) {
           if (notif.type === "TEAM_ANNOUNCEMENT" && !seenIds.includes(notif.id)) {
@@ -98,30 +140,31 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
               const textSnippet = match[2];
               
               seenIds.push(notif.id);
-              newToasts.push({
-                id: notif.id,
-                title: notif.title || "📢 New Team Announcement",
-                message: textSnippet,
-                noteId
-              });
+              triggeredCount++;
+              
+              // Trigger Native Windows Desktop Notification
+              if ('Notification' in window && Notification.permission === 'granted') {
+                navigator.serviceWorker?.ready.then((registration) => {
+                  registration.showNotification("📢 New Team Announcement", {
+                    body: textSnippet,
+                    icon: "/logo.png",
+                    badge: "/logo.png",
+                    data: { noteId },
+                    tag: notif.id,
+                    requireInteraction: true
+                  });
+                });
+              }
               playSound = true;
             }
           }
         }
 
-        if (newToasts.length > 0) {
+        if (triggeredCount > 0) {
           localStorage.setItem("seen_announcement_toasts", JSON.stringify(seenIds));
-          setToasts(prev => [...prev, ...newToasts]);
           if (playSound) {
             playChimeAlert();
           }
-
-          // Setup auto-dismiss for each new toast
-          newToasts.forEach((nt) => {
-            setTimeout(() => {
-              setToasts(prev => prev.filter(t => t.id !== nt.id));
-            }, 8000);
-          });
         }
       } catch (err) {
         console.error("Failed to check new team announcements:", err);
@@ -137,12 +180,19 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
   }, [session?.user?.id]);
 
   const triggerToast = (toast: Omit<Toast, "id">) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts(prev => [...prev, { ...toast, id }]);
     playChimeAlert();
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 8000);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      navigator.serviceWorker?.ready.then((registration) => {
+        registration.showNotification(toast.title, {
+          body: toast.message,
+          icon: "/logo.png",
+          badge: "/logo.png",
+          data: { noteId: toast.noteId },
+          tag: Math.random().toString(),
+          requireInteraction: true
+        });
+      });
+    }
   };
 
   const openAnnouncementById = async (noteId: string) => {
@@ -160,93 +210,6 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
     <AnnouncementContext.Provider value={{ triggerToast, openAnnouncementById }}>
       {children}
 
-      {/* Global In-App Toast Container Stack */}
-      <div 
-        style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          zIndex: 9999,
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-          width: "360px",
-          pointerEvents: "none"
-        }}
-      >
-        {toasts.map((toast) => (
-          <div 
-            key={toast.id}
-            className="glass-panel"
-            style={{
-              padding: "1.25rem",
-              borderRadius: "12px",
-              background: "rgba(255, 255, 255, 0.95)",
-              border: "1px solid rgba(2, 80, 161, 0.15)",
-              boxShadow: "0 10px 30px rgba(2, 80, 161, 0.15)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.6rem",
-              pointerEvents: "auto",
-              animation: "slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
-              position: "relative"
-            }}
-          >
-            {/* Header info */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "0.82rem", fontWeight: 800, color: "#0250A1", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                {toast.title}
-              </span>
-              <button 
-                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--text-muted)",
-                  padding: "0.1rem",
-                  display: "flex",
-                  alignItems: "center"
-                }}
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            {/* Truncated message text */}
-            <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", margin: 0, lineHeight: "1.4" }}>
-              {toast.message}
-            </p>
-
-            {/* CTA action button */}
-            <button
-              onClick={() => {
-                openAnnouncementById(toast.noteId);
-                // Dismiss the toast
-                setToasts(prev => prev.filter(t => t.id !== toast.id));
-              }}
-              className="btn-gold"
-              style={{
-                width: "100%",
-                padding: "0.4rem",
-                fontSize: "0.76rem",
-                fontWeight: 700,
-                textAlign: "center",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.3rem",
-                borderRadius: "6px",
-                height: "auto",
-                marginTop: "0.2rem"
-              }}
-            >
-              👀 View Note
-            </button>
-          </div>
-        ))}
-      </div>
-
       {/* Global Preview Modal */}
       {activeModalNote && (
         <FullscreenModal
@@ -256,20 +219,6 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
           onSave={async () => {}} // shared announcements are read-only
         />
       )}
-
-      {/* Embedded slide-in animation styles */}
-      <style jsx global>{`
-        @keyframes slide-in-right {
-          from {
-            transform: translateX(110%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </AnnouncementContext.Provider>
   );
 }
