@@ -1456,3 +1456,36 @@ textarea::placeholder {
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
+
+/* Symmetric Operations Dashboard Grid Overhauls */
+.fb-operations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.vinted-operations-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .fb-operations-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .vinted-operations-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .fb-operations-grid {
+    grid-template-columns: 1fr;
+  }
+  .vinted-operations-grid {
+    grid-template-columns: 1fr;
+  }
+}

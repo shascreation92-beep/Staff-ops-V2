@@ -523,12 +523,7 @@ export default async function DashboardPage() {
             </h2>
           </div>
 
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "1.25rem",
-            marginBottom: "2rem"
-          }}>
+          <div className="fb-operations-grid">
             {/* Card 1: TOTAL FB ACCOUNTS */}
             <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
               <div className="glass-panel kpi-card kpi-info" style={{ height: "100%" }}>
@@ -633,12 +628,7 @@ export default async function DashboardPage() {
             </h2>
           </div>
 
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "1.25rem",
-            marginBottom: "2rem"
-          }}>
+          <div className="vinted-operations-grid">
             {/* Card 1: TOTAL VINTED ACCOUNTS */}
             <Link href={`/master-accounts-pool?platform=${vintedPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
               <div className="glass-panel kpi-card kpi-info" style={{ height: "100%" }}>
