@@ -118,14 +118,23 @@ export default async function DashboardPage() {
     });
   }
 
-  // Fetch number of active team leads in active company context
-  const companyTeamLeadsCount = await db.user.count({
+  // Fetch active team leads in active company context
+  const companyTeamLeadsList = await db.user.findMany({
     where: {
       ...companyFilter,
       role: "TEAM_LEAD",
       isArchived: false
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true
+    },
+    orderBy: {
+      name: "asc"
     }
   });
+  const companyTeamLeadsCount = companyTeamLeadsList.length;
 
   // Fetch the target rule value
   const targetRule = await db.rule.findFirst({
@@ -144,6 +153,54 @@ export default async function DashboardPage() {
 
   const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook", mode: "insensitive" as any } } };
   const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted", mode: "insensitive" as any } } };
+
+  // Fetch team-wise metrics
+  const teamLeadsStats = await Promise.all(
+    companyTeamLeadsList.map(async (tl) => {
+      // Find team members
+      const teamMembers = await db.user.findMany({
+        where: { teamLeadId: tl.id, isArchived: false },
+        select: { id: true }
+      });
+      const teamUserIds = [tl.id, ...teamMembers.map(m => m.id)];
+
+      const [
+        totalAccounts,
+        verifiedAccounts,
+        unverifiedAccounts,
+        fbAccounts,
+        vintedAccounts,
+        fbMarketplaceIssues,
+        fbIdentityAccounts,
+        fbSuspendedMarketplaces
+      ] = await Promise.all([
+        db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...fbWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...vintedWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } })
+      ]);
+
+      return {
+        id: tl.id,
+        name: tl.name || "Unnamed Team Lead",
+        email: tl.email,
+        stats: {
+          totalAccounts,
+          verifiedAccounts,
+          unverifiedAccounts,
+          fbAccounts,
+          vintedAccounts,
+          fbMarketplaceIssues,
+          fbIdentityAccounts,
+          fbSuspendedMarketplaces
+        }
+      };
+    })
+  );
 
   // Row 2 Queries: Facebook Dedicated Operations
   const [
@@ -701,6 +758,140 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </Link>
+          </div>
+
+          {/* New Section: Team-Wise Operations Breakdown Blocks */}
+          <div style={{ marginBottom: "1rem", marginTop: "3rem" }}>
+            <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              👥 TEAM-WISE OPERATIONS BREAKDOWN
+            </h2>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", marginBottom: "3rem" }}>
+            {teamLeadsStats.length === 0 ? (
+              <div className="glass-panel" style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.85rem", background: "#FFFFFF", border: "1px solid var(--border-dim)" }}>
+                No active Team Leads registered in the system.
+              </div>
+            ) : (
+              teamLeadsStats.map((tl) => (
+                <div key={tl.id} className="glass-panel" style={{
+                  padding: "1.5rem",
+                  background: "#FFFFFF",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "12px",
+                  boxShadow: "var(--shadow-premium)"
+                }}>
+                  {/* Team Lead Info Header Row */}
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "1rem",
+                    borderBottom: "1px solid var(--border-dim)",
+                    paddingBottom: "1rem",
+                    marginBottom: "1.25rem"
+                  }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-muted)", textTransform: "uppercase" }}>
+                        TEAM LEAD
+                      </span>
+                      <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                        {tl.name}
+                      </span>
+                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                        {tl.email}
+                      </span>
+                    </div>
+
+                    <Link href={`/live-team-operations/${tl.id}`} style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      background: "rgba(2, 80, 161, 0.08)",
+                      color: "#0250A1",
+                      padding: "0.4rem 0.8rem",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(2, 80, 161, 0.15)",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
+                    }}>
+                      <span>🎛️ Mirror Live Dashboard</span>
+                    </Link>
+                  </div>
+
+                  {/* Team Stats Sub-Grid */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                    gap: "1rem"
+                  }}>
+                    {/* Stat 1: Total accounts */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Total IDs
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                        {tl.stats.totalAccounts < 10 ? `0${tl.stats.totalAccounts}` : tl.stats.totalAccounts}
+                      </span>
+                    </div>
+
+                    {/* Stat 2: Verified */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Verified IDs
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#10B981" }}>
+                        {tl.stats.verifiedAccounts < 10 ? `0${tl.stats.verifiedAccounts}` : tl.stats.verifiedAccounts}
+                      </span>
+                    </div>
+
+                    {/* Stat 3: Unverified */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Unverified IDs
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#F59E0B" }}>
+                        {tl.stats.unverifiedAccounts < 10 ? `0${tl.stats.unverifiedAccounts}` : tl.stats.unverifiedAccounts}
+                      </span>
+                    </div>
+
+                    {/* Stat 4: Marketplace Issue */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        MP Issues
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#EF4444" }}>
+                        {tl.stats.fbMarketplaceIssues < 10 ? `0${tl.stats.fbMarketplaceIssues}` : tl.stats.fbMarketplaceIssues}
+                      </span>
+                    </div>
+
+                    {/* Stat 5: Identity Issue */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Identity Issues
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#3B82F6" }}>
+                        {tl.stats.fbIdentityAccounts < 10 ? `0${tl.stats.fbIdentityAccounts}` : tl.stats.fbIdentityAccounts}
+                      </span>
+                    </div>
+
+                    {/* Stat 6: Suspended */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Suspended
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#D97706" }}>
+                        {tl.stats.fbSuspendedMarketplaces < 10 ? `0${tl.stats.fbSuspendedMarketplaces}` : tl.stats.fbSuspendedMarketplaces}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </>
       )}
