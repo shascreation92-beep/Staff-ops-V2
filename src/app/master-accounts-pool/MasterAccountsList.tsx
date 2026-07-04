@@ -116,104 +116,100 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-      {/* Header and Notification bell */}
-      <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem", position: "relative", zIndex: 40, background: "#FFFFFF" }}>
-        <div style={{ flex: 1, minWidth: "280px" }}>
-          <h1 className="text-gold-gradient" style={{ fontSize: "1.5rem", fontWeight: 800 }}>📊 MASTER ACCOUNTS POOL</h1>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-            Aggregated dashboard of all accounts registered by Sales Associates and Team Leads across the active organization.
-          </p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginLeft: "auto", position: "relative", zIndex: 50 }}>
-          <NotificationBell />
-        </div>
-      </div>
-
-      {/* Global Filter Bar */}
+      {/* Merged Header & Filters card */}
       <div className="glass-panel" style={{
-        padding: "1.25rem",
+        padding: "1rem 1.5rem",
         display: "flex",
         alignItems: "center",
         flexWrap: "wrap",
-        gap: "1rem",
+        justifyContent: "space-between",
+        gap: "1.5rem",
         background: "#FFFFFF",
         border: "1px solid var(--border-dim)",
         position: "relative",
-        zIndex: 30
+        zIndex: 40
       }}>
-        {/* Search */}
-        <div style={{ flex: "1 1 250px", display: "flex", alignItems: "center", gap: "0.5rem", background: "#F9FAFB", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-          <Search size={16} style={{ color: "var(--text-muted)" }} />
-          <input
-            type="text"
-            placeholder="Search serial, name, or creator..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        {/* Left Filters Group */}
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "1rem", flex: 1, minWidth: "280px" }}>
+          {/* Search */}
+          <div style={{ flex: "1 1 250px", display: "flex", alignItems: "center", gap: "0.5rem", background: "#F9FAFB", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+            <Search size={16} style={{ color: "var(--text-muted)" }} />
+            <input
+              type="text"
+              placeholder="Search serial, name, or creator..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: "100%",
+                border: "none",
+                outline: "none",
+                fontSize: "0.82rem",
+                background: "transparent",
+                color: "var(--text-primary)"
+              }}
+            />
+          </div>
+
+          {/* Platform Dropdown */}
+          <select
+            value={selectedPlatform}
+            onChange={(e) => setSelectedPlatform(e.target.value)}
+            className="select-gold"
             style={{
-              width: "100%",
-              border: "none",
-              outline: "none",
+              flex: "0 1 180px",
+              height: "36px",
+              background: "#FFFFFF",
+              border: "1px solid var(--border-dim)",
+              borderRadius: "6px",
+              padding: "0 0.5rem",
               fontSize: "0.82rem",
-              background: "transparent",
-              color: "var(--text-primary)"
+              color: "var(--text-primary)",
+              outline: "none",
+              cursor: "pointer",
+              position: "relative",
+              zIndex: 40
             }}
-          />
+          >
+            <option value="ALL">All Platforms</option>
+            {platforms.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+
+          {/* Status Dropdown */}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="select-gold"
+            style={{
+              flex: "0 1 180px",
+              height: "36px",
+              background: "#FFFFFF",
+              border: "1px solid var(--border-dim)",
+              borderRadius: "6px",
+              padding: "0 0.5rem",
+              fontSize: "0.82rem",
+              color: "var(--text-primary)",
+              outline: "none",
+              cursor: "pointer",
+              position: "relative",
+              zIndex: 40
+            }}
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="DRAFT">Draft</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED_BY_TEAM_LEAD">Approved by TL</option>
+            <option value="FORWARDED_TO_IT">Forwarded to IT</option>
+            <option value="ACTIVE">Active</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
         </div>
 
-        {/* Platform Dropdown */}
-        <select
-          value={selectedPlatform}
-          onChange={(e) => setSelectedPlatform(e.target.value)}
-          className="select-gold"
-          style={{
-            flex: "0 1 180px",
-            height: "36px",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            borderRadius: "6px",
-            padding: "0 0.5rem",
-            fontSize: "0.82rem",
-            color: "var(--text-primary)",
-            outline: "none",
-            cursor: "pointer",
-            position: "relative",
-            zIndex: 40
-          }}
-        >
-          <option value="ALL">All Platforms</option>
-          {platforms.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-
-        {/* Status Dropdown */}
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-          className="select-gold"
-          style={{
-            flex: "0 1 180px",
-            height: "36px",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            borderRadius: "6px",
-            padding: "0 0.5rem",
-            fontSize: "0.82rem",
-            color: "var(--text-primary)",
-            outline: "none",
-            cursor: "pointer",
-            position: "relative",
-            zIndex: 40
-          }}
-        >
-          <option value="ALL">All Statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="PENDING">Pending</option>
-          <option value="APPROVED_BY_TEAM_LEAD">Approved by TL</option>
-          <option value="FORWARDED_TO_IT">Forwarded to IT</option>
-          <option value="ACTIVE">Active</option>
-          <option value="REJECTED">Rejected</option>
-        </select>
+        {/* Right Notification Group */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginLeft: "auto", position: "relative", zIndex: 50 }}>
+          <NotificationBell />
+        </div>
       </div>
 
       {/* Unified Accounts Sheet Table */}
