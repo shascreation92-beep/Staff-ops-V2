@@ -260,7 +260,6 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
   };
 
   const handleDeleteNote = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this note?")) return;
     startTransition(async () => {
       try {
         const res = await deletePersonalNoteAction(id);
@@ -608,6 +607,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
   const [showPollVoters, setShowPollVoters] = useState(false);
   const [isCastingVote, setIsCastingVote] = useState(false);
   const [locallySelectedOptionIdx, setLocallySelectedOptionIdx] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleTogglePollMode = () => {
     if (note.isSharedAnnouncement || isLocked) return;
@@ -1942,21 +1942,58 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
 
           {/* Delete Card */}
           {(!note.isSharedAnnouncement || !note.isGlobalPinned) && (
-            <button
-              disabled={isLocked}
-              onClick={() => !isLocked && onDelete(note.id)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: isLocked ? "default" : "pointer",
-                padding: "0.2rem",
-                color: "var(--color-danger)",
-                opacity: isLocked ? 0.4 : 1
-              }}
-              title="Delete Note"
-            >
-              <Trash2 size={14} />
-            </button>
+            showDeleteConfirm ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", zIndex: 10 }}>
+                <button
+                  onClick={() => !isLocked && onDelete(note.id)}
+                  style={{
+                    background: "rgba(239, 68, 68, 0.1)",
+                    border: "1px solid rgba(239, 68, 68, 0.3)",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    padding: "0.1rem 0.35rem",
+                    fontSize: "0.62rem",
+                    fontWeight: 800,
+                    color: "var(--color-danger)"
+                  }}
+                  title="Confirm Permanent Deletion"
+                >
+                  Confirm?
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0.15rem",
+                    fontSize: "0.68rem",
+                    color: "var(--text-muted)",
+                    display: "flex",
+                    alignItems: "center"
+                  }}
+                  title="Cancel Delete"
+                >
+                  ✕
+                </button>
+              </span>
+            ) : (
+              <button
+                disabled={isLocked}
+                onClick={() => !isLocked && setShowDeleteConfirm(true)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: isLocked ? "default" : "pointer",
+                  padding: "0.2rem",
+                  color: "var(--color-danger)",
+                  opacity: isLocked ? 0.4 : 1
+                }}
+                title="Delete Note"
+              >
+                <Trash2 size={14} />
+              </button>
+            )
           )}
         </div>
       </div>
