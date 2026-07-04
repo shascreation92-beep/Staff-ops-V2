@@ -323,25 +323,25 @@ export default function SettingsShard({
           )}
 
           {isSuperAdmin && (
-            <>
-              <button
-                onClick={() => setActiveTab("PLATFORMS")}
-                className={`sidebar-item ${activeTab === "PLATFORMS" ? "active" : ""}`}
-                style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-              >
-                <Building className="sidebar-icon" size={16} />
-                <span>Platform Manager</span>
-              </button>
+            <button
+              onClick={() => setActiveTab("PLATFORMS")}
+              className={`sidebar-item ${activeTab === "PLATFORMS" ? "active" : ""}`}
+              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
+            >
+              <Building className="sidebar-icon" size={16} />
+              <span>Platform Manager</span>
+            </button>
+          )}
 
-              <button
-                onClick={() => setActiveTab("ANNOUNCEMENTS")}
-                className={`sidebar-item ${activeTab === "ANNOUNCEMENTS" ? "active" : ""}`}
-                style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-              >
-                <Megaphone className="sidebar-icon" size={16} />
-                <span>Announcements</span>
-              </button>
-            </>
+          {(isSuperAdmin || isCompanyOwner || currentUser.role === "IT_DEPARTMENT") && (
+            <button
+              onClick={() => setActiveTab("ANNOUNCEMENTS")}
+              className={`sidebar-item ${activeTab === "ANNOUNCEMENTS" ? "active" : ""}`}
+              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
+            >
+              <Megaphone className="sidebar-icon" size={16} />
+              <span>Announcements</span>
+            </button>
           )}
         </div>
       </div>
@@ -370,12 +370,12 @@ export default function SettingsShard({
         )}
 
         {/* Tab 3: System Announcements */}
-        {activeTab === "ANNOUNCEMENTS" && isSuperAdmin && (
+        {(isSuperAdmin || isCompanyOwner || currentUser.role === "IT_DEPARTMENT") && activeTab === "ANNOUNCEMENTS" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             <div>
-              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>BROADCAST SYSTEM ANNOUNCEMENT</h2>
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>📢 Broadcast New Announcement</h2>
               <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                Send messages and alerts to company dashboard banners.
+                Draft and dispatch official system-wide notifications and priority alerts.
               </p>
             </div>
 
@@ -391,9 +391,9 @@ export default function SettingsShard({
               </div>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2.5rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "2.5rem" }}>
               {/* Dispatcher Form */}
-              <form onSubmit={handleSendAnnouncement} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <form onSubmit={handleSendAnnouncement} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", background: "#FAFAFA", padding: "1.5rem", borderRadius: "8px", border: "1px solid var(--border-dim)" }}>
                 <div className="form-group">
                   <label className="form-label">Recipient Scope</label>
                   <select
@@ -409,32 +409,49 @@ export default function SettingsShard({
                   </select>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "0.25rem" }}>
-                  <div className="form-group">
-                    <label className="form-label">Sender Identity</label>
-                    <select
-                      value={annSender}
-                      onChange={(e) => setAnnSender(e.target.value as any)}
-                      className="select-gold"
-                      disabled={isPending}
-                    >
-                      <option value="COMPANY_HQ">🏢 Company HQ</option>
-                      <option value="IT_DEPARTMENT">💻 IT Department</option>
-                    </select>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: "block", marginBottom: "0.5rem" }}>Broadcast Authorization Identity</label>
+                  <div style={{ display: "flex", gap: "1.5rem" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600 }}>
+                      <input
+                        type="radio"
+                        name="annSenderRadio"
+                        value="COMPANY_HQ"
+                        checked={annSender === "COMPANY_HQ"}
+                        onChange={() => setAnnSender("COMPANY_HQ")}
+                        disabled={isPending}
+                        style={{ cursor: "pointer" }}
+                      />
+                      🏢 Company HQ
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600 }}>
+                      <input
+                        type="radio"
+                        name="annSenderRadio"
+                        value="IT_DEPARTMENT"
+                        checked={annSender === "IT_DEPARTMENT"}
+                        onChange={() => setAnnSender("IT_DEPARTMENT")}
+                        disabled={isPending}
+                        style={{ cursor: "pointer" }}
+                      />
+                      💻 IT Department
+                    </label>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Announcement Type</label>
-                    <select
-                      value={annType}
-                      onChange={(e) => setAnnType(e.target.value as any)}
-                      className="select-gold"
-                      disabled={isPending}
-                    >
-                      <option value="COMPANY_UPDATE">🏢 [Company Update]</option>
-                      <option value="URGENT_ALERT">⚠️ [Urgent Alert]</option>
-                      <option value="SALES_CELEBRATION">🎉 [Sales Celebration]</option>
-                    </select>
-                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Priority Tier</label>
+                  <select
+                    value={annType}
+                    onChange={(e) => setAnnType(e.target.value as any)}
+                    className="select-gold"
+                    disabled={isPending}
+                    style={{ width: "100%" }}
+                  >
+                    <option value="COMPANY_UPDATE">Standard Update (🏢 Blue Badge)</option>
+                    <option value="URGENT_ALERT">Urgent Alert (⚠️ Red Badge - Center Modal)</option>
+                    <option value="SALES_CELEBRATION">Celebration (🎉 Green Badge)</option>
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -442,7 +459,7 @@ export default function SettingsShard({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Critical Shard Database Maintenance"
+                    placeholder="Enter announcement heading..."
                     value={annTitle}
                     onChange={(e) => setAnnTitle(e.target.value)}
                     className="input-gold"
@@ -453,9 +470,9 @@ export default function SettingsShard({
                 <div className="form-group">
                   <label className="form-label">Announcement Content</label>
                   <textarea
-                    rows={4}
+                    rows={6}
                     required
-                    placeholder="Enter broadcast details, links or schedules..."
+                    placeholder="Type your official announcement or technical notice here..."
                     value={annContent}
                     onChange={(e) => setAnnContent(e.target.value)}
                     className="input-gold"
@@ -470,7 +487,7 @@ export default function SettingsShard({
                   style={{ width: "100%", height: "42px", marginTop: "0.5rem" }}
                   disabled={isPending}
                 >
-                  {isPending ? "Broadcasting..." : "DISPATCH BROADCAST"}
+                  {isPending ? "Broadcasting..." : "🚀 Broadcast Live"}
                 </button>
               </form>
 

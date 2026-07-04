@@ -98,7 +98,7 @@ const AnnouncementSchema = z.object({
 });
 
 export async function createAnnouncementAction(formData: z.infer<typeof AnnouncementSchema>) {
-  const user = await enforceAuth(["SUPER_ADMIN"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   const result = AnnouncementSchema.safeParse(formData);
   if (!result.success) {
