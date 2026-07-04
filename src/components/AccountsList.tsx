@@ -673,7 +673,7 @@ export default function AccountsList({
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       
       {/* Toolbar Controls */}
-      <div className="glass-panel table-panel" style={{ padding: "0.6rem 1.25rem", marginBottom: 0 }}>
+      <div className="glass-panel table-panel" style={{ padding: "0.6rem 1.25rem", marginBottom: 0, position: "relative", zIndex: 50 }}>
         <div className="table-toolbar table-toolbar-responsive">
           {/* Center Column: Search icon, Search input, and Select filters */}
           <div className="toolbar-center-group">

@@ -295,7 +295,9 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
         flexWrap: "wrap",
         gap: "1.5rem",
         background: "#FFFFFF",
-        border: "1px solid var(--border-dim)"
+        border: "1px solid var(--border-dim)",
+        position: "relative",
+        zIndex: 50
       }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">

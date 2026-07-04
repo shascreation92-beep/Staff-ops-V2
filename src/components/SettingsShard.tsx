@@ -273,7 +273,9 @@ export default function SettingsShard({
         display: "flex",
         flexDirection: "column",
         background: "#F9FAFB",
-        padding: "1rem"
+        padding: "1rem",
+        position: "relative",
+        zIndex: 50
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-dim)", padding: "0 0.5rem 1rem 0.5rem" }}>
           <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>

@@ -78,7 +78,7 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
       {/* Header and Summary card */}
-      <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem" }}>
+      <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem", position: "relative", zIndex: 50 }}>
         <div style={{ flex: 1, minWidth: "280px" }}>
           <h1 className="text-gold-gradient" style={{ fontSize: "1.5rem", fontWeight: 800 }}>TEAM LEADS & ASSOCIATE ORGANIZATIONAL DIRECTORY</h1>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
