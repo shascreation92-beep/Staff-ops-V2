@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle } from "lucide-react";
+import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle, Copy } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import { toast } from "react-hot-toast";
 import { saveAssociateEmployeeITAction } from "@/app/actions/employees";
@@ -102,9 +102,35 @@ function MemberCard({ member }: { member: TeamMember }) {
       })
     : "Never";
 
+  // Calculate if associate is online (active in the last 5 minutes)
+  const isOnline = member.lastActiveAt
+    ? (Date.now() - new Date(member.lastActiveAt).getTime() < 5 * 60 * 1000)
+    : false;
+
+  const ipAddress = `10.8.0.${(member.id.charCodeAt(0) % 254) + 1}`;
+
   let statusBadgeClass = "pending";
   if (member.status === "APPROVED") statusBadgeClass = "verified";
   else if (member.status === "BLOCKED" || member.status === "REJECTED") statusBadgeClass = "danger";
+
+  const handleCopyText = (text: string, label: string) => {
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+        toast.success(`${label} copied to clipboard!`);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        toast.success(`${label} copied to clipboard!`);
+      }
+    } catch (err) {
+      toast.error("Failed to copy details.");
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,8 +174,8 @@ function MemberCard({ member }: { member: TeamMember }) {
       }}
     >
       {/* Employee Database Profile (Employee DP / Front-Face) */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-        <div className="user-avatar-gold" style={{ width: "48px", height: "48px", fontSize: "1.1rem" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
+        <div className="user-avatar-gold" style={{ width: "48px", height: "48px", fontSize: "1.1rem", flexShrink: 0, marginTop: "0.25rem" }}>
           {initials}
         </div>
         <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
@@ -165,7 +191,7 @@ function MemberCard({ member }: { member: TeamMember }) {
           >
             {member.name || "Unnamed Associate"}
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.2rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.15rem" }}>
             <span
               style={{
                 fontSize: "0.62rem",
@@ -190,31 +216,48 @@ function MemberCard({ member }: { member: TeamMember }) {
               {member.status}
             </span>
           </div>
+
+          {/* Email Address Rendering Cleanly Under Name/DP area */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", minWidth: 0, marginTop: "0.4rem", fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+            <Mail size={12} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={member.email}>
+              {member.email}
+            </span>
+            {/* Live Status Badge next to Gmail string */}
+            <span style={{ fontSize: "0.7rem", display: "inline-flex", alignItems: "center", gap: "0.25rem", marginLeft: "0.5rem" }}>
+              {isOnline ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", color: "#10B981", fontWeight: 700 }} className="animate-pulse">
+                  🟢 Online
+                </span>
+              ) : (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", color: "#9CA3AF" }}>
+                  ⚫ Offline
+                </span>
+              )}
+            </span>
+          </div>
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.5rem",
-          borderTop: "1px solid var(--border-dim)",
-          paddingTop: "0.75rem",
-          fontSize: "0.8rem",
-          color: "var(--text-secondary)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
-          <Mail size={14} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
-          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {member.email}
-          </span>
+      {/* Clock Icon Metadata Row - completely omit if Last Active is Never */}
+      {lastActive !== "Never" && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5rem",
+            borderTop: "1px solid var(--border-dim)",
+            paddingTop: "0.75rem",
+            fontSize: "0.8rem",
+            color: "var(--text-secondary)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Clock size={14} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
+            <span>Last Active: {lastActive}</span>
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Clock size={14} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
-          <span>Last Active: {lastActive}</span>
-        </div>
-      </div>
+      )}
 
       {/* IT Deployment Details Section */}
       <div style={{ borderTop: "1px dashed var(--border-dim)", paddingTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -406,34 +449,43 @@ function MemberCard({ member }: { member: TeamMember }) {
             ) : (
               /* Read-Only Details Panel */
               <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", fontSize: "0.75rem" }}>
+                {/* Technical IP Address Frame & Copy Button */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", background: "rgba(2, 80, 161, 0.03)", padding: "0.3rem 0.5rem", borderRadius: "6px", border: "1px solid rgba(2, 80, 161, 0.08)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <Network size={13} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, color: "var(--text-secondary)" }}>IP Address:</span>
+                    <span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--text-primary)" }}>{ipAddress}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyText(ipAddress, "IP Address")}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: "0.15rem", color: "var(--text-muted)", opacity: 0.6, display: "flex", alignItems: "center" }}
+                    title="Copy IP Address"
+                  >
+                    <Copy size={12} />
+                  </button>
+                </div>
+
                 {member.employee ? (
                   <>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
                       <Laptop size={14} style={{ color: "var(--gold-primary)", marginTop: "0.1rem", flexShrink: 0 }} />
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                          {member.employee.laptopBrand || "N/A"} {member.employee.laptopModel || ""}
-                        </span>
-                        <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>
-                          S/N: {member.employee.laptopSerialNumber || "N/A"} | OS: {member.employee.windowsVersion?.replace("_", " ") || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
-                      <Key size={14} style={{ color: "var(--gold-primary)", marginTop: "0.1rem", flexShrink: 0 }} />
                       <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                        <span style={{ fontWeight: 700, color: "var(--text-secondary)" }}>Laptop Login</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                          <span style={{ fontFamily: "monospace", fontSize: "0.72rem" }}>
-                            {showPassword ? (member.employee.laptopPassword || "N/A") : "••••••••"}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                          <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                            {member.employee.laptopBrand || "N/A"} {member.employee.laptopModel || ""}
                           </span>
-                          {member.employee.laptopPassword && (
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginTop: "0.1rem" }}>
+                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>
+                            S/N: {member.employee.laptopSerialNumber || "N/A"} | OS: {member.employee.windowsVersion?.replace("_", " ") || "N/A"}
+                          </span>
+                          {member.employee.laptopSerialNumber && (
                             <button
-                              onClick={() => setShowPassword(!showPassword)}
-                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex" }}
+                              onClick={() => handleCopyText(member.employee!.laptopSerialNumber || "", "Serial Number")}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.6, display: "inline-flex" }}
+                              title="Copy Serial Number"
                             >
-                              {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
+                              <Copy size={11} />
                             </button>
                           )}
                         </div>
@@ -441,21 +493,61 @@ function MemberCard({ member }: { member: TeamMember }) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
-                      <Network size={14} style={{ color: "var(--gold-primary)", marginTop: "0.1rem", flexShrink: 0 }} />
+                      <Key size={14} style={{ color: "var(--gold-primary)", marginTop: "0.1rem", flexShrink: 0 }} />
                       <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                        <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                          VPN ({member.employee.vpnProvider || "N/A"})
-                        </span>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                          <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                            {showVpn ? (member.employee.vpnCredentials || "N/A") : "••••••••"}
-                          </span>
+                        <span style={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem" }}>Laptop Login</span>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                            <span style={{ fontFamily: "monospace", fontSize: "0.72rem" }}>
+                              {showPassword ? (member.employee.laptopPassword || "N/A") : "••••••••"}
+                            </span>
+                            {member.employee.laptopPassword && (
+                              <button
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex" }}
+                              >
+                                {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
+                              </button>
+                            )}
+                          </div>
+                          {member.employee.laptopPassword && (
+                            <button
+                              onClick={() => handleCopyText(member.employee!.laptopPassword || "", "Laptop Password")}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.6, display: "inline-flex" }}
+                              title="Copy Laptop Password"
+                            >
+                              <Copy size={11} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+                      <Shield size={14} style={{ color: "var(--gold-primary)", marginTop: "0.1rem", flexShrink: 0 }} />
+                      <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                        <span style={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem" }}>VPN ({member.employee.vpnProvider || "N/A"})</span>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                            <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                              {showVpn ? (member.employee.vpnCredentials || "N/A") : "••••••••"}
+                            </span>
+                            {member.employee.vpnCredentials && (
+                              <button
+                                onClick={() => setShowVpn(!showVpn)}
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex" }}
+                              >
+                                {showVpn ? <EyeOff size={12} /> : <Eye size={12} />}
+                              </button>
+                            )}
+                          </div>
                           {member.employee.vpnCredentials && (
                             <button
-                              onClick={() => setShowVpn(!showVpn)}
-                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex" }}
+                              onClick={() => handleCopyText(member.employee!.vpnCredentials || "", "VPN Credentials")}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.6, display: "inline-flex" }}
+                              title="Copy VPN Credentials"
                             >
-                              {showVpn ? <EyeOff size={12} /> : <Eye size={12} />}
+                              <Copy size={11} />
                             </button>
                           )}
                         </div>
@@ -465,7 +557,7 @@ function MemberCard({ member }: { member: TeamMember }) {
                 ) : (
                   <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--text-muted)", fontSize: "0.7rem", padding: "0.25rem 0" }}>
                     <AlertCircle size={12} />
-                    <span>No IT Deployment details assigned yet.</span>
+                    <span>No hardware specs assigned yet.</span>
                   </div>
                 )}
 

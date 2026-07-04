@@ -140,13 +140,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["TEAM_LEAD"] 
     },
     { 
-      id: "employees", 
-      label: "Employees DB", 
-      path: "/employees", 
-      icon: Laptop,
-      roles: ["SUPER_ADMIN", "TEAM_LEAD", "IT_DEPARTMENT"] 
-    },
-    { 
       id: "team-leads", 
       label: "Team Leads", 
       path: "/team-leads", 

@@ -25,10 +25,6 @@ export default withAuth(
       if (path.startsWith("/settings") && !["SUPER_ADMIN", "COMPANY_OWNER"].includes(token.role)) {
         return NextResponse.redirect(new URL("/", req.url));
       }
-      
-      if (path.startsWith("/employees") && token.role === "SALES_ASSOCIATE") {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
     }
   },
   {
@@ -45,7 +41,6 @@ export const config = {
   matcher: [
     "/",
     "/accounts/:path*",
-    "/employees/:path*",
     "/chat/:path*",
     "/settings/:path*",
     "/audit-logs/:path*",
