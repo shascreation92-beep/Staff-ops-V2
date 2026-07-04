@@ -229,7 +229,15 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
     fetchTeam();
   }, []);
 
-  const handleAddNewNote = async (type: "note" | "poll") => {
+  // Real-time collaborative sync: refresh page data every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [router]);
+
+  const handleAddNewNote = async (type: "note" | "poll" | "spreadsheet") => {
     startTransition(async () => {
       try {
         let initialContent = "";
@@ -239,16 +247,28 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
             options: ["Option 1", "Option 2"],
             votes: []
           });
+        } else if (type === "spreadsheet") {
+          initialContent = JSON.stringify({
+            type: "spreadsheet",
+            grid: [
+              ["", "", "", ""],
+              ["", "", "", ""],
+              ["", "", "", ""],
+              ["", "", "", ""],
+              ["", "", "", ""],
+              ["", "", "", ""]
+            ]
+          });
         }
         const res = await createPersonalNoteAction({
-          title: type === "poll" ? "New Team Poll" : "Untitled Note",
+          title: type === "poll" ? "New Team Poll" : type === "spreadsheet" ? "New Spreadsheet" : "Untitled Note",
           content: initialContent,
           isChecklist: false,
           color: "default",
           category: "Work"
         });
         if (res.success && res.note) {
-          toast.success(type === "poll" ? "New Team Poll created!" : "New Standard Note created!");
+          toast.success(type === "poll" ? "New Team Poll created!" : type === "spreadsheet" ? "New Spreadsheet created!" : "New Standard Note created!");
           router.refresh();
         }
       } catch (err: any) {
@@ -441,8 +461,8 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
             borderRadius: "16px",
             boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
             padding: "2rem",
-            width: "500px",
-            maxWidth: "90%",
+            width: "680px",
+            maxWidth: "95%",
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",
@@ -474,14 +494,14 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
               </p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem" }}>
               {/* Option 1: Standard Note */}
               <div 
                 onClick={() => handleAddNewNote("note")}
                 style={{
                   border: "1px solid var(--border-dim)",
                   borderRadius: "12px",
-                  padding: "1.25rem 1rem",
+                  padding: "1.25rem 0.75rem",
                   cursor: "pointer",
                   textAlign: "center",
                   display: "flex",
@@ -504,8 +524,8 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
                 }}
               >
                 <div style={{ fontSize: "2rem" }}>📝</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Standard Note</div>
-                <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
+                <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "var(--text-primary)" }}>Standard Note</div>
+                <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", margin: 0 }}>
                   Create text documents, lists, or mathematical worksheets.
                 </p>
               </div>
@@ -516,7 +536,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
                 style={{
                   border: "1px solid var(--border-dim)",
                   borderRadius: "12px",
-                  padding: "1.25rem 1rem",
+                  padding: "1.25rem 0.75rem",
                   cursor: "pointer",
                   textAlign: "center",
                   display: "flex",
@@ -539,9 +559,44 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
                 }}
               >
                 <div style={{ fontSize: "2rem" }}>📊</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Team Live Poll</div>
-                <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
+                <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "var(--text-primary)" }}>Team Live Poll</div>
+                <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", margin: 0 }}>
                   Create a live voting question with custom options.
+                </p>
+              </div>
+
+              {/* Option 3: Interactive Spreadsheet */}
+              <div 
+                onClick={() => handleAddNewNote("spreadsheet")}
+                style={{
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "12px",
+                  padding: "1.25rem 0.75rem",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  transition: "all 0.2s ease",
+                  background: "#F9FAFB"
+                }}
+                className="hover:scale-102 hover:border-gold hover:bg-white"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--gold-premium)";
+                  e.currentTarget.style.background = "#FFFFFF";
+                  e.currentTarget.style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-dim)";
+                  e.currentTarget.style.background = "#F9FAFB";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                <div style={{ fontSize: "2rem" }}>田</div>
+                <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "var(--text-primary)" }}>Spreadsheet</div>
+                <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", margin: 0 }}>
+                  Provision an interactive grid worksheet with dynamic formula evaluation.
                 </p>
               </div>
             </div>
@@ -603,6 +658,180 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
   const userHasVotedIdx = pollData?.votes?.findIndex((v: any) => v.userId === currentUserId);
   const hasVoted = userHasVotedIdx !== undefined && userHasVotedIdx >= 0;
   const isCreator = !note.isSharedAnnouncement;
+
+  // Spreadsheet Mode Local States & Actions
+  const isSpreadsheet = (() => {
+    try {
+      const parsed = JSON.parse(localContent);
+      return parsed && parsed.type === "spreadsheet";
+    } catch (e) {
+      return false;
+    }
+  })();
+
+  const spreadsheetData = isSpreadsheet ? (() => {
+    try {
+      return JSON.parse(localContent);
+    } catch (e) {
+      return { type: "spreadsheet", grid: [["", "", "", ""], ["", "", "", ""], ["", "", "", ""], ["", "", "", ""], ["", "", "", ""], ["", "", "", ""]] };
+    }
+  })() : { type: "spreadsheet", grid: [["", "", "", ""], ["", "", "", ""], ["", "", "", ""], ["", "", "", ""], ["", "", "", ""], ["", "", "", ""]] };
+
+  const [editingCell, setEditingCell] = useState<{ row: number; col: number } | null>(null);
+  const [cellInputValue, setCellInputValue] = useState("");
+
+  const parseCellRef = (ref: string): { col: number; row: number } | null => {
+    const match = ref.match(/^([A-Z]+)([0-9]+)$/i);
+    if (!match) return null;
+    const colStr = match[1].toUpperCase();
+    const rowStr = match[2];
+    let col = 0;
+    for (let i = 0; i < colStr.length; i++) {
+      col = col * 26 + (colStr.charCodeAt(i) - 65);
+    }
+    const row = parseInt(rowStr, 10) - 1;
+    return { col, row };
+  };
+
+  const evaluateCell = (cellVal: string, grid: string[][]): string => {
+    if (!cellVal || typeof cellVal !== "string" || !cellVal.startsWith("=")) {
+      return cellVal || "";
+    }
+
+    try {
+      const formula = cellVal.slice(1).trim().toUpperCase();
+      
+      // SUM range: e.g. SUM(A1:B3)
+      if (formula.startsWith("SUM(")) {
+        const rangeMatch = formula.match(/SUM\(([A-Z0-9:]+)\)/i);
+        if (rangeMatch) {
+          const range = rangeMatch[1];
+          const parts = range.split(":");
+          if (parts.length === 2) {
+            const start = parseCellRef(parts[0]);
+            const end = parseCellRef(parts[1]);
+            if (start && end) {
+              let sum = 0;
+              const rStart = Math.min(start.row, end.row);
+              const rEnd = Math.max(start.row, end.row);
+              const cStart = Math.min(start.col, end.col);
+              const cEnd = Math.max(start.col, end.col);
+              
+              for (let r = rStart; r <= rEnd; r++) {
+                for (let c = cStart; c <= cEnd; c++) {
+                  const val = grid[r]?.[c];
+                  const evalVal = val && val.startsWith("=") ? parseFloat(evaluateCell(val, grid)) : parseFloat(val);
+                  if (!isNaN(evalVal)) {
+                    sum += evalVal;
+                  }
+                }
+              }
+              return sum.toString();
+            }
+          }
+        }
+      }
+      
+      // AVG range: e.g. AVG(A1:B3)
+      if (formula.startsWith("AVG(")) {
+        const rangeMatch = formula.match(/AVG\(([A-Z0-9:]+)\)/i);
+        if (rangeMatch) {
+          const range = rangeMatch[1];
+          const parts = range.split(":");
+          if (parts.length === 2) {
+            const start = parseCellRef(parts[0]);
+            const end = parseCellRef(parts[1]);
+            if (start && end) {
+              let sum = 0;
+              let count = 0;
+              const rStart = Math.min(start.row, end.row);
+              const rEnd = Math.max(start.row, end.row);
+              const cStart = Math.min(start.col, end.col);
+              const cEnd = Math.max(start.col, end.col);
+              
+              for (let r = rStart; r <= rEnd; r++) {
+                for (let c = cStart; c <= cEnd; c++) {
+                  const val = grid[r]?.[c];
+                  const evalVal = val && val.startsWith("=") ? parseFloat(evaluateCell(val, grid)) : parseFloat(val);
+                  if (!isNaN(evalVal)) {
+                    sum += evalVal;
+                    count++;
+                  }
+                }
+              }
+              return count > 0 ? (sum / count).toFixed(2).replace(/\.00$/, "") : "0";
+            }
+          }
+        }
+      }
+
+      // Basic arithmetic like =A1+B2
+      let evaluatedFormula = formula;
+      const refRegex = /([A-Z]+[0-9]+)/g;
+      let match;
+      const refsFound: string[] = [];
+      while ((match = refRegex.exec(formula)) !== null) {
+        refsFound.push(match[1]);
+      }
+
+      refsFound.sort((a, b) => b.length - a.length);
+
+      for (const ref of refsFound) {
+        const parsed = parseCellRef(ref);
+        if (parsed) {
+          const val = grid[parsed.row]?.[parsed.col];
+          const evalVal = val && val.startsWith("=") ? parseFloat(evaluateCell(val, grid)) : parseFloat(val);
+          const replacer = isNaN(evalVal) ? "0" : evalVal.toString();
+          evaluatedFormula = evaluatedFormula.split(ref).join(replacer);
+        }
+      }
+
+      const cleanFormula = evaluatedFormula.replace(/[^0-9.+\-*/()]/g, "");
+      const result = new Function(`return (${cleanFormula})`)();
+      return typeof result === "number" && !isNaN(result) ? result.toString() : "ERROR";
+
+    } catch (err) {
+      return "ERROR";
+    }
+  };
+
+  const handleUpdateCell = (rowIdx: number, colIdx: number, val: string) => {
+    if (!isSpreadsheet || isLocked || note.isSharedAnnouncement) return;
+    const updatedGrid = spreadsheetData.grid.map((row: string[], rIdx: number) => {
+      if (rIdx === rowIdx) {
+        return row.map((cell: string, cIdx: number) => (cIdx === colIdx ? val : cell));
+      }
+      return row;
+    });
+    const updatedContent = JSON.stringify({ ...spreadsheetData, grid: updatedGrid });
+    setLocalContent(updatedContent);
+  };
+
+  const handleExportCSV = () => {
+    try {
+      const rowsCsv = spreadsheetData.grid.map((row: string[]) => {
+        return row.map((cell: string) => {
+          const evaluated = evaluateCell(cell, spreadsheetData.grid);
+          // escape double quotes
+          const escaped = evaluated.replace(/"/g, '""');
+          return `"${escaped}"`;
+        }).join(",");
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + ["A,B,C,D", ...rowsCsv].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `${note.title || "spreadsheet"}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Spreadsheet exported to CSV!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export spreadsheet.");
+    }
+  };
 
   const [showPollVoters, setShowPollVoters] = useState(false);
   const [isCastingVote, setIsCastingVote] = useState(false);
@@ -1190,7 +1419,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
           )}
 
           {/* Fullscreen expanded */}
-          {!isPoll && (
+          {!isPoll && !isSpreadsheet && (
             <button
               onClick={() => onExpand({ ...note, title: localTitle, content: localContent, color: localColor, category: localCategory, isPinned: localIsPinned, isSharedByMe: note.isSharedByMe })}
               style={{
@@ -1250,7 +1479,155 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
 
       {/* Card Content Area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", marginTop: "0.85rem", overflowY: "auto" }}>
-        {isPoll ? (
+        {isSpreadsheet ? (
+          /* SPREADSHEET RENDERING */
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+              <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                Interactive Grid
+              </span>
+              <button
+                onClick={handleExportCSV}
+                style={{
+                  background: "rgba(2, 80, 161, 0.08)",
+                  border: "1px solid rgba(2, 80, 161, 0.2)",
+                  borderRadius: "4px",
+                  padding: "0.15rem 0.4rem",
+                  fontSize: "0.65rem",
+                  fontWeight: 800,
+                  color: "#0250A1",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.2rem"
+                }}
+                title="Download spreadsheet data as CSV"
+              >
+                📥 Export CSV
+              </button>
+            </div>
+
+            <div style={{ overflowX: "auto", border: "1px solid var(--border-dim)", borderRadius: "6px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.74rem" }}>
+                <thead>
+                  <tr style={{ background: "rgba(0, 0, 0, 0.03)" }}>
+                    <th style={{ borderBottom: "1px solid var(--border-dim)", borderRight: "1px solid var(--border-dim)", width: "30px", padding: "0.25rem" }}></th>
+                    {["A", "B", "C", "D"].map((colHeader) => (
+                      <th
+                        key={colHeader}
+                        style={{
+                          borderBottom: "1px solid var(--border-dim)",
+                          borderRight: "1px solid var(--border-dim)",
+                          fontWeight: 800,
+                          color: "var(--text-secondary)",
+                          textAlign: "center",
+                          padding: "0.25rem"
+                        }}
+                      >
+                        {colHeader}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {spreadsheetData.grid.map((row: string[], rIdx: number) => (
+                    <tr key={rIdx} style={{ borderBottom: "1px solid var(--border-dim)" }}>
+                      {/* Row number header */}
+                      <td
+                        style={{
+                          background: "rgba(0, 0, 0, 0.03)",
+                          borderRight: "1px solid var(--border-dim)",
+                          fontWeight: 800,
+                          color: "var(--text-secondary)",
+                          textAlign: "center",
+                          padding: "0.25rem",
+                          width: "30px"
+                        }}
+                      >
+                        {rIdx + 1}
+                      </td>
+                      {row.map((cellValue: string, cIdx: number) => {
+                        const evaluated = evaluateCell(cellValue, spreadsheetData.grid);
+                        const isEditing = editingCell?.row === rIdx && editingCell?.col === cIdx;
+                        
+                        // Parse numerical result for conditional formatting colors
+                        const numericVal = parseFloat(evaluated);
+                        let cellBg = "transparent";
+                        let cellColor = "var(--text-primary)";
+                        if (!isNaN(numericVal)) {
+                          if (numericVal >= 500) {
+                            cellBg = "rgba(46, 196, 182, 0.12)"; // targets met green
+                            cellColor = "#2EC4B6";
+                          } else if (numericVal > 0 && numericVal < 150) {
+                            cellBg = "rgba(239, 68, 68, 0.08)"; // underperformance red
+                            cellColor = "#EF4444";
+                          }
+                        }
+
+                        return (
+                          <td
+                            key={cIdx}
+                            onClick={() => {
+                              if (!isLocked && !note.isSharedAnnouncement) {
+                                setEditingCell({ row: rIdx, col: cIdx });
+                                setCellInputValue(cellValue);
+                              }
+                            }}
+                            style={{
+                              borderRight: "1px solid var(--border-dim)",
+                              padding: "0.25rem 0.35rem",
+                              height: "28px",
+                              cursor: (isLocked || note.isSharedAnnouncement) ? "default" : "pointer",
+                              background: cellBg,
+                              color: cellColor,
+                              fontWeight: isNaN(numericVal) ? "normal" : "bold",
+                              textAlign: isNaN(numericVal) ? "left" : "right"
+                            }}
+                          >
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={cellInputValue}
+                                onChange={(e) => setCellInputValue(e.target.value)}
+                                onBlur={() => {
+                                  handleUpdateCell(rIdx, cIdx, cellInputValue);
+                                  setEditingCell(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    handleUpdateCell(rIdx, cIdx, cellInputValue);
+                                    setEditingCell(null);
+                                  } else if (e.key === "Escape") {
+                                    setEditingCell(null);
+                                  }
+                                }}
+                                autoFocus
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  outline: "none",
+                                  background: "none",
+                                  fontSize: "0.74rem",
+                                  color: "var(--text-primary)",
+                                  padding: 0
+                                }}
+                              />
+                            ) : (
+                              <span style={{ display: "block", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={cellValue}>
+                                {evaluated}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : isPoll ? (
           /* POLL RENDERING */
           <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
             {isCreator ? (

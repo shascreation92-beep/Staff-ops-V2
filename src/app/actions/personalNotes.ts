@@ -264,16 +264,24 @@ export async function sharePersonalNoteWithTeamAction(
     }
 
     let isPoll = false;
+    let isSpreadsheet = false;
     let messageText = note.content;
     try {
       const parsed = JSON.parse(note.content);
       if (parsed && parsed.type === "poll") {
         isPoll = true;
         messageText = `Poll: ${note.title}. Options: ${parsed.options.filter(Boolean).join(", ")}`;
+      } else if (parsed && parsed.type === "spreadsheet") {
+        isSpreadsheet = true;
+        messageText = `Spreadsheet: ${note.title}. Click cells to view and collaborate.`;
       }
     } catch (e) {}
 
-    const notifTitle = isPoll ? "📊 New Team Poll: Vote Now!" : "📢 New Team Announcement";
+    const notifTitle = isPoll 
+      ? "📊 New Team Poll: Vote Now!" 
+      : isSpreadsheet 
+        ? "田 New Collaborative Spreadsheet Shared!" 
+        : "📢 New Team Announcement";
 
     // Create an anonymous Team Announcement notification for the target user
     await db.notification.create({
