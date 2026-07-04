@@ -778,24 +778,27 @@ export default function AccountsList({
       </div>
 
       {/* Main Table listing */}
-      <div className="glass-panel table-panel">
+      <div className="glass-panel table-panel table-panel-flat">
         <div className="table-container-outer">
-          <table className="premium-table">
+          <table className="premium-table compact-table">
             <thead>
               <tr>
-                {isSuperAdmin && <th>Tenant Company</th>}
-                <th>Platform</th>
+                {isSuperAdmin && <th className="col-requested-by">Tenant Company</th>}
+                <th className="col-platform">Platform</th>
                 <th>ID Serial</th>
-                <th>ID Name</th>
-                <th>Ads Pub.</th>
-                <th>Verified</th>
-                <th onClick={toggleTimeSort} style={{ cursor: "pointer", userSelect: "none" }}>
-                  Time of Entry {sortOrder === "desc" ? "↓" : "↑"}
+                <th className="col-id-name">ID Name</th>
+                <th className="col-ads">Ads Pub.</th>
+                <th className="col-verified">Verified</th>
+                <th onClick={toggleTimeSort} className="col-time" style={{ cursor: "pointer", userSelect: "none" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <span>Entry Time</span>
+                    <span>{sortOrder === "desc" ? "↓" : "↑"}</span>
+                  </div>
                 </th>
-                <th>Comments</th>
-                <th>{isIT ? "Requested By" : "Request to TL"}</th>
-                <th>IT Comments</th>
-                <th>Status</th>
+                <th className="col-comments">Comments</th>
+                <th className="col-requested-by">{isIT ? "Requested By" : "Request to TL"}</th>
+                <th className="col-it-comments">IT Comments</th>
+                <th className="col-status">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -813,11 +816,11 @@ export default function AccountsList({
                   return (
                     <tr key={acc.id}>
                       {isSuperAdmin && (
-                        <td style={{ fontWeight: 600, color: "var(--gold-primary)" }}>
+                        <td className="col-requested-by" style={{ fontWeight: 600, color: "var(--gold-primary)" }}>
                           {acc.company?.name || "Global"}
                         </td>
                       )}
-                      <td>
+                      <td className="col-platform">
                         <span className="badge developer" style={{ border: "1px solid rgba(255,255,255,0.05)" }}>
                           {acc.platform?.name}
                         </span>
@@ -825,9 +828,9 @@ export default function AccountsList({
                       <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 500 }}>
                         {acc.serialCode}
                       </td>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                          <span style={{ fontWeight: 600 }}>{acc.idName}</span>
+                      <td className="col-id-name">
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap", overflow: "hidden" }}>
+                          <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={acc.idName}>{acc.idName}</span>
                           {duplicates > 1 && (
                             <span 
                               title={`${duplicates} duplicate records use this ID name`}
@@ -854,7 +857,11 @@ export default function AccountsList({
                                 fontWeight: 700,
                                 textTransform: "uppercase",
                                 padding: "0.1rem 0.45rem",
-                                borderRadius: "4px"
+                                borderRadius: "4px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: "80px"
                               }}
                               title={`Direct submission from Team Lead ${acc.user_account_createdByIdTouser?.name}`}
                             >
@@ -863,7 +870,7 @@ export default function AccountsList({
                           )}
                         </div>
                       </td>
-                      <td style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>
+                      <td className="col-ads" style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>
                         {editingAdsId === acc.id ? (
                           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                             <input
@@ -895,7 +902,7 @@ export default function AccountsList({
                           </div>
                         )}
                       </td>
-                      <td>
+                      <td className="col-verified">
                         <button
                           onClick={() => (isSuperAdmin || isCompanyOwner || isTeamLead) && handleToggleVerification(acc.id, acc.verificationStatus)}
                           disabled={!(isSuperAdmin || isCompanyOwner || isTeamLead)}
@@ -918,7 +925,7 @@ export default function AccountsList({
                           )}
                         </button>
                       </td>
-                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: "1.2" }}>
+                      <td className="col-time" style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: "1.2" }}>
                         {(() => {
                           const d = new Date(acc.createdAt);
                           const datePart = `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()}`;
@@ -931,7 +938,7 @@ export default function AccountsList({
                           );
                         })()}
                       </td>
-                      <td>
+                      <td className="col-comments">
                         <button
                           onClick={() => handleOpenCommentModal(acc)}
                           style={{
@@ -942,6 +949,7 @@ export default function AccountsList({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            margin: "0 auto",
                             transition: "transform 0.2s ease"
                           }}
                           title={acc.comment ? `Comment: "${acc.comment}"` : "No comment"}
@@ -966,10 +974,10 @@ export default function AccountsList({
                           )}
                         </button>
                       </td>
-                      <td>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", alignItems: "flex-start" }}>
+                      <td className="col-requested-by">
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", alignItems: "flex-start", overflow: "hidden" }}>
                           {isIT ? (
-                            <span style={{ fontWeight: 600 }}>
+                            <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100px" }} title={acc.user_account_createdByIdTouser?.name || acc.associateId || "N/A"}>
                               {acc.user_account_createdByIdTouser?.name || acc.associateId || "N/A"}
                             </span>
                           ) : (isSalesAssociate || isTeamLead) && ["DRAFT", "REJECTED"].includes(acc.status) ? (
@@ -1010,7 +1018,7 @@ export default function AccountsList({
                             )
                           ) : (acc.status === "PENDING_TL" && (isTeamLead || isSuperAdmin)) ? (
                             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                              <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45px" }} title={acc.associateId || "N/A"}>
                                 {acc.associateId || "N/A"}
                               </span>
                               <button
@@ -1023,13 +1031,13 @@ export default function AccountsList({
                               </button>
                             </div>
                           ) : (
-                            <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                            <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100px" }} title={acc.associateId || ""}>
                               {acc.associateId || "—"}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td style={{ textAlign: "center" }}>
+                      <td className="col-it-comments" style={{ textAlign: "center" }}>
                         <button
                           onClick={() => {
                             setSelectedITNotes(acc.itNotes || "");
@@ -1051,6 +1059,7 @@ export default function AccountsList({
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            margin: "0 auto",
                             transition: "transform 0.2s ease"
                           }}
                           title={acc.itNotes ? `IT Comment: "${acc.itNotes}"` : "No IT comment"}
@@ -1092,8 +1101,8 @@ export default function AccountsList({
                           )}
                         </button>
                       </td>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <td className="col-status">
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
                           {/* Dropdown select for Sales Associate (own account), Team Lead (own account), or IT (on TL personal accounts) */}
                           {(acc.status === "SORTED" && (isSalesAssociate || (isTeamLead && acc.createdById === currentUser.id))) ||
                            ((acc.status === "FORWARDED_TO_IT" || acc.status === "SORTED") && (isIT || isSuperAdmin) && acc.user_account_createdByIdTouser?.role === "TEAM_LEAD") ? (
