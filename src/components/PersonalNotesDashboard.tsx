@@ -34,7 +34,8 @@ import {
   updateNoteTimerAction,
   acknowledgeSharedAnnouncementAction,
   getTeamMembersAction,
-  getNoteShareTargetsAction
+  getNoteShareTargetsAction,
+  castVoteAction
 } from "@/app/actions/personalNotes";
 import NotificationBell from "./NotificationBell";
 import { playChimeAlert } from "./AnnouncementProvider";
@@ -385,6 +386,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
               key={note.id}
               note={note}
               userRole={user.role}
+              currentUserId={user.id}
               onDelete={handleDeleteNote}
               onShare={handleShareWithTeam}
               onClone={handleCloneAnnouncement}
@@ -419,6 +421,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
 interface NoteCardProps {
   note: PersonalNote;
   userRole: string;
+  currentUserId: string;
   onDelete: (id: string) => void;
   onShare: (id: string, isGlobalPinned?: boolean, targetUserIds?: string[]) => void;
   onClone: (id: string) => void;
@@ -426,7 +429,7 @@ interface NoteCardProps {
   teamMembers: any[];
 }
 
-function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand, teamMembers }: NoteCardProps) {
+function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, onExpand, teamMembers }: NoteCardProps) {
   const router = useRouter();
   const [localTitle, setLocalTitle] = useState(note.title === "Untitled Note" ? "" : note.title);
   const [localContent, setLocalContent] = useState(note.content);
@@ -440,6 +443,102 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand, teamMe
 
   // Read Acknowledgments State
   const [showAckDropdown, setShowAckDropdown] = useState(false);
+
+  // Poll Mode Local States & Actions
+  const isPoll = (() => {
+    try {
+      const parsed = JSON.parse(localContent);
+      return parsed && parsed.type === "poll";
+    } catch (e) {
+      return false;
+    }
+  })();
+
+  const pollData = isPoll ? (() => {
+    try {
+      return JSON.parse(localContent);
+    } catch (e) {
+      return { type: "poll", options: ["", ""], votes: [] };
+    }
+  })() : { type: "poll", options: ["", ""], votes: [] };
+
+  const totalVotes = pollData?.votes?.length || 0;
+  const userHasVotedIdx = pollData?.votes?.findIndex((v: any) => v.userId === currentUserId);
+  const hasVoted = userHasVotedIdx !== undefined && userHasVotedIdx >= 0;
+  const isCreator = !note.isSharedAnnouncement;
+
+  const [showPollVoters, setShowPollVoters] = useState(false);
+  const [isCastingVote, setIsCastingVote] = useState(false);
+
+  const handleTogglePollMode = () => {
+    if (note.isSharedAnnouncement || isLocked) return;
+    
+    startTransition(async () => {
+      try {
+        let nextContent = "";
+        if (!isPoll) {
+          const initialPoll = {
+            type: "poll",
+            options: ["", ""],
+            votes: []
+          };
+          nextContent = JSON.stringify(initialPoll);
+        } else {
+          nextContent = "";
+        }
+
+        await updatePersonalNoteAction(note.id, {
+          isChecklist: false,
+          content: nextContent
+        });
+        setLocalContent(nextContent);
+        toast.success(!isPoll ? "Toggled to Live Poll Mode" : "Toggled to Standard Note Mode");
+        router.refresh();
+      } catch (err: any) {
+        toast.error(err.message || "Failed to switch mode.");
+      }
+    });
+  };
+
+  const handleUpdateOption = (idx: number, val: string) => {
+    if (!pollData) return;
+    const updatedOptions = [...pollData.options];
+    updatedOptions[idx] = val;
+    const updatedPoll = { ...pollData, options: updatedOptions };
+    const nextContent = JSON.stringify(updatedPoll);
+    setLocalContent(nextContent);
+  };
+
+  const handleAddOption = () => {
+    if (!pollData || pollData.options.length >= 5) return;
+    const updatedPoll = { ...pollData, options: [...pollData.options, ""] };
+    const nextContent = JSON.stringify(updatedPoll);
+    setLocalContent(nextContent);
+  };
+
+  const handleRemoveOption = (idx: number) => {
+    if (!pollData || pollData.options.length <= 2) return;
+    const updatedOptions = pollData.options.filter((_: any, i: number) => i !== idx);
+    const updatedPoll = { ...pollData, options: updatedOptions };
+    const nextContent = JSON.stringify(updatedPoll);
+    setLocalContent(nextContent);
+  };
+
+  const handleVote = async (optionIdx: number) => {
+    if (isExpired || isLocked || isCastingVote) return;
+    setIsCastingVote(true);
+    try {
+      const res = await castVoteAction(note.id, optionIdx);
+      if (res.success) {
+        toast.success("Vote recorded successfully!");
+        router.refresh();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to record vote.");
+    } finally {
+      setIsCastingVote(false);
+    }
+  };
 
   // Share targets state
   const [showShareDropdown, setShowShareDropdown] = useState(false);
@@ -878,8 +977,34 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand, teamMe
               }}
               title={note.isSharedAnnouncement ? "Countdown deadline" : "Click to edit countdown timer"}
             >
-              {isExpired ? "⏰ Time's Up" : formatMMSS(timeLeftSeconds)}
+              {isExpired ? (isPoll ? "🔒 Closed" : "⏰ Time's Up") : formatMMSS(timeLeftSeconds)}
             </span>
+          )}
+
+          {/* Note Mode vs Live Poll Mode Toggle */}
+          {!note.isSharedAnnouncement && (
+            <button
+              onClick={handleTogglePollMode}
+              disabled={isLocked}
+              style={{
+                background: isPoll ? "rgba(2, 80, 161, 0.1)" : "none",
+                border: "1px solid rgba(2, 80, 161, 0.2)",
+                borderRadius: "12px",
+                cursor: isLocked ? "default" : "pointer",
+                padding: "0.25rem 0.5rem",
+                fontSize: "0.68rem",
+                fontWeight: 800,
+                color: isPoll ? "#0250A1" : "var(--text-muted)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.2rem",
+                opacity: isLocked ? 0.5 : 1
+              }}
+              title={isPoll ? "Switch to Standard Note Mode" : "Switch to Live Poll Mode"}
+            >
+              <span>📊</span>
+              <span>{isPoll ? "Poll" : "Note"}</span>
+            </button>
           )}
 
           {/* Action Countdown Timer button setter (⏱️) */}
@@ -948,23 +1073,25 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand, teamMe
           )}
 
           {/* Fullscreen expanded */}
-          <button
-            onClick={() => onExpand({ ...note, title: localTitle, content: localContent, color: localColor, category: localCategory, isPinned: localIsPinned, isSharedByMe: note.isSharedByMe })}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "0.3rem",
-              color: "var(--text-muted)",
-              opacity: 0.6,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-            title="Expand Fullscreen"
-          >
-            <Maximize2 size={15} />
-          </button>
+          {!isPoll && (
+            <button
+              onClick={() => onExpand({ ...note, title: localTitle, content: localContent, color: localColor, category: localCategory, isPinned: localIsPinned, isSharedByMe: note.isSharedByMe })}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "0.3rem",
+                color: "var(--text-muted)",
+                opacity: 0.6,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+              title="Expand Fullscreen"
+            >
+              <Maximize2 size={15} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -1006,7 +1133,217 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand, teamMe
 
       {/* Card Content Area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", marginTop: "0.85rem", overflowY: "auto" }}>
-        {note.isChecklist ? (
+        {isPoll ? (
+          /* POLL RENDERING */
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {isCreator ? (
+              /* CREATOR VIEW: EDITABLE OPTIONS + RESULTS SUMMARY */
+              <>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                    Poll Options (max 5)
+                  </span>
+                  {pollData.options.map((opt: string, idx: number) => (
+                    <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                      <input
+                        type="text"
+                        value={opt}
+                        disabled={isLocked}
+                        onChange={(e) => handleUpdateOption(idx, e.target.value)}
+                        placeholder={`Option ${idx + 1}...`}
+                        style={{
+                          flex: 1,
+                          fontSize: "0.8rem",
+                          padding: "0.35rem 0.5rem",
+                          background: "rgba(0, 0, 0, 0.02)",
+                          border: "1px solid var(--border-dim)",
+                          borderRadius: "4px",
+                          color: "var(--text-primary)"
+                        }}
+                      />
+                      {pollData.options.length > 2 && !isLocked && (
+                        <button
+                          onClick={() => handleRemoveOption(idx)}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", padding: "0.2rem" }}
+                          title="Remove Option"
+                        >
+                          ❌
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {pollData.options.length < 5 && !isLocked && (
+                    <button
+                      onClick={handleAddOption}
+                      className="btn-gold"
+                      style={{
+                        padding: "0.35rem 0.6rem",
+                        fontSize: "0.72rem",
+                        height: "auto",
+                        marginTop: "0.2rem",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                        alignSelf: "flex-start"
+                      }}
+                    >
+                      <Plus size={10} /> Add Option
+                    </button>
+                  )}
+                </div>
+
+                {/* RESULTS SUMMARY FOR CREATOR */}
+                <div style={{ marginTop: "0.75rem", borderTop: "1px solid var(--border-dim)", paddingTop: "0.75rem" }}>
+                  <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block", marginBottom: "0.5rem" }}>
+                    Live Voting Results ({totalVotes} votes cast)
+                  </span>
+                  {pollData.options.map((opt: string, idx: number) => {
+                    const optVotes = pollData.votes?.filter((v: any) => v.optionIndex === idx) || [];
+                    const votesCount = optVotes.length;
+                    const pct = totalVotes > 0 ? Math.round((votesCount / totalVotes) * 100) : 0;
+                    return (
+                      <div key={idx} style={{ marginBottom: "0.5rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 700, marginBottom: "0.15rem" }}>
+                          <span style={{ color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>
+                            {opt || `Option ${idx + 1}`}
+                          </span>
+                          <span style={{ color: "var(--text-secondary)" }}>
+                            {pct}% ({votesCount})
+                          </span>
+                        </div>
+                        <div style={{ height: "6px", background: "rgba(0,0,0,0.04)", borderRadius: "999px", overflow: "hidden" }}>
+                          <div style={{
+                            height: "100%",
+                            width: `${pct}%`,
+                            background: "var(--gold-primary)",
+                            borderRadius: "999px",
+                            transition: "width 0.5s ease"
+                          }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* CREATOR VOTES DETAIL BREAKDOWN */}
+                {totalVotes > 0 && (
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <button
+                      onClick={() => setShowPollVoters(!showPollVoters)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: "0.68rem",
+                        fontWeight: 800,
+                        color: "var(--gold-primary)",
+                        padding: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.2rem"
+                      }}
+                    >
+                      <span>{showPollVoters ? "Hide" : "Show"} Detailed Votes Breakdown</span>
+                      <span>{showPollVoters ? "▲" : "▼"}</span>
+                    </button>
+                    {showPollVoters && (
+                      <div style={{
+                        marginTop: "0.35rem",
+                        background: "rgba(0,0,0,0.02)",
+                        border: "1px solid var(--border-dim)",
+                        borderRadius: "6px",
+                        padding: "0.45rem",
+                        maxHeight: "100px",
+                        overflowY: "auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.25rem"
+                      }}>
+                        {pollData.votes.map((v: any, index: number) => (
+                          <div key={index} style={{ fontSize: "0.68rem", display: "flex", justifyContent: "space-between", color: "var(--text-primary)" }}>
+                            <span style={{ fontWeight: 700 }}>{v.userName}</span>
+                            <span style={{ color: "var(--gold-premium)" }}>
+                              voted "{pollData.options[v.optionIndex] || `Option ${v.optionIndex + 1}`}"
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* RECIPIENT VIEW */
+              <>
+                {(!hasVoted && !isExpired && !isLocked) ? (
+                  /* VOTE CASTING PANEL */
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "0.2rem" }}>
+                      Cast your vote:
+                    </span>
+                    {pollData.options.filter(Boolean).map((opt: string, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleVote(idx)}
+                        disabled={isCastingVote}
+                        className="btn-gold"
+                        style={{
+                          width: "100%",
+                          padding: "0.45rem 0.75rem",
+                          fontSize: "0.78rem",
+                          fontWeight: 700,
+                          textAlign: "left",
+                          justifyContent: "flex-start",
+                          background: "none",
+                          border: "1px solid var(--border-dim)",
+                          color: "var(--text-primary)",
+                          height: "auto",
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  /* VOTE PROGRESS RESULTS BAR VIEW */
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "0.2rem" }}>
+                      {isExpired ? "🔒 Closed Poll Results" : "Live Poll Results"} ({totalVotes} votes cast)
+                    </span>
+                    {pollData.options.map((opt: string, idx: number) => {
+                      const optVotes = pollData.votes?.filter((v: any) => v.optionIndex === idx) || [];
+                      const votesCount = optVotes.length;
+                      const pct = totalVotes > 0 ? Math.round((votesCount / totalVotes) * 100) : 0;
+                      const userSelectedThis = pollData.votes?.some((v: any) => v.userId === currentUserId && v.optionIndex === idx);
+                      return (
+                        <div key={idx} style={{ marginBottom: "0.4rem" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 700, marginBottom: "0.15rem" }}>
+                            <span style={{ color: userSelectedThis ? "var(--gold-primary)" : "var(--text-primary)" }}>
+                              {opt || `Option ${idx + 1}`} {userSelectedThis && " ⟨Your Vote⟩"}
+                            </span>
+                            <span style={{ color: "var(--text-secondary)" }}>
+                              {pct}% ({votesCount})
+                            </span>
+                          </div>
+                          <div style={{ height: "6px", background: "rgba(0,0,0,0.04)", borderRadius: "999px", overflow: "hidden" }}>
+                            <div style={{
+                              height: "100%",
+                              width: `${pct}%`,
+                              background: userSelectedThis ? "var(--gold-primary)" : "var(--gold-premium)",
+                              borderRadius: "999px",
+                              transition: "width 0.5s ease"
+                            }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : note.isChecklist ? (
           /* CHECKLIST RENDERING */
           <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
             {checklistItems.map(item => (

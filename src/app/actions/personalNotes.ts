@@ -263,13 +263,25 @@ export async function sharePersonalNoteWithTeamAction(
       clonedNoteId = created.id;
     }
 
+    let isPoll = false;
+    let messageText = note.content;
+    try {
+      const parsed = JSON.parse(note.content);
+      if (parsed && parsed.type === "poll") {
+        isPoll = true;
+        messageText = `Poll: ${note.title}. Options: ${parsed.options.filter(Boolean).join(", ")}`;
+      }
+    } catch (e) {}
+
+    const notifTitle = isPoll ? "📊 New Team Poll: Vote Now!" : "📢 New Team Announcement";
+
     // Create an anonymous Team Announcement notification for the target user
     await db.notification.create({
       data: {
         id: crypto.randomUUID(),
         userId: targetId,
-        title: "📢 New Team Announcement",
-        message: `[NOTE_ID:${clonedNoteId}] ${note.content.substring(0, 80)}`,
+        title: notifTitle,
+        message: `[NOTE_ID:${clonedNoteId}] ${messageText.substring(0, 80)}`,
         type: "TEAM_ANNOUNCEMENT",
         isRead: false
       }
@@ -501,4 +513,75 @@ export async function getNoteShareTargetsAction(noteId: string) {
   } catch (error: any) {
     throw new Error(error.message || "Failed to fetch share targets.");
   }
+}
+
+export async function castVoteAction(noteId: string, optionIndex: number) {
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+
+  const note = await db.personalnote.findUnique({
+    where: { id: noteId }
+  });
+
+  if (!note) {
+    throw new Error("Poll not found.");
+  }
+
+  if (note.timerExpiresAt && new Date() > new Date(note.timerExpiresAt)) {
+    throw new Error("This poll has expired.");
+  }
+
+  const masterNoteId = note.sharedFromNoteId || note.id;
+
+  const masterNote = await db.personalnote.findUnique({
+    where: { id: masterNoteId }
+  });
+
+  if (!masterNote) {
+    throw new Error("Master poll not found.");
+  }
+
+  let pollData;
+  try {
+    pollData = JSON.parse(masterNote.content);
+  } catch (e) {
+    throw new Error("Invalid poll format.");
+  }
+
+  if (pollData.type !== "poll") {
+    throw new Error("Note is not in poll mode.");
+  }
+
+  if (!pollData.votes) {
+    pollData.votes = [];
+  }
+
+  const existingVoteIdx = pollData.votes.findIndex((v: any) => v.userId === user.id);
+  if (existingVoteIdx >= 0) {
+    pollData.votes[existingVoteIdx].optionIndex = optionIndex;
+    pollData.votes[existingVoteIdx].userName = user.name || user.email;
+  } else {
+    pollData.votes.push({
+      userId: user.id,
+      userName: user.name || user.email,
+      optionIndex
+    });
+  }
+
+  const updatedContent = JSON.stringify(pollData);
+
+  await db.personalnote.update({
+    where: { id: masterNoteId },
+    data: { content: updatedContent }
+  });
+
+  await db.personalnote.updateMany({
+    where: { sharedFromNoteId: masterNoteId },
+    data: { content: updatedContent }
+  });
+
+  try {
+    revalidatePath("/personal-notes");
+  } catch (e) {}
+
+  return { success: true };
 }
