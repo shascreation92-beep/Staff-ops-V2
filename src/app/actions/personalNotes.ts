@@ -167,8 +167,9 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
       }
     });
 
+    let clonedNoteId = "";
     if (existingAnnouncement) {
-      await db.personalnote.update({
+      const updated = await db.personalnote.update({
         where: { id: existingAnnouncement.id },
         data: {
           title: note.title,
@@ -183,8 +184,9 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
           updatedAt: new Date()
         }
       });
+      clonedNoteId = updated.id;
     } else {
-      await db.personalnote.create({
+      const created = await db.personalnote.create({
         data: {
           userId: associate.id,
           title: note.title,
@@ -200,7 +202,21 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
           sharedFromNoteId: note.id
         }
       });
+      clonedNoteId = created.id;
     }
+
+    // Create an anonymous Team Announcement notification for the associate
+    await db.notification.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: associate.id,
+        title: "📢 New Team Announcement",
+        message: `[NOTE_ID:${clonedNoteId}] ${note.content.substring(0, 80)}`,
+        type: "TEAM_ANNOUNCEMENT",
+        isRead: false
+      }
+    });
+
     shareCount++;
   }
 
@@ -318,4 +334,22 @@ export async function acknowledgeSharedAnnouncementAction(noteId: string) {
   } catch (e) {}
 
   return { success: true };
+}
+
+export async function getPersonalNoteByIdAction(noteId: string) {
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+
+  const note = await db.personalnote.findUnique({
+    where: { id: noteId }
+  });
+
+  if (!note) {
+    throw new Error("Note not found.");
+  }
+
+  if (note.userId !== user.id) {
+    throw new Error("UNAUTHORIZED: You cannot view this note.");
+  }
+
+  return { success: true, note };
 }

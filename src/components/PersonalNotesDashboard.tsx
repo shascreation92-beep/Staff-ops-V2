@@ -1291,14 +1291,14 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
 /* ==========================================
    FULLSCREEN FOCUS MODAL OVERLAY
    ========================================== */
-interface FullscreenModalProps {
+export interface FullscreenModalProps {
   note: PersonalNote;
   userRole: string;
   onClose: () => void;
   onSave: (id: string, data: any) => Promise<void>;
 }
 
-function FullscreenModal({ note, userRole, onClose, onSave }: FullscreenModalProps) {
+export function FullscreenModal({ note, userRole, onClose, onSave }: FullscreenModalProps) {
   const [title, setTitle] = useState(note.title === "Untitled Note" ? "" : note.title);
   const [content, setContent] = useState(note.content);
   const [category, setCategory] = useState(note.category || "Work");
