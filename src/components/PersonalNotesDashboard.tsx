@@ -206,6 +206,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategoryFilter, setActiveCategoryFilter] = useState("ALL");
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [showCreationWizard, setShowCreationWizard] = useState(false);
 
   // Fullscreen expanded note card state
   const [expandedNote, setExpandedNote] = useState<PersonalNote | null>(null);
@@ -228,22 +229,32 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
     fetchTeam();
   }, []);
 
-  const handleAddNewNote = async () => {
+  const handleAddNewNote = async (type: "note" | "poll") => {
     startTransition(async () => {
       try {
+        let initialContent = "";
+        if (type === "poll") {
+          initialContent = JSON.stringify({
+            type: "poll",
+            options: ["Option 1", "Option 2"],
+            votes: []
+          });
+        }
         const res = await createPersonalNoteAction({
-          title: "",
-          content: "",
+          title: type === "poll" ? "New Team Poll" : "Untitled Note",
+          content: initialContent,
           isChecklist: false,
           color: "default",
           category: "Work"
         });
         if (res.success && res.note) {
-          toast.success("New note created!");
+          toast.success(type === "poll" ? "New Team Poll created!" : "New Standard Note created!");
           router.refresh();
         }
       } catch (err: any) {
         toast.error(err.message || "Failed to create note.");
+      } finally {
+        setShowCreationWizard(false);
       }
     });
   };
@@ -346,7 +357,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
 
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button 
-              onClick={handleAddNewNote} 
+              onClick={() => setShowCreationWizard(true)} 
               disabled={isPending}
               className="btn-gold"
               style={{
@@ -411,6 +422,133 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
           }}
         />
       )}
+      {/* Creation Wizard Option Modal */}
+      {showCreationWizard && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.4)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 99999
+        }}>
+          <div style={{
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            borderRadius: "16px",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
+            padding: "2rem",
+            width: "500px",
+            maxWidth: "90%",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.5rem",
+            position: "relative"
+          }}>
+            <button
+              onClick={() => setShowCreationWizard(false)}
+              style={{
+                position: "absolute",
+                top: "1.25rem",
+                right: "1.25rem",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "1.1rem",
+                color: "var(--text-muted)",
+                padding: 0
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ textAlign: "center" }}>
+              <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--gold-primary)", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Select Workspace Type
+              </h3>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem", marginBottom: 0 }}>
+                Choose the operational block format to provision.
+              </p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              {/* Option 1: Standard Note */}
+              <div 
+                onClick={() => handleAddNewNote("note")}
+                style={{
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "12px",
+                  padding: "1.25rem 1rem",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  transition: "all 0.2s ease",
+                  background: "#F9FAFB"
+                }}
+                className="hover:scale-102 hover:border-gold hover:bg-white"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--gold-premium)";
+                  e.currentTarget.style.background = "#FFFFFF";
+                  e.currentTarget.style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-dim)";
+                  e.currentTarget.style.background = "#F9FAFB";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                <div style={{ fontSize: "2rem" }}>📝</div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Standard Note</div>
+                <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
+                  Create text documents, lists, or mathematical worksheets.
+                </p>
+              </div>
+
+              {/* Option 2: Live Team Poll */}
+              <div 
+                onClick={() => handleAddNewNote("poll")}
+                style={{
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "12px",
+                  padding: "1.25rem 1rem",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  transition: "all 0.2s ease",
+                  background: "#F9FAFB"
+                }}
+                className="hover:scale-102 hover:border-gold hover:bg-white"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--gold-premium)";
+                  e.currentTarget.style.background = "#FFFFFF";
+                  e.currentTarget.style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-dim)";
+                  e.currentTarget.style.background = "#F9FAFB";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                <div style={{ fontSize: "2rem" }}>📊</div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Team Live Poll</div>
+                <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
+                  Create a live voting question with custom options.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -469,6 +607,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
 
   const [showPollVoters, setShowPollVoters] = useState(false);
   const [isCastingVote, setIsCastingVote] = useState(false);
+  const [locallySelectedOptionIdx, setLocallySelectedOptionIdx] = useState<number | null>(null);
 
   const handleTogglePollMode = () => {
     if (note.isSharedAnnouncement || isLocked) return;
@@ -479,7 +618,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
         if (!isPoll) {
           const initialPoll = {
             type: "poll",
-            options: ["", ""],
+            options: ["Option 1", "Option 2"],
             votes: []
           };
           nextContent = JSON.stringify(initialPoll);
@@ -526,6 +665,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
 
   const handleVote = async (optionIdx: number) => {
     if (isExpired || isLocked || isCastingVote) return;
+    setLocallySelectedOptionIdx(optionIdx);
     setIsCastingVote(true);
     try {
       const res = await castVoteAction(note.id, optionIdx);
@@ -535,6 +675,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to record vote.");
+      setLocallySelectedOptionIdx(null);
     } finally {
       setIsCastingVote(false);
     }
@@ -981,31 +1122,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
             </span>
           )}
 
-          {/* Note Mode vs Live Poll Mode Toggle */}
-          {!note.isSharedAnnouncement && (
-            <button
-              onClick={handleTogglePollMode}
-              disabled={isLocked}
-              style={{
-                background: isPoll ? "rgba(2, 80, 161, 0.1)" : "none",
-                border: "1px solid rgba(2, 80, 161, 0.2)",
-                borderRadius: "12px",
-                cursor: isLocked ? "default" : "pointer",
-                padding: "0.25rem 0.5rem",
-                fontSize: "0.68rem",
-                fontWeight: 800,
-                color: isPoll ? "#0250A1" : "var(--text-muted)",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.2rem",
-                opacity: isLocked ? 0.5 : 1
-              }}
-              title={isPoll ? "Switch to Standard Note Mode" : "Switch to Live Poll Mode"}
-            >
-              <span>📊</span>
-              <span>{isPoll ? "Poll" : "Note"}</span>
-            </button>
-          )}
+
 
           {/* Action Countdown Timer button setter (⏱️) */}
           {!note.isSharedAnnouncement && (
@@ -1097,7 +1214,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
 
       {/* Mode toggle row */}
       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: "0.5rem" }}>
-        {!note.isSharedAnnouncement && (
+        {!note.isSharedAnnouncement && !isPoll && (
           <button
             onClick={() => !isLocked && handleToggleMode()}
             disabled={isLocked}
@@ -1281,29 +1398,45 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                     <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "0.2rem" }}>
                       Cast your vote:
                     </span>
-                    {pollData.options.filter(Boolean).map((opt: string, idx: number) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleVote(idx)}
-                        disabled={isCastingVote}
-                        className="btn-gold"
-                        style={{
-                          width: "100%",
-                          padding: "0.45rem 0.75rem",
-                          fontSize: "0.78rem",
-                          fontWeight: 700,
-                          textAlign: "left",
-                          justifyContent: "flex-start",
-                          background: "none",
-                          border: "1px solid var(--border-dim)",
-                          color: "var(--text-primary)",
-                          height: "auto",
-                          transition: "all 0.2s"
-                        }}
-                      >
-                        {opt}
-                      </button>
-                    ))}
+                    {pollData.options.filter(Boolean).map((opt: string, idx: number) => {
+                      const isSelected = locallySelectedOptionIdx === idx;
+                      const isDimmed = locallySelectedOptionIdx !== null && locallySelectedOptionIdx !== idx;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleVote(idx)}
+                          disabled={isCastingVote || locallySelectedOptionIdx !== null}
+                          className="btn-gold"
+                          style={{
+                            width: "100%",
+                            padding: "0.45rem 0.75rem",
+                            fontSize: "0.78rem",
+                            fontWeight: 700,
+                            textAlign: "left",
+                            justifyContent: "flex-start",
+                            background: isSelected ? "rgba(2, 80, 161, 0.05)" : "none",
+                            border: isSelected ? "2px solid #0250A1" : "1px solid var(--border-dim)",
+                            color: "var(--text-primary)",
+                            height: "auto",
+                            transition: "all 0.2s",
+                            opacity: isDimmed ? 0.4 : 1,
+                            pointerEvents: isDimmed ? "none" : "auto",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.4rem"
+                          }}
+                        >
+                          {isSelected ? (
+                            <>
+                              <span style={{ fontSize: "0.85rem", color: "#0250A1" }}>✔️</span>
+                              <span style={{ fontWeight: 800 }}>{opt}</span>
+                            </>
+                          ) : (
+                            <span>{opt}</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   /* VOTE PROGRESS RESULTS BAR VIEW */
@@ -1320,7 +1453,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                         <div key={idx} style={{ marginBottom: "0.4rem" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 700, marginBottom: "0.15rem" }}>
                             <span style={{ color: userSelectedThis ? "var(--gold-primary)" : "var(--text-primary)" }}>
-                              {opt || `Option ${idx + 1}`} {userSelectedThis && " ⟨Your Vote⟩"}
+                              {opt || `Option ${idx + 1}`} {userSelectedThis && " (🎯 Your Vote)"}
                             </span>
                             <span style={{ color: "var(--text-secondary)" }}>
                               {pct}% ({votesCount})
