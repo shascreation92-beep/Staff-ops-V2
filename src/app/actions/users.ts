@@ -856,3 +856,30 @@ export async function rejectSalesAssociateAction(userId: string) {
     throw new Error(error.message || "Failed to reject onboarding request.");
   }
 }
+
+export async function getCompanyTeamLeadsAction() {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+  
+  let companyFilter = {};
+  if (currentUser.companyId) {
+    companyFilter = { companyId: currentUser.companyId };
+  }
+
+  const teamLeads = await db.user.findMany({
+    where: {
+      ...companyFilter,
+      role: "TEAM_LEAD",
+      isArchived: false
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true
+    },
+    orderBy: {
+      name: "asc"
+    }
+  });
+
+  return { success: true, teamLeads };
+}

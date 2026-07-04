@@ -114,6 +114,25 @@ export default async function DashboardPage() {
     });
   }
 
+  // Fetch number of active team leads in active company context
+  const companyTeamLeadsCount = await db.user.count({
+    where: {
+      ...companyFilter,
+      role: "TEAM_LEAD",
+      isArchived: false
+    }
+  });
+
+  // Fetch the target rule value
+  const targetRule = await db.rule.findFirst({
+    where: {
+      companyId: user.companyId || undefined,
+      key: { in: ["targetToMaintainFB", "targetToMaintain"] }
+    }
+  });
+  const targetValuePerTL = targetRule ? (parseInt(targetRule.value, 10) || 15) : 15;
+  const totalOfficeTarget = targetValuePerTL * companyTeamLeadsCount;
+
   // Team Lead specific metrics
   let combinedStats = {
     totalCombinedAccounts: 0,
@@ -398,7 +417,64 @@ export default async function DashboardPage() {
           globalFeed={tlGlobalFeed}
         />
       ) : (
-        <div className="kpi-grid">
+        <>
+          {/* New Top-Level Global KPI Row */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: "1.5rem",
+            marginBottom: "1.5rem"
+          }}>
+            {/* Card 1: TOTAL ACCOUNTS (OVERALL) */}
+            <div className="glass-panel kpi-card kpi-info" style={{
+              background: "linear-gradient(135deg, #0250A1 0%, #0077B6 100%)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              boxShadow: "0 8px 32px rgba(2, 80, 161, 0.15)"
+            }}>
+              <div className="kpi-card-glow" style={{ opacity: 0.1 }}></div>
+              <div className="kpi-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span className="kpi-title" style={{ color: "rgba(255, 255, 255, 0.8)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  Total Accounts (Overall)
+                </span>
+                <div className="kpi-icon-wrapper" style={{ background: "rgba(255, 255, 255, 0.1)", color: "#FFFFFF" }}>
+                  <Database size={16} />
+                </div>
+              </div>
+              <div className="kpi-value" style={{ fontSize: "2.5rem", fontWeight: 800, margin: "0.5rem 0", color: "#FFFFFF" }}>
+                {totalAccounts < 10 ? `0${totalAccounts}` : totalAccounts}
+              </div>
+              <div className="kpi-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.1)", paddingTop: "0.5rem", fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.6)" }}>
+                <span>Company-wide aggregated accounts database</span>
+              </div>
+            </div>
+
+            {/* Card 2: TOTAL OFFICE TARGET */}
+            <div className="glass-panel kpi-card kpi-info" style={{
+              background: "linear-gradient(135deg, #D4AF37 0%, #AA8F24 100%)",
+              color: "#FFFFFF",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              boxShadow: "0 8px 32px rgba(212, 175, 55, 0.15)"
+            }}>
+              <div className="kpi-card-glow" style={{ opacity: 0.1 }}></div>
+              <div className="kpi-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span className="kpi-title" style={{ color: "rgba(255, 255, 255, 0.8)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  Total Office Target
+                </span>
+                <div className="kpi-icon-wrapper" style={{ background: "rgba(255, 255, 255, 0.1)", color: "#FFFFFF" }}>
+                  <Target size={16} />
+                </div>
+              </div>
+              <div className="kpi-value" style={{ fontSize: "2.5rem", fontWeight: 800, margin: "0.5rem 0", color: "#FFFFFF" }}>
+                {totalOfficeTarget < 10 ? `0${totalOfficeTarget}` : totalOfficeTarget}
+              </div>
+              <div className="kpi-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.1)", paddingTop: "0.5rem", fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.6)" }}>
+                <span>Combined operational goals of {companyTeamLeadsCount} team lead{companyTeamLeadsCount === 1 ? "" : "s"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="kpi-grid">
           <div className="glass-panel kpi-card kpi-info">
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
@@ -473,6 +549,7 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
+        </>
       )}
 
       {["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"].includes(user.role) && (
