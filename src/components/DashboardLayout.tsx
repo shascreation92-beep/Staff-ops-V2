@@ -88,9 +88,9 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     <div className="app-container" style={{ display: "flex", flexDirection: "column" }}>
       {/* CSS marquee and glowing capsule style definitions */}
       <style>{`
-        @keyframes marquee-ltr {
-          0% { transform: translate3d(-100%, 0, 0); }
-          100% { transform: translate3d(100%, 0, 0); }
+        @keyframes marquee-rtl {
+          0% { transform: translate3d(100%, 0, 0); }
+          100% { transform: translate3d(-100%, 0, 0); }
         }
         .marquee-container {
           overflow: hidden;
@@ -104,7 +104,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
         .marquee-text-scroll {
           display: inline-block;
           white-space: nowrap;
-          animation: marquee-ltr 22s linear infinite;
+          animation: marquee-rtl 22s linear infinite;
         }
         .marquee-text-scroll:hover {
           animation-play-state: paused;
@@ -263,6 +263,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
             {/* Centered Eye-Catching Animated Announcement Bar */}
             {activeStripAnn && (() => {
               const parsed = parseAnnTitle(activeStripAnn.title);
+              const labelText = parsed.sender === "IT_DEPARTMENT" ? "Company / IT Dept" : "Company";
 
               return (
                 <div 
@@ -286,11 +287,11 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                   {/* Fixed left badges (scrolling text slides out from underneath) */}
                   <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", zIndex: 10, background: "#FFFFFF", paddingRight: "0.85rem", boxShadow: "6px 0 10px 4px #FFFFFF", height: "100%", flexShrink: 0 }}>
                     <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontWeight: 800, whiteSpace: "nowrap" }}>
-                      Company: {user.companyName || "Active Tenant"}
+                      {labelText}
                     </span>
                   </div>
 
-                  {/* Left-to-Right Animated Text Area */}
+                  {/* Right-to-Left Animated Text Area */}
                   <div className="marquee-container" onClick={() => openGlobalAnnDetails(activeStripAnn)}>
                     <div className="marquee-text-scroll" style={{ paddingLeft: "10%" }}>
                       <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.78rem" }}>
