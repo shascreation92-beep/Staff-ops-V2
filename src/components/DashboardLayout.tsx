@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { user_role } from "@prisma/client";
-import { Shield, Check, X, Loader2 } from "lucide-react";
+import { Shield, Check, X, Loader2, Megaphone } from "lucide-react";
+import { useAnnouncements } from "./AnnouncementProvider";
 import { 
   getUpgradeInvitationAction, 
   acceptUpgradeAction, 
@@ -30,6 +31,9 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [invitation, setInvitation] = useState<{ id: string; title: string; message: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Read Announcements context
+  const { activeStripAnn, dismissStrip, openGlobalAnnDetails } = useAnnouncements();
 
   useEffect(() => {
     if (user.role === "SALES_ASSOCIATE") {
@@ -70,8 +74,52 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
     }
   };
 
+  const parseAnnTitle = (rawTitle: string) => {
+    try {
+      const parsed = JSON.parse(rawTitle);
+      if (parsed && typeof parsed === 'object' && 'sender' in parsed) {
+        return parsed as { sender: "COMPANY_HQ" | "IT_DEPARTMENT"; type: "COMPANY_UPDATE" | "URGENT_ALERT" | "SALES_CELEBRATION"; text: string };
+      }
+    } catch (e) {}
+    return { sender: "COMPANY_HQ" as const, type: "COMPANY_UPDATE" as const, text: rawTitle };
+  };
+
   return (
     <div className="app-container" style={{ display: "flex", flexDirection: "column" }}>
+      {/* CSS marquee and glowing capsule style definitions */}
+      <style>{`
+        @keyframes marquee-ltr {
+          0% { transform: translate3d(-100%, 0, 0); }
+          100% { transform: translate3d(100%, 0, 0); }
+        }
+        .marquee-container {
+          overflow: hidden;
+          white-space: nowrap;
+          width: 100%;
+          position: relative;
+          height: 100%;
+          display: flex;
+          align-items: center;
+        }
+        .marquee-text-scroll {
+          display: inline-block;
+          white-space: nowrap;
+          animation: marquee-ltr 22s linear infinite;
+        }
+        .marquee-text-scroll:hover {
+          animation-play-state: paused;
+          cursor: pointer;
+        }
+        @keyframes border-glow-pulse {
+          0% { box-shadow: 0 0 4px rgba(2, 80, 161, 0.15), 0 0 0 1px rgba(2, 80, 161, 0.1); }
+          50% { box-shadow: 0 0 12px rgba(2, 80, 161, 0.35), 0 0 0 1.5px rgba(2, 80, 161, 0.25); }
+          100% { box-shadow: 0 0 4px rgba(2, 80, 161, 0.15), 0 0 0 1px rgba(2, 80, 161, 0.1); }
+        }
+        .capsule-pulse-glow {
+          animation: border-glow-pulse 3.5s infinite ease-in-out;
+        }
+      `}</style>
+
       {invitation && (
         <div style={{
           width: "100%",
@@ -212,6 +260,76 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           </button>
 
           <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 10 }}>
+            {/* Centered Eye-Catching Animated Announcement Bar */}
+            {activeStripAnn && (() => {
+              const parsed = parseAnnTitle(activeStripAnn.title);
+              const senderBadge = parsed.sender === "COMPANY_HQ" ? "🏢 Company HQ" : "💻 IT Department";
+              let typeBadge = "[Company Update]";
+              let typeColor = "#0250A1"; // Blue
+              if (parsed.type === "URGENT_ALERT") {
+                typeBadge = "[Urgent Alert]";
+                typeColor = "#EF4444";
+              } else if (parsed.type === "SALES_CELEBRATION") {
+                typeBadge = "[Sales Celebration]";
+                typeColor = "#10B981"; // Green
+              }
+
+              return (
+                <div 
+                  className="capsule-pulse-glow"
+                  style={{
+                    width: "100%",
+                    maxWidth: "896px", // max-w-4xl is 56rem (896px)
+                    margin: "1rem auto 0 auto",
+                    background: "#FFFFFF",
+                    border: "1.5px solid rgba(2, 80, 161, 0.18)",
+                    borderRadius: "9999px",
+                    height: "38px",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0 1.25rem",
+                    zIndex: 50,
+                    overflow: "hidden",
+                    position: "relative"
+                  }}
+                >
+                  {/* Fixed left badges (scrolling text slides out from underneath) */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", zIndex: 10, background: "#FFFFFF", paddingRight: "0.85rem", boxShadow: "6px 0 10px 4px #FFFFFF", height: "100%", flexShrink: 0 }}>
+                    <span className="badge pending animate-pulse" style={{ fontSize: "0.6rem", padding: "0.1rem 0.35rem", textTransform: "uppercase" }}>
+                      📢 New
+                    </span>
+                    <span style={{ fontSize: "0.62rem", background: "rgba(2, 80, 161, 0.05)", color: "#0250A1", padding: "0.1rem 0.35rem", borderRadius: "4px", fontWeight: 800 }}>
+                      {senderBadge}
+                    </span>
+                    <span style={{ fontSize: "0.62rem", background: "rgba(0,0,0,0.03)", color: typeColor, padding: "0.1rem 0.35rem", borderRadius: "4px", fontWeight: 800 }}>
+                      {typeBadge}
+                    </span>
+                  </div>
+
+                  {/* Left-to-Right Animated Text Area */}
+                  <div className="marquee-container" onClick={() => openGlobalAnnDetails(activeStripAnn)}>
+                    <div className="marquee-text-scroll" style={{ paddingLeft: "10%" }}>
+                      <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.78rem" }}>
+                        {parsed.text}:
+                      </span>
+                      <span style={{ marginLeft: "0.25rem", color: "var(--text-secondary)", fontSize: "0.78rem" }}>
+                        {activeStripAnn.content}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Close button with left white fade shadow */}
+                  <button
+                    onClick={() => dismissStrip(activeStripAnn.id)}
+                    style={{ border: "none", cursor: "pointer", zIndex: 10, paddingLeft: "0.5rem", background: "#FFFFFF", boxShadow: "-6px 0 10px 4px #FFFFFF", height: "100%", display: "flex", alignItems: "center", color: "var(--text-muted)", opacity: 0.6, flexShrink: 0 }}
+                    title="Dismiss Announcement"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              );
+            })()}
+
             {children}
           </div>
         </main>

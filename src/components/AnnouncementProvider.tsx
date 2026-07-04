@@ -2,10 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { X, Volume2, AlertTriangle, Info, PartyPopper } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react";
 import { FullscreenModal } from "./PersonalNotesDashboard";
 import { getPersonalNoteByIdAction } from "@/app/actions/personalNotes";
-import { toast } from "react-hot-toast";
 
 interface Toast {
   id: string;
@@ -17,6 +16,9 @@ interface Toast {
 interface AnnouncementContextType {
   triggerToast: (toast: Omit<Toast, "id">) => void;
   openAnnouncementById: (noteId: string) => Promise<void>;
+  activeStripAnn: any | null;
+  dismissStrip: (annId: string) => void;
+  openGlobalAnnDetails: (ann: any) => void;
 }
 
 const AnnouncementContext = createContext<AnnouncementContextType | undefined>(undefined);
@@ -304,76 +306,14 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
   });
 
   return (
-    <AnnouncementContext.Provider value={{ triggerToast, openAnnouncementById }}>
-      {/* Dynamic Header Push Wrapper */}
-      <div style={{ paddingTop: activeStripAnn ? "40px" : "0px", transition: "padding 0.3s ease" }}>
-        {children}
-      </div>
-
-      {/* Global Sticky Top Announcement Strip */}
-      {activeStripAnn && (() => {
-        const parsed = parseAnnTitle(activeStripAnn.title);
-        const senderBadge = parsed.sender === "COMPANY_HQ" ? "🏢 Company HQ" : "💻 IT Department";
-        let typeBadge = "[Company Update]";
-        let typeColor = "#0250A1"; // Blue
-        if (parsed.type === "SALES_CELEBRATION") {
-          typeBadge = "[Sales Celebration]";
-          typeColor = "#10B981"; // Green
-        }
-
-        return (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "40px",
-              background: "#FFFFFF",
-              borderBottom: "1.5px solid var(--border-gold)",
-              zIndex: 999999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 1.5rem",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-              animation: "fadeIn 0.5s ease"
-            }}
-          >
-            <div
-              onClick={() => setFocusedAnnDetails(activeStripAnn)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                cursor: "pointer",
-                flex: 1,
-                minWidth: 0
-              }}
-            >
-              <span className="badge pending animate-pulse" style={{ fontSize: "0.62rem", padding: "0.15rem 0.4rem", textTransform: "uppercase" }}>
-                📢 New
-              </span>
-              <span style={{ fontSize: "0.65rem", background: "rgba(2, 80, 161, 0.05)", color: "#0250A1", padding: "0.1rem 0.35rem", borderRadius: "4px", fontWeight: 800 }}>
-                {senderBadge}
-              </span>
-              <span style={{ fontSize: "0.65rem", background: "rgba(0,0,0,0.03)", color: typeColor, padding: "0.1rem 0.35rem", borderRadius: "4px", fontWeight: 800 }}>
-                {typeBadge}
-              </span>
-              <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {parsed.text}
-              </span>
-            </div>
-            <button
-              onClick={() => handleDismissStrip(activeStripAnn.id)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: "0.2rem", display: "flex", color: "var(--text-muted)", opacity: 0.6 }}
-              title="Dismiss Announcement"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        );
-      })()}
+    <AnnouncementContext.Provider value={{ 
+      triggerToast, 
+      openAnnouncementById,
+      activeStripAnn,
+      dismissStrip: handleDismissStrip,
+      openGlobalAnnDetails: setFocusedAnnDetails
+    }}>
+      {children}
 
       {/* High-Priority Alerts Frosted-Glass Modal */}
       {activeUrgentAlert && (() => {
