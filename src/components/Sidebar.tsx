@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
-import { updateUserPasswordAction, getCompanyTeamLeadsAction } from "@/app/actions/users";
+import { updateUserPasswordAction } from "@/app/actions/users";
 import { getPendingTLRequestsCountAction } from "@/app/actions/accounts";
 import { useEffect } from "react";
 
@@ -49,17 +49,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
   // Dynamic notification count for TL requests
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
-  const [teamLeads, setTeamLeads] = useState<{ id: string; name: string | null; email: string }[]>([]);
-
-  useEffect(() => {
-    if (["IT_DEPARTMENT", "COMPANY_OWNER", "SUPER_ADMIN"].includes(user.role)) {
-      getCompanyTeamLeadsAction().then((res) => {
-        if (res.success && res.teamLeads) {
-          setTeamLeads(res.teamLeads);
-        }
-      }).catch(err => console.error("Failed to load team leads in sidebar", err));
-    }
-  }, [user.role]);
 
   useEffect(() => {
     if (user.role !== "TEAM_LEAD") return;
@@ -303,39 +292,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         })}
       </nav>
 
-      {/* Live Team Operations Section */}
-      {["IT_DEPARTMENT", "COMPANY_OWNER", "SUPER_ADMIN"].includes(user.role) && teamLeads.length > 0 && (
-        <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.25rem", borderTop: "1px solid var(--border-dim)", paddingTop: "1rem" }}>
-          <div style={{
-            fontSize: "0.68rem",
-            fontWeight: 800,
-            color: "var(--text-muted)",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            paddingLeft: "1rem"
-          }}>
-            🎛️ Live Team Operations
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-            {teamLeads.map((tl) => {
-              const tlPath = `/live-team-operations/${tl.id}`;
-              const isTlActive = pathname === tlPath;
-              return (
-                <Link
-                  key={tl.id}
-                  href={tlPath}
-                  className={`sidebar-item ${isTlActive ? 'active' : ''}`}
-                  onClick={() => setIsOpen(false)}
-                  style={{ paddingLeft: "1.5rem" }}
-                >
-                  <Users size={16} className="sidebar-icon" />
-                  <span style={{ fontSize: "0.82rem" }}>{tl.name || tl.email.split("@")[0]}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
+
 
       <div className="sidebar-footer-wrap">
         <button
