@@ -120,11 +120,11 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["TEAM_LEAD", "SALES_ASSOCIATE"] 
     },
     {
-      id: "team-live-roster",
-      label: "Team Live Roster",
-      path: "/team-live-roster",
-      icon: Users,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]
+      id: "master-accounts-pool",
+      label: "📊 Master Accounts Pool",
+      path: "/master-accounts-pool",
+      icon: Database,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]
     },
     { 
       id: "associates-requests", 

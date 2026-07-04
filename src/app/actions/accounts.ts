@@ -725,7 +725,7 @@ export async function updateAccountITNotesAction(accountId: string, itNotes: str
 
     try {
       revalidatePath("/accounts");
-      revalidatePath("/team-live-roster");
+      revalidatePath("/master-accounts-pool");
     } catch (revalErr: any) {
       console.warn("Non-fatal revalidation warning:", revalErr.message || revalErr);
     }
