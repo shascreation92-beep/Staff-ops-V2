@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
+import React, { useState, useEffect, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Search, 
@@ -32,7 +32,9 @@ import {
   sharePersonalNoteWithTeamAction,
   cloneSharedAnnouncementAction,
   updateNoteTimerAction,
-  acknowledgeSharedAnnouncementAction
+  acknowledgeSharedAnnouncementAction,
+  getTeamMembersAction,
+  getNoteShareTargetsAction
 } from "@/app/actions/personalNotes";
 import NotificationBell from "./NotificationBell";
 import { playChimeAlert } from "./AnnouncementProvider";
@@ -202,6 +204,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
   const [notes, setNotes] = useState<PersonalNote[]>(initialNotes);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategoryFilter, setActiveCategoryFilter] = useState("ALL");
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   // Fullscreen expanded note card state
   const [expandedNote, setExpandedNote] = useState<PersonalNote | null>(null);
@@ -209,6 +212,20 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
   useEffect(() => {
     setNotes(initialNotes);
   }, [initialNotes]);
+
+  useEffect(() => {
+    const fetchTeam = async () => {
+      try {
+        const res = await getTeamMembersAction();
+        if (res.success && res.members) {
+          setTeamMembers(res.members);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchTeam();
+  }, []);
 
   const handleAddNewNote = async () => {
     startTransition(async () => {
@@ -259,14 +276,12 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
     });
   };
 
-  const handleShareWithTeam = async (id: string) => {
-    if (!confirm("Are you sure you want to share this note as an announcement with all your assigned Sales Associates?")) return;
-    const isGlobalPinned = confirm("Would you like to PIN this announcement permanently at the top of the Associates' workspace?\n(If enabled, associates cannot delete it until you unpin it)");
+  const handleShareWithTeam = async (id: string, isGlobalPinned: boolean = false, targetUserIds?: string[]) => {
     startTransition(async () => {
       try {
-        const res = await sharePersonalNoteWithTeamAction(id, isGlobalPinned);
+        const res = await sharePersonalNoteWithTeamAction(id, isGlobalPinned, targetUserIds);
         if (res.success) {
-          toast.success(`Note shared! Cloned into ${res.count} associates' workspaces.`);
+          toast.success(`Note shared! Cloned into ${res.count} workspaces.`);
           router.refresh();
         }
       } catch (err: any) {
@@ -321,23 +336,32 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
             <Search className="header-search-icon" size={16} />
             <input
               type="text"
-              placeholder="Search notes title or keywords..."
+              placeholder="Search note titles or content..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="header-search-input"
             />
           </div>
 
-          {/* Add New Note Float/Sticky button */}
-          <button
-            onClick={handleAddNewNote}
-            className="btn-gold"
-            disabled={isPending}
-            style={{ padding: "0.45rem 1.2rem", gap: "0.4rem" }}
-          >
-            <Plus size={16} />
-            <span>ADD NEW NOTE</span>
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button 
+              onClick={handleAddNewNote} 
+              disabled={isPending}
+              className="btn-gold"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.6rem 1.25rem",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                height: "40px"
+              }}
+            >
+              <Plus size={16} />
+              Add New Note
+            </button>
+          </div>
         </div>
       </div>
 
@@ -365,6 +389,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
               onShare={handleShareWithTeam}
               onClone={handleCloneAnnouncement}
               onExpand={(n) => setExpandedNote(n)}
+              teamMembers={teamMembers}
             />
           ))}
         </div>
@@ -395,12 +420,13 @@ interface NoteCardProps {
   note: PersonalNote;
   userRole: string;
   onDelete: (id: string) => void;
-  onShare: (id: string) => void;
+  onShare: (id: string, isGlobalPinned?: boolean, targetUserIds?: string[]) => void;
   onClone: (id: string) => void;
   onExpand: (note: PersonalNote) => void;
+  teamMembers: any[];
 }
 
-function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: NoteCardProps) {
+function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand, teamMembers }: NoteCardProps) {
   const router = useRouter();
   const [localTitle, setLocalTitle] = useState(note.title === "Untitled Note" ? "" : note.title);
   const [localContent, setLocalContent] = useState(note.content);
@@ -414,6 +440,63 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
 
   // Read Acknowledgments State
   const [showAckDropdown, setShowAckDropdown] = useState(false);
+
+  // Share targets state
+  const [showShareDropdown, setShowShareDropdown] = useState(false);
+  const [shareTargets, setShareTargets] = useState<string[]>([]);
+  const [shareGlobalPin, setShareGlobalPin] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleOpenShareDropdown = async () => {
+    if (showShareDropdown) {
+      setShowShareDropdown(false);
+      return;
+    }
+    
+    try {
+      const res = await getNoteShareTargetsAction(note.id);
+      if (res.success) {
+        setShareTargets(res.targetUserIds);
+        setShareGlobalPin(res.isGlobalPinned);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setShowShareDropdown(true);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setShareTargets(teamMembers.map(m => m.id));
+    } else {
+      setShareTargets([]);
+    }
+  };
+
+  const handleToggleTarget = (userId: string) => {
+    setShareTargets(prev => 
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const handleSaveShare = () => {
+    onShare(note.id, shareGlobalPin, shareTargets);
+    setShowShareDropdown(false);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowShareDropdown(false);
+      }
+    }
+    if (showShareDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showShareDropdown]);
 
   // Countdown Timer State
   const [timeLeftSeconds, setTimeLeftSeconds] = useState<number | null>(null);
@@ -1062,8 +1145,8 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         </div>
       )}
 
-      {/* Team Lead acknowledgment dashboard tracker */}
-      {userRole === "TEAM_LEAD" && note.isSharedByMe && (
+      {/* Acknowledgment dashboard tracker */}
+      {note.isSharedByMe && (
         <div style={{ marginTop: "0.55rem" }}>
           <button
             onClick={() => setShowAckDropdown(!showAckDropdown)}
@@ -1080,7 +1163,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
               padding: 0
             }}
           >
-            <span>Read by {note.readCount || 0}/{note.sharesCount || 0} Associates</span>
+            <span>Read by {note.readCount || 0}/{note.sharesCount || 0} {userRole === "TEAM_LEAD" ? "Associates" : "Members"}</span>
             <span style={{ fontSize: "0.55rem" }}>{showAckDropdown ? "▲" : "▼"}</span>
           </button>
           {showAckDropdown && (
@@ -1206,45 +1289,146 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
             )}
           </button>
 
-          {/* Share announcement (Team Lead only) */}
-          {userRole === "TEAM_LEAD" && !note.isSharedAnnouncement && (
-            note.isSharedByMe ? (
-              <span 
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  fontSize: "0.68rem",
-                  fontWeight: 800,
-                  color: "#2EC4B6",
-                  background: "rgba(46, 196, 182, 0.1)",
-                  border: "1px solid rgba(46, 196, 182, 0.25)",
-                  padding: "0.15rem 0.45rem",
-                  borderRadius: "4px",
-                  gap: "0.25rem",
-                  cursor: "default"
-                }}
-                title="This note has been shared with your team."
-              >
-                <Users size={12} />
-                Shared
-              </span>
-            ) : (
+          {/* Share note (Team Lead & Sales Associate) */}
+          {!note.isSharedAnnouncement && (userRole === "TEAM_LEAD" || userRole === "SALES_ASSOCIATE") && (
+            <div style={{ position: "relative" }} ref={dropdownRef}>
               <button
                 disabled={isLocked}
-                onClick={() => !isLocked && onShare(note.id)}
+                onClick={handleOpenShareDropdown}
                 style={{
-                  background: "none",
-                  border: "none",
+                  background: note.isSharedByMe ? "rgba(46, 196, 182, 0.1)" : "none",
+                  border: note.isSharedByMe ? "1px solid rgba(46, 196, 182, 0.25)" : "none",
+                  borderRadius: "4px",
                   cursor: isLocked ? "default" : "pointer",
-                  padding: "0.2rem",
-                  color: "var(--gold-premium)",
-                  opacity: isLocked ? 0.4 : 1
+                  padding: "0.2rem 0.4rem",
+                  color: note.isSharedByMe ? "#2EC4B6" : "var(--gold-premium)",
+                  opacity: isLocked ? 0.4 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
+                  fontSize: "0.68rem",
+                  fontWeight: 800
                 }}
-                title="Share with Team"
+                title="Share Note"
               >
                 <Share2 size={14} />
+                {note.isSharedByMe && "Shared"}
               </button>
-            )
+
+              {showShareDropdown && (
+                <div style={{
+                  position: "absolute",
+                  bottom: "100%",
+                  right: 0,
+                  marginBottom: "0.5rem",
+                  background: "#FFFFFF",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "8px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
+                  padding: "0.75rem",
+                  width: "240px",
+                  zIndex: 9999,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.35rem" }}>
+                    <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--gold-primary)", textTransform: "uppercase" }}>
+                      Share Targets
+                    </span>
+                    <button
+                      onClick={() => setShowShareDropdown(false)}
+                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", color: "var(--text-muted)", padding: 0 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {userRole === "TEAM_LEAD" && (
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={shareTargets.length === teamMembers.length && teamMembers.length > 0}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        style={{ accentColor: "var(--gold-primary)" }}
+                      />
+                      <span>Select All (Global)</span>
+                    </label>
+                  )}
+
+                  <div style={{
+                    maxHeight: "120px",
+                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.35rem",
+                    padding: "0.1rem 0"
+                  }}>
+                    {teamMembers.length > 0 ? (
+                      teamMembers.map((member) => (
+                        <label key={member.id} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: "var(--text-secondary)", cursor: "pointer" }}>
+                          <input
+                            type="checkbox"
+                            checked={shareTargets.includes(member.id)}
+                            onChange={() => handleToggleTarget(member.id)}
+                            style={{ accentColor: "var(--gold-primary)" }}
+                          />
+                          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {member.name}
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                        No members available.
+                      </span>
+                    )}
+                  </div>
+
+                  {userRole === "TEAM_LEAD" && (
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", borderTop: "1px solid var(--border-dim)", paddingTop: "0.4rem", color: "var(--text-primary)", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={shareGlobalPin}
+                        onChange={(e) => setShareGlobalPin(e.target.checked)}
+                        style={{ accentColor: "var(--gold-primary)" }}
+                      />
+                      <span>Pin to Team Workspace</span>
+                    </label>
+                  )}
+
+                  <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.25rem" }}>
+                    <button
+                      onClick={() => setShowShareDropdown(false)}
+                      className="btn-gold"
+                      style={{
+                        flex: 1,
+                        background: "none",
+                        border: "1px solid var(--border-dim)",
+                        color: "var(--text-primary)",
+                        padding: "0.25rem",
+                        fontSize: "0.68rem",
+                        height: "auto"
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveShare}
+                      className="btn-gold"
+                      style={{
+                        flex: 1,
+                        padding: "0.25rem",
+                        fontSize: "0.68rem",
+                        height: "auto"
+                      }}
+                    >
+                      Save Share
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Clone shared announcement (Sales Associate only) */}

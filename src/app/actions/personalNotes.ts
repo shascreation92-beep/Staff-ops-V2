@@ -136,8 +136,12 @@ export async function deletePersonalNoteAction(noteId: string) {
   }
 }
 
-export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPinned: boolean = false) {
-  const user = await enforceAuth(["TEAM_LEAD"]);
+export async function sharePersonalNoteWithTeamAction(
+  noteId: string,
+  isGlobalPinned: boolean = false,
+  targetUserIds?: string[]
+) {
+  const user = await enforceAuth(["TEAM_LEAD", "SALES_ASSOCIATE"]);
 
   const note = await db.personalnote.findFirst({
     where: { id: noteId, userId: user.id }
@@ -147,21 +151,75 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
     throw new Error("Note not found or unauthorized.");
   }
 
-  // Find all Sales Associates reporting to this Team Lead
-  const associates = await db.user.findMany({
+  let targets: string[] = [];
+
+  if (user.role === "TEAM_LEAD") {
+    // Find all Sales Associates reporting to this Team Lead
+    const associates = await db.user.findMany({
+      where: {
+        teamLeadId: user.id,
+        role: "SALES_ASSOCIATE",
+        status: "APPROVED"
+      },
+      select: { id: true }
+    });
+    const associateIds = associates.map(a => a.id);
+
+    if (targetUserIds && targetUserIds.length > 0) {
+      // Filter targetUserIds to ensure they are valid associates under this TL
+      targets = targetUserIds.filter(id => associateIds.includes(id));
+    } else {
+      targets = associateIds;
+    }
+  } else {
+    // User is a SALES_ASSOCIATE
+    const associateUser = await db.user.findUnique({
+      where: { id: user.id },
+      select: { teamLeadId: true }
+    });
+
+    if (associateUser?.teamLeadId) {
+      // Fetch direct TL and peer associates under the same TL
+      const tl = await db.user.findFirst({
+        where: { id: associateUser.teamLeadId, status: "APPROVED" },
+        select: { id: true }
+      });
+      const peers = await db.user.findMany({
+        where: {
+          teamLeadId: associateUser.teamLeadId,
+          role: "SALES_ASSOCIATE",
+          status: "APPROVED",
+          id: { not: user.id }
+        },
+        select: { id: true }
+      });
+
+      const allowedIds: string[] = [];
+      if (tl) allowedIds.push(tl.id);
+      peers.forEach(p => allowedIds.push(p.id));
+
+      if (targetUserIds && targetUserIds.length > 0) {
+        targets = targetUserIds.filter(id => allowedIds.includes(id));
+      } else {
+        targets = allowedIds;
+      }
+    }
+  }
+
+  // Delete any existing clones that are no longer targeted
+  await db.personalnote.deleteMany({
     where: {
-      teamLeadId: user.id,
-      role: "SALES_ASSOCIATE",
-      status: "APPROVED"
+      sharedFromNoteId: note.id,
+      userId: { notIn: targets }
     }
   });
 
   let shareCount = 0;
-  for (const associate of associates) {
+  for (const targetId of targets) {
     // Check if there is already a cloned note from this source
     const existingAnnouncement = await db.personalnote.findFirst({
       where: {
-        userId: associate.id,
+        userId: targetId,
         sharedFromNoteId: note.id,
         isSharedAnnouncement: true
       }
@@ -188,7 +246,7 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
     } else {
       const created = await db.personalnote.create({
         data: {
-          userId: associate.id,
+          userId: targetId,
           title: note.title,
           content: note.content,
           color: note.color,
@@ -205,11 +263,11 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
       clonedNoteId = created.id;
     }
 
-    // Create an anonymous Team Announcement notification for the associate
+    // Create an anonymous Team Announcement notification for the target user
     await db.notification.create({
       data: {
         id: crypto.randomUUID(),
-        userId: associate.id,
+        userId: targetId,
         title: "📢 New Team Announcement",
         message: `[NOTE_ID:${clonedNoteId}] ${note.content.substring(0, 80)}`,
         type: "TEAM_ANNOUNCEMENT",
@@ -220,10 +278,10 @@ export async function sharePersonalNoteWithTeamAction(noteId: string, isGlobalPi
     shareCount++;
   }
 
-  // Mark the source note as shared by the TL
+  // Mark the source note as shared by the current user
   await db.personalnote.update({
     where: { id: noteId },
-    data: { isSharedByMe: true }
+    data: { isSharedByMe: shareCount > 0 }
   });
 
   try {
@@ -352,4 +410,95 @@ export async function getPersonalNoteByIdAction(noteId: string) {
   }
 
   return { success: true, note };
+}
+
+export async function getTeamMembersAction() {
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+
+  try {
+    if (user.role === "TEAM_LEAD") {
+      // Return all active Sales Associates under this Team Lead
+      const associates = await db.user.findMany({
+        where: {
+          teamLeadId: user.id,
+          role: "SALES_ASSOCIATE",
+          status: "APPROVED"
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      });
+      return { success: true, members: associates };
+    } else {
+      // User is a SALES_ASSOCIATE
+      const associateUser = await db.user.findUnique({
+        where: { id: user.id },
+        select: { teamLeadId: true }
+      });
+
+      if (!associateUser?.teamLeadId) {
+        return { success: true, members: [] };
+      }
+
+      // Fetch the Team Lead
+      const tl = await db.user.findFirst({
+        where: { id: associateUser.teamLeadId, status: "APPROVED" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      });
+
+      // Fetch peer Sales Associates (excluding current user)
+      const peers = await db.user.findMany({
+        where: {
+          teamLeadId: associateUser.teamLeadId,
+          role: "SALES_ASSOCIATE",
+          status: "APPROVED",
+          id: { not: user.id }
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      });
+
+      const members: any[] = [];
+      if (tl) {
+        members.push({ id: tl.id, name: `Team Lead: ${tl.name || tl.email}`, email: tl.email, role: tl.role });
+      }
+      peers.forEach(p => {
+        members.push({ id: p.id, name: `Peer: ${p.name || p.email}`, email: p.email, role: p.role });
+      });
+
+      return { success: true, members };
+    }
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to fetch team members.");
+  }
+}
+
+export async function getNoteShareTargetsAction(noteId: string) {
+  const user = await enforceAuth(["TEAM_LEAD", "SALES_ASSOCIATE"]);
+
+  try {
+    const clones = await db.personalnote.findMany({
+      where: { sharedFromNoteId: noteId },
+      select: { userId: true, isGlobalPinned: true }
+    });
+
+    const targetUserIds = clones.map(c => c.userId);
+    const isGlobalPinned = clones.some(c => c.isGlobalPinned);
+
+    return { success: true, targetUserIds, isGlobalPinned };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to fetch share targets.");
+  }
 }
