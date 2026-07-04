@@ -1390,74 +1390,68 @@ textarea::placeholder {
 
 /* Compact operational accounts table optimizations */
 .table-panel-flat .table-container-outer {
-  overflow-x: hidden !important;
+  overflow-x: auto !important;
   width: 100% !important;
+  scrollbar-width: none; /* Firefox */
+}
+
+.table-panel-flat .table-container-outer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
 
 .compact-table th {
-  padding: 0.35rem 0.4rem !important;
-  font-size: 0.72rem !important;
+  padding: 0.5rem 0.6rem !important;
+  font-size: 0.74rem !important;
+  white-space: nowrap !important;
 }
 
 .compact-table td {
-  padding: 0.35rem 0.4rem !important;
-  font-size: 0.75rem !important;
+  padding: 0.5rem 0.6rem !important;
+  font-size: 0.78rem !important;
 }
 
 .col-platform {
-  width: 80px !important;
-  max-width: 80px !important;
-  min-width: 80px !important;
+  min-width: 100px !important;
 }
 
 .col-ads {
-  width: 75px !important;
-  max-width: 75px !important;
-  min-width: 75px !important;
+  min-width: 90px !important;
 }
 
 .col-verified {
-  width: 65px !important;
-  max-width: 65px !important;
-  min-width: 65px !important;
+  min-width: 90px !important;
 }
 
 .col-comments {
-  width: 65px !important;
-  max-width: 65px !important;
-  min-width: 65px !important;
+  min-width: 95px !important;
   text-align: center !important;
 }
 
 .col-it-comments {
-  width: 90px !important;
-  max-width: 90px !important;
-  min-width: 90px !important;
-  text-align: center !important;
-}
-
-.col-status {
-  width: 110px !important;
-  max-width: 110px !important;
   min-width: 110px !important;
   text-align: center !important;
 }
 
+.col-status {
+  min-width: 120px !important;
+  text-align: center !important;
+}
+
 .col-time {
-  width: 105px !important;
-  max-width: 105px !important;
-  min-width: 105px !important;
+  min-width: 110px !important;
 }
 
 .col-id-name {
-  max-width: 120px !important;
+  min-width: 130px !important;
+  max-width: 150px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
 
 .col-requested-by {
-  max-width: 120px !important;
+  min-width: 130px !important;
+  max-width: 150px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
