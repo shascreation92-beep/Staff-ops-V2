@@ -24,6 +24,7 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
     if (pathname.startsWith("/team-live-roster")) return "Team Live Roster";
     if (pathname.startsWith("/pending")) return "Pending Onboarding";
     if (pathname.startsWith("/settings")) return "Global Platform Rule Engine";
+    if (pathname.startsWith("/announcements")) return "Broadcast Announcements Composer";
     if (pathname.startsWith("/team-leads")) return "Team Leads";
     if (pathname.startsWith("/audit-logs")) return "SOC2 System Audit Logs";
     return "StaffOps Console";

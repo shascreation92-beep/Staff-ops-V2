@@ -15,7 +15,8 @@ import {
   UserCheck,
   LogOut,
   Key,
-  ClipboardCheck
+  ClipboardCheck,
+  Megaphone
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -153,6 +154,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       path: "/settings", 
       icon: Sliders,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
+    },
+    { 
+      id: "announcements", 
+      label: "Announcements", 
+      path: "/announcements", 
+      icon: Megaphone,
+      roles: ["COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
     { 
       id: "audit-logs", 
