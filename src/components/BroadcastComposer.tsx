@@ -142,7 +142,7 @@ export default function BroadcastComposer({ currentUser, initialAnnouncements }:
             style={{ width: "100%", height: "42px", marginTop: "0.5rem" }}
             disabled={isPending}
           >
-            {isPending ? "Broadcasting..." : "🚀 Broadcast Live"}
+            {isPending ? "Announcing..." : "Announce"}
           </button>
         </form>
 
