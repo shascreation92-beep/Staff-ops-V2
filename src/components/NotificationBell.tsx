@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Bell, Check, Archive, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAnnouncements } from "./AnnouncementProvider";
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -23,6 +25,8 @@ interface Notification {
 }
 
 export default function NotificationBell() {
+  const router = useRouter();
+  const announcements = useAnnouncements();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -93,6 +97,34 @@ export default function NotificationBell() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const cleanMessage = (msg: string) => {
+    return msg.replace(/^\[NOTE_ID:[^\]]+\]\s*/, "");
+  };
+
+  const handleNotificationClick = (n: Notification) => {
+    if (!n.isRead) {
+      handleMarkAsRead(n.id);
+    }
+
+    const isTeamAnnouncement = n.type === "TEAM_ANNOUNCEMENT" || n.message.includes("[NOTE_ID:");
+    const isItTicket = n.type === "IT Processing Ticket" || n.title.includes("IT Processing Ticket") || n.type === "IT_READ_ONLY";
+
+    if (isTeamAnnouncement) {
+      const match = n.message.match(/\[NOTE_ID:([^\]]+)\]/);
+      const noteId = match ? match[1] : null;
+      if (noteId) {
+        if (window.location.pathname === "/personal-notes") {
+          announcements.openAnnouncementById(noteId);
+        } else {
+          router.push(`/personal-notes?openNoteId=${noteId}`);
+        }
+      }
+    } else if (isItTicket) {
+      router.push("/accounts");
+    }
+    setShowNotifications(false);
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -174,7 +206,8 @@ export default function NotificationBell() {
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {notifications.map((n) => (
                 <div 
-                  key={n.id} 
+                  key={n.id}
+                  onClick={() => handleNotificationClick(n)}
                   style={{
                     display: "flex",
                     flexDirection: "column",
@@ -183,7 +216,8 @@ export default function NotificationBell() {
                     borderRadius: "4px",
                     background: n.isRead ? "transparent" : "rgba(255, 215, 0, 0.02)",
                     borderLeft: n.isRead ? "1px solid transparent" : "2px solid var(--gold-primary)",
-                    textAlign: "left"
+                    textAlign: "left",
+                    cursor: "pointer"
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -192,7 +226,10 @@ export default function NotificationBell() {
                       <div style={{ display: "flex", gap: "0.35rem" }}>
                         {!n.isRead && (
                           <button 
-                            onClick={() => handleMarkAsRead(n.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkAsRead(n.id);
+                            }}
                             title="Mark as read"
                             style={{ background: "none", border: "none", color: "var(--color-success)", cursor: "pointer" }}
                           >
@@ -200,7 +237,10 @@ export default function NotificationBell() {
                           </button>
                         )}
                         <button 
-                          onClick={() => handleArchive(n.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleArchive(n.id);
+                          }}
                           title="Archive"
                           style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
                         >
@@ -209,7 +249,9 @@ export default function NotificationBell() {
                       </div>
                     )}
                   </div>
-                  <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>{n.message}</p>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                    {cleanMessage(n.message)}
+                  </p>
                   <span
                     title={new Date(n.createdAt).toLocaleString()}
                     style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", cursor: "help" }}
