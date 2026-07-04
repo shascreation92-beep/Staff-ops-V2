@@ -116,6 +116,12 @@ export async function deletePersonalNoteAction(noteId: string) {
   }
 
   try {
+    if (note.isSharedByMe) {
+      await db.personalnote.deleteMany({
+        where: { sharedFromNoteId: note.id }
+      });
+    }
+
     await db.personalnote.delete({
       where: { id: noteId }
     });

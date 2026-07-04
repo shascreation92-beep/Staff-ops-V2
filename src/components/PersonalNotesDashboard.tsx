@@ -729,7 +729,7 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
         marginTop: note.isSharedAnnouncement ? "0.4rem" : "0"
       }}>
         {note.isSharedAnnouncement ? (
-          <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "var(--text-primary)" }}>{localTitle}</span>
+          <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "var(--text-primary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{localTitle}</span>
         ) : (
           <input
             type="text"
@@ -743,20 +743,21 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
               fontSize: "0.95rem",
               color: "var(--text-primary)",
               outline: "none",
-              width: "55%"
+              flex: 1,
+              minWidth: 0
             }}
             placeholder="Note Title..."
           />
         )}
 
         {/* Header Tools */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginLeft: "0.5rem", flexShrink: 0 }}>
           
           {/* Live countdown timer display */}
           {note.timerExpiresAt && timeLeftSeconds !== null && (
             <span 
               onClick={handleSetCountdown}
-              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold transition-all duration-300 ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-300 ${
                 isExpired ? "" : timeLeftSeconds < 600 ? "animate-pulse" : ""
               }`}
               style={{ 
@@ -764,7 +765,11 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
                 background: isExpired ? "#EF4444" : timeLeftSeconds < 600 ? "#FEE2E2" : "rgba(0, 0, 0, 0.04)",
                 color: isExpired ? "#FFFFFF" : timeLeftSeconds < 600 ? "#991B1B" : "var(--text-secondary)",
                 border: isExpired ? "1px solid #DC2626" : timeLeftSeconds < 600 ? "1px solid #FCA5A5" : "1px solid rgba(0, 0, 0, 0.08)",
-                fontSize: "0.68rem"
+                fontSize: "0.72rem",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center"
               }}
               title={note.isSharedAnnouncement ? "Countdown deadline" : "Click to edit countdown timer"}
             >
@@ -781,9 +786,12 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
                 background: "none",
                 border: "none",
                 cursor: isLocked ? "default" : "pointer",
-                padding: "0.2rem",
+                padding: "0.3rem",
                 color: note.timerExpiresAt ? "var(--gold-premium)" : "var(--text-muted)",
-                opacity: note.timerExpiresAt ? 1 : 0.4
+                opacity: note.timerExpiresAt ? 1 : 0.4,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
               }}
               title="Set Urgency Countdown Timer (⏱️)"
             >
@@ -799,9 +807,12 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                padding: "0.2rem",
+                padding: "0.3rem",
                 color: isLocked ? "#EF4444" : "var(--text-muted)",
-                opacity: isLocked ? 1 : 0.4
+                opacity: isLocked ? 1 : 0.4,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
               }}
               title={isLocked ? "Unlock Note" : "Lock Note (Read Only)"}
             >
@@ -818,9 +829,12 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
                 background: "none",
                 border: "none",
                 cursor: isLocked ? "default" : "pointer",
-                padding: "0.2rem",
+                padding: "0.3rem",
                 color: localIsPinned ? "#EF4444" : "var(--text-muted)",
-                opacity: localIsPinned ? 1 : 0.4
+                opacity: localIsPinned ? 1 : 0.4,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
               }}
               title={localIsPinned ? "Unpin Note" : "Pin to Top"}
             >
@@ -835,9 +849,12 @@ function NoteCard({ note, userRole, onDelete, onShare, onClone, onExpand }: Note
               background: "none",
               border: "none",
               cursor: "pointer",
-              padding: "0.2rem",
+              padding: "0.3rem",
               color: "var(--text-muted)",
-              opacity: 0.6
+              opacity: 0.6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
             }}
             title="Expand Fullscreen"
           >
