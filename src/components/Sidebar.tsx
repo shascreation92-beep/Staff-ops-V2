@@ -285,6 +285,10 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         })}
       </nav>
 
+      {user.role === "IT_DEPARTMENT" && (
+        <ITLiveRosterAccordion />
+      )}
+
       <div className="sidebar-footer-wrap">
         <button
           onClick={() => signOut({ callbackUrl: "/auth/signin" })}
@@ -380,5 +384,156 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         </div>
       )}
     </aside>
+  );
+}
+
+function ITLiveRosterAccordion() {
+  const [teamLeads, setTeamLeads] = useState<any[]>([]);
+  const [expandedLeads, setExpandedLeads] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState<number>(Date.now());
+
+  useEffect(() => {
+    const fetchRoster = async () => {
+      try {
+        const res = await fetch("/api/it/roster");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setTeamLeads(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch IT live roster:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoster();
+    const interval = setInterval(fetchRoster, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const toggleLead = (leadId: string) => {
+    if (expandedLeads.includes(leadId)) {
+      setExpandedLeads(expandedLeads.filter(id => id !== leadId));
+    } else {
+      setExpandedLeads([...expandedLeads, leadId]);
+    }
+  };
+
+  const getUptimeString = (createdAtStr: string, lastActiveStr: string | null) => {
+    if (!lastActiveStr) return "-";
+    const lastActiveTime = new Date(lastActiveStr).getTime();
+    const isOnline = (now - lastActiveTime) < 5 * 60 * 1000;
+    if (!isOnline) return "-";
+
+    const startTime = new Date(createdAtStr).getTime();
+    const diff = Math.max(0, Math.floor((now - startTime) / 1000));
+    const hrs = Math.floor(diff / 3600).toString().padStart(2, "0");
+    const mins = Math.floor((diff % 3600) / 60).toString().padStart(2, "0");
+    const secs = (diff % 60).toString().padStart(2, "0");
+    return `${hrs}:${mins}:${secs}`;
+  };
+
+  const checkIsOnline = (lastActiveStr: string | null) => {
+    if (!lastActiveStr) return false;
+    return (now - new Date(lastActiveStr).getTime()) < 5 * 60 * 1000;
+  };
+
+  return (
+    <div style={{ marginTop: "1rem", padding: "0 0.75rem", borderTop: "1px solid var(--border-dim)", paddingTop: "1rem" }}>
+      <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", display: "block", marginBottom: "0.5rem" }}>
+        Live Team Roster
+      </span>
+      {loading && teamLeads.length === 0 ? (
+        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", padding: "0 0.5rem" }}>Loading roster...</span>
+      ) : teamLeads.length === 0 ? (
+        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", padding: "0 0.5rem" }}>No team leads found.</span>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+          {teamLeads.map((lead) => {
+            const isExpanded = expandedLeads.includes(lead.id);
+            const leadOnline = checkIsOnline(lead.lastActiveAt);
+            return (
+              <div key={lead.id} style={{ display: "flex", flexDirection: "column" }}>
+                <button
+                  onClick={() => toggleLead(lead.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    padding: "0.4rem 0.5rem",
+                    background: isExpanded ? "rgba(2, 80, 161, 0.04)" : "none",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    color: "var(--text-primary)",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    transition: "background 0.2s"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                    <span>{leadOnline ? "🟢" : "⚫"}</span>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "120px" }}>
+                      {lead.name}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "0.6rem", color: "var(--text-muted)" }}>
+                    {isExpanded ? "▲" : "▼"}
+                  </span>
+                </button>
+
+                {isExpanded && (
+                  <div style={{ paddingLeft: "1rem", marginTop: "0.2rem", display: "flex", flexDirection: "column", gap: "0.25rem", borderLeft: "1px dashed var(--border-gold)" }}>
+                    {!lead.other_user || lead.other_user.length === 0 ? (
+                      <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", padding: "0.2rem 0.5rem" }}>
+                        No members
+                      </span>
+                    ) : (
+                      lead.other_user.map((assoc: any) => {
+                        const online = checkIsOnline(assoc.lastActiveAt);
+                        const uptime = getUptimeString(assoc.createdAt, assoc.lastActiveAt);
+                        return (
+                          <div
+                            key={assoc.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "0.25rem 0.5rem",
+                              borderRadius: "4px",
+                              fontSize: "0.72rem"
+                            }}
+                          >
+                            <span style={{ color: "var(--text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "80px" }} title={assoc.name}>
+                              {assoc.name}
+                            </span>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                              <span style={{ fontSize: "0.68rem", color: online ? "var(--color-success)" : "var(--text-muted)", fontWeight: 700 }}>
+                                {online ? `🟢 ${uptime}` : "⚫ Off"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
