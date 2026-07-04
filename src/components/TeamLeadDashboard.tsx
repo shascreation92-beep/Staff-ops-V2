@@ -242,13 +242,15 @@ export default function TeamLeadDashboard({
 
       {/* 1. Top Combined KPI Cards Panel */}
       {/* Row 1: Overview & Goals */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <h3 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0 }}>
-          📊 Team Overview & Goals
-        </h3>
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative", marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+          <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>
+            Team Overview & Goals
+          </h2>
+        </div>
+        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.25rem" }}>
           {/* Card 1: Total Combined Accounts */}
-          <div className="glass-panel kpi-card kpi-info">
+          <div className="glass-panel kpi-card kpi-info" style={{ margin: 0 }}>
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Total Combined Accounts</span>
@@ -261,7 +263,7 @@ export default function TeamLeadDashboard({
           </div>
 
           {/* Card 2: Combined FB Target */}
-          <div className="glass-panel kpi-card kpi-warning">
+          <div className="glass-panel kpi-card kpi-warning" style={{ margin: 0 }}>
             <div className="kpi-card-glow"></div>
             <div className="kpi-header">
               <span className="kpi-title">Total Target to Maintain</span>
