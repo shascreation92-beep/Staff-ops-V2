@@ -162,6 +162,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       icon: Megaphone,
       roles: ["COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
+    {
+      id: "user-directory",
+      label: "👥 User Directory",
+      path: "/user-directory",
+      icon: Users,
+      roles: ["IT_DEPARTMENT"]
+    },
     { 
       id: "audit-logs", 
       label: "Audit Logs", 
