@@ -17,7 +17,9 @@ import {
   ShieldAlert,
   AlertCircle,
   HelpCircle,
-  Target
+  Target,
+  AlertTriangle,
+  MinusCircle
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import PendingOnboardingList from "@/components/PendingOnboardingList";
@@ -132,6 +134,44 @@ export default async function DashboardPage() {
   });
   const targetValuePerTL = targetRule ? (parseInt(targetRule.value, 10) || 15) : 15;
   const totalOfficeTarget = targetValuePerTL * companyTeamLeadsCount;
+
+  // Find FB and Vinted platforms
+  const dbPlatforms = await db.platform.findMany({ where: { isArchived: false } });
+  const fbPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("facebook"));
+  const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
+
+  const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook", mode: "insensitive" as any } } };
+  const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted", mode: "insensitive" as any } } };
+
+  // Row 2 Queries: Facebook Dedicated Operations
+  const [
+    itTotalFbAccounts,
+    itFbVerifiedAccounts,
+    itFbUnverifiedAccounts,
+    itFbPendingRequests,
+    itFbIdentityAccounts,
+    itFbSuspendedMarketplaces
+  ] = await Promise.all([
+    db.account.count({ where: { ...companyFilter, isArchived: false, ...fbWhere } }),
+    db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "Yes", ...fbWhere } }),
+    db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "No", ...fbWhere } }),
+    db.account.count({ where: { ...companyFilter, status: "UNDER_REVIEW", isArchived: false, ...fbWhere } }),
+    db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+    db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } })
+  ]);
+
+  // Row 3 Queries: Vinted Dedicated Operations
+  const [
+    itTotalVintedAccounts,
+    itVintedVerified,
+    itVintedUnverified,
+    itVintedSuspended
+  ] = await Promise.all([
+    db.account.count({ where: { ...companyFilter, isArchived: false, ...vintedWhere } }),
+    db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "Yes", ...vintedWhere } }),
+    db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "No", ...vintedWhere } }),
+    db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Suspended", isArchived: false, ...vintedWhere } })
+  ]);
 
   // Team Lead specific metrics
   let combinedStats = {
@@ -474,81 +514,169 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="kpi-grid">
-          <div className="glass-panel kpi-card kpi-info">
-            <div className="kpi-card-glow"></div>
-            <div className="kpi-header">
-              <span className="kpi-title">Total Accounts</span>
-              <div className="kpi-icon-wrapper"><Database size={18} /></div>
-            </div>
-            <div className="kpi-value">{totalAccounts}</div>
-            <div className="kpi-footer">
-              <span>Scoped shard db records</span>
-            </div>
+          {/* Row 2: Facebook Dedicated Operations */}
+          <div style={{ marginBottom: "1rem", marginTop: "2rem" }}>
+            <h2 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              💻 Facebook Dedicated Operations
+            </h2>
           </div>
 
-          <div className="glass-panel kpi-card kpi-success">
-            <div className="kpi-card-glow"></div>
-            <div className="kpi-header">
-              <span className="kpi-title">Verified Accounts</span>
-              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
-            </div>
-            <div className="kpi-value">{verifiedAccounts}</div>
-            <div className="kpi-footer">
-              <span>Verification rate: {totalAccounts > 0 ? Math.round((verifiedAccounts / totalAccounts) * 100) : 0}%</span>
-            </div>
-          </div>
-
-          <div className="glass-panel kpi-card kpi-warning">
-            <div className="kpi-card-glow"></div>
-            <div className="kpi-header">
-              <span className="kpi-title">Pending Reviews</span>
-              <div className="kpi-icon-wrapper"><Clock size={18} /></div>
-            </div>
-            <div className="kpi-value">{pendingReviews}</div>
-            <div className="kpi-footer" style={{ color: pendingReviews > 0 ? "var(--color-warning)" : "var(--text-muted)" }}>
-              <span>Awaiting authorization</span>
-            </div>
-          </div>
-
-          <div className="glass-panel kpi-card kpi-info">
-            <div className="kpi-card-glow"></div>
-            <div className="kpi-header">
-              <span className="kpi-title">Active Employees</span>
-              <div className="kpi-icon-wrapper"><Users size={18} /></div>
-            </div>
-            <div className="kpi-value">{activeEmployees}</div>
-            <div className="kpi-footer">
-              <span>Hardware/VPN catalog items</span>
-            </div>
-          </div>
-
-          {user.role === "SUPER_ADMIN" ? (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "1.25rem",
+            marginBottom: "2rem"
+          }}>
+            {/* Card 1: TOTAL FB ACCOUNTS */}
             <div className="glass-panel kpi-card kpi-info">
               <div className="kpi-card-glow"></div>
               <div className="kpi-header">
-                <span className="kpi-title">Total Companies</span>
-                <div className="kpi-icon-wrapper"><Building size={18} /></div>
+                <span className="kpi-title">Total FB Accounts</span>
+                <div className="kpi-icon-wrapper"><Database size={16} /></div>
               </div>
-              <div className="kpi-value">{companyCount}</div>
+              <div className="kpi-value">{itTotalFbAccounts < 10 ? `0${itTotalFbAccounts}` : itTotalFbAccounts}</div>
               <div className="kpi-footer">
-                <span>SaaS tenant company count</span>
+                <span>Active company registry</span>
               </div>
             </div>
-          ) : (
+
+            {/* Card 2: TOTAL VERIFIED ACCOUNTS */}
+            <div className="glass-panel kpi-card kpi-success">
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Total Verified Accounts</span>
+                <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
+              </div>
+              <div className="kpi-value">{itFbVerifiedAccounts < 10 ? `0${itFbVerifiedAccounts}` : itFbVerifiedAccounts}</div>
+              <div className="kpi-footer">
+                <span>Cleared verification checks</span>
+              </div>
+            </div>
+
+            {/* Card 3: TOTAL UNVERIFIED ACCOUNTS */}
+            <div className="glass-panel kpi-card kpi-warning">
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Total Unverified Accounts</span>
+                <div className="kpi-icon-wrapper"><Clock size={16} /></div>
+              </div>
+              <div className="kpi-value">{itFbUnverifiedAccounts < 10 ? `0${itFbUnverifiedAccounts}` : itFbUnverifiedAccounts}</div>
+              <div className="kpi-footer">
+                <span>Profiles awaiting setup</span>
+              </div>
+            </div>
+
+            {/* Card 4: FB PENDING REQUESTS */}
+            <div className="glass-panel kpi-card kpi-danger" style={{
+              borderLeft: "4px solid #EF4444"
+            }}>
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">FB Pending Requests</span>
+                <div className="kpi-icon-wrapper" style={{ color: "#EF4444" }}><HelpCircle size={16} /></div>
+              </div>
+              <div className="kpi-value" style={{ color: "#EF4444" }}>{itFbPendingRequests < 10 ? `0${itFbPendingRequests}` : itFbPendingRequests}</div>
+              <div className="kpi-footer">
+                <span>Awaiting IT authorization</span>
+              </div>
+            </div>
+
+            {/* Card 5: FB IDENTITY ACCOUNTS */}
             <div className="glass-panel kpi-card kpi-info">
               <div className="kpi-card-glow"></div>
               <div className="kpi-header">
-                <span className="kpi-title">Teammates</span>
-                <div className="kpi-icon-wrapper"><UserCheck size={18} /></div>
+                <span className="kpi-title">FB Identity Accounts</span>
+                <div className="kpi-icon-wrapper"><AlertTriangle size={16} /></div>
               </div>
-              <div className="kpi-value">{totalSystemUsers}</div>
+              <div className="kpi-value">{itFbIdentityAccounts < 10 ? `0${itFbIdentityAccounts}` : itFbIdentityAccounts}</div>
               <div className="kpi-footer">
-                <span>Users in company registry</span>
+                <span>Locked under checkpoints</span>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Card 6: SUSPENDED MARKETPLACES */}
+            <div className="glass-panel kpi-card kpi-warning" style={{
+              borderLeft: "4px solid #F59E0B"
+            }}>
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Suspended Marketplaces</span>
+                <div className="kpi-icon-wrapper" style={{ color: "#F59E0B" }}><MinusCircle size={16} /></div>
+              </div>
+              <div className="kpi-value" style={{ color: "#F59E0B" }}>{itFbSuspendedMarketplaces < 10 ? `0${itFbSuspendedMarketplaces}` : itFbSuspendedMarketplaces}</div>
+              <div className="kpi-footer">
+                <span>Suspended platform entities</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 3: Vinted Dedicated Operations */}
+          <div style={{ marginBottom: "1rem", marginTop: "2rem" }}>
+            <h2 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              🛍️ Vinted Dedicated Operations
+            </h2>
+          </div>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "1.25rem",
+            marginBottom: "2rem"
+          }}>
+            {/* Card 1: TOTAL VINTED ACCOUNTS */}
+            <div className="glass-panel kpi-card kpi-info">
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Total Vinted Accounts</span>
+                <div className="kpi-icon-wrapper"><Database size={16} /></div>
+              </div>
+              <div className="kpi-value">{itTotalVintedAccounts < 10 ? `0${itTotalVintedAccounts}` : itTotalVintedAccounts}</div>
+              <div className="kpi-footer">
+                <span>Active company Vinted pool</span>
+              </div>
+            </div>
+
+            {/* Card 2: VINTED VERIFIED */}
+            <div className="glass-panel kpi-card kpi-success">
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Vinted Verified</span>
+                <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
+              </div>
+              <div className="kpi-value">{itVintedVerified < 10 ? `0${itVintedVerified}` : itVintedVerified}</div>
+              <div className="kpi-footer">
+                <span>Cleared operational profiles</span>
+              </div>
+            </div>
+
+            {/* Card 3: VINTED UNVERIFIED */}
+            <div className="glass-panel kpi-card kpi-warning">
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Vinted Unverified</span>
+                <div className="kpi-icon-wrapper"><Clock size={16} /></div>
+              </div>
+              <div className="kpi-value">{itVintedUnverified < 10 ? `0${itVintedUnverified}` : itVintedUnverified}</div>
+              <div className="kpi-footer">
+                <span>Awaiting setup details</span>
+              </div>
+            </div>
+
+            {/* Card 4: VINTED SUSPENDED */}
+            <div className="glass-panel kpi-card kpi-danger" style={{
+              borderLeft: "4px solid #EF4444"
+            }}>
+              <div className="kpi-card-glow"></div>
+              <div className="kpi-header">
+                <span className="kpi-title">Vinted Suspended</span>
+                <div className="kpi-icon-wrapper" style={{ color: "#EF4444" }}><MinusCircle size={16} /></div>
+              </div>
+              <div className="kpi-value" style={{ color: "#EF4444" }}>{itVintedSuspended < 10 ? `0${itVintedSuspended}` : itVintedSuspended}</div>
+              <div className="kpi-footer">
+                <span>Awaiting IT intervention</span>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
