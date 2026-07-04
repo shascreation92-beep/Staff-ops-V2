@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Mail, Shield, User, CircleDot, Database } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import { useSearchParams } from "next/navigation";
 
 interface Account {
   id: string;
@@ -10,6 +11,7 @@ interface Account {
   idName: string;
   adsPublished: number;
   status: string;
+  issueType?: string | null;
   createdAt: Date | string;
   platform: {
     id: string;
@@ -37,9 +39,21 @@ interface MasterAccountsListProps {
 }
 
 export default function MasterAccountsList({ initialAccounts, platforms, currentUserRole }: MasterAccountsListProps) {
+  const searchParams = useSearchParams();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("ALL");
   const [selectedStatus, setSelectedStatus] = useState("ALL");
+
+  useEffect(() => {
+    const searchVal = searchParams.get("search");
+    const platformVal = searchParams.get("platform");
+    const statusVal = searchParams.get("status");
+
+    if (searchVal !== null) setSearchTerm(searchVal);
+    if (platformVal !== null) setSelectedPlatform(platformVal);
+    if (statusVal !== null) setSelectedStatus(statusVal);
+  }, [searchParams]);
 
   const filteredAccounts = initialAccounts.filter((acc) => {
     // Search filter
@@ -47,7 +61,8 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
     const serialMatch = acc.serialCode.toLowerCase().includes(term);
     const idNameMatch = acc.idName.toLowerCase().includes(term);
     const addedByMatch = (acc.user_account_createdByIdTouser.name || "").toLowerCase().includes(term);
-    const searchMatch = serialMatch || idNameMatch || addedByMatch;
+    const issueMatch = (acc.issueType || "").toLowerCase().includes(term);
+    const searchMatch = serialMatch || idNameMatch || addedByMatch || issueMatch;
 
     // Platform filter
     const platformMatch = selectedPlatform === "ALL" || acc.platform.id === selectedPlatform;

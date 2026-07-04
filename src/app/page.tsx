@@ -1,6 +1,7 @@
 import React from "react";
 import { enforceAuth, getCompanyFilter } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -19,7 +20,8 @@ import {
   HelpCircle,
   Target,
   AlertTriangle,
-  MinusCircle
+  MinusCircle,
+  Store
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import PendingOnboardingList from "@/components/PendingOnboardingList";
@@ -148,14 +150,14 @@ export default async function DashboardPage() {
     itTotalFbAccounts,
     itFbVerifiedAccounts,
     itFbUnverifiedAccounts,
-    itFbPendingRequests,
+    itFbMarketplaceIssues,
     itFbIdentityAccounts,
     itFbSuspendedMarketplaces
   ] = await Promise.all([
     db.account.count({ where: { ...companyFilter, isArchived: false, ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "Yes", ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "No", ...fbWhere } }),
-    db.account.count({ where: { ...companyFilter, status: "UNDER_REVIEW", isArchived: false, ...fbWhere } }),
+    db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } })
   ]);
@@ -528,86 +530,100 @@ export default async function DashboardPage() {
             marginBottom: "2rem"
           }}>
             {/* Card 1: TOTAL FB ACCOUNTS */}
-            <div className="glass-panel kpi-card kpi-info">
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">Total FB Accounts</span>
-                <div className="kpi-icon-wrapper"><Database size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-info" style={{ height: "100%" }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Total FB Accounts</span>
+                  <div className="kpi-icon-wrapper"><Database size={16} /></div>
+                </div>
+                <div className="kpi-value">{itTotalFbAccounts < 10 ? `0${itTotalFbAccounts}` : itTotalFbAccounts}</div>
+                <div className="kpi-footer">
+                  <span>Active company registry</span>
+                </div>
               </div>
-              <div className="kpi-value">{itTotalFbAccounts < 10 ? `0${itTotalFbAccounts}` : itTotalFbAccounts}</div>
-              <div className="kpi-footer">
-                <span>Active company registry</span>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 2: TOTAL VERIFIED ACCOUNTS */}
-            <div className="glass-panel kpi-card kpi-success">
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">Total Verified Accounts</span>
-                <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&status=ACTIVE`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-success" style={{ height: "100%" }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Total Verified Accounts</span>
+                  <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
+                </div>
+                <div className="kpi-value">{itFbVerifiedAccounts < 10 ? `0${itFbVerifiedAccounts}` : itFbVerifiedAccounts}</div>
+                <div className="kpi-footer">
+                  <span>Cleared verification checks</span>
+                </div>
               </div>
-              <div className="kpi-value">{itFbVerifiedAccounts < 10 ? `0${itFbVerifiedAccounts}` : itFbVerifiedAccounts}</div>
-              <div className="kpi-footer">
-                <span>Cleared verification checks</span>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 3: TOTAL UNVERIFIED ACCOUNTS */}
-            <div className="glass-panel kpi-card kpi-warning">
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">Total Unverified Accounts</span>
-                <div className="kpi-icon-wrapper"><Clock size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-warning" style={{ height: "100%" }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Total Unverified Accounts</span>
+                  <div className="kpi-icon-wrapper"><Clock size={16} /></div>
+                </div>
+                <div className="kpi-value">{itFbUnverifiedAccounts < 10 ? `0${itFbUnverifiedAccounts}` : itFbUnverifiedAccounts}</div>
+                <div className="kpi-footer">
+                  <span>Profiles awaiting setup</span>
+                </div>
               </div>
-              <div className="kpi-value">{itFbUnverifiedAccounts < 10 ? `0${itFbUnverifiedAccounts}` : itFbUnverifiedAccounts}</div>
-              <div className="kpi-footer">
-                <span>Profiles awaiting setup</span>
-              </div>
-            </div>
+            </Link>
 
-            {/* Card 4: FB PENDING REQUESTS */}
-            <div className="glass-panel kpi-card kpi-danger" style={{
-              borderLeft: "4px solid #EF4444"
-            }}>
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">FB Pending Requests</span>
-                <div className="kpi-icon-wrapper" style={{ color: "#EF4444" }}><HelpCircle size={16} /></div>
+            {/* Card 4: FB MARKETPLACE ISSUE */}
+            <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&search=Marketplace+Issue`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-warning" style={{
+                height: "100%",
+                borderLeft: "4px solid #F59E0B"
+              }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Fb Marketplace Issue</span>
+                  <div className="kpi-icon-wrapper" style={{ color: "#F59E0B" }}><Store size={16} /></div>
+                </div>
+                <div className="kpi-value" style={{ color: "#F59E0B" }}>{itFbMarketplaceIssues < 10 ? `0${itFbMarketplaceIssues}` : itFbMarketplaceIssues}</div>
+                <div className="kpi-footer">
+                  <span>Accounts with marketplace blocks</span>
+                </div>
               </div>
-              <div className="kpi-value" style={{ color: "#EF4444" }}>{itFbPendingRequests < 10 ? `0${itFbPendingRequests}` : itFbPendingRequests}</div>
-              <div className="kpi-footer">
-                <span>Awaiting IT authorization</span>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 5: FB IDENTITY ACCOUNTS */}
-            <div className="glass-panel kpi-card kpi-info">
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">FB Identity Accounts</span>
-                <div className="kpi-icon-wrapper"><AlertTriangle size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&search=Identity+Issue`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-info" style={{ height: "100%" }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">FB Identity Accounts</span>
+                  <div className="kpi-icon-wrapper"><AlertTriangle size={16} /></div>
+                </div>
+                <div className="kpi-value">{itFbIdentityAccounts < 10 ? `0${itFbIdentityAccounts}` : itFbIdentityAccounts}</div>
+                <div className="kpi-footer">
+                  <span>Locked under checkpoints</span>
+                </div>
               </div>
-              <div className="kpi-value">{itFbIdentityAccounts < 10 ? `0${itFbIdentityAccounts}` : itFbIdentityAccounts}</div>
-              <div className="kpi-footer">
-                <span>Locked under checkpoints</span>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 6: SUSPENDED MARKETPLACES */}
-            <div className="glass-panel kpi-card kpi-warning" style={{
-              borderLeft: "4px solid #F59E0B"
-            }}>
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">Suspended Marketplaces</span>
-                <div className="kpi-icon-wrapper" style={{ color: "#F59E0B" }}><MinusCircle size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&search=Suspended`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-warning" style={{
+                height: "100%",
+                borderLeft: "4px solid #F59E0B"
+              }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Suspended Marketplaces</span>
+                  <div className="kpi-icon-wrapper" style={{ color: "#F59E0B" }}><MinusCircle size={16} /></div>
+                </div>
+                <div className="kpi-value" style={{ color: "#F59E0B" }}>{itFbSuspendedMarketplaces < 10 ? `0${itFbSuspendedMarketplaces}` : itFbSuspendedMarketplaces}</div>
+                <div className="kpi-footer">
+                  <span>Suspended platform entities</span>
+                </div>
               </div>
-              <div className="kpi-value" style={{ color: "#F59E0B" }}>{itFbSuspendedMarketplaces < 10 ? `0${itFbSuspendedMarketplaces}` : itFbSuspendedMarketplaces}</div>
-              <div className="kpi-footer">
-                <span>Suspended platform entities</span>
-              </div>
-            </div>
+            </Link>
           </div>
 
           {/* Row 3: Vinted Dedicated Operations */}
@@ -624,58 +640,67 @@ export default async function DashboardPage() {
             marginBottom: "2rem"
           }}>
             {/* Card 1: TOTAL VINTED ACCOUNTS */}
-            <div className="glass-panel kpi-card kpi-info">
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">Total Vinted Accounts</span>
-                <div className="kpi-icon-wrapper"><Database size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${vintedPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-info" style={{ height: "100%" }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Total Vinted Accounts</span>
+                  <div className="kpi-icon-wrapper"><Database size={16} /></div>
+                </div>
+                <div className="kpi-value">{itTotalVintedAccounts < 10 ? `0${itTotalVintedAccounts}` : itTotalVintedAccounts}</div>
+                <div className="kpi-footer">
+                  <span>Active company Vinted pool</span>
+                </div>
               </div>
-              <div className="kpi-value">{itTotalVintedAccounts < 10 ? `0${itTotalVintedAccounts}` : itTotalVintedAccounts}</div>
-              <div className="kpi-footer">
-                <span>Active company Vinted pool</span>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 2: VINTED VERIFIED */}
-            <div className="glass-panel kpi-card kpi-success">
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">Vinted Verified</span>
-                <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${vintedPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-success" style={{ height: "100%" }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Vinted Verified</span>
+                  <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
+                </div>
+                <div className="kpi-value">{itVintedVerified < 10 ? `0${itVintedVerified}` : itVintedVerified}</div>
+                <div className="kpi-footer">
+                  <span>Cleared operational profiles</span>
+                </div>
               </div>
-              <div className="kpi-value">{itVintedVerified < 10 ? `0${itVintedVerified}` : itVintedVerified}</div>
-              <div className="kpi-footer">
-                <span>Cleared operational profiles</span>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 3: VINTED UNVERIFIED */}
-            <div className="glass-panel kpi-card kpi-warning">
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">Vinted Unverified</span>
-                <div className="kpi-icon-wrapper"><Clock size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${vintedPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-warning" style={{ height: "100%" }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Vinted Unverified</span>
+                  <div className="kpi-icon-wrapper"><Clock size={16} /></div>
+                </div>
+                <div className="kpi-value">{itVintedUnverified < 10 ? `0${itVintedUnverified}` : itVintedUnverified}</div>
+                <div className="kpi-footer">
+                  <span>Awaiting setup details</span>
+                </div>
               </div>
-              <div className="kpi-value">{itVintedUnverified < 10 ? `0${itVintedUnverified}` : itVintedUnverified}</div>
-              <div className="kpi-footer">
-                <span>Awaiting setup details</span>
-              </div>
-            </div>
+            </Link>
 
             {/* Card 4: VINTED SUSPENDED */}
-            <div className="glass-panel kpi-card kpi-danger" style={{
-              borderLeft: "4px solid #EF4444"
-            }}>
-              <div className="kpi-card-glow"></div>
-              <div className="kpi-header">
-                <span className="kpi-title">Vinted Suspended</span>
-                <div className="kpi-icon-wrapper" style={{ color: "#EF4444" }}><MinusCircle size={16} /></div>
+            <Link href={`/master-accounts-pool?platform=${vintedPlatform?.id || "ALL"}&search=Suspended`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <div className="glass-panel kpi-card kpi-danger" style={{
+                height: "100%",
+                borderLeft: "4px solid #EF4444"
+              }}>
+                <div className="kpi-card-glow"></div>
+                <div className="kpi-header">
+                  <span className="kpi-title">Vinted Suspended</span>
+                  <div className="kpi-icon-wrapper" style={{ color: "#EF4444" }}><MinusCircle size={16} /></div>
+                </div>
+                <div className="kpi-value" style={{ color: "#EF4444" }}>{itVintedSuspended < 10 ? `0${itVintedSuspended}` : itVintedSuspended}</div>
+                <div className="kpi-footer">
+                  <span>Awaiting IT intervention</span>
+                </div>
               </div>
-              <div className="kpi-value" style={{ color: "#EF4444" }}>{itVintedSuspended < 10 ? `0${itVintedSuspended}` : itVintedSuspended}</div>
-              <div className="kpi-footer">
-                <span>Awaiting IT intervention</span>
-              </div>
-            </div>
+            </Link>
           </div>
         </>
       )}

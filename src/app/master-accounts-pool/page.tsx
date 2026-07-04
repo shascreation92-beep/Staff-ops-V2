@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { enforceAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -56,11 +56,13 @@ export default async function MasterAccountsPoolPage() {
   return (
     <DashboardLayout user={{ ...user, companyName }}>
       <div className="dashboard-container" style={{ padding: "2rem" }}>
-        <MasterAccountsList 
-          initialAccounts={accounts} 
-          platforms={platforms} 
-          currentUserRole={user.role} 
-        />
+        <Suspense fallback={<div className="text-muted" style={{ padding: "3rem", textAlign: "center" }}>Loading accounts pool...</div>}>
+          <MasterAccountsList 
+            initialAccounts={accounts} 
+            platforms={platforms} 
+            currentUserRole={user.role} 
+          />
+        </Suspense>
       </div>
     </DashboardLayout>
   );
