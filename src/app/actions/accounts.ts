@@ -539,7 +539,21 @@ export async function getTLTeamMembersAction() {
       name: true,
       email: true,
       status: true,
-      lastActiveAt: true
+      role: true,
+      lastActiveAt: true,
+      employee: {
+        select: {
+          id: true,
+          employeeId: true,
+          laptopBrand: true,
+          laptopModel: true,
+          laptopSerialNumber: true,
+          windowsVersion: true,
+          vpnProvider: true,
+          laptopPassword: true,
+          vpnCredentials: true
+        }
+      }
     },
     orderBy: {
       name: "asc"

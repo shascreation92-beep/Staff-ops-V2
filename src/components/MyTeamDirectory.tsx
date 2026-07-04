@@ -1,15 +1,30 @@
 "use client";
 
-import React from "react";
-import { Users, Mail, Clock, ShieldCheck, ShieldAlert, AlertCircle } from "lucide-react";
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle } from "lucide-react";
 import NotificationBell from "./NotificationBell";
+import { toast } from "react-hot-toast";
+import { saveAssociateEmployeeITAction } from "@/app/actions/employees";
 
 interface TeamMember {
   id: string;
   name: string | null;
   email: string;
   status: string;
+  role: string;
   lastActiveAt: Date | null;
+  employee?: {
+    id: string;
+    employeeId: string;
+    laptopBrand: string | null;
+    laptopModel: string | null;
+    laptopSerialNumber: string | null;
+    windowsVersion: string | null;
+    vpnProvider: string | null;
+    laptopPassword?: string | null;
+    vpnCredentials?: string | null;
+  } | null;
 }
 
 interface MyTeamDirectoryProps {
@@ -25,7 +40,7 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
             MY TEAM DIRECTORY
           </h2>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-            Read-only directory of Sales Associates currently mapped to your node operations.
+            Operational directory of Sales Associates currently mapped to your node operations.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -33,7 +48,7 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.5rem" }}>
         {members.length === 0 ? (
           <div className="glass-panel" style={{ gridColumn: "1 / -1", padding: "3rem", textAlign: "center" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
@@ -45,95 +60,439 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
             </div>
           </div>
         ) : (
-          members.map((member) => {
-            const initials = member.name
-              ? member.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-              : "SA";
+          members.map((member) => (
+            <MemberCard key={member.id} member={member} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
-            const lastActive = member.lastActiveAt
-              ? new Date(member.lastActiveAt).toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "Never";
+function MemberCard({ member }: { member: TeamMember }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-            let statusBadgeClass = "pending";
-            if (member.status === "APPROVED") statusBadgeClass = "verified";
-            else if (member.status === "BLOCKED" || member.status === "REJECTED") statusBadgeClass = "danger";
+  // Form states for IT Deployment specs
+  const [laptopBrand, setLaptopBrand] = useState<string>(member.employee?.laptopBrand || "");
+  const [laptopModel, setLaptopModel] = useState<string>(member.employee?.laptopModel || "");
+  const [laptopSerialNumber, setLaptopSerialNumber] = useState<string>(member.employee?.laptopSerialNumber || "");
+  const [laptopPassword, setLaptopPassword] = useState<string>(member.employee?.laptopPassword || "");
+  const [windowsVersion, setWindowsVersion] = useState<string>(member.employee?.windowsVersion || "");
+  const [vpnProvider, setVpnProvider] = useState<string>(member.employee?.vpnProvider || "");
+  const [vpnCredentials, setVpnCredentials] = useState<string>(member.employee?.vpnCredentials || "");
+  const [employeeId, setEmployeeId] = useState<string>(member.employee?.employeeId || "");
 
-            return (
-              <div
-                key={member.id}
-                className="glass-panel"
-                style={{
-                  padding: "1.5rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1rem",
-                  position: "relative",
-                  transition: "all 0.3s ease",
-                  border: "1px solid var(--border-dim)",
-                  background: "#FFFFFF",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                  <div className="user-avatar-gold" style={{ width: "48px", height: "48px", fontSize: "1.1rem" }}>
-                    {initials}
+  // Visibility toggles
+  const [showPassword, setShowPassword] = useState(false);
+  const [showVpn, setShowVpn] = useState(false);
+
+  const initials = member.name
+    ? member.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "SA";
+
+  const lastActive = member.lastActiveAt
+    ? new Date(member.lastActiveAt).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "Never";
+
+  let statusBadgeClass = "pending";
+  if (member.status === "APPROVED") statusBadgeClass = "verified";
+  else if (member.status === "BLOCKED" || member.status === "REJECTED") statusBadgeClass = "danger";
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(async () => {
+      try {
+        const res = await saveAssociateEmployeeITAction(member.id, {
+          employeeId: employeeId || undefined,
+          laptopBrand: (laptopBrand as any) || null,
+          laptopModel: laptopModel || null,
+          laptopSerialNumber: laptopSerialNumber || null,
+          windowsVersion: (windowsVersion as any) || null,
+          vpnProvider: (vpnProvider as any) || null,
+          laptopPassword: laptopPassword || null,
+          vpnCredentials: vpnCredentials || null,
+        });
+
+        if (res.success) {
+          toast.success("IT Deployment details saved!");
+          setIsEditing(false);
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to save details.");
+      }
+    });
+  };
+
+  return (
+    <div
+      className="glass-panel"
+      style={{
+        padding: "1.5rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+        position: "relative",
+        transition: "all 0.3s ease",
+        border: "1px solid var(--border-dim)",
+        background: "#FFFFFF",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.03)"
+      }}
+    >
+      {/* Employee Database Profile (Employee DP / Front-Face) */}
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div className="user-avatar-gold" style={{ width: "48px", height: "48px", fontSize: "1.1rem" }}>
+          {initials}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+          <span
+            style={{
+              fontWeight: 800,
+              fontSize: "1.05rem",
+              color: "var(--text-primary)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {member.name || "Unnamed Associate"}
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.2rem" }}>
+            <span
+              style={{
+                fontSize: "0.62rem",
+                background: "rgba(2, 80, 161, 0.08)",
+                color: "#0250A1",
+                padding: "0.1rem 0.35rem",
+                borderRadius: "4px",
+                fontWeight: 800,
+                textTransform: "uppercase"
+              }}
+            >
+              {member.role.replace("_", " ")}
+            </span>
+            <span
+              className={`badge ${statusBadgeClass}`}
+              style={{
+                fontSize: "0.62rem",
+                textTransform: "uppercase",
+                padding: "0.1rem 0.35rem"
+              }}
+            >
+              {member.status}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5rem",
+          borderTop: "1px solid var(--border-dim)",
+          paddingTop: "0.75rem",
+          fontSize: "0.8rem",
+          color: "var(--text-secondary)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+          <Mail size={14} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {member.email}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Clock size={14} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
+          <span>Last Active: {lastActive}</span>
+        </div>
+      </div>
+
+      {/* IT Deployment Details Section */}
+      <div style={{ borderTop: "1px dashed var(--border-dim)", paddingTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <button
+          onClick={() => {
+            setIsExpanded(!isExpanded);
+            if (isEditing) setIsEditing(false);
+          }}
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--gold-primary)",
+            fontSize: "0.75rem",
+            fontWeight: 800,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.25rem",
+            padding: 0,
+            width: "fit-content"
+          }}
+        >
+          {isExpanded ? "▼ Hide IT Deployment" : "▶ Show IT Deployment Details"}
+        </button>
+
+        {isExpanded && (
+          <div style={{ background: "#F9FAFB", borderRadius: "8px", padding: "0.75rem", marginTop: "0.25rem" }}>
+            {isEditing ? (
+              /* Inline Edit Form */
+              <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                  <div>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                      Employee ID
+                    </label>
+                    <input
+                      type="text"
+                      value={employeeId}
+                      onChange={(e) => setEmployeeId(e.target.value)}
+                      placeholder="e.g. EMP-101"
+                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                    />
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        fontSize: "1.05rem",
-                        color: "var(--text-primary)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
+                  <div>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                      Laptop Brand
+                    </label>
+                    <select
+                      value={laptopBrand}
+                      onChange={(e) => setLaptopBrand(e.target.value)}
+                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
                     >
-                      {member.name || "Unnamed Associate"}
-                    </span>
-                    <span
-                      className={`badge ${statusBadgeClass}`}
-                      style={{
-                        fontSize: "0.65rem",
-                        alignSelf: "flex-start",
-                        marginTop: "0.25rem",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {member.status}
-                    </span>
+                      <option value="">Select Brand...</option>
+                      <option value="HP">HP</option>
+                      <option value="Dell">Dell</option>
+                      <option value="ThinkPad">ThinkPad</option>
+                    </select>
                   </div>
                 </div>
 
-                <div
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                  <div>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                      Laptop Model
+                    </label>
+                    <input
+                      type="text"
+                      value={laptopModel}
+                      onChange={(e) => setLaptopModel(e.target.value)}
+                      placeholder="e.g. EliteBook 840"
+                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                      OS Version
+                    </label>
+                    <select
+                      value={windowsVersion}
+                      onChange={(e) => setWindowsVersion(e.target.value)}
+                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                    >
+                      <option value="">Select OS...</option>
+                      <option value="Windows_10">Windows 10</option>
+                      <option value="Windows_11">Windows 11</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                    Laptop Serial Number
+                  </label>
+                  <input
+                    type="text"
+                    value={laptopSerialNumber}
+                    onChange={(e) => setLaptopSerialNumber(e.target.value)}
+                    placeholder="e.g. CND1234567"
+                    style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                    Laptop Password
+                  </label>
+                  <input
+                    type="text"
+                    value={laptopPassword}
+                    onChange={(e) => setLaptopPassword(e.target.value)}
+                    placeholder="Laptop login credential"
+                    style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                  />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                  <div>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                      VPN Provider
+                    </label>
+                    <select
+                      value={vpnProvider}
+                      onChange={(e) => setVpnProvider(e.target.value)}
+                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                    >
+                      <option value="">Select VPN...</option>
+                      <option value="Surfshark">Surfshark</option>
+                      <option value="ExpressVPN">ExpressVPN</option>
+                      <option value="NordVPN">NordVPN</option>
+                      <option value="ProtonVPN">ProtonVPN</option>
+                      <option value="PureVPN">PureVPN</option>
+                      <option value="HideMe">HideMe</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                      VPN Credentials
+                    </label>
+                    <input
+                      type="text"
+                      value={vpnCredentials}
+                      onChange={(e) => setVpnCredentials(e.target.value)}
+                      placeholder="Username / Password details"
+                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="btn-gold"
+                    style={{
+                      flex: 1,
+                      padding: "0.35rem 0.5rem",
+                      fontSize: "0.72rem",
+                      height: "auto",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.25rem"
+                    }}
+                  >
+                    <Save size={12} /> {isPending ? "Saving..." : "Save Details"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    style={{
+                      flex: 1,
+                      padding: "0.35rem 0.5rem",
+                      fontSize: "0.72rem",
+                      background: "rgba(0,0,0,0.04)",
+                      border: "1px solid var(--border-dim)",
+                      borderRadius: "4px",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.25rem"
+                    }}
+                  >
+                    <X size={12} /> Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Read-Only Details Panel */
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", fontSize: "0.75rem" }}>
+                {member.employee ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+                      <Laptop size={14} style={{ color: "var(--gold-primary)", marginTop: "0.1rem", flexShrink: 0 }} />
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                          {member.employee.laptopBrand || "N/A"} {member.employee.laptopModel || ""}
+                        </span>
+                        <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>
+                          S/N: {member.employee.laptopSerialNumber || "N/A"} | OS: {member.employee.windowsVersion?.replace("_", " ") || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+                      <Key size={14} style={{ color: "var(--gold-primary)", marginTop: "0.1rem", flexShrink: 0 }} />
+                      <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                        <span style={{ fontWeight: 700, color: "var(--text-secondary)" }}>Laptop Login</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                          <span style={{ fontFamily: "monospace", fontSize: "0.72rem" }}>
+                            {showPassword ? (member.employee.laptopPassword || "N/A") : "••••••••"}
+                          </span>
+                          {member.employee.laptopPassword && (
+                            <button
+                              onClick={() => setShowPassword(!showPassword)}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex" }}
+                            >
+                              {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+                      <Network size={14} style={{ color: "var(--gold-primary)", marginTop: "0.1rem", flexShrink: 0 }} />
+                      <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                        <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                          VPN ({member.employee.vpnProvider || "N/A"})
+                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                          <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                            {showVpn ? (member.employee.vpnCredentials || "N/A") : "••••••••"}
+                          </span>
+                          {member.employee.vpnCredentials && (
+                            <button
+                              onClick={() => setShowVpn(!showVpn)}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex" }}
+                            >
+                              {showVpn ? <EyeOff size={12} /> : <Eye size={12} />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--text-muted)", fontSize: "0.7rem", padding: "0.25rem 0" }}>
+                    <AlertCircle size={12} />
+                    <span>No IT Deployment details assigned yet.</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setIsEditing(true)}
                   style={{
+                    background: "rgba(2, 80, 161, 0.05)",
+                    border: "1px solid rgba(2, 80, 161, 0.15)",
+                    borderRadius: "4px",
+                    padding: "0.3rem 0.5rem",
+                    fontSize: "0.7rem",
+                    fontWeight: 800,
+                    color: "#0250A1",
+                    cursor: "pointer",
                     display: "flex",
-                    flexDirection: "column",
-                    gap: "0.5rem",
-                    borderTop: "1px solid var(--border-dim)",
-                    paddingTop: "0.75rem",
-                    fontSize: "0.8rem",
-                    color: "var(--text-secondary)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.25rem",
+                    marginTop: "0.25rem",
+                    width: "100%"
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
-                    <Mail size={14} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {member.email}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <Clock size={14} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
-                    <span>Last Active: {lastActive}</span>
-                  </div>
-                </div>
+                  <Edit3 size={11} /> ✏️ Edit IT Details
+                </button>
               </div>
-            );
-          })
+            )}
+          </div>
         )}
       </div>
     </div>

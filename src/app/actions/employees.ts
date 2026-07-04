@@ -209,3 +209,88 @@ export async function archiveEmployeeAction(id: string) {
     throw new Error(error.message || "Failed to archive employee.");
   }
 }
+
+export async function saveAssociateEmployeeITAction(
+  userId: string,
+  formData: {
+    employeeId?: string;
+    laptopBrand?: employee_laptopBrand | null;
+    laptopModel?: string | null;
+    laptopSerialNumber?: string | null;
+    windowsVersion?: employee_windowsVersion | null;
+    vpnProvider?: employee_vpnProvider | null;
+    laptopPassword?: string | null;
+    vpnCredentials?: string | null;
+  }
+) {
+  const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"]);
+  
+  const targetUser = await db.user.findUnique({
+    where: { id: userId },
+    include: { employee: true }
+  });
+
+  if (!targetUser) {
+    throw new Error("Associate not found.");
+  }
+
+  if (user.role !== "SUPER_ADMIN" && targetUser.companyId !== user.companyId) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  let employeeId = formData.employeeId;
+  if (!employeeId) {
+    if (targetUser.employee?.employeeId) {
+      employeeId = targetUser.employee.employeeId;
+    } else {
+      employeeId = `EMP-${targetUser.name?.replace(/\s+/g, "").toUpperCase() || targetUser.id.substring(0, 5)}`;
+    }
+  }
+
+  try {
+    const updated = await db.employee.upsert({
+      where: { userId },
+      update: {
+        laptopBrand: formData.laptopBrand || null,
+        laptopModel: formData.laptopModel || null,
+        laptopSerialNumber: formData.laptopSerialNumber || null,
+        windowsVersion: formData.windowsVersion || null,
+        vpnProvider: formData.vpnProvider || null,
+        laptopPassword: formData.laptopPassword || null,
+        vpnCredentials: formData.vpnCredentials || null,
+        updatedAt: new Date()
+      },
+      create: {
+        id: crypto.randomUUID(),
+        employeeId,
+        fullName: targetUser.name || "Sales Associate",
+        email: targetUser.email,
+        userId: targetUser.id,
+        companyId: targetUser.companyId!,
+        laptopBrand: formData.laptopBrand || null,
+        laptopModel: formData.laptopModel || null,
+        laptopSerialNumber: formData.laptopSerialNumber || null,
+        windowsVersion: formData.windowsVersion || null,
+        vpnProvider: formData.vpnProvider || null,
+        laptopPassword: formData.laptopPassword || null,
+        vpnCredentials: formData.vpnCredentials || null,
+        updatedAt: new Date()
+      }
+    });
+
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "",
+      userRole: user.role,
+      action: "IT_UPSERT",
+      entity: "employee",
+      entityId: updated.id,
+      newValue: JSON.stringify(updated)
+    });
+
+    revalidatePath("/my-team");
+    return { success: true, employee: updated };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to save IT specs.");
+  }
+}
