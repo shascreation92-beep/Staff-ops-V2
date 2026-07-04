@@ -263,16 +263,6 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
             {/* Centered Eye-Catching Animated Announcement Bar */}
             {activeStripAnn && (() => {
               const parsed = parseAnnTitle(activeStripAnn.title);
-              const senderBadge = parsed.sender === "COMPANY_HQ" ? "🏢 Company HQ" : "💻 IT Department";
-              let typeBadge = "[Company Update]";
-              let typeColor = "#0250A1"; // Blue
-              if (parsed.type === "URGENT_ALERT") {
-                typeBadge = "[Urgent Alert]";
-                typeColor = "#EF4444";
-              } else if (parsed.type === "SALES_CELEBRATION") {
-                typeBadge = "[Sales Celebration]";
-                typeColor = "#10B981"; // Green
-              }
 
               return (
                 <div 
@@ -295,14 +285,8 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                 >
                   {/* Fixed left badges (scrolling text slides out from underneath) */}
                   <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", zIndex: 10, background: "#FFFFFF", paddingRight: "0.85rem", boxShadow: "6px 0 10px 4px #FFFFFF", height: "100%", flexShrink: 0 }}>
-                    <span className="badge pending animate-pulse" style={{ fontSize: "0.6rem", padding: "0.1rem 0.35rem", textTransform: "uppercase" }}>
-                      📢 New
-                    </span>
-                    <span style={{ fontSize: "0.62rem", background: "rgba(2, 80, 161, 0.05)", color: "#0250A1", padding: "0.1rem 0.35rem", borderRadius: "4px", fontWeight: 800 }}>
-                      {senderBadge}
-                    </span>
-                    <span style={{ fontSize: "0.62rem", background: "rgba(0,0,0,0.03)", color: typeColor, padding: "0.1rem 0.35rem", borderRadius: "4px", fontWeight: 800 }}>
-                      {typeBadge}
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontWeight: 800, whiteSpace: "nowrap" }}>
+                      Company: {user.companyName || "Active Tenant"}
                     </span>
                   </div>
 
@@ -321,10 +305,10 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                   {/* Close button with left white fade shadow */}
                   <button
                     onClick={() => dismissStrip(activeStripAnn.id)}
-                    style={{ border: "none", cursor: "pointer", zIndex: 10, paddingLeft: "0.5rem", background: "#FFFFFF", boxShadow: "-6px 0 10px 4px #FFFFFF", height: "100%", display: "flex", alignItems: "center", color: "var(--text-muted)", opacity: 0.6, flexShrink: 0 }}
+                    style={{ border: "none", cursor: "pointer", zIndex: 10, paddingLeft: "0.5rem", background: "#FFFFFF", boxShadow: "-6px 0 10px 4px #FFFFFF", height: "100%", display: "flex", alignItems: "center", color: "var(--text-muted)", opacity: 0.6, flexShrink: 0, fontSize: "0.78rem", fontWeight: 700 }}
                     title="Dismiss Announcement"
                   >
-                    <X size={13} />
+                    ✕
                   </button>
                 </div>
               );

@@ -10,20 +10,15 @@ export default async function AnnouncementsPage() {
   // Visible only to COMPANY_OWNER and IT_DEPARTMENT
   const user = await enforceAuth(["COMPANY_OWNER", "IT_DEPARTMENT"]);
 
-  // Fetch target companies for broadcast scope selection
-  const companiesList = await db.company.findMany({
-    where: { isArchived: false, status: "APPROVED" },
-    select: { id: true, name: true }
-  });
+  if (!user.companyId) {
+    throw new Error("Active company context missing.");
+  }
 
-  // Fetch announcements history
+  // Fetch announcements history strictly scoped under current company tenant
   const announcements = await db.announcement.findMany({
     where: {
       isArchived: false,
-      OR: [
-        { companyId: user.companyId || undefined },
-        { companyId: null }
-      ]
+      companyId: user.companyId
     },
     include: {
       company: {
@@ -39,7 +34,7 @@ export default async function AnnouncementsPage() {
     <DashboardLayout user={user}>
       <BroadcastComposer 
         currentUser={user}
-        companies={companiesList}
+        companies={[]}
         initialAnnouncements={announcements}
       />
     </DashboardLayout>

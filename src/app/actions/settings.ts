@@ -88,13 +88,9 @@ export async function archivePlatformAction(id: string) {
 }
 
 // Announcements Actions
-// Announcements Actions
 const AnnouncementSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  content: z.string().min(1, "Content is required"),
-  targetCompanyId: z.string().optional(),
-  sender: z.enum(["COMPANY_HQ", "IT_DEPARTMENT"]),
-  type: z.enum(["COMPANY_UPDATE", "URGENT_ALERT", "SALES_CELEBRATION"])
+  content: z.string().min(1, "Content is required")
 });
 
 export async function createAnnouncementAction(formData: z.infer<typeof AnnouncementSchema>) {
@@ -105,7 +101,14 @@ export async function createAnnouncementAction(formData: z.infer<typeof Announce
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { title, content, targetCompanyId, sender, type } = result.data;
+  const { title, content } = result.data;
+  const targetCompanyId = user.companyId;
+  if (!targetCompanyId) {
+    throw new Error("Active company context missing.");
+  }
+
+  const sender = user.role === "COMPANY_OWNER" ? "COMPANY_HQ" : "IT_DEPARTMENT";
+  const type = "COMPANY_UPDATE";
   const annId = crypto.randomUUID();
 
   // Serialize metadata into the title field
@@ -118,7 +121,7 @@ export async function createAnnouncementAction(formData: z.infer<typeof Announce
         title: serializedTitle,
         content,
         createdById: user.id,
-        companyId: targetCompanyId || null
+        companyId: targetCompanyId
       }
     });
 
@@ -138,7 +141,7 @@ export async function createAnnouncementAction(formData: z.infer<typeof Announce
       where: {
         isArchived: false,
         status: "APPROVED",
-        companyId: targetCompanyId || undefined
+        companyId: targetCompanyId
       }
     });
 

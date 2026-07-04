@@ -12,13 +12,14 @@ export async function GET() {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
 
+    if (!session.user.companyId) {
+      return NextResponse.json([]);
+    }
+
     const announcements = await db.announcement.findMany({
       where: {
         isArchived: false,
-        OR: [
-          { companyId: null },
-          { companyId: session.user.companyId || undefined }
-        ]
+        companyId: session.user.companyId
       },
       orderBy: {
         createdAt: "desc"

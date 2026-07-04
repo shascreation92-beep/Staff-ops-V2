@@ -2,7 +2,6 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Megaphone, Save, Trash2, Shield, Network, Eye, EyeOff, X, Copy } from "lucide-react";
 import { createAnnouncementAction } from "@/app/actions/settings";
 import { toast } from "react-hot-toast";
 
@@ -14,11 +13,6 @@ interface Announcement {
   company?: { name: string } | null;
 }
 
-interface Company {
-  id: string;
-  name: string;
-}
-
 interface BroadcastComposerProps {
   currentUser: {
     id: string;
@@ -26,25 +20,19 @@ interface BroadcastComposerProps {
     email?: string | null;
     companyId?: string | null;
   };
-  companies: Company[];
+  companies: any[];
   initialAnnouncements: any[];
 }
 
-export default function BroadcastComposer({ currentUser, companies, initialAnnouncements }: BroadcastComposerProps) {
+export default function BroadcastComposer({ currentUser, initialAnnouncements }: BroadcastComposerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [annTitle, setAnnTitle] = useState("");
   const [annContent, setAnnContent] = useState("");
-  const [annTargetCompany, setAnnTargetCompany] = useState("");
-  const [annType, setAnnType] = useState<"COMPANY_UPDATE" | "URGENT_ALERT" | "SALES_CELEBRATION">("COMPANY_UPDATE");
   
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  // Automatic sender identity tagging based on user role
-  const senderIdentity = currentUser.role === "COMPANY_OWNER" ? "COMPANY_HQ" : "IT_DEPARTMENT";
-  const senderDisplay = senderIdentity === "COMPANY_HQ" ? "🏢 Company HQ" : "💻 IT Department";
 
   const handleSendAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,17 +43,12 @@ export default function BroadcastComposer({ currentUser, companies, initialAnnou
       try {
         const res = await createAnnouncementAction({
           title: annTitle,
-          content: annContent,
-          targetCompanyId: annTargetCompany === "" ? undefined : annTargetCompany,
-          sender: senderIdentity,
-          type: annType
+          content: annContent
         });
 
         if (res.success) {
           setAnnTitle("");
           setAnnContent("");
-          setAnnTargetCompany("");
-          setAnnType("COMPANY_UPDATE");
           setSuccessMsg("🚀 System announcement broadcast live successfully!");
           toast.success("Announcement distributed successfully!");
           router.refresh();
@@ -95,7 +78,7 @@ export default function BroadcastComposer({ currentUser, companies, initialAnnou
           📢 Broadcast New Announcement
         </h2>
         <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-          Authorize, draft, and publish priority updates across all company nodes instantly.
+          Draft and publish real-time messages strictly scoped to your active company tenant.
         </p>
       </div>
 
@@ -126,48 +109,6 @@ export default function BroadcastComposer({ currentUser, companies, initialAnnou
             boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
           }}
         >
-          {/* Authorization Sender Info Badge (Read Only / Automatic) */}
-          <div style={{ background: "rgba(2, 80, 161, 0.03)", border: "1px solid rgba(2, 80, 161, 0.08)", padding: "0.75rem", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-              Broadcast Authorization:
-            </span>
-            <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "#0250A1", background: "rgba(2,80,161,0.08)", padding: "0.15rem 0.5rem", borderRadius: "4px" }}>
-              {senderDisplay}
-            </span>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Recipient Scope</label>
-            <select
-              value={annTargetCompany}
-              onChange={(e) => setAnnTargetCompany(e.target.value)}
-              className="select-gold"
-              disabled={isPending}
-            >
-              <option value="">Global Broadcast (All Companies)</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Priority Tier</label>
-            <select
-              value={annType}
-              onChange={(e) => setAnnType(e.target.value as any)}
-              className="select-gold"
-              disabled={isPending}
-              style={{ width: "100%" }}
-            >
-              <option value="COMPANY_UPDATE">Standard Update (🏢 Blue Badge)</option>
-              <option value="URGENT_ALERT">Urgent Alert (⚠️ Red Badge - Center Modal)</option>
-              <option value="SALES_CELEBRATION">Celebration (🎉 Green Badge)</option>
-            </select>
-          </div>
-
           <div className="form-group">
             <label className="form-label">Notice Heading</label>
             <input
@@ -217,28 +158,8 @@ export default function BroadcastComposer({ currentUser, companies, initialAnnou
               initialAnnouncements.map((ann) => {
                 const parsed = parseAnnTitle(ann.title);
                 
-                let typeColor = "var(--gold-primary)";
-                let typeLabel = "[Company Update]";
-                if (parsed.type === "URGENT_ALERT") {
-                  typeColor = "#EF4444";
-                  typeLabel = "[Urgent Alert]";
-                } else if (parsed.type === "SALES_CELEBRATION") {
-                  typeColor = "#10B981";
-                  typeLabel = "[Sales Celebration]";
-                }
-
-                const displaySender = parsed.sender === "COMPANY_HQ" ? "🏢 Company HQ" : "💻 IT Department";
-
                 return (
                   <div key={ann.id} style={{ padding: "0.85rem", background: "#FFFFFF", border: "1px solid var(--border-gold)", borderRadius: "var(--border-radius-sm)", display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "0.62rem", background: "rgba(2, 80, 161, 0.05)", color: "#0250A1", padding: "0.1rem 0.35rem", borderRadius: "4px", fontWeight: 800 }}>
-                        {displaySender}
-                      </span>
-                      <span style={{ fontSize: "0.62rem", background: "rgba(0,0,0,0.03)", color: typeColor, padding: "0.1rem 0.35rem", borderRadius: "4px", fontWeight: 800 }}>
-                        {typeLabel}
-                      </span>
-                    </div>
                     <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
                       {parsed.text}
                     </span>
@@ -246,7 +167,7 @@ export default function BroadcastComposer({ currentUser, companies, initialAnnou
                       {ann.content}
                     </p>
                     <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", marginTop: "0.1rem" }}>
-                      Sent: {new Date(ann.createdAt).toLocaleString()} | Scope: {ann.company?.name || "Global"}
+                      Sent: {new Date(ann.createdAt).toLocaleString()} | Scope: {ann.company?.name || "Active Tenant"}
                     </span>
                   </div>
                 );
