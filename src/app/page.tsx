@@ -1035,7 +1035,7 @@ export default async function DashboardPage() {
                   {/* Vinted Stats Sub-Grid */}
                   <div style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                     gap: "1rem"
                   }}>
                     {/* Stat 1: Total Vinted */}
@@ -1077,10 +1077,6 @@ export default async function DashboardPage() {
                         {tl.stats.vintedSuspended < 10 ? `0${tl.stats.vintedSuspended}` : tl.stats.vintedSuspended}
                       </span>
                     </div>
-
-                    {/* Empty Slots for perfect alignment */}
-                    <div />
-                    <div />
                   </div>
                 </div>
               ))
