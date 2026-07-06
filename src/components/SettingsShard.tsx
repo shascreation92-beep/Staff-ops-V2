@@ -236,15 +236,35 @@ export default function SettingsShard({
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [tlFilter, setTlFilter] = useState("ALL");
 
   const staffUsers = users.filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE");
   const filteredUsers = staffUsers.filter(u => {
+    // 1. Search Query filter
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    return (
-      (u.name || "").toLowerCase().includes(q) ||
-      (u.email || "").toLowerCase().includes(q)
-    );
+    if (q) {
+      const matchQuery = (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q);
+      if (!matchQuery) return false;
+    }
+
+    // 2. Status filter
+    if (statusFilter !== "ALL") {
+      if (statusFilter === "ACTIVE" && u.status !== "APPROVED") return false;
+      if (statusFilter === "DISABLED" && u.status !== "BLOCKED" && u.status !== "REJECTED") return false;
+    }
+
+    // 3. Designation filter
+    if (roleFilter !== "ALL" && u.role !== roleFilter) return false;
+
+    // 4. Team Lead filter
+    if (tlFilter !== "ALL") {
+      if (tlFilter === "UNASSIGNED" && u.teamLeadId !== null) return false;
+      if (tlFilter !== "UNASSIGNED" && u.teamLeadId !== tlFilter) return false;
+    }
+
+    return true;
   });
 
   const togglePasswordVisibility = (userId: string) => {
@@ -315,12 +335,12 @@ export default function SettingsShard({
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mx-6 mb-4" style={{
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
-        gap: "1rem",
+        justifyContent: "flex-start",
+        gap: "1.25rem",
         flexWrap: "wrap"
       }}>
         {/* Search Input Field */}
-        <div style={{ position: "relative", flex: 1, maxWidth: "360px" }}>
+        <div style={{ position: "relative", flex: 1, maxWidth: "300px" }}>
           <Search 
             size={16} 
             style={{ 
@@ -348,16 +368,106 @@ export default function SettingsShard({
 
         {/* Counter Metrics Pills */}
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <span className="badge" style={{ background: "rgba(100, 116, 139, 0.08)", color: "var(--text-primary)", border: "1px solid var(--border-dim)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+          <span className="badge" style={{ background: "rgba(100, 116, 139, 0.04)", color: "var(--text-primary)", border: "1px solid var(--border-dim)", padding: "0.45rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, borderRadius: "10px", textTransform: "uppercase" }}>
             Total Staff: {totalStaff}
           </span>
-          <span className="badge" style={{ background: "rgba(16, 185, 129, 0.08)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.15)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+          <span className="badge" style={{ background: "rgba(16, 185, 129, 0.04)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.2)", padding: "0.45rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, borderRadius: "10px", textTransform: "uppercase" }}>
             Active: {activeStaff}
           </span>
-          <span className="badge" style={{ background: "rgba(239, 68, 68, 0.08)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.15)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+          <span className="badge" style={{ background: "rgba(239, 68, 68, 0.04)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.2)", padding: "0.45rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, borderRadius: "10px", textTransform: "uppercase" }}>
             Disabled: {disabledStaff}
           </span>
         </div>
+
+        {/* Filter: ALL STATUSES */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{
+            color: "#0F172A",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            fontSize: "0.75rem",
+            letterSpacing: "0.05em",
+            padding: "0.5rem 2rem 0.5rem 1rem",
+            borderRadius: "10px",
+            border: "1px solid var(--border-dim)",
+            background: "#FFFFFF",
+            cursor: "pointer",
+            appearance: "none",
+            backgroundImage: "url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2310B981%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 0.5rem center",
+            backgroundSize: "1rem",
+            height: "38px"
+          }}
+        >
+          <option value="ALL">ALL STATUSES</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="DISABLED">DISABLED</option>
+        </select>
+
+        {/* Filter: ALL DESIGNATIONS */}
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          style={{
+            color: "#0F172A",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            fontSize: "0.75rem",
+            letterSpacing: "0.05em",
+            padding: "0.5rem 2rem 0.5rem 1rem",
+            borderRadius: "10px",
+            border: "1px solid var(--border-dim)",
+            background: "#FFFFFF",
+            cursor: "pointer",
+            appearance: "none",
+            backgroundImage: "url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2310B981%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 0.5rem center",
+            backgroundSize: "1rem",
+            height: "38px"
+          }}
+        >
+          <option value="ALL">ALL DESIGNATIONS</option>
+          <option value="TEAM_LEAD">TEAM LEAD</option>
+          <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
+        </select>
+
+        {/* Filter: ALL TEAM LEADS */}
+        <select
+          value={tlFilter}
+          onChange={(e) => setTlFilter(e.target.value)}
+          style={{
+            color: "#0F172A",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            fontSize: "0.75rem",
+            letterSpacing: "0.05em",
+            padding: "0.5rem 2rem 0.5rem 1rem",
+            borderRadius: "10px",
+            border: "1px solid var(--border-dim)",
+            background: "#FFFFFF",
+            cursor: "pointer",
+            appearance: "none",
+            backgroundImage: "url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2310B981%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 0.5rem center",
+            backgroundSize: "1rem",
+            height: "38px"
+          }}
+        >
+          <option value="ALL">ALL TEAM LEADS</option>
+          <option value="UNASSIGNED">NO TEAM LEAD (UNASSIGNED)</option>
+          {users
+            .filter(u => u.role === "TEAM_LEAD")
+            .map(tl => (
+              <option key={tl.id} value={tl.id}>
+                {tl.name || tl.email}
+              </option>
+            ))}
+        </select>
       </div>
 
       {/* Main Table Container Card */}
