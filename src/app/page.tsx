@@ -43,6 +43,14 @@ export default async function DashboardPage() {
     companyName = company?.name;
   }
 
+  const dashboardPinnedNotes = await db.personalnote.findMany({
+    where: {
+      userId: user.id,
+      isPinned: true
+    },
+    orderBy: { updatedAt: "desc" }
+  });
+
   // Fetch standard dashboard stats
   const totalAccounts = await db.account.count({
     where: {
@@ -491,6 +499,57 @@ export default async function DashboardPage() {
           <div style={{ display: "flex", alignItems: "center" }}>
             <NotificationBell />
           </div>
+        </div>
+      )}
+
+      {/* Pinned IT Notes / Alerts for Dashboard Headers */}
+      {dashboardPinnedNotes.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
+          {dashboardPinnedNotes.map((note) => (
+            <div key={note.id} className="glass-panel" style={{
+              padding: "1rem 1.5rem",
+              background: note.color === "red" ? "rgba(239, 68, 68, 0.05)" : (note.color === "blue" ? "rgba(59, 130, 246, 0.05)" : (note.color === "green" ? "rgba(16, 185, 129, 0.05)" : "rgba(245, 158, 11, 0.05)")),
+              borderLeft: `5px solid ${note.color === "red" ? "#EF4444" : (note.color === "blue" ? "#3B82F6" : (note.color === "green" ? "#10B981" : "#F59E0B"))}`,
+              borderRadius: "12px",
+              boxShadow: "var(--shadow-sm)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "1rem"
+            }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  {note.category && (
+                    <span style={{
+                      fontSize: "0.62rem",
+                      fontWeight: 850,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      background: note.category.toLowerCase().includes("server") ? "rgba(239, 68, 68, 0.15)" : 
+                                 (note.category.toLowerCase().includes("fb") ? "rgba(59, 130, 246, 0.15)" : "rgba(107, 114, 128, 0.15)"),
+                      color: note.category.toLowerCase().includes("server") ? "#EF4444" : 
+                             (note.category.toLowerCase().includes("fb") ? "#3B82F6" : "#6B7280"),
+                      padding: "0.15rem 0.4rem",
+                      borderRadius: "4px"
+                    }}>
+                      {note.category}
+                    </span>
+                  )}
+                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                    {note.title}
+                  </span>
+                </div>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0, whiteSpace: "pre-wrap" }}>
+                  {note.content}
+                </p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+                <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                  Pinned Alert
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

@@ -7,7 +7,7 @@ import PersonalNotesDashboard from "@/components/PersonalNotesDashboard";
 export const dynamic = "force-dynamic";
 
 export default async function PersonalNotesPage() {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   let companyName = null;
   if (user.companyId) {

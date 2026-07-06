@@ -159,13 +159,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       icon: Database,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
-    { 
-      id: "personal-notes", 
-      label: "My Personal Notes", 
-      path: "/personal-notes", 
-      icon: FileText,
-      roles: ["TEAM_LEAD", "SALES_ASSOCIATE"] 
-    },
     {
       id: "master-accounts-pool",
       label: "Master Accounts Pool",
@@ -201,13 +194,19 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       icon: UserCheck,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
     },
-
     { 
       id: "settings", 
       label: user.role === "SUPER_ADMIN" ? "Platform Shard" : (user.role === "IT_DEPARTMENT" ? "User Management" : "Rule Engine"), 
       path: "/settings", 
       icon: Sliders,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
+    },
+    { 
+      id: "personal-notes", 
+      label: "My Personal Notes", 
+      path: "/personal-notes", 
+      icon: FileText,
+      roles: ["TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     { 
       id: "announcements", 

@@ -568,7 +568,7 @@ interface NoteCardProps {
   userRole: string;
   currentUserId: string;
   onDelete: (id: string) => void;
-  onShare: (id: string, isGlobalPinned?: boolean, targetUserIds?: string[]) => void;
+  onShare: (id: string, isGlobalPinned?: boolean, targetUserIds?: string[], pinType?: "ALL_IT" | "SPECIFIC_MEMBER") => void;
   onClone: (id: string) => void;
   onExpand: (note: PersonalNote) => void;
   teamMembers: any[];
@@ -581,6 +581,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
   const [localColor, setLocalColor] = useState(note.color);
   const [localCategory] = useState(note.category || "Work");
   const [localIsPinned, setLocalIsPinned] = useState(note.isPinned);
+  const [itPinType, setItPinType] = useState<"ALL_IT" | "SPECIFIC_MEMBER">("ALL_IT");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [isCopied, setIsCopied] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
@@ -708,6 +709,13 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
       if (res.success) {
         setShareTargets(res.targetUserIds);
         setShareGlobalPin(res.isGlobalPinned);
+        if (userRole === "IT_DEPARTMENT") {
+          if (res.targetUserIds.length === 1) {
+            setItPinType("SPECIFIC_MEMBER");
+          } else {
+            setItPinType("ALL_IT");
+          }
+        }
       }
     } catch (e) {
       console.error(e);
@@ -730,7 +738,11 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
   };
 
   const handleSaveShare = () => {
-    onShare(note.id, shareGlobalPin, shareTargets);
+    if (userRole === "IT_DEPARTMENT") {
+      onShare(note.id, true, shareTargets, itPinType);
+    } else {
+      onShare(note.id, shareGlobalPin, shareTargets);
+    }
     setShowShareDropdown(false);
   };
 
@@ -1221,6 +1233,30 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
           )}
         </div>
       </div>
+
+      {/* Category tag */}
+      {note.category && (
+        <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.5rem" }}>
+          <span style={{
+            fontSize: "0.62rem",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            padding: "0.15rem 0.4rem",
+            borderRadius: "4px",
+            background: note.category.toLowerCase().includes("server") ? "rgba(239, 68, 68, 0.08)" : 
+                       (note.category.toLowerCase().includes("fb") ? "rgba(59, 130, 246, 0.08)" : "rgba(107, 114, 128, 0.08)"),
+            color: note.category.toLowerCase().includes("server") ? "#EF4444" : 
+                   (note.category.toLowerCase().includes("fb") ? "#3B82F6" : "#6B7280"),
+            border: `1px solid ${
+              note.category.toLowerCase().includes("server") ? "rgba(239, 68, 68, 0.15)" : 
+              (note.category.toLowerCase().includes("fb") ? "rgba(59, 130, 246, 0.15)" : "rgba(107, 114, 128, 0.15)")
+            }`
+          }}>
+            {note.category}
+          </span>
+        </div>
+      )}
 
       {/* Mode toggle row */}
       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: "0.5rem" }}>
@@ -1769,8 +1805,8 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
             )}
           </button>
 
-          {/* Share note (Team Lead & Sales Associate) */}
-          {!note.isSharedAnnouncement && (userRole === "TEAM_LEAD" || userRole === "SALES_ASSOCIATE") && (
+          {/* Share note (Team Lead, Sales Associate, IT Department) */}
+          {!note.isSharedAnnouncement && (userRole === "TEAM_LEAD" || userRole === "SALES_ASSOCIATE" || userRole === "IT_DEPARTMENT") && (
             <div style={{ position: "relative" }} ref={dropdownRef}>
               <button
                 disabled={isLocked}
@@ -1806,7 +1842,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                   borderRadius: "8px",
                   boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
                   padding: "0.75rem",
-                  width: "240px",
+                  width: "260px",
                   zIndex: 9999,
                   display: "flex",
                   flexDirection: "column",
@@ -1814,7 +1850,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.35rem" }}>
                     <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--gold-primary)", textTransform: "uppercase" }}>
-                      Share Targets
+                      {userRole === "IT_DEPARTMENT" ? "IT Pin Distribution" : "Share Targets"}
                     </span>
                     <button
                       onClick={() => setShowShareDropdown(false)}
@@ -1824,57 +1860,116 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                     </button>
                   </div>
 
-                  {userRole === "TEAM_LEAD" && (
-                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", cursor: "pointer" }}>
-                      <input
-                        type="checkbox"
-                        checked={shareTargets.length === teamMembers.length && teamMembers.length > 0}
-                        onChange={(e) => handleSelectAll(e.target.checked)}
-                        style={{ accentColor: "var(--gold-primary)" }}
-                      />
-                      <span>Select All (Global)</span>
-                    </label>
-                  )}
+                  {userRole === "IT_DEPARTMENT" ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: "var(--text-primary)", cursor: "pointer" }}>
+                        <input
+                          type="radio"
+                          name={`itPinType-${note.id}`}
+                          checked={itPinType === "ALL_IT"}
+                          onChange={() => {
+                            setItPinType("ALL_IT");
+                            setShareTargets([]);
+                          }}
+                          style={{ accentColor: "var(--gold-primary)" }}
+                        />
+                        <span style={{ fontWeight: 700 }}>Pin to All IT Employees</span>
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: "var(--text-primary)", cursor: "pointer" }}>
+                        <input
+                          type="radio"
+                          name={`itPinType-${note.id}`}
+                          checked={itPinType === "SPECIFIC_MEMBER"}
+                          onChange={() => setItPinType("SPECIFIC_MEMBER")}
+                          style={{ accentColor: "var(--gold-primary)" }}
+                        />
+                        <span style={{ fontWeight: 700 }}>Pin to Specific Member</span>
+                      </label>
 
-                  <div style={{
-                    maxHeight: "120px",
-                    overflowY: "auto",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.35rem",
-                    padding: "0.1rem 0"
-                  }}>
-                    {teamMembers.length > 0 ? (
-                      teamMembers.map((member) => (
-                        <label key={member.id} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: "var(--text-secondary)", cursor: "pointer" }}>
+                      {itPinType === "SPECIFIC_MEMBER" && (
+                        <div style={{ marginTop: "0.25rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                          <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                            Select Member:
+                          </span>
+                          <select
+                            value={shareTargets[0] || ""}
+                            onChange={(e) => setShareTargets(e.target.value ? [e.target.value] : [])}
+                            style={{
+                              width: "100%",
+                              fontSize: "0.72rem",
+                              padding: "0.25rem",
+                              borderRadius: "4px",
+                              border: "1px solid var(--border-dim)",
+                              background: "#FFFFFF",
+                              color: "var(--text-primary)",
+                              outline: "none"
+                            }}
+                          >
+                            <option value="">-- Choose Member --</option>
+                            {teamMembers.map((member) => (
+                              <option key={member.id} value={member.id}>
+                                {member.name} ({member.role})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {userRole === "TEAM_LEAD" && (
+                        <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", cursor: "pointer" }}>
                           <input
                             type="checkbox"
-                            checked={shareTargets.includes(member.id)}
-                            onChange={() => handleToggleTarget(member.id)}
+                            checked={shareTargets.length === teamMembers.length && teamMembers.length > 0}
+                            onChange={(e) => handleSelectAll(e.target.checked)}
                             style={{ accentColor: "var(--gold-primary)" }}
                           />
-                          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {member.name}
-                          </span>
+                          <span>Select All (Global)</span>
                         </label>
-                      ))
-                    ) : (
-                      <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontStyle: "italic" }}>
-                        No members available.
-                      </span>
-                    )}
-                  </div>
+                      )}
 
-                  {userRole === "TEAM_LEAD" && (
-                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", borderTop: "1px solid var(--border-dim)", paddingTop: "0.4rem", color: "var(--text-primary)", cursor: "pointer" }}>
-                      <input
-                        type="checkbox"
-                        checked={shareGlobalPin}
-                        onChange={(e) => setShareGlobalPin(e.target.checked)}
-                        style={{ accentColor: "var(--gold-primary)" }}
-                      />
-                      <span>Pin to Team Workspace</span>
-                    </label>
+                      <div style={{
+                        maxHeight: "120px",
+                        overflowY: "auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.35rem",
+                        padding: "0.1rem 0"
+                      }}>
+                        {teamMembers.length > 0 ? (
+                          teamMembers.map((member) => (
+                            <label key={member.id} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: "var(--text-secondary)", cursor: "pointer" }}>
+                              <input
+                                type="checkbox"
+                                checked={shareTargets.includes(member.id)}
+                                onChange={() => handleToggleTarget(member.id)}
+                                style={{ accentColor: "var(--gold-primary)" }}
+                              />
+                              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {member.name}
+                              </span>
+                            </label>
+                          ))
+                        ) : (
+                          <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                            No members available.
+                          </span>
+                        )}
+                      </div>
+
+                      {userRole === "TEAM_LEAD" && (
+                        <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", borderTop: "1px solid var(--border-dim)", paddingTop: "0.4rem", color: "var(--text-primary)", cursor: "pointer" }}>
+                          <input
+                            type="checkbox"
+                            checked={shareGlobalPin}
+                            onChange={(e) => setShareGlobalPin(e.target.checked)}
+                            style={{ accentColor: "var(--gold-primary)" }}
+                          />
+                          <span>Pin to Team Workspace</span>
+                        </label>
+                      )}
+                    </>
                   )}
 
                   <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.25rem" }}>
@@ -2244,26 +2339,53 @@ export function FullscreenModal({ note, userRole, onClose, onSave }: FullscreenM
           
           {/* Colors Selection (Modal) */}
           {!note.isSharedAnnouncement ? (
-            <div style={{ display: "flex", gap: "0.35rem" }}>
-              {["default", "yellow", "blue", "green", "red"].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
+            <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+              <div style={{ display: "flex", gap: "0.35rem" }}>
+                {["default", "yellow", "blue", "green", "red"].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setColor(c)}
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "50%",
+                      border: color === c ? "2px solid #000" : "1px solid rgba(0,0,0,0.15)",
+                      background: c === "default" ? "#FFFFFF" : 
+                                  c === "yellow" ? "#FEF08A" : 
+                                  c === "blue" ? "#BFDBFE" : 
+                                  c === "green" ? "#BBF7D0" : "#FECACA",
+                      cursor: "pointer",
+                      padding: 0
+                    }}
+                    title={c}
+                  />
+                ))}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+                  CATEGORY:
+                </span>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
                   style={{
-                    width: "16px",
-                    height: "16px",
-                    borderRadius: "50%",
-                    border: color === c ? "2px solid #000" : "1px solid rgba(0,0,0,0.15)",
-                    background: c === "default" ? "#FFFFFF" : 
-                                c === "yellow" ? "#FEF08A" : 
-                                c === "blue" ? "#BFDBFE" : 
-                                c === "green" ? "#BBF7D0" : "#FECACA",
-                    cursor: "pointer",
-                    padding: 0
+                    fontSize: "0.75rem",
+                    padding: "0.25rem 0.5rem",
+                    borderRadius: "4px",
+                    border: "1px solid var(--border-dim)",
+                    background: "#FFFFFF",
+                    color: "var(--text-primary)",
+                    outline: "none",
+                    cursor: "pointer"
                   }}
-                  title={c}
-                />
-              ))}
+                >
+                  <option value="Work">Work</option>
+                  <option value="Server">Server</option>
+                  <option value="FB">FB</option>
+                  <option value="Personal">Personal</option>
+                </select>
+              </div>
             </div>
           ) : (
             <div />

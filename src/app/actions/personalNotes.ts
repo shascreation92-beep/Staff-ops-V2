@@ -5,7 +5,7 @@ import { enforceAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 
 export async function getPersonalNotesAction() {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   try {
     const notes = await db.personalnote.findMany({
@@ -28,7 +28,7 @@ export async function createPersonalNoteAction(data: {
   color?: string;
   category?: string;
 }) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   try {
     const note = await db.personalnote.create({
@@ -63,7 +63,7 @@ export async function updatePersonalNoteAction(
     category?: string;
   }
 ) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   const note = await db.personalnote.findUnique({
     where: { id: noteId }
@@ -101,7 +101,7 @@ export async function updatePersonalNoteAction(
 }
 
 export async function deletePersonalNoteAction(noteId: string) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   const note = await db.personalnote.findUnique({
     where: { id: noteId }
@@ -139,9 +139,10 @@ export async function deletePersonalNoteAction(noteId: string) {
 export async function sharePersonalNoteWithTeamAction(
   noteId: string,
   isGlobalPinned: boolean = false,
-  targetUserIds?: string[]
+  targetUserIds?: string[],
+  pinType?: "ALL_IT" | "SPECIFIC_MEMBER"
 ) {
-  const user = await enforceAuth(["TEAM_LEAD", "SALES_ASSOCIATE"]);
+  const user = await enforceAuth(["TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]);
 
   const note = await db.personalnote.findFirst({
     where: { id: noteId, userId: user.id }
@@ -153,7 +154,36 @@ export async function sharePersonalNoteWithTeamAction(
 
   let targets: string[] = [];
 
-  if (user.role === "TEAM_LEAD") {
+  if (user.role === "IT_DEPARTMENT") {
+    if (pinType === "ALL_IT") {
+      const itStaff = await db.user.findMany({
+        where: {
+          companyId: user.companyId,
+          role: "IT_DEPARTMENT",
+          status: "APPROVED",
+          isArchived: false
+        },
+        select: { id: true }
+      });
+      targets = itStaff.map(s => s.id);
+    } else if (pinType === "SPECIFIC_MEMBER") {
+      if (targetUserIds && targetUserIds.length === 1) {
+        const targetUser = await db.user.findFirst({
+          where: {
+            id: targetUserIds[0],
+            companyId: user.companyId,
+            role: { in: ["TEAM_LEAD", "IT_DEPARTMENT", "COMPANY_OWNER"] },
+            status: "APPROVED",
+            isArchived: false
+          },
+          select: { id: true }
+        });
+        if (targetUser) {
+          targets = [targetUser.id];
+        }
+      }
+    }
+  } else if (user.role === "TEAM_LEAD") {
     // Find all Sales Associates reporting to this Team Lead
     const associates = await db.user.findMany({
       where: {
@@ -304,7 +334,7 @@ export async function sharePersonalNoteWithTeamAction(
 }
 
 export async function cloneSharedAnnouncementAction(noteId: string) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   const announcement = await db.personalnote.findFirst({
     where: {
@@ -344,7 +374,7 @@ export async function cloneSharedAnnouncementAction(noteId: string) {
 }
 
 export async function updateNoteTimerAction(noteId: string, durationMinutes: number | null) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   const note = await db.personalnote.findUnique({
     where: { id: noteId }
@@ -380,7 +410,7 @@ export async function updateNoteTimerAction(noteId: string, durationMinutes: num
 }
 
 export async function acknowledgeSharedAnnouncementAction(noteId: string) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   const announcement = await db.personalnote.findFirst({
     where: {
@@ -407,7 +437,7 @@ export async function acknowledgeSharedAnnouncementAction(noteId: string) {
 }
 
 export async function getPersonalNoteByIdAction(noteId: string) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   const note = await db.personalnote.findUnique({
     where: { id: noteId }
@@ -425,10 +455,27 @@ export async function getPersonalNoteByIdAction(noteId: string) {
 }
 
 export async function getTeamMembersAction() {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   try {
-    if (user.role === "TEAM_LEAD") {
+    if (user.role === "IT_DEPARTMENT") {
+      // Fetch all Team Leads, IT staff, or admins in the active company
+      const members = await db.user.findMany({
+        where: {
+          companyId: user.companyId,
+          status: "APPROVED",
+          isArchived: false,
+          role: { in: ["TEAM_LEAD", "IT_DEPARTMENT", "COMPANY_OWNER"] }
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      });
+      return { success: true, members };
+    } else if (user.role === "TEAM_LEAD") {
       // Return all active Sales Associates under this Team Lead
       const associates = await db.user.findMany({
         where: {
@@ -498,7 +545,7 @@ export async function getTeamMembersAction() {
 }
 
 export async function getNoteShareTargetsAction(noteId: string) {
-  const user = await enforceAuth(["TEAM_LEAD", "SALES_ASSOCIATE"]);
+  const user = await enforceAuth(["TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]);
 
   try {
     const clones = await db.personalnote.findMany({
@@ -516,7 +563,7 @@ export async function getNoteShareTargetsAction(noteId: string) {
 }
 
 export async function castVoteAction(noteId: string, optionIndex: number) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD"]);
+  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   const note = await db.personalnote.findUnique({
     where: { id: noteId }
