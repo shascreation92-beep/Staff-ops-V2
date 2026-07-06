@@ -311,72 +311,67 @@ export default function SettingsShard({
         </p>
       </div>
 
-      {/* Sheet Container Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mx-6 mb-6" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        {/* Search and Metrics Bar */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "1rem",
-          flexWrap: "wrap",
-          background: "#F9FAFB",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "12px",
-          padding: "0.75rem 1rem",
-          marginTop: "0.5rem"
-        }}>
-          {/* Search Input Field */}
-          <div style={{ position: "relative", flex: 1, maxWidth: "360px" }}>
-            <Search 
-              size={16} 
-              style={{ 
-                position: "absolute", 
-                left: "0.75rem", 
-                top: "50%", 
-                transform: "translateY(-50%)", 
-                color: "var(--text-muted)" 
-              }} 
-            />
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-gold"
-              style={{
-                paddingLeft: "2.25rem",
-                height: "38px",
-                fontSize: "0.85rem",
-                width: "100%"
-              }}
-            />
-          </div>
-
-          {/* Counter Metrics Pills */}
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <span className="badge" style={{ background: "rgba(100, 116, 139, 0.08)", color: "var(--text-primary)", border: "1px solid var(--border-dim)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
-              Total Staff: {totalStaff}
-            </span>
-            <span className="badge" style={{ background: "rgba(16, 185, 129, 0.08)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.15)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
-              Active: {activeStaff}
-            </span>
-            <span className="badge" style={{ background: "rgba(239, 68, 68, 0.08)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.15)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
-              Disabled: {disabledStaff}
-            </span>
-          </div>
+      {/* Search and Metrics Bar Card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mx-6 mb-4" style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "1rem",
+        flexWrap: "wrap"
+      }}>
+        {/* Search Input Field */}
+        <div style={{ position: "relative", flex: 1, maxWidth: "360px" }}>
+          <Search 
+            size={16} 
+            style={{ 
+              position: "absolute", 
+              left: "0.75rem", 
+              top: "50%", 
+              transform: "translateY(-50%)", 
+              color: "var(--text-muted)" 
+            }} 
+          />
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input-gold"
+            style={{
+              paddingLeft: "2.25rem",
+              height: "38px",
+              fontSize: "0.85rem",
+              width: "100%"
+            }}
+          />
         </div>
 
-        <div className="table-container-outer" style={{ width: "100%", marginTop: "0.5rem", display: "flex", justifyContent: "center" }}>
-          <table className="premium-table" style={{ width: "100%", maxWidth: "1024px", margin: "0 auto" }}>
+        {/* Counter Metrics Pills */}
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <span className="badge" style={{ background: "rgba(100, 116, 139, 0.08)", color: "var(--text-primary)", border: "1px solid var(--border-dim)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+            Total Staff: {totalStaff}
+          </span>
+          <span className="badge" style={{ background: "rgba(16, 185, 129, 0.08)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.15)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+            Active: {activeStaff}
+          </span>
+          <span className="badge" style={{ background: "rgba(239, 68, 68, 0.08)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.15)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+            Disabled: {disabledStaff}
+          </span>
+        </div>
+      </div>
+
+      {/* Main Table Container Card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mx-6 mb-6" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        <div className="table-container-outer" style={{ width: "100%" }}>
+          <table className="premium-table" style={{ width: "100%" }}>
             <thead>
               <tr>
-                <th style={{ padding: "0.75rem 1rem", width: "22%" }}>FULL NAME</th>
+                <th style={{ padding: "0.75rem 1rem", width: "20%" }}>FULL NAME</th>
                 <th style={{ padding: "0.75rem 1rem", width: "25%" }}>GMAIL (READ-ONLY)</th>
                 <th style={{ padding: "0.75rem 1rem", width: "15%" }}>PASSWORD</th>
-                <th style={{ padding: "0.75rem 1rem", width: "16%" }}>DESIGNATION</th>
-                <th style={{ padding: "0.75rem 1rem", width: "10%" }}>STATUS</th>
-                <th style={{ textAlign: "right", padding: "0.75rem 1rem", width: "12%" }}>ACTIONS</th>
+                <th style={{ padding: "0.75rem 1rem", width: "15%" }}>DESIGNATION</th>
+                <th style={{ padding: "0.75rem 1rem", width: "15%" }}>STATUS</th>
+                <th style={{ textAlign: "right", padding: "0.75rem 1rem", width: "10%" }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
