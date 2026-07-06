@@ -42,11 +42,11 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
   const [isSyncing, setIsSyncing] = useState(false);
 
   const formatNumber = (num: number | string | null | undefined): string => {
-    if (num === null || num === undefined) return "00";
+    if (num === null || num === undefined) return "0";
     const n = typeof num === "string" ? parseInt(num, 10) : num;
     if (isNaN(n)) return num.toString();
     if (n < 0) return n.toString();
-    return n < 10 ? `0${n}` : n.toString();
+    return n.toString();
   };
 
   useEffect(() => {

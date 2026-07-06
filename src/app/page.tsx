@@ -610,7 +610,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <div className="kpi-value" style={{ fontSize: "2.5rem", fontWeight: 800, margin: "0.5rem 0", color: "#FFFFFF" }}>
-                {totalAccounts < 10 ? `0${totalAccounts}` : totalAccounts}
+                {totalAccounts}
               </div>
               <div className="kpi-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.1)", paddingTop: "0.5rem", fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.6)" }}>
                 <span>Company-wide aggregated accounts database</span>
@@ -634,7 +634,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <div className="kpi-value" style={{ fontSize: "2.5rem", fontWeight: 800, margin: "0.5rem 0", color: "#FFFFFF" }}>
-                {totalOfficeTarget < 10 ? `0${totalOfficeTarget}` : totalOfficeTarget}
+                {totalOfficeTarget}
               </div>
               <div className="kpi-footer" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.1)", paddingTop: "0.5rem", fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.6)" }}>
                 <span>Combined operational goals of {companyTeamLeadsCount} team lead{companyTeamLeadsCount === 1 ? "" : "s"}</span>
@@ -689,7 +689,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Total FB Accounts</span>
                     <div className="kpi-icon-wrapper"><Database size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itTotalFbAccounts < 10 ? `0${itTotalFbAccounts}` : itTotalFbAccounts}</div>
+                  <div className="kpi-value">{itTotalFbAccounts}</div>
                   <div className="kpi-footer">
                     <span>Active company registry</span>
                   </div>
@@ -704,7 +704,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Total Verified Accounts</span>
                     <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itFbVerifiedAccounts < 10 ? `0${itFbVerifiedAccounts}` : itFbVerifiedAccounts}</div>
+                  <div className="kpi-value">{itFbVerifiedAccounts}</div>
                   <div className="kpi-footer">
                     <span>Cleared verification checks</span>
                   </div>
@@ -719,7 +719,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Total Unverified Accounts</span>
                     <div className="kpi-icon-wrapper"><Clock size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itFbUnverifiedAccounts < 10 ? `0${itFbUnverifiedAccounts}` : itFbUnverifiedAccounts}</div>
+                  <div className="kpi-value">{itFbUnverifiedAccounts}</div>
                   <div className="kpi-footer">
                     <span>Profiles awaiting setup</span>
                   </div>
@@ -737,7 +737,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Fb Marketplace Issue</span>
                     <div className="kpi-icon-wrapper" style={{ color: "#F59E0B" }}><Store size={16} /></div>
                   </div>
-                  <div className="kpi-value" style={{ color: "#F59E0B" }}>{itFbMarketplaceIssues < 10 ? `0${itFbMarketplaceIssues}` : itFbMarketplaceIssues}</div>
+                  <div className="kpi-value" style={{ color: "#F59E0B" }}>{itFbMarketplaceIssues}</div>
                   <div className="kpi-footer">
                     <span>Accounts with marketplace blocks</span>
                   </div>
@@ -752,7 +752,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">FB Identity Accounts</span>
                     <div className="kpi-icon-wrapper"><AlertTriangle size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itFbIdentityAccounts < 10 ? `0${itFbIdentityAccounts}` : itFbIdentityAccounts}</div>
+                  <div className="kpi-value">{itFbIdentityAccounts}</div>
                   <div className="kpi-footer">
                     <span>Locked under checkpoints</span>
                   </div>
@@ -770,7 +770,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Suspended Marketplaces</span>
                     <div className="kpi-icon-wrapper" style={{ color: "#F59E0B" }}><MinusCircle size={16} /></div>
                   </div>
-                  <div className="kpi-value" style={{ color: "#F59E0B" }}>{itFbSuspendedMarketplaces < 10 ? `0${itFbSuspendedMarketplaces}` : itFbSuspendedMarketplaces}</div>
+                  <div className="kpi-value" style={{ color: "#F59E0B" }}>{itFbSuspendedMarketplaces}</div>
                   <div className="kpi-footer">
                     <span>Suspended platform entities</span>
                   </div>
@@ -826,7 +826,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Total Vinted Accounts</span>
                     <div className="kpi-icon-wrapper"><Database size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itTotalVintedAccounts < 10 ? `0${itTotalVintedAccounts}` : itTotalVintedAccounts}</div>
+                  <div className="kpi-value">{itTotalVintedAccounts}</div>
                   <div className="kpi-footer">
                     <span>Active company Vinted pool</span>
                   </div>
@@ -841,7 +841,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Vinted Verified</span>
                     <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itVintedVerified < 10 ? `0${itVintedVerified}` : itVintedVerified}</div>
+                  <div className="kpi-value">{itVintedVerified}</div>
                   <div className="kpi-footer">
                     <span>Cleared operational profiles</span>
                   </div>
@@ -856,7 +856,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Vinted Unverified</span>
                     <div className="kpi-icon-wrapper"><Clock size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itVintedUnverified < 10 ? `0${itVintedUnverified}` : itVintedUnverified}</div>
+                  <div className="kpi-value">{itVintedUnverified}</div>
                   <div className="kpi-footer">
                     <span>Awaiting setup details</span>
                   </div>
@@ -874,7 +874,7 @@ export default async function DashboardPage() {
                     <span className="kpi-title">Vinted Suspended</span>
                     <div className="kpi-icon-wrapper" style={{ color: "#EF4444" }}><MinusCircle size={16} /></div>
                   </div>
-                  <div className="kpi-value" style={{ color: "#EF4444" }}>{itVintedSuspended < 10 ? `0${itVintedSuspended}` : itVintedSuspended}</div>
+                  <div className="kpi-value" style={{ color: "#EF4444" }}>{itVintedSuspended}</div>
                   <div className="kpi-footer">
                     <span>Awaiting IT intervention</span>
                   </div>
@@ -957,7 +957,7 @@ export default async function DashboardPage() {
                         Total IDs
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                        {tl.stats.fbAccounts < 10 ? `0${tl.stats.fbAccounts}` : tl.stats.fbAccounts}
+                        {tl.stats.fbAccounts}
                       </span>
                     </div>
 
@@ -967,7 +967,7 @@ export default async function DashboardPage() {
                         Verified IDs
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#10B981" }}>
-                        {tl.stats.verifiedAccounts < 10 ? `0${tl.stats.verifiedAccounts}` : tl.stats.verifiedAccounts}
+                        {tl.stats.verifiedAccounts}
                       </span>
                     </div>
 
@@ -977,7 +977,7 @@ export default async function DashboardPage() {
                         Unverified IDs
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#F59E0B" }}>
-                        {tl.stats.unverifiedAccounts < 10 ? `0${tl.stats.unverifiedAccounts}` : tl.stats.unverifiedAccounts}
+                        {tl.stats.unverifiedAccounts}
                       </span>
                     </div>
 
@@ -987,7 +987,7 @@ export default async function DashboardPage() {
                         MP Issues
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#EF4444" }}>
-                        {tl.stats.fbMarketplaceIssues < 10 ? `0${tl.stats.fbMarketplaceIssues}` : tl.stats.fbMarketplaceIssues}
+                        {tl.stats.fbMarketplaceIssues}
                       </span>
                     </div>
 
@@ -997,7 +997,7 @@ export default async function DashboardPage() {
                         Identity Issues
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#3B82F6" }}>
-                        {tl.stats.fbIdentityAccounts < 10 ? `0${tl.stats.fbIdentityAccounts}` : tl.stats.fbIdentityAccounts}
+                        {tl.stats.fbIdentityAccounts}
                       </span>
                     </div>
 
@@ -1007,7 +1007,7 @@ export default async function DashboardPage() {
                         Suspended
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#D97706" }}>
-                        {tl.stats.fbSuspendedMarketplaces < 10 ? `0${tl.stats.fbSuspendedMarketplaces}` : tl.stats.fbSuspendedMarketplaces}
+                        {tl.stats.fbSuspendedMarketplaces}
                       </span>
                     </div>
                   </div>
@@ -1044,7 +1044,7 @@ export default async function DashboardPage() {
                         Total Vinted
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                        {tl.stats.vintedAccounts < 10 ? `0${tl.stats.vintedAccounts}` : tl.stats.vintedAccounts}
+                        {tl.stats.vintedAccounts}
                       </span>
                     </div>
 
@@ -1054,7 +1054,7 @@ export default async function DashboardPage() {
                         Verified
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#10B981" }}>
-                        {tl.stats.vintedVerified < 10 ? `0${tl.stats.vintedVerified}` : tl.stats.vintedVerified}
+                        {tl.stats.vintedVerified}
                       </span>
                     </div>
 
@@ -1064,7 +1064,7 @@ export default async function DashboardPage() {
                         Unverified
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#F59E0B" }}>
-                        {tl.stats.vintedUnverified < 10 ? `0${tl.stats.vintedUnverified}` : tl.stats.vintedUnverified}
+                        {tl.stats.vintedUnverified}
                       </span>
                     </div>
 
@@ -1074,7 +1074,7 @@ export default async function DashboardPage() {
                         Suspended
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#EF4444" }}>
-                        {tl.stats.vintedSuspended < 10 ? `0${tl.stats.vintedSuspended}` : tl.stats.vintedSuspended}
+                        {tl.stats.vintedSuspended}
                       </span>
                     </div>
                   </div>
