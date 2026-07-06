@@ -172,7 +172,10 @@ export default async function DashboardPage() {
         vintedAccounts,
         fbMarketplaceIssues,
         fbIdentityAccounts,
-        fbSuspendedMarketplaces
+        fbSuspendedMarketplaces,
+        vintedVerified,
+        vintedUnverified,
+        vintedSuspended
       ] = await Promise.all([
         db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false } }),
@@ -181,13 +184,17 @@ export default async function DashboardPage() {
         db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...vintedWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
-        db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } })
+        db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...vintedWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Suspended", isArchived: false, ...vintedWhere } })
       ]);
 
       return {
         id: tl.id,
         name: tl.name || "Unnamed Team Lead",
         email: tl.email,
+        teamMembersCount: teamMembers.length,
         stats: {
           totalAccounts,
           verifiedAccounts,
@@ -196,7 +203,10 @@ export default async function DashboardPage() {
           vintedAccounts,
           fbMarketplaceIssues,
           fbIdentityAccounts,
-          fbSuspendedMarketplaces
+          fbSuspendedMarketplaces,
+          vintedVerified,
+          vintedUnverified,
+          vintedSuspended
         }
       };
     })
@@ -817,7 +827,7 @@ export default async function DashboardPage() {
           {/* New Section: Team-Wise Operations Breakdown Blocks */}
           <div style={{ marginBottom: "1rem", marginTop: "3rem" }}>
             <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--gold-primary)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              👥 TEAM-WISE OPERATIONS BREAKDOWN
+              TEAM-WISE OPERATIONS BREAKDOWN
             </h2>
           </div>
 
@@ -854,30 +864,29 @@ export default async function DashboardPage() {
                         {tl.name}
                       </span>
                       <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        {tl.email}
+                        {tl.email} • {tl.teamMembersCount} mapped associate{tl.teamMembersCount === 1 ? "" : "s"}
                       </span>
                     </div>
-
-                    <Link href={`/live-team-operations/${tl.id}`} style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      fontSize: "0.78rem",
-                      fontWeight: 700,
-                      background: "rgba(2, 80, 161, 0.08)",
-                      color: "#0250A1",
-                      padding: "0.4rem 0.8rem",
-                      borderRadius: "6px",
-                      border: "1px solid rgba(2, 80, 161, 0.15)",
-                      textDecoration: "none",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease"
-                    }}>
-                      <span>🎛️ Mirror Live Dashboard</span>
-                    </Link>
                   </div>
 
-                  {/* Team Stats Sub-Grid */}
+                  {/* Sub-Row A (Facebook Operations) */}
+                  <div style={{ marginBottom: "0.75rem" }}>
+                    <span style={{
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      color: "#0250A1",
+                      background: "rgba(2, 80, 161, 0.08)",
+                      padding: "0.2rem 0.5rem",
+                      borderRadius: "4px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                      display: "inline-block"
+                    }}>
+                      Facebook Operations
+                    </span>
+                  </div>
+
+                  {/* Facebook Stats Sub-Grid */}
                   <div style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
@@ -889,7 +898,7 @@ export default async function DashboardPage() {
                         Total IDs
                       </span>
                       <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                        {tl.stats.totalAccounts < 10 ? `0${tl.stats.totalAccounts}` : tl.stats.totalAccounts}
+                        {tl.stats.fbAccounts < 10 ? `0${tl.stats.fbAccounts}` : tl.stats.fbAccounts}
                       </span>
                     </div>
 
@@ -942,6 +951,77 @@ export default async function DashboardPage() {
                         {tl.stats.fbSuspendedMarketplaces < 10 ? `0${tl.stats.fbSuspendedMarketplaces}` : tl.stats.fbSuspendedMarketplaces}
                       </span>
                     </div>
+                  </div>
+
+                  {/* Clean Horizontal Splitter */}
+                  <hr style={{ border: 0, borderTop: "1px solid var(--border-dim)", margin: "1.25rem 0" }} />
+
+                  {/* Sub-Row B (Vinted Operations) */}
+                  <div style={{ marginBottom: "0.75rem" }}>
+                    <span style={{
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      color: "#EF4444",
+                      background: "rgba(239, 68, 68, 0.08)",
+                      padding: "0.2rem 0.5rem",
+                      borderRadius: "4px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                      display: "inline-block"
+                    }}>
+                      Vinted Operations
+                    </span>
+                  </div>
+
+                  {/* Vinted Stats Sub-Grid */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                    gap: "1rem"
+                  }}>
+                    {/* Stat 1: Total Vinted */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Total Vinted
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                        {tl.stats.vintedAccounts < 10 ? `0${tl.stats.vintedAccounts}` : tl.stats.vintedAccounts}
+                      </span>
+                    </div>
+
+                    {/* Stat 2: Verified Vinted */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Verified
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#10B981" }}>
+                        {tl.stats.vintedVerified < 10 ? `0${tl.stats.vintedVerified}` : tl.stats.vintedVerified}
+                      </span>
+                    </div>
+
+                    {/* Stat 3: Unverified Vinted */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Unverified
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#F59E0B" }}>
+                        {tl.stats.vintedUnverified < 10 ? `0${tl.stats.vintedUnverified}` : tl.stats.vintedUnverified}
+                      </span>
+                    </div>
+
+                    {/* Stat 4: Suspended Vinted */}
+                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                        Suspended
+                      </span>
+                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#EF4444" }}>
+                        {tl.stats.vintedSuspended < 10 ? `0${tl.stats.vintedSuspended}` : tl.stats.vintedSuspended}
+                      </span>
+                    </div>
+
+                    {/* Empty Slots for perfect alignment */}
+                    <div />
+                    <div />
                   </div>
                 </div>
               ))
