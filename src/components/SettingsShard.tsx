@@ -303,14 +303,16 @@ export default function SettingsShard({
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", width: "100%" }}>
-        <div>
-          <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER DIRECTORY</h2>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-            Manage employee profiles, override passwords, set roles, and control active dashboard access.
-          </p>
-        </div>
+      {/* Title Row */}
+      <div style={{ padding: "0.5rem 1rem 1rem 1.25rem" }}>
+        <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER DIRECTORY</h2>
+        <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+          Manage employee profiles, override passwords, set roles, and control active dashboard access.
+        </p>
+      </div>
 
+      {/* Sheet Container Card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mx-6 mb-6" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
         {/* Search and Metrics Bar */}
         <div style={{
           display: "flex",
@@ -365,16 +367,16 @@ export default function SettingsShard({
           </div>
         </div>
 
-        <div className="table-container-outer" style={{ width: "100%", marginTop: "0.5rem" }}>
-          <table className="premium-table">
+        <div className="table-container-outer" style={{ width: "100%", marginTop: "0.5rem", display: "flex", justifyContent: "center" }}>
+          <table className="premium-table" style={{ width: "100%", maxWidth: "1024px", margin: "0 auto" }}>
             <thead>
               <tr>
-                <th style={{ padding: "1rem 1.25rem" }}>Full Name</th>
-                <th style={{ padding: "1rem 1.25rem" }}>Gmail (Read-Only)</th>
-                <th style={{ padding: "1rem 1.25rem" }}>Password Override</th>
-                <th style={{ padding: "1rem 1.25rem" }}>Role Designation Badge</th>
-                <th style={{ padding: "1rem 1.25rem" }}>Account Status Switch</th>
-                <th style={{ textAlign: "right", padding: "1rem 1.25rem" }}>Actions</th>
+                <th style={{ padding: "0.75rem 1rem", width: "22%" }}>FULL NAME</th>
+                <th style={{ padding: "0.75rem 1rem", width: "25%" }}>GMAIL (READ-ONLY)</th>
+                <th style={{ padding: "0.75rem 1rem", width: "15%" }}>PASSWORD</th>
+                <th style={{ padding: "0.75rem 1rem", width: "16%" }}>DESIGNATION</th>
+                <th style={{ padding: "0.75rem 1rem", width: "10%" }}>STATUS</th>
+                <th style={{ textAlign: "right", padding: "0.75rem 1rem", width: "12%" }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -387,9 +389,9 @@ export default function SettingsShard({
               ) : (
                 filteredUsers.map(u => (
                   <tr key={u.id}>
-                    <td style={{ fontWeight: 600, padding: "1rem 1.25rem" }}>{u.name || "N/A"}</td>
-                    <td style={{ color: "var(--text-secondary)", padding: "1rem 1.25rem" }}>{u.email}</td>
-                    <td style={{ padding: "1rem 1.25rem" }}>
+                    <td style={{ fontWeight: 600, padding: "0.75rem 1rem" }}>{u.name || "N/A"}</td>
+                    <td style={{ color: "var(--text-secondary)", padding: "0.75rem 1rem" }}>{u.email}</td>
+                    <td style={{ padding: "0.75rem 1rem" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--gold-premium)", fontWeight: 600 }}>
                           {u.password ? (visiblePasswords[u.id] ? u.password : "••••••••") : <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>No Password</span>}
@@ -415,7 +417,7 @@ export default function SettingsShard({
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: "1rem 1.25rem" }}>
+                    <td style={{ padding: "0.75rem 1rem" }}>
                       <span 
                         className={`badge ${u.role === "TEAM_LEAD" ? "developer" : "default"}`} 
                         style={{ 
@@ -428,7 +430,7 @@ export default function SettingsShard({
                         {u.role.replace(/_/g, " ")}
                       </span>
                     </td>
-                    <td style={{ padding: "1rem 1.25rem" }}>
+                    <td style={{ padding: "0.75rem 1rem" }}>
                       <div style={{ display: "flex", alignItems: "center" }}>
                         <button
                           type="button"
@@ -463,7 +465,7 @@ export default function SettingsShard({
                         </button>
                       </div>
                     </td>
-                    <td style={{ textAlign: "right", padding: "1rem 1.25rem" }}>
+                    <td style={{ textAlign: "right", padding: "0.75rem 1rem" }}>
                       <button
                         onClick={() => {
                           setEditAccountUserId(u.id);
@@ -487,8 +489,8 @@ export default function SettingsShard({
               )}
             </tbody>
           </table>
+        </div>
       </div>
-    </div>
 
       {/* Edit Team Lead Name Modal */}
       {showEditTLModal && (
