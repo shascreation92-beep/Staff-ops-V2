@@ -22,7 +22,7 @@ export default withAuth(
         return NextResponse.redirect(new URL("/", req.url));
       }
       
-      if (path.startsWith("/settings") && !["SUPER_ADMIN", "COMPANY_OWNER"].includes(token.role)) {
+      if (path.startsWith("/settings") && !["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"].includes(token.role)) {
         return NextResponse.redirect(new URL("/", req.url));
       }
       
