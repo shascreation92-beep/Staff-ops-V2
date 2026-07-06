@@ -283,342 +283,129 @@ export default function SettingsShard({
 
 
   return (
-    <div className="glass-panel" style={{
-      display: "grid",
-      gridTemplateColumns: "240px 1fr",
-      minHeight: "550px",
-      background: "#FFFFFF",
-      border: "1px solid var(--border-dim)",
-      borderRadius: "var(--border-radius-md)",
-      overflow: "hidden",
-      boxShadow: "var(--shadow-premium)"
-    }}>
-      
-      {/* Sidebar options */}
-      <div style={{
-        borderRight: "1px solid var(--border-dim)",
-        display: "flex",
-        flexDirection: "column",
-        background: "#F9FAFB",
-        padding: "1rem",
-        position: "relative",
-        zIndex: 50
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-dim)", padding: "0 0.5rem 1rem 0.5rem" }}>
-          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Configuration Panel
-          </div>
-          <NotificationBell />
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "1rem" }}>
-          <button
-            onClick={() => setActiveTab("RULES")}
-            className={`sidebar-item ${activeTab === "RULES" ? "active" : ""}`}
-            style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-          >
-            <Sliders className="sidebar-icon" size={16} />
-            <span>Rule Engine</span>
-          </button>
-
-          {(isSuperAdmin || isCompanyOwner) && (
-            <button
-              onClick={() => setActiveTab("INVITATIONS")}
-              className={`sidebar-item ${activeTab === "INVITATIONS" ? "active" : ""}`}
-              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-            >
-              <Users className="sidebar-icon" size={16} />
-              <span>Team Invitations</span>
-            </button>
-          )}
-
-          {(isSuperAdmin || isCompanyOwner || currentUser.role === "IT_DEPARTMENT") && (
-            <button
-              onClick={() => setActiveTab("USERS")}
-              className={`sidebar-item ${activeTab === "USERS" ? "active" : ""}`}
-              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-            >
-              <Users className="sidebar-icon" size={16} />
-              <span>User Accounts</span>
-            </button>
-          )}
-
-          {isSuperAdmin && (
-            <button
-              onClick={() => setActiveTab("PLATFORMS")}
-              className={`sidebar-item ${activeTab === "PLATFORMS" ? "active" : ""}`}
-              style={{ border: "none", background: "none", width: "100%", textAlign: "left" }}
-            >
-              <Building className="sidebar-icon" size={16} />
-              <span>Platform Manager</span>
-            </button>
-          )}
-
-        </div>
+    <>
+      <div className="bg-white rounded-2xl p-6 shadow-sm" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", width: "100%" }}>
+      <div>
+        <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER DIRECTORY</h2>
+        <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+          Manage employee profiles, override passwords, set roles, and control active dashboard access.
+        </p>
       </div>
 
-      {/* Content pane */}
-      <div style={{ padding: "2rem", overflowY: "auto" }}>
-        
-        {/* Tab 1: Threshold Rules */}
-        {activeTab === "RULES" && (
-          <RuleForm
-            currentUserRole={currentUser.role}
-            companies={companies}
-            initialValues={{
-              minAds,
-              requireVerification: requireVerification as 'true' | 'false',
-              targetToMaintain,
-              targetToMaintainFB,
-            }}
-            targetCompanyId={isSuperAdmin ? targetCompanyId : undefined}
-          />
-        )}
-
-        {/* Tab 2: Platform Manager */}
-        {activeTab === "PLATFORMS" && isSuperAdmin && (
-          <PlatformManager platforms={platforms} isPending={isPending} />
-        )}
-
-
-        {/* Tab 4: Team Invitations */}
-        {activeTab === "INVITATIONS" && (isSuperAdmin || isCompanyOwner) && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            <div>
-              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>TEAM INVITATION DISPATCHER</h2>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                Add new IT department operators or designate Team Leads by sending email invitations.
-              </p>
-            </div>
-
-            {inviteSuccessMsg && (
-              <div style={{ background: "rgba(34, 197, 94, 0.08)", border: "1px solid rgba(34, 197, 94, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-success)", fontSize: "0.85rem" }}>
-                {inviteSuccessMsg}
-              </div>
-            )}
-
-            {inviteError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
-                {inviteError}
-              </div>
-            )}
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2.5rem" }}>
-              {/* Form */}
-              <form onSubmit={handleSendInvitation} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", maxWidth: "380px" }}>
-                <div className="form-group">
-                  <label className="form-label">Recipient Gmail Address</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. operator@gmail.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="input-gold"
-                    disabled={isPending}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Designation Role</label>
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as any)}
-                    className="select-gold"
-                    disabled={isPending}
-                  >
-                    <option value="TEAM_LEAD">Team Lead</option>
-                    <option value="IT_DEPARTMENT">IT Department Member</option>
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn-gold"
-                  style={{ width: "100%", height: "42px", marginTop: "0.5rem" }}
-                  disabled={isPending}
-                >
-                  {isPending ? "Sending..." : "DISPATCH INVITATION"}
-                </button>
-              </form>
-
-              {/* Invitation List */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <h3 style={{ fontSize: "0.95rem", fontWeight: 700, borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.5rem" }}>
-                  Pending Invitations
-                </h3>
-                <div className="table-container-outer" style={{ maxHeight: "380px", overflowY: "auto" }}>
-                  <table className="premium-table">
-                    <thead>
-                      <tr>
-                        <th>Recipient</th>
-                        <th>Role</th>
-                        <th style={{ textAlign: "right" }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pendingInvitations.length === 0 ? (
-                        <tr>
-                          <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted)", padding: "1.5rem", fontSize: "0.8rem" }}>
-                            No active invitations.
-                          </td>
-                        </tr>
-                      ) : (
-                        pendingInvitations.map(invite => (
-                          <tr key={invite.id}>
-                            <td style={{ fontWeight: 500, fontSize: "0.85rem" }}>{invite.email}</td>
-                            <td>
-                              <span className="badge pending" style={{ fontSize: "0.65rem" }}>
-                                {invite.role.replace("_", " ")}
-                              </span>
-                            </td>
-                            <td style={{ textAlign: "right" }}>
-                              <button
-                                onClick={() => handleCancelInvitation(invite.id, invite.email)}
-                                className="btn-danger"
-                                style={{ padding: "0.25rem 0.5rem", height: "auto" }}
-                                title="Cancel Invite"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 5: User Accounts Directory */}
-        {activeTab === "USERS" && (isSuperAdmin || isCompanyOwner || currentUser.role === "IT_DEPARTMENT") && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            <div>
-              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER DIRECTORY</h2>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                Manage employee profiles, override passwords, set roles, and control active dashboard access.
-              </p>
-            </div>
-
-            <div className="table-container-outer" style={{ width: "100%", marginTop: "1rem" }}>
-              <table className="premium-table">
-                <thead>
-                  <tr>
-                    <th>Full Name</th>
-                    <th>Gmail (Read-Only)</th>
-                    <th>Password Override</th>
-                    <th>Role Designation Badge</th>
-                    <th>Account Status Switch</th>
-                    <th style={{ textAlign: "right" }}>Actions</th>
+      <div className="table-container-outer" style={{ width: "100%", marginTop: "1rem" }}>
+        <table className="premium-table">
+          <thead>
+            <tr>
+              <th>Full Name</th>
+              <th>Gmail (Read-Only)</th>
+              <th>Password Override</th>
+              <th>Role Designation Badge</th>
+              <th>Account Status Switch</th>
+              <th style={{ textAlign: "right" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE").length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
+                  No Team Leads or Sales Associates registered in the system.
+                </td>
+              </tr>
+            ) : (
+              users
+                .filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE")
+                .map(u => (
+                  <tr key={u.id}>
+                    <td style={{ fontWeight: 600 }}>{u.name || "N/A"}</td>
+                    <td style={{ color: "var(--text-secondary)" }}>{u.email}</td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--gold-premium)", fontWeight: 600 }}>
+                          {u.password ? (visiblePasswords[u.id] ? u.password : "••••••••") : <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>No Password</span>}
+                        </span>
+                        {u.password && (
+                          <button
+                            type="button"
+                            onClick={() => togglePasswordVisibility(u.id)}
+                            className="btn-glass"
+                            style={{ padding: "0.15rem 0.4rem", height: "auto", fontSize: "0.65rem", display: "inline-flex", alignItems: "center" }}
+                          >
+                            {visiblePasswords[u.id] ? "Hide" : "Show"}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span 
+                        className={`badge ${u.role === "TEAM_LEAD" ? "developer" : "default"}`} 
+                        style={{ 
+                          fontSize: "0.7rem",
+                          background: u.role === "TEAM_LEAD" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                          color: u.role === "TEAM_LEAD" ? "#10B981" : "#3B82F6",
+                          border: u.role === "TEAM_LEAD" ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(59, 130, 246, 0.2)"
+                        }}
+                      >
+                        {u.role.replace(/_/g, " ")}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <button
+                          onClick={() => handleToggleStatus(u.id, u.status)}
+                          disabled={isPending}
+                          style={{
+                            background: u.status === "APPROVED" ? "#10B981" : "#EF4444",
+                            color: "#FFFFFF",
+                            border: "none",
+                            borderRadius: "12px",
+                            padding: "0.25rem 0.75rem",
+                            fontSize: "0.7rem",
+                            fontWeight: 700,
+                            cursor: isPending ? "not-allowed" : "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <span style={{
+                            width: "6px",
+                            height: "6px",
+                            borderRadius: "50%",
+                            background: "#FFFFFF",
+                            display: "inline-block"
+                          }} />
+                          <span>{u.status === "APPROVED" ? "Active" : (u.status === "PENDING" ? "Pending" : "Disabled")}</span>
+                        </button>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <button
+                        onClick={() => {
+                          setEditAccountUserId(u.id);
+                          setEditAccountName(u.name || "");
+                          setEditAccountPassword(u.password || "");
+                          setEditAccountRole(u.role === "TEAM_LEAD" ? "TEAM_LEAD" : "SALES_ASSOCIATE");
+                          setEditAccountStatus(u.status === "BLOCKED" ? "BLOCKED" : "APPROVED");
+                          setEditAccountTeamLeadId(u.teamLeadId);
+                          setEditAccountError(null);
+                          setShowEditAccountModal(true);
+                        }}
+                        className="btn-glass"
+                        style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                      >
+                        <Edit2 size={12} />
+                        <span>Edit Account</span>
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE").length === 0 ? (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
-                        No Team Leads or Sales Associates registered in the system.
-                      </td>
-                    </tr>
-                  ) : (
-                    users
-                      .filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE")
-                      .map(u => (
-                        <tr key={u.id}>
-                          <td style={{ fontWeight: 600 }}>{u.name || "N/A"}</td>
-                          <td style={{ color: "var(--text-secondary)" }}>{u.email}</td>
-                          <td>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--gold-premium)", fontWeight: 600 }}>
-                                {u.password ? (visiblePasswords[u.id] ? u.password : "••••••••") : <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>No Password</span>}
-                              </span>
-                              {u.password && (
-                                <button
-                                  type="button"
-                                  onClick={() => togglePasswordVisibility(u.id)}
-                                  className="btn-glass"
-                                  style={{ padding: "0.15rem 0.4rem", height: "auto", fontSize: "0.65rem", display: "inline-flex", alignItems: "center" }}
-                                >
-                                  {visiblePasswords[u.id] ? "Hide" : "Show"}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <span 
-                              className={`badge ${u.role === "TEAM_LEAD" ? "developer" : "default"}`} 
-                              style={{ 
-                                fontSize: "0.7rem",
-                                background: u.role === "TEAM_LEAD" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                                color: u.role === "TEAM_LEAD" ? "#10B981" : "#3B82F6",
-                                border: u.role === "TEAM_LEAD" ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(59, 130, 246, 0.2)"
-                              }}
-                            >
-                              {u.role.replace(/_/g, " ")}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <button
-                                onClick={() => handleToggleStatus(u.id, u.status)}
-                                disabled={isPending}
-                                style={{
-                                  background: u.status === "APPROVED" ? "#10B981" : "#EF4444",
-                                  color: "#FFFFFF",
-                                  border: "none",
-                                  borderRadius: "12px",
-                                  padding: "0.25rem 0.75rem",
-                                  fontSize: "0.7rem",
-                                  fontWeight: 700,
-                                  cursor: isPending ? "not-allowed" : "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "0.25rem",
-                                  transition: "all 0.2s ease"
-                                }}
-                              >
-                                <span style={{
-                                  width: "6px",
-                                  height: "6px",
-                                  borderRadius: "50%",
-                                  background: "#FFFFFF",
-                                  display: "inline-block"
-                                }} />
-                                <span>{u.status === "APPROVED" ? "Active" : (u.status === "PENDING" ? "Pending" : "Disabled")}</span>
-                              </button>
-                            </div>
-                          </td>
-                          <td style={{ textAlign: "right" }}>
-                            <button
-                              onClick={() => {
-                                setEditAccountUserId(u.id);
-                                setEditAccountName(u.name || "");
-                                setEditAccountPassword(u.password || "");
-                                setEditAccountRole(u.role === "TEAM_LEAD" ? "TEAM_LEAD" : "SALES_ASSOCIATE");
-                                setEditAccountStatus(u.status === "BLOCKED" ? "BLOCKED" : "APPROVED");
-                                setEditAccountTeamLeadId(u.teamLeadId);
-                                setEditAccountError(null);
-                                setShowEditAccountModal(true);
-                              }}
-                              className="btn-glass"
-                              style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
-                            >
-                              <Edit2 size={12} />
-                              <span>Edit Account</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
+                ))
+            )}
+          </tbody>
+        </table>
       </div>
+    </div>
+  );
 
       {/* Edit Team Lead Name Modal */}
       {showEditTLModal && (
@@ -998,7 +785,6 @@ export default function SettingsShard({
           </div>
         </div>
       )}
-
-    </div>
+    </>
   );
 }
