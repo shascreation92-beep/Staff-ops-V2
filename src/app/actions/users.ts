@@ -883,3 +883,134 @@ export async function getCompanyTeamLeadsAction() {
 
   return { success: true, teamLeads };
 }
+
+export async function toggleUserStatusAction(userId: string, newStatus: "APPROVED" | "BLOCKED") {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+
+  const targetUser = await db.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found.");
+  }
+
+  if (currentUser.role !== "SUPER_ADMIN" && targetUser.companyId !== currentUser.companyId) {
+    throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
+  }
+
+  try {
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        status: newStatus,
+        updatedAt: new Date()
+      }
+    });
+
+    const emp = await db.employee.findFirst({
+      where: { userId }
+    });
+
+    if (emp) {
+      await db.employee.update({
+        where: { id: emp.id },
+        data: {
+          status: newStatus === "APPROVED" ? "ACTIVE" : "INACTIVE",
+          updatedAt: new Date()
+        }
+      });
+    }
+
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "TOGGLE_USER_STATUS",
+      entity: "user",
+      entityId: userId,
+      newValue: newStatus
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/team-leads");
+    revalidatePath("/employees");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to toggle user status.");
+  }
+}
+
+export async function editUserAccountAction(formData: {
+  userId: string;
+  name: string;
+  password?: string;
+  status: "APPROVED" | "BLOCKED";
+  role: "TEAM_LEAD" | "SALES_ASSOCIATE";
+  teamLeadId?: string | null;
+}) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+
+  const targetUser = await db.user.findUnique({
+    where: { id: formData.userId }
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found.");
+  }
+
+  if (currentUser.role !== "SUPER_ADMIN" && targetUser.companyId !== currentUser.companyId) {
+    throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
+  }
+
+  try {
+    const oldName = targetUser.name || "";
+
+    await db.user.update({
+      where: { id: formData.userId },
+      data: {
+        name: formData.name,
+        password: formData.password || null,
+        status: formData.status,
+        role: formData.role,
+        teamLeadId: formData.role === "SALES_ASSOCIATE" ? formData.teamLeadId : null,
+        updatedAt: new Date()
+      }
+    });
+
+    const emp = await db.employee.findFirst({
+      where: { userId: formData.userId }
+    });
+
+    if (emp) {
+      await db.employee.update({
+        where: { id: emp.id },
+        data: {
+          fullName: formData.name,
+          status: formData.status === "APPROVED" ? "ACTIVE" : "INACTIVE",
+          updatedAt: new Date()
+        }
+      });
+    }
+
+    await logAction({
+      userId: currentUser.id,
+      userEmail: currentUser.email || "",
+      userRole: currentUser.role,
+      action: "EDIT_USER_ACCOUNT",
+      entity: "user",
+      entityId: formData.userId,
+      oldValue: JSON.stringify({ name: oldName, status: targetUser.status }),
+      newValue: JSON.stringify({ name: formData.name, status: formData.status })
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/team-leads");
+    revalidatePath("/employees");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update user account.");
+  }
+}

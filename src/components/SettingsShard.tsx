@@ -11,7 +11,9 @@ import {
   declineInvitationAction,
   updateTeamLeadNameAction,
   approveSalesAssociateAction,
-  adminResetUserPasswordAction
+  adminResetUserPasswordAction,
+  toggleUserStatusAction,
+  editUserAccountAction
 } from "@/app/actions/users";
 import { 
   Sliders, 
@@ -214,6 +216,58 @@ export default function SettingsShard({
         }
       } catch (err: any) {
         setResetPassError(err.message || "Failed to reset password.");
+      }
+    });
+  };
+
+  // Edit Account State
+  const [showEditAccountModal, setShowEditAccountModal] = useState(false);
+  const [editAccountUserId, setEditAccountUserId] = useState("");
+  const [editAccountName, setEditAccountName] = useState("");
+  const [editAccountPassword, setEditAccountPassword] = useState("");
+  const [editAccountRole, setEditAccountRole] = useState<"TEAM_LEAD" | "SALES_ASSOCIATE">("SALES_ASSOCIATE");
+  const [editAccountStatus, setEditAccountStatus] = useState<"APPROVED" | "BLOCKED">("APPROVED");
+  const [editAccountTeamLeadId, setEditAccountTeamLeadId] = useState<string | null>(null);
+  const [editAccountError, setEditAccountError] = useState<string | null>(null);
+
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+
+  const togglePasswordVisibility = (userId: string) => {
+    setVisiblePasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
+  };
+
+  const handleToggleStatus = (userId: string, currentStatus: string) => {
+    const newStatus = currentStatus === "APPROVED" ? "BLOCKED" : "APPROVED";
+    startTransition(async () => {
+      try {
+        await toggleUserStatusAction(userId, newStatus);
+      } catch (err: any) {
+        alert(err.message || "Failed to toggle status.");
+      }
+    });
+  };
+
+  const handleEditAccountSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditAccountError(null);
+    startTransition(async () => {
+      try {
+        const res = await editUserAccountAction({
+          userId: editAccountUserId,
+          name: editAccountName.trim(),
+          password: editAccountPassword.trim() || undefined,
+          status: editAccountStatus,
+          role: editAccountRole,
+          teamLeadId: editAccountRole === "SALES_ASSOCIATE" ? editAccountTeamLeadId : null
+        });
+        if (res.success) {
+          setShowEditAccountModal(false);
+          setEditAccountUserId("");
+          setEditAccountName("");
+          setEditAccountPassword("");
+        }
+      } catch (err: any) {
+        setEditAccountError(err.message || "Failed to update user account.");
       }
     });
   };
@@ -441,11 +495,11 @@ export default function SettingsShard({
 
         {/* Tab 5: User Accounts Directory */}
         {activeTab === "USERS" && (isSuperAdmin || isCompanyOwner || currentUser.role === "IT_DEPARTMENT") && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          <div className="bg-white rounded-2xl p-6 shadow-sm" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             <div>
-              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER ACCOUNTS DIRECTORY</h2>
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER DIRECTORY</h2>
               <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                Monitor system operators, view plain-text active passwords, and manage profiles.
+                Manage employee profiles, override passwords, set roles, and control active dashboard access.
               </p>
             </div>
 
@@ -453,107 +507,110 @@ export default function SettingsShard({
               <table className="premium-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Email Address</th>
-                    <th>Designation Role</th>
-                    <th>Status</th>
-                    <th>Active Password</th>
-                    <th>Mapped Team Lead</th>
+                    <th>Full Name</th>
+                    <th>Gmail (Read-Only)</th>
+                    <th>Password Override</th>
+                    <th>Role Designation Badge</th>
+                    <th>Account Status Switch</th>
                     <th style={{ textAlign: "right" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.length === 0 ? (
+                  {users.filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE").length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
-                        No user accounts cataloged.
+                      <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
+                        No Team Leads or Sales Associates registered in the system.
                       </td>
                     </tr>
                   ) : (
-                    users.map(u => (
-                      <tr key={u.id}>
-                        <td style={{ fontWeight: 600 }}>{u.name || "N/A"}</td>
-                        <td>{u.email}</td>
-                        <td>
-                          <span className="badge developer" style={{ fontSize: "0.7rem" }}>
-                            {u.role.replace(/_/g, " ")}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge ${u.status === "APPROVED" ? "verified" : "pending"}`} style={{ fontSize: "0.7rem" }}>
-                            {u.status}
-                          </span>
-                        </td>
-                        <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--gold-premium)" }}>
-                          {u.password || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>No Password Set</span>}
-                        </td>
-                        <td>
-                          {u.role === "SALES_ASSOCIATE" ? (
-                            u.user?.name || <span style={{ color: "var(--text-muted)" }}>—</span>
-                          ) : (
-                            <span style={{ color: "var(--text-muted)" }}>N/A</span>
-                          )}
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", alignItems: "center" }}>
-                            {u.status === "PENDING" && u.role === "SALES_ASSOCIATE" && (
+                    users
+                      .filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE")
+                      .map(u => (
+                        <tr key={u.id}>
+                          <td style={{ fontWeight: 600 }}>{u.name || "N/A"}</td>
+                          <td style={{ color: "var(--text-secondary)" }}>{u.email}</td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--gold-premium)", fontWeight: 600 }}>
+                                {u.password ? (visiblePasswords[u.id] ? u.password : "••••••••") : <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>No Password</span>}
+                              </span>
+                              {u.password && (
+                                <button
+                                  type="button"
+                                  onClick={() => togglePasswordVisibility(u.id)}
+                                  className="btn-glass"
+                                  style={{ padding: "0.15rem 0.4rem", height: "auto", fontSize: "0.65rem", display: "inline-flex", alignItems: "center" }}
+                                >
+                                  {visiblePasswords[u.id] ? "Hide" : "Show"}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <span 
+                              className={`badge ${u.role === "TEAM_LEAD" ? "developer" : "default"}`} 
+                              style={{ 
+                                fontSize: "0.7rem",
+                                background: u.role === "TEAM_LEAD" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                                color: u.role === "TEAM_LEAD" ? "#10B981" : "#3B82F6",
+                                border: u.role === "TEAM_LEAD" ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(59, 130, 246, 0.2)"
+                              }}
+                            >
+                              {u.role.replace(/_/g, " ")}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                               <button
-                                onClick={() => {
-                                  setApproveUserId(u.id);
-                                  setApproveUserName(u.name || "");
-                                  setApproveEmployeeId("");
-                                  setApprovePassword("");
-                                  setApproveError(null);
-                                  setShowApproveModal(true);
+                                onClick={() => handleToggleStatus(u.id, u.status)}
+                                disabled={isPending}
+                                style={{
+                                  background: u.status === "APPROVED" ? "#10B981" : "#EF4444",
+                                  color: "#FFFFFF",
+                                  border: "none",
+                                  borderRadius: "12px",
+                                  padding: "0.25rem 0.75rem",
+                                  fontSize: "0.7rem",
+                                  fontWeight: 700,
+                                  cursor: isPending ? "not-allowed" : "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                  transition: "all 0.2s ease"
                                 }}
-                                className="btn-gold"
-                                style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
-                                title="Approve & Onboard Associate"
                               >
-                                <Check size={12} />
-                                <span>Approve</span>
+                                <span style={{
+                                  width: "6px",
+                                  height: "6px",
+                                  borderRadius: "50%",
+                                  background: "#FFFFFF",
+                                  display: "inline-block"
+                                }} />
+                                <span>{u.status === "APPROVED" ? "Active" : (u.status === "PENDING" ? "Pending" : "Disabled")}</span>
                               </button>
-                            )}
-
-                            {u.role === "TEAM_LEAD" && (
-                              <button
-                                onClick={() => {
-                                  setEditTLUserId(u.id);
-                                  setEditTLName(u.name || "");
-                                  setEditTLError(null);
-                                  setShowEditTLModal(true);
-                                }}
-                                className="btn-glass"
-                                style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
-                                title="Edit Team Lead Name"
-                              >
-                                <Edit2 size={12} />
-                                <span>Edit Profile</span>
-                              </button>
-                            )}
-
-                            {(u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE") && (
-                              <button
-                                onClick={() => {
-                                  setResetPassUserId(u.id);
-                                  setResetPassUserName(u.name || "");
-                                  setResetPassUserEmail(u.email);
-                                  setResetPassNewPassword("");
-                                  setResetPassError(null);
-                                  setShowResetPassModal(true);
-                                }}
-                                className="btn-glass"
-                                style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
-                                title="Reset User Password"
-                              >
-                                <Key size={12} />
-                                <span>Password</span>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                            </div>
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            <button
+                              onClick={() => {
+                                setEditAccountUserId(u.id);
+                                setEditAccountName(u.name || "");
+                                setEditAccountPassword(u.password || "");
+                                setEditAccountRole(u.role === "TEAM_LEAD" ? "TEAM_LEAD" : "SALES_ASSOCIATE");
+                                setEditAccountStatus(u.status === "BLOCKED" ? "BLOCKED" : "APPROVED");
+                                setEditAccountTeamLeadId(u.teamLeadId);
+                                setEditAccountError(null);
+                                setShowEditAccountModal(true);
+                              }}
+                              className="btn-glass"
+                              style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                            >
+                              <Edit2 size={12} />
+                              <span>Edit Account</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))
                   )}
                 </tbody>
               </table>
@@ -799,6 +856,142 @@ export default function SettingsShard({
                   disabled={isPending}
                 >
                   {isPending ? "Resetting..." : "Reset Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Account Modal */}
+      {showEditAccountModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(15, 23, 42, 0.3)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "460px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
+          }}>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>EDIT EMPLOYEE ACCOUNT</h2>
+
+            {editAccountError && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {editAccountError}
+              </div>
+            )}
+
+            <form onSubmit={handleEditAccountSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter employee full name"
+                  value={editAccountName}
+                  onChange={(e) => setEditAccountName(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Password Override</label>
+                <input
+                  type="text"
+                  placeholder="Enter new password override"
+                  value={editAccountPassword}
+                  onChange={(e) => setEditAccountPassword(e.target.value)}
+                  className="input-gold"
+                  disabled={isPending}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Role Designation</label>
+                <select
+                  value={editAccountRole}
+                  onChange={(e) => setEditAccountRole(e.target.value as any)}
+                  className="select-gold"
+                  disabled={isPending}
+                >
+                  <option value="SALES_ASSOCIATE">Sales Associate</option>
+                  <option value="TEAM_LEAD">Team Lead</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Account Status</label>
+                <select
+                  value={editAccountStatus}
+                  onChange={(e) => setEditAccountStatus(e.target.value as any)}
+                  className="select-gold"
+                  disabled={isPending}
+                >
+                  <option value="APPROVED">Active (Approved)</option>
+                  <option value="BLOCKED">Disabled (Blocked)</option>
+                </select>
+              </div>
+
+              {editAccountRole === "SALES_ASSOCIATE" && (
+                <div className="form-group">
+                  <label className="form-label">Assign Team Lead</label>
+                  <select
+                    value={editAccountTeamLeadId || ""}
+                    onChange={(e) => setEditAccountTeamLeadId(e.target.value ? e.target.value : null)}
+                    className="select-gold"
+                    disabled={isPending}
+                  >
+                    <option value="">No Mapped Team Lead</option>
+                    {users
+                      .filter(u => u.role === "TEAM_LEAD" && u.status === "APPROVED")
+                      .map(tl => (
+                        <option key={tl.id} value={tl.id}>
+                          {tl.name || tl.email}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditAccountModal(false);
+                    setEditAccountUserId("");
+                    setEditAccountName("");
+                    setEditAccountPassword("");
+                  }}
+                  className="btn-glass"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
