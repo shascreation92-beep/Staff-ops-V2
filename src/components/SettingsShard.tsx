@@ -27,7 +27,10 @@ import {
   AlertCircle,
   Users,
   Edit2,
-  Key
+  Key,
+  Eye,
+  EyeOff,
+  Search
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
@@ -232,6 +235,18 @@ export default function SettingsShard({
 
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const staffUsers = users.filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE");
+  const filteredUsers = staffUsers.filter(u => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (u.name || "").toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q)
+    );
+  });
+
   const togglePasswordVisibility = (userId: string) => {
     setVisiblePasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
   };
@@ -282,43 +297,99 @@ export default function SettingsShard({
 
 
 
+  const totalStaff = filteredUsers.length;
+  const activeStaff = filteredUsers.filter(u => u.status === "APPROVED").length;
+  const disabledStaff = filteredUsers.filter(u => u.status === "BLOCKED" || u.status === "REJECTED").length;
+
   return (
     <>
-      <div className="bg-white rounded-2xl p-6 shadow-sm" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", width: "100%" }}>
-      <div>
-        <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER DIRECTORY</h2>
-        <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-          Manage employee profiles, override passwords, set roles, and control active dashboard access.
-        </p>
-      </div>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", width: "100%" }}>
+        <div>
+          <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER DIRECTORY</h2>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+            Manage employee profiles, override passwords, set roles, and control active dashboard access.
+          </p>
+        </div>
 
-      <div className="table-container-outer" style={{ width: "100%", marginTop: "1rem" }}>
-        <table className="premium-table">
-          <thead>
-            <tr>
-              <th>Full Name</th>
-              <th>Gmail (Read-Only)</th>
-              <th>Password Override</th>
-              <th>Role Designation Badge</th>
-              <th>Account Status Switch</th>
-              <th style={{ textAlign: "right" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE").length === 0 ? (
+        {/* Search and Metrics Bar */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1rem",
+          flexWrap: "wrap",
+          background: "#F9FAFB",
+          border: "1px solid var(--border-dim)",
+          borderRadius: "12px",
+          padding: "0.75rem 1rem",
+          marginTop: "0.5rem"
+        }}>
+          {/* Search Input Field */}
+          <div style={{ position: "relative", flex: 1, maxWidth: "360px" }}>
+            <Search 
+              size={16} 
+              style={{ 
+                position: "absolute", 
+                left: "0.75rem", 
+                top: "50%", 
+                transform: "translateY(-50%)", 
+                color: "var(--text-muted)" 
+              }} 
+            />
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-gold"
+              style={{
+                paddingLeft: "2.25rem",
+                height: "38px",
+                fontSize: "0.85rem",
+                width: "100%"
+              }}
+            />
+          </div>
+
+          {/* Counter Metrics Pills */}
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <span className="badge" style={{ background: "rgba(100, 116, 139, 0.08)", color: "var(--text-primary)", border: "1px solid var(--border-dim)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+              Total Staff: {totalStaff}
+            </span>
+            <span className="badge" style={{ background: "rgba(16, 185, 129, 0.08)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.15)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+              Active: {activeStaff}
+            </span>
+            <span className="badge" style={{ background: "rgba(239, 68, 68, 0.08)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.15)", padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 600 }}>
+              Disabled: {disabledStaff}
+            </span>
+          </div>
+        </div>
+
+        <div className="table-container-outer" style={{ width: "100%", marginTop: "0.5rem" }}>
+          <table className="premium-table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "2rem" }}>
-                  No Team Leads or Sales Associates registered in the system.
-                </td>
+                <th style={{ padding: "1rem 1.25rem" }}>Full Name</th>
+                <th style={{ padding: "1rem 1.25rem" }}>Gmail (Read-Only)</th>
+                <th style={{ padding: "1rem 1.25rem" }}>Password Override</th>
+                <th style={{ padding: "1rem 1.25rem" }}>Role Designation Badge</th>
+                <th style={{ padding: "1rem 1.25rem" }}>Account Status Switch</th>
+                <th style={{ textAlign: "right", padding: "1rem 1.25rem" }}>Actions</th>
               </tr>
-            ) : (
-              users
-                .filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE")
-                .map(u => (
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "3rem" }}>
+                    No matching Team Leads or Sales Associates found in the system.
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map(u => (
                   <tr key={u.id}>
-                    <td style={{ fontWeight: 600 }}>{u.name || "N/A"}</td>
-                    <td style={{ color: "var(--text-secondary)" }}>{u.email}</td>
-                    <td>
+                    <td style={{ fontWeight: 600, padding: "1rem 1.25rem" }}>{u.name || "N/A"}</td>
+                    <td style={{ color: "var(--text-secondary)", padding: "1rem 1.25rem" }}>{u.email}</td>
+                    <td style={{ padding: "1rem 1.25rem" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--gold-premium)", fontWeight: 600 }}>
                           {u.password ? (visiblePasswords[u.id] ? u.password : "••••••••") : <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>No Password</span>}
@@ -327,15 +398,24 @@ export default function SettingsShard({
                           <button
                             type="button"
                             onClick={() => togglePasswordVisibility(u.id)}
-                            className="btn-glass"
-                            style={{ padding: "0.15rem 0.4rem", height: "auto", fontSize: "0.65rem", display: "inline-flex", alignItems: "center" }}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              color: "var(--text-muted)",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "0.25rem",
+                              transition: "color 0.2s ease"
+                            }}
+                            title={visiblePasswords[u.id] ? "Hide Password" : "Show Password"}
                           >
-                            {visiblePasswords[u.id] ? "Hide" : "Show"}
+                            {visiblePasswords[u.id] ? <EyeOff size={16} /> : <Eye size={16} />}
                           </button>
                         )}
                       </div>
                     </td>
-                    <td>
+                    <td style={{ padding: "1rem 1.25rem" }}>
                       <span 
                         className={`badge ${u.role === "TEAM_LEAD" ? "developer" : "default"}`} 
                         style={{ 
@@ -348,38 +428,42 @@ export default function SettingsShard({
                         {u.role.replace(/_/g, " ")}
                       </span>
                     </td>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <td style={{ padding: "1rem 1.25rem" }}>
+                      <div style={{ display: "flex", alignItems: "center" }}>
                         <button
+                          type="button"
                           onClick={() => handleToggleStatus(u.id, u.status)}
                           disabled={isPending}
                           style={{
-                            background: u.status === "APPROVED" ? "#10B981" : "#EF4444",
-                            color: "#FFFFFF",
-                            border: "none",
+                            position: "relative",
+                            width: "44px",
+                            height: "24px",
                             borderRadius: "12px",
-                            padding: "0.25rem 0.75rem",
-                            fontSize: "0.7rem",
-                            fontWeight: 700,
+                            background: u.status === "APPROVED" ? "#10B981" : "#D1D5DB",
+                            border: "none",
                             cursor: isPending ? "not-allowed" : "pointer",
+                            transition: "background-color 0.2s ease",
+                            outline: "none",
+                            padding: 0,
                             display: "inline-flex",
-                            alignItems: "center",
-                            gap: "0.25rem",
-                            transition: "all 0.2s ease"
+                            alignItems: "center"
                           }}
+                          title={u.status === "APPROVED" ? "Toggle to Disable" : "Toggle to Activate"}
                         >
                           <span style={{
-                            width: "6px",
-                            height: "6px",
+                            position: "absolute",
+                            left: u.status === "APPROVED" ? "22px" : "2px",
+                            width: "20px",
+                            height: "20px",
                             borderRadius: "50%",
                             background: "#FFFFFF",
-                            display: "inline-block"
+                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.15)",
+                            transition: "left 0.2s ease"
                           }} />
-                          <span>{u.status === "APPROVED" ? "Active" : (u.status === "PENDING" ? "Pending" : "Disabled")}</span>
                         </button>
                       </div>
                     </td>
-                    <td style={{ textAlign: "right" }}>
+                    <td style={{ textAlign: "right", padding: "1rem 1.25rem" }}>
                       <button
                         onClick={() => {
                           setEditAccountUserId(u.id);
@@ -400,12 +484,11 @@ export default function SettingsShard({
                     </td>
                   </tr>
                 ))
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
       </div>
     </div>
-  );
 
       {/* Edit Team Lead Name Modal */}
       {showEditTLModal && (
