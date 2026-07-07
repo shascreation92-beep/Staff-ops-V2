@@ -385,13 +385,15 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
         }}>
           <div className="glass-panel" style={{
             width: "100%",
-            maxWidth: "480px",
+            maxWidth: "768px",
             padding: "2rem",
             border: "1px solid var(--border-gold)",
+            background: "#FFFFFF",
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",
-            position: "relative"
+            position: "relative",
+            zIndex: 50
           }}>
             {/* Close button */}
             <button
@@ -434,78 +436,87 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
               </div>
             )}
 
-            <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div className="form-group">
-                <label className="form-label">Company / Tenant Shard</label>
-                <select
-                  value={onboardCompanyId}
-                  onChange={(e) => setOnboardCompanyId(e.target.value)}
-                  className="select-gold"
-                  disabled={isPending}
-                  required
-                >
-                  <option value="" disabled>Select Company</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+            <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {/* Landscape Two-Column Form Grid Layout */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "1.5rem" }}>
+                {/* Left Column */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div className="form-group">
+                    <label className="form-label">Company / Tenant Shard</label>
+                    <select
+                      value={onboardCompanyId}
+                      onChange={(e) => setOnboardCompanyId(e.target.value)}
+                      className="select-gold"
+                      disabled={isPending}
+                      required
+                    >
+                      <option value="" disabled>Select Company</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Role Designation</label>
+                    <select
+                      value={onboardRole}
+                      onChange={(e) => setOnboardRole(e.target.value as any)}
+                      className="select-gold"
+                      disabled={isPending}
+                      required
+                    >
+                      <option value="TEAM_LEAD">TEAM LEAD</option>
+                      <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
+                      <option value="IT_DEPARTMENT">IT DEPARTMENT</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div className="form-group">
+                    <label className="form-label">Employee ID (Globally Unique)</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. TL-001"
+                      value={onboardEmployeeId}
+                      onChange={(e) => setOnboardEmployeeId(e.target.value)}
+                      className="input-gold"
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Jane Lead"
+                      value={onboardFullName}
+                      onChange={(e) => setOnboardFullName(e.target.value)}
+                      className="input-gold"
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. jane@company.com"
+                      value={onboardEmail}
+                      onChange={(e) => setOnboardEmail(e.target.value)}
+                      className="input-gold"
+                      disabled={isPending}
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Explicit Role Designation Dropdown Picker */}
-              <div className="form-group">
-                <label className="form-label">Role Designation</label>
-                <select
-                  value={onboardRole}
-                  onChange={(e) => setOnboardRole(e.target.value as any)}
-                  className="select-gold"
-                  disabled={isPending}
-                  required
-                >
-                  <option value="TEAM_LEAD">TEAM LEAD</option>
-                  <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
-                  <option value="IT_DEPARTMENT">IT DEPARTMENT</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Employee ID (Globally Unique)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. TL-001"
-                  value={onboardEmployeeId}
-                  onChange={(e) => setOnboardEmployeeId(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Jane Lead"
-                  value={onboardFullName}
-                  onChange={(e) => setOnboardFullName(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. jane@company.com"
-                  value={onboardEmail}
-                  onChange={(e) => setOnboardEmail(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
+              {/* Initial Password (Full Width) */}
               <div className="form-group">
                 <label className="form-label">Initial Password</label>
                 <input
@@ -519,12 +530,20 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+              {/* Buttons (Bottom-Right corner with border-t) */}
+              <div style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "1rem",
+                paddingTop: "1rem",
+                marginTop: "0.5rem",
+                borderTop: "1px solid rgba(229, 231, 235, 0.5)"
+              }}>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
                   className="btn-glass"
-                  style={{ flex: 1 }}
+                  style={{ minWidth: "110px" }}
                   disabled={isPending}
                 >
                   Cancel
@@ -532,7 +551,7 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
                 <button
                   type="submit"
                   className="btn-gold"
-                  style={{ flex: 1 }}
+                  style={{ minWidth: "130px" }}
                   disabled={isPending}
                 >
                   {isPending ? "Onboarding..." : "Onboard User"}

@@ -22,9 +22,10 @@ interface ITManagementDirectoryProps {
   itPersonnel: ITMember[];
   companies: { id: string; name: string }[];
   currentUserRole: string;
+  currentUserCompanyId: string | null;
 }
 
-export default function ITManagementDirectory({ itPersonnel, companies, currentUserRole }: ITManagementDirectoryProps) {
+export default function ITManagementDirectory({ itPersonnel, companies, currentUserRole, currentUserCompanyId }: ITManagementDirectoryProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -41,9 +42,9 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
   const [showAddModal, setShowAddModal] = useState(false);
   const [onboardFullName, setOnboardFullName] = useState("");
   const [onboardEmail, setOnboardEmail] = useState("");
-  const [onboardEmployeeId, setOnboardEmployeeId] = useState("");
+  const [onboardEmployeeId, setOnboardEmployeeId] = useState("IT-");
   const [onboardPassword, setOnboardPassword] = useState("");
-  const [onboardCompanyId, setOnboardCompanyId] = useState(companies[0]?.id || "");
+  const [onboardCompanyId, setOnboardCompanyId] = useState(currentUserCompanyId || companies[0]?.id || "");
   const [onboardRole, setOnboardRole] = useState<"TEAM_LEAD" | "SALES_ASSOCIATE" | "IT_DEPARTMENT">("IT_DEPARTMENT");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -258,9 +259,9 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
               setShowAddModal(true);
               setOnboardFullName("");
               setOnboardEmail("");
-              setOnboardEmployeeId("");
+              setOnboardEmployeeId("IT-");
               setOnboardPassword("");
-              setOnboardCompanyId(companies[0]?.id || "");
+              setOnboardCompanyId(currentUserCompanyId || companies[0]?.id || "");
               setOnboardRole("IT_DEPARTMENT");
               setErrorMsg(null);
             }}
@@ -552,14 +553,15 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
         }}>
           <div className="glass-panel" style={{
             width: "100%",
-            maxWidth: "480px",
+            maxWidth: "768px",
             padding: "2rem",
             border: "1px solid var(--border-gold)",
             background: "#FFFFFF",
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",
-            position: "relative"
+            position: "relative",
+            zIndex: 50
           }}>
             {/* Close button */}
             <button
@@ -602,78 +604,74 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
               </div>
             )}
 
-            <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div className="form-group">
-                <label className="form-label">Company / Tenant Shard</label>
-                <select
-                  value={onboardCompanyId}
-                  onChange={(e) => setOnboardCompanyId(e.target.value)}
-                  className="select-gold"
-                  disabled={isPending}
-                  required
-                >
-                  <option value="" disabled>Select Company</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+            <form onSubmit={handleOnboardSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {/* Landscape Two-Column Form Grid Layout */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "1.5rem" }}>
+                {/* Left Column */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div className="form-group">
+                    <label className="form-label">Role Designation</label>
+                    <div style={{
+                      background: "#F9FAFB",
+                      border: "1px solid var(--border-dim)",
+                      borderRadius: "6px",
+                      height: "36px",
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "0 0.75rem",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      color: "#8B5CF6"
+                    }}>
+                      IT TECHNICAL SPECIALIST
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Employee ID (Globally Unique)</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="IT-001"
+                      value={onboardEmployeeId}
+                      onChange={(e) => setOnboardEmployeeId(e.target.value)}
+                      className="input-gold"
+                      disabled={isPending}
+                    />
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. John Doe"
+                      value={onboardFullName}
+                      onChange={(e) => setOnboardFullName(e.target.value)}
+                      className="input-gold"
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. john@company.com"
+                      value={onboardEmail}
+                      onChange={(e) => setOnboardEmail(e.target.value)}
+                      className="input-gold"
+                      disabled={isPending}
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Explicit Role Designation Dropdown Picker */}
-              <div className="form-group">
-                <label className="form-label">Role Designation</label>
-                <select
-                  value={onboardRole}
-                  onChange={(e) => setOnboardRole(e.target.value as any)}
-                  className="select-gold"
-                  disabled={isPending}
-                  required
-                >
-                  <option value="TEAM_LEAD">TEAM LEAD</option>
-                  <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
-                  <option value="IT_DEPARTMENT">IT DEPARTMENT</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Employee ID (Globally Unique)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. IT-001 or TL-001"
-                  value={onboardEmployeeId}
-                  onChange={(e) => setOnboardEmployeeId(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. John Doe"
-                  value={onboardFullName}
-                  onChange={(e) => setOnboardFullName(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. john@company.com"
-                  value={onboardEmail}
-                  onChange={(e) => setOnboardEmail(e.target.value)}
-                  className="input-gold"
-                  disabled={isPending}
-                />
-              </div>
-
+              {/* Initial Password (Full Width) */}
               <div className="form-group">
                 <label className="form-label">Initial Password</label>
                 <input
@@ -687,12 +685,20 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+              {/* Buttons (Bottom-Right corner with border-t) */}
+              <div style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "1rem",
+                paddingTop: "1rem",
+                marginTop: "0.5rem",
+                borderTop: "1px solid rgba(229, 231, 235, 0.5)"
+              }}>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
                   className="btn-glass"
-                  style={{ flex: 1 }}
+                  style={{ minWidth: "110px" }}
                   disabled={isPending}
                 >
                   Cancel
@@ -700,7 +706,7 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                 <button
                   type="submit"
                   className="btn-gold"
-                  style={{ flex: 1 }}
+                  style={{ minWidth: "130px" }}
                   disabled={isPending}
                 >
                   {isPending ? "Onboarding..." : "Onboard User"}

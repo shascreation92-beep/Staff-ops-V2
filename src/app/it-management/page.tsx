@@ -55,6 +55,7 @@ export default async function ITManagementPage() {
           itPersonnel={itPersonnel} 
           companies={companies}
           currentUserRole={user.role}
+          currentUserCompanyId={user.companyId}
         />
       </div>
     </DashboardLayout>
