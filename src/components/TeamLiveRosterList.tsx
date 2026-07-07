@@ -57,6 +57,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
   const [isPending, startTransition] = useTransition();
   const [isSyncing, setIsSyncing] = useState(false);
   const [accountsList, setAccountsList] = useState<Account[]>(initialAccounts);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Modal State for Read-Only IT Comment View
   const [selectedITCommentAccount, setSelectedITCommentAccount] = useState<Account | null>(null);
@@ -68,19 +69,23 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
   const [selectedStatus, setSelectedStatus] = useState("ALL");
   const [selectedAssociate, setSelectedAssociate] = useState("ALL");
 
-  // Helper: Leading zero padding
+  // Helper: Single-digit normalization
   const formatNumber = (num: number | string | null | undefined): string => {
-    if (num === null || num === undefined) return "00";
+    if (num === null || num === undefined) return "0";
     const n = typeof num === "string" ? parseInt(num, 10) : num;
     if (isNaN(n)) return num.toString();
     if (n < 0) return n.toString();
-    return n < 10 ? `0${n}` : n.toString();
+    return n.toString();
   };
 
   // Sync data with incoming server-side updates on refresh
   useEffect(() => {
     setAccountsList(initialAccounts);
   }, [initialAccounts]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedPlatform, selectedStatus, selectedAssociate]);
 
   // Real-time synchronization polling every 5 seconds
   useEffect(() => {
@@ -127,6 +132,30 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
 
     return matchesSearch && matchesPlatform && matchesStatus && matchesAssociate;
   });
+
+  const ITEMS_PER_PAGE = 50;
+  const totalRecords = filteredAccounts.length;
+  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalRecords);
+  const paginatedAccounts = filteredAccounts.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -298,14 +327,14 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
               </tr>
             </thead>
             <tbody>
-              {filteredAccounts.length === 0 ? (
+              {totalRecords === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
                     No associate accounts matched the specified filter criteria.
                   </td>
                 </tr>
               ) : (
-                filteredAccounts.map((acc) => {
+                paginatedAccounts.map((acc) => {
                   const creatorName = acc.user_account_createdByIdTouser?.name || "N/A";
                   
                   return (
@@ -382,6 +411,98 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
             </tbody>
           </table>
         </div>
+
+        {/* Premium Minimalist Pagination Control Bar */}
+        {totalRecords > 0 && (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "1rem 1.5rem",
+            borderTop: "1px solid var(--border-dim)",
+            background: "#FFFFFF",
+            flexWrap: "wrap",
+            gap: "1rem"
+          }}>
+            <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>
+              Showing {totalRecords === 0 ? 0 : startIndex + 1}-{endIndex} of {totalRecords} entries
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "6px",
+                  padding: "0.35rem 0.75rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: currentPage === 1 ? "var(--text-muted)" : "var(--text-primary)",
+                  cursor: currentPage === 1 ? "default" : "pointer",
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Previous
+              </button>
+
+              {/* Page numbers */}
+              {getPageNumbers().map((pageNum, idx) => {
+                if (pageNum === '...') {
+                  return (
+                    <span key={`dots-${idx}`} style={{ padding: "0 0.5rem", color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                      ...
+                    </span>
+                  );
+                }
+                const isSelected = pageNum === currentPage;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum as number)}
+                    style={{
+                      background: isSelected ? "var(--gold-primary)" : "transparent",
+                      border: isSelected ? "1px solid var(--gold-primary)" : "1px solid var(--border-dim)",
+                      borderRadius: "6px",
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      color: isSelected ? "#FFFFFF" : "var(--text-secondary)",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "6px",
+                  padding: "0.35rem 0.75rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: currentPage === totalPages ? "var(--text-muted)" : "var(--text-primary)",
+                  cursor: currentPage === totalPages ? "default" : "pointer",
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. Read-Only IT Comment Modal Popup */}

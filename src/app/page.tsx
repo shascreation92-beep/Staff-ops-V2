@@ -21,7 +21,8 @@ import {
   Target,
   AlertTriangle,
   MinusCircle,
-  Store
+  Store,
+  Coins
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import PendingOnboardingList from "@/components/PendingOnboardingList";
@@ -153,6 +154,15 @@ export default async function DashboardPage() {
   });
   const targetValuePerTL = targetRule ? (parseInt(targetRule.value, 10) || 15) : 15;
   const totalOfficeTarget = targetValuePerTL * companyTeamLeadsCount;
+
+  // Fetch verification cost rule
+  const costRule = await db.rule.findFirst({
+    where: {
+      companyId: user.companyId || undefined,
+      key: "verification_cost"
+    }
+  });
+  const verificationCost = costRule ? (parseFloat(costRule.value) || 300) : 300;
 
   // Find FB and Vinted platforms
   const dbPlatforms = await db.platform.findMany({ where: { isArchived: false } });
@@ -713,14 +723,33 @@ export default async function DashboardPage() {
 
               {/* Card 3: TOTAL UNVERIFIED ACCOUNTS */}
               <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
-                <div className="glass-panel kpi-card kpi-warning" style={{ height: "100%" }}>
+                <div className="glass-panel kpi-card kpi-warning" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
                   <div className="kpi-card-glow"></div>
                   <div className="kpi-header">
                     <span className="kpi-title">Total Unverified Accounts</span>
                     <div className="kpi-icon-wrapper"><Clock size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itFbUnverifiedAccounts}</div>
-                  <div className="kpi-footer">
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem", margin: "0.5rem 0" }}>
+                    <div className="kpi-value" style={{ margin: 0 }}>{itFbUnverifiedAccounts}</div>
+                    <div style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      background: "rgba(245, 158, 11, 0.08)",
+                      border: "1px solid rgba(245, 158, 11, 0.25)",
+                      borderRadius: "6px",
+                      padding: "0.15rem 0.45rem",
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                      color: "#D97706"
+                    }}
+                    title="Estimated verification cost based on configuration"
+                    >
+                      <Coins size={11} />
+                      <span>Est. Cost: {(itFbUnverifiedAccounts * verificationCost).toLocaleString()} PKR</span>
+                    </div>
+                  </div>
+                  <div className="kpi-footer" style={{ marginTop: "auto" }}>
                     <span>Profiles awaiting setup</span>
                   </div>
                 </div>

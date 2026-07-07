@@ -24,6 +24,7 @@ export default function AuditLogsView({
 }: AuditLogsViewProps) {
   const [activeTab, setActiveTab] = useState<"AUDIT" | "LOGIN">("AUDIT");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filteredAudits = auditLogs.filter(log => 
     log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,6 +40,41 @@ export default function AuditLogsView({
     (log.device || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     (log.country || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchTerm]);
+
+  const ITEMS_PER_PAGE = 50;
+
+  const totalAudits = filteredAudits.length;
+  const auditPages = Math.ceil(totalAudits / ITEMS_PER_PAGE) || 1;
+  const auditStart = (currentPage - 1) * ITEMS_PER_PAGE;
+  const auditEnd = Math.min(auditStart + ITEMS_PER_PAGE, totalAudits);
+  const paginatedAudits = filteredAudits.slice(auditStart, auditEnd);
+
+  const totalLogins = filteredLogins.length;
+  const loginPages = Math.ceil(totalLogins / ITEMS_PER_PAGE) || 1;
+  const loginStart = (currentPage - 1) * ITEMS_PER_PAGE;
+  const loginEnd = Math.min(loginStart + ITEMS_PER_PAGE, totalLogins);
+  const paginatedLogins = filteredLogins.slice(loginStart, loginEnd);
+
+  const getPageNumbers = (totalPages: number) => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -95,14 +131,14 @@ export default function AuditLogsView({
                 </tr>
               </thead>
               <tbody>
-                {filteredAudits.length === 0 ? (
+                {totalAudits === 0 ? (
                   <tr>
                     <td colSpan={7} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
                       No audit logs captured.
                     </td>
                   </tr>
                 ) : (
-                  filteredAudits.map((log) => (
+                  paginatedAudits.map((log) => (
                     <tr key={log.id}>
                       <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
                         {new Date(log.createdAt).toLocaleString()}
@@ -158,14 +194,14 @@ export default function AuditLogsView({
                 </tr>
               </thead>
               <tbody>
-                {filteredLogins.length === 0 ? (
+                {totalLogins === 0 ? (
                   <tr>
                     <td colSpan={7} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
                       No authentication sessions recorded.
                     </td>
                   </tr>
                 ) : (
-                  filteredLogins.map((log) => (
+                  paginatedLogins.map((log) => (
                     <tr key={log.id}>
                       <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
                         {new Date(log.loginTime).toLocaleString()}
@@ -193,8 +229,108 @@ export default function AuditLogsView({
           )}
 
         </div>
-      </div>
 
+        {/* Premium Minimalist Pagination Control Bar */}
+        {(() => {
+          const currentTotal = activeTab === "AUDIT" ? totalAudits : totalLogins;
+          const currentPages = activeTab === "AUDIT" ? auditPages : loginPages;
+          const currentStart = activeTab === "AUDIT" ? auditStart : loginStart;
+          const currentEnd = activeTab === "AUDIT" ? auditEnd : loginEnd;
+
+          if (currentTotal === 0) return null;
+
+          return (
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "1rem 1.5rem",
+              borderTop: "1px solid var(--border-dim)",
+              background: "#FFFFFF",
+              flexWrap: "wrap",
+              gap: "1rem"
+            }}>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>
+                Showing {currentTotal === 0 ? 0 : currentStart + 1}-{currentEnd} of {currentTotal} entries
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--border-dim)",
+                    borderRadius: "6px",
+                    padding: "0.35rem 0.75rem",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    color: currentPage === 1 ? "var(--text-muted)" : "var(--text-primary)",
+                    cursor: currentPage === 1 ? "default" : "pointer",
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  Previous
+                </button>
+
+                {/* Page numbers */}
+                {getPageNumbers(currentPages).map((pageNum, idx) => {
+                  if (pageNum === '...') {
+                    return (
+                      <span key={`dots-${idx}`} style={{ padding: "0 0.5rem", color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                        ...
+                      </span>
+                    );
+                  }
+                  const isSelected = pageNum === currentPage;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum as number)}
+                      style={{
+                        background: isSelected ? "var(--gold-primary)" : "transparent",
+                        border: isSelected ? "1px solid var(--gold-primary)" : "1px solid var(--border-dim)",
+                        borderRadius: "6px",
+                        width: "32px",
+                        height: "32px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        color: isSelected ? "#FFFFFF" : "var(--text-secondary)",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  disabled={currentPage === currentPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, currentPages))}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--border-dim)",
+                    borderRadius: "6px",
+                    padding: "0.35rem 0.75rem",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    color: currentPage === currentPages ? "var(--text-muted)" : "var(--text-primary)",
+                    cursor: currentPage === currentPages ? "default" : "pointer",
+                    opacity: currentPage === currentPages ? 0.5 : 1,
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
     </div>
   );
 }

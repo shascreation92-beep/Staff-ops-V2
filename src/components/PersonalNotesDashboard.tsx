@@ -334,8 +334,9 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
         zIndex: 50
       }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">
-            📝 MY PERSONAL NOTES & WORKSPACE
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 800, display: "flex", alignItems: "center", gap: "0.5rem" }} className="text-gold-gradient">
+            <FileText size={20} className="text-gold-primary" />
+            <span>MY PERSONAL NOTES & WORKSPACE</span>
           </h2>
           <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
             Create unlimited scratchpads, manage checklists, customize color codes, and view team announcements.
@@ -387,7 +388,6 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
       {/* Notes Grid */}
       {filteredNotes.length === 0 ? (
         <div className="glass-panel" style={{ padding: "4rem", textAlign: "center", background: "#FFFFFF" }}>
-          <AlertCircle size={40} style={{ color: "var(--text-muted)", opacity: 0.5, marginBottom: "0.75rem" }} />
           <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>No Notes Found</h3>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
             {searchTerm ? "No notes matched your search query." : "Click '+ Add New Note' above to create your first personal note card."}
@@ -511,7 +511,9 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
                   e.currentTarget.style.transform = "none";
                 }}
               >
-                <div style={{ fontSize: "2rem" }}>📝</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "40px" }}>
+                  <FileText size={32} className="text-gold-primary" />
+                </div>
                 <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Standard Note</div>
                 <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
                   Create text documents, lists, or mathematical worksheets.
@@ -546,7 +548,9 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
                   e.currentTarget.style.transform = "none";
                 }}
               >
-                <div style={{ fontSize: "2rem" }}>📊</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "40px" }}>
+                  <CheckSquare size={32} className="text-gold-primary" />
+                </div>
                 <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Team Live Poll</div>
                 <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
                   Create a live voting question with custom options.
@@ -586,6 +590,12 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
   const [isCopied, setIsCopied] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [reminderTime, setReminderTime] = useState<number | null>(null);
+
+  // Custom Popover States
+  const [showCountdownPopover, setShowCountdownPopover] = useState(false);
+  const [showReminderPopover, setShowReminderPopover] = useState(false);
+  const [countdownMinutesInput, setCountdownMinutesInput] = useState("");
+  const [reminderMinutesInput, setReminderMinutesInput] = useState("");
 
   // Read Acknowledgments State
   const [showAckDropdown, setShowAckDropdown] = useState(false);
@@ -810,28 +820,106 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
     }
   }, [timeLeftSeconds, note.id, localTitle]);
 
-  const handleSetCountdown = async () => {
+  const handleCountdownSave = () => {
     if (isLocked) return;
-    const minsStr = prompt("Append action countdown timer (minutes) - e.g. 15, 30, 60.\nEnter 0 or leave empty to clear current timer.");
-    if (minsStr === null) return;
-    
-    const mins = minsStr.trim() === "" ? 0 : parseFloat(minsStr);
-    if (isNaN(mins) || mins < 0) {
+    const mins = parseFloat(countdownMinutesInput);
+    if (isNaN(mins) || mins <= 0) {
       toast.error("Please enter a valid positive number.");
       return;
     }
-
     startTransition(async () => {
       try {
-        const res = await updateNoteTimerAction(note.id, mins === 0 ? null : mins);
+        const res = await updateNoteTimerAction(note.id, mins);
         if (res.success) {
-          toast.success(mins === 0 ? "Timer cleared!" : `Urgency countdown set for ${mins} minutes!`);
+          toast.success(`Urgency countdown set for ${mins} minutes!`);
+          setShowCountdownPopover(false);
           router.refresh();
         }
       } catch (err: any) {
         toast.error(err.message || "Failed to update timer.");
       }
     });
+  };
+
+  const handleCountdownClear = () => {
+    if (isLocked) return;
+    startTransition(async () => {
+      try {
+        const res = await updateNoteTimerAction(note.id, null);
+        if (res.success) {
+          toast.success("Timer cleared!");
+          setCountdownMinutesInput("");
+          setShowCountdownPopover(false);
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to clear timer.");
+      }
+    });
+  };
+
+  const handleReminderSave = () => {
+    const mins = parseFloat(reminderMinutesInput);
+    if (isNaN(mins) || mins <= 0) {
+      toast.error("Please enter a valid positive number.");
+      return;
+    }
+
+    const delayMs = mins * 60 * 1000;
+    setReminderTime(Date.now() + delayMs);
+    toast.success(`Reminder scheduled for ${mins} minutes from now!`);
+    setShowReminderPopover(false);
+
+    setTimeout(() => {
+      toast((t) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 800 }}>NOTE REMINDER</span>
+          <span style={{ fontSize: "0.85rem" }}>Your reminder for "{localTitle || "Untitled Note"}" has arrived!</span>
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+            <button 
+              onClick={() => {
+                toast.dismiss(t.id);
+                onExpand({ ...note, title: localTitle, content: localContent, color: localColor, isPinned: localIsPinned, isSharedByMe: note.isSharedByMe });
+              }}
+              style={{
+                background: "var(--gold-primary)",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                padding: "0.25rem 0.6rem",
+                fontSize: "0.75rem",
+                cursor: "pointer",
+                fontWeight: 700
+              }}
+            >
+              Open Note
+            </button>
+            <button 
+              onClick={() => toast.dismiss(t.id)}
+              style={{
+                background: "rgba(0,0,0,0.05)",
+                color: "var(--text-primary)",
+                border: "none",
+                borderRadius: "4px",
+                padding: "0.25rem 0.6rem",
+                fontSize: "0.75rem",
+                cursor: "pointer"
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ), { duration: 15000 });
+      setReminderTime(null);
+    }, delayMs);
+  };
+
+  const handleReminderClear = () => {
+    setReminderTime(null);
+    setReminderMinutesInput("");
+    toast.success("Reminder cleared!");
+    setShowReminderPopover(false);
   };
 
   const handleAcknowledge = async () => {
@@ -976,70 +1064,14 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
     }
   };
 
-  const handleSetReminder = () => {
-    const minutesStr = prompt("Set a reminder alert in how many minutes? (e.g. 5, 15, 60)");
-    if (!minutesStr) return;
-    const mins = parseFloat(minutesStr);
-    if (isNaN(mins) || mins <= 0) {
-      toast.error("Please enter a valid positive number.");
-      return;
-    }
 
-    const delayMs = mins * 60 * 1000;
-    setReminderTime(Date.now() + delayMs);
-    toast.success(`Reminder scheduled for ${mins} minutes from now!`);
-
-    setTimeout(() => {
-      toast((t) => (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 800 }}>🔔 NOTE REMINDER</span>
-          <span style={{ fontSize: "0.85rem" }}>Your reminder for "{localTitle || "Untitled Note"}" has arrived!</span>
-          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-            <button 
-              onClick={() => {
-                toast.dismiss(t.id);
-                onExpand({ ...note, title: localTitle, content: localContent, color: localColor, isPinned: localIsPinned, isSharedByMe: note.isSharedByMe });
-              }}
-              style={{
-                background: "var(--gold-primary)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                padding: "0.25rem 0.6rem",
-                fontSize: "0.75rem",
-                cursor: "pointer",
-                fontWeight: 700
-              }}
-            >
-              Open Note
-            </button>
-            <button 
-              onClick={() => toast.dismiss(t.id)}
-              style={{
-                background: "rgba(0,0,0,0.05)",
-                color: "var(--text-primary)",
-                border: "none",
-                borderRadius: "4px",
-                padding: "0.25rem 0.6rem",
-                fontSize: "0.75rem",
-                cursor: "pointer"
-              }}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      ), { duration: 15000 });
-      setReminderTime(null);
-    }, delayMs);
-  };
 
   const [, startTransition] = useTransition();
 
   const formatMMSS = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
-    return `⏱️ ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} remaining`;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} remaining`;
   };
 
   // Progress calculations
@@ -1080,9 +1112,13 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
           border: "1px solid rgba(255,255,255,0.2)",
           boxShadow: "0 2px 8px rgba(2, 80, 161, 0.25)",
           textTransform: "uppercase",
-          letterSpacing: "0.03em"
+          letterSpacing: "0.03em",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.25rem"
         }}>
-          📢 Team Announcement {note.isGlobalPinned && "• Pinned to Team"}
+          <Users size={10} />
+          <span>Team Announcement {note.isGlobalPinned && "• Pinned to Team"}</span>
         </div>
       )}
 
@@ -1123,8 +1159,12 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
           {/* Live countdown timer display */}
           {note.timerExpiresAt && timeLeftSeconds !== null && (
             <span 
-              onClick={handleSetCountdown}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-300 ${
+              onClick={() => {
+                if (note.isSharedAnnouncement || isLocked) return;
+                setShowCountdownPopover(!showCountdownPopover);
+                setShowReminderPopover(false);
+              }}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-300 ${
                 isExpired ? "" : timeLeftSeconds < 600 ? "animate-pulse" : ""
               }`}
               style={{ 
@@ -1140,32 +1180,114 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
               }}
               title={note.isSharedAnnouncement ? "Countdown deadline" : "Click to edit countdown timer"}
             >
-              {isExpired ? (isPoll ? "🔒 Closed" : "⏰ Time's Up") : formatMMSS(timeLeftSeconds)}
+              <Clock size={11} />
+              <span>{isExpired ? (isPoll ? "Closed" : "Time's Up") : formatMMSS(timeLeftSeconds)}</span>
             </span>
           )}
 
-
-
-          {/* Action Countdown Timer button setter (⏱️) */}
+          {/* Action Countdown Timer button setter */}
           {!note.isSharedAnnouncement && (
-            <button
-              onClick={handleSetCountdown}
-              disabled={isLocked}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: isLocked ? "default" : "pointer",
-                padding: "0.3rem",
-                color: note.timerExpiresAt ? "var(--gold-premium)" : "var(--text-muted)",
-                opacity: note.timerExpiresAt ? 1 : 0.4,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-              title="Set Urgency Countdown Timer (⏱️)"
-            >
-              <span style={{ fontSize: "0.9rem" }}>⏱️</span>
-            </button>
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => {
+                  if (isLocked) return;
+                  setShowCountdownPopover(!showCountdownPopover);
+                  setShowReminderPopover(false);
+                }}
+                disabled={isLocked}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: isLocked ? "default" : "pointer",
+                  padding: "0.3rem",
+                  color: note.timerExpiresAt ? "var(--gold-premium)" : "var(--text-muted)",
+                  opacity: note.timerExpiresAt ? 1 : 0.4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+                title="Set Urgency Countdown Timer"
+              >
+                <Clock size={15} />
+              </button>
+              {showCountdownPopover && (
+                <div className="glass-panel" style={{
+                  position: "absolute",
+                  top: "100%",
+                  right: 0,
+                  marginTop: "0.5rem",
+                  padding: "0.75rem",
+                  background: "#FFFFFF",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "8px",
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
+                  zIndex: 100,
+                  width: "200px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem"
+                }}>
+                  <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--gold-primary)", textTransform: "uppercase" }}>
+                    Urgency Countdown
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="Minutes (e.g. 15)"
+                    value={countdownMinutesInput}
+                    onChange={(e) => setCountdownMinutesInput(e.target.value)}
+                    style={{
+                      fontSize: "0.78rem",
+                      padding: "0.35rem 0.5rem",
+                      background: "rgba(0, 0, 0, 0.02)",
+                      border: "1px solid var(--border-dim)",
+                      borderRadius: "4px",
+                      color: "var(--text-primary)",
+                      outline: "none"
+                    }}
+                  />
+                  <div style={{ display: "flex", gap: "0.25rem" }}>
+                    <button
+                      onClick={handleCountdownSave}
+                      className="btn-gold"
+                      style={{ flex: 1, padding: "0.3rem", fontSize: "0.7rem", height: "auto" }}
+                    >
+                      Set
+                    </button>
+                    {note.timerExpiresAt && (
+                      <button
+                        onClick={handleCountdownClear}
+                        style={{
+                          flex: 1,
+                          padding: "0.3rem",
+                          fontSize: "0.7rem",
+                          background: "rgba(239, 68, 68, 0.1)",
+                          border: "1px solid rgba(239, 68, 68, 0.2)",
+                          color: "#EF4444",
+                          borderRadius: "4px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowCountdownPopover(false)}
+                      style={{
+                        padding: "0.3rem",
+                        fontSize: "0.7rem",
+                        background: "none",
+                        border: "1px solid var(--border-dim)",
+                        color: "var(--text-secondary)",
+                        borderRadius: "4px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Note Edit Lock (🔒) */}
@@ -1743,20 +1865,102 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
           
           {/* Reminder Alert Clock Icon */}
           {!note.isSharedAnnouncement && (
-            <button
-              onClick={handleSetReminder}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "0.2rem",
-                color: reminderTime ? "#0250A1" : "var(--text-muted)",
-                opacity: reminderTime ? 1 : 0.6
-              }}
-              title={reminderTime ? `Reminder active at ${new Date(reminderTime).toLocaleTimeString()}` : "Set Reminder Timer"}
-            >
-              <Clock size={14} />
-            </button>
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => {
+                  setShowReminderPopover(!showReminderPopover);
+                  setShowCountdownPopover(false);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0.2rem",
+                  color: reminderTime ? "#0250A1" : "var(--text-muted)",
+                  opacity: reminderTime ? 1 : 0.6
+                }}
+                title={reminderTime ? `Reminder active at ${new Date(reminderTime).toLocaleTimeString()}` : "Set Reminder Timer"}
+              >
+                <Clock size={14} />
+              </button>
+              {showReminderPopover && (
+                <div className="glass-panel" style={{
+                  position: "absolute",
+                  bottom: "100%",
+                  right: 0,
+                  marginBottom: "0.5rem",
+                  padding: "0.75rem",
+                  background: "#FFFFFF",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "8px",
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
+                  zIndex: 100,
+                  width: "200px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem"
+                }}>
+                  <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--gold-primary)", textTransform: "uppercase" }}>
+                    Set Note Reminder
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="Minutes (e.g. 5)"
+                    value={reminderMinutesInput}
+                    onChange={(e) => setReminderMinutesInput(e.target.value)}
+                    style={{
+                      fontSize: "0.78rem",
+                      padding: "0.35rem 0.5rem",
+                      background: "rgba(0, 0, 0, 0.02)",
+                      border: "1px solid var(--border-dim)",
+                      borderRadius: "4px",
+                      color: "var(--text-primary)",
+                      outline: "none"
+                    }}
+                  />
+                  <div style={{ display: "flex", gap: "0.25rem" }}>
+                    <button
+                      onClick={handleReminderSave}
+                      className="btn-gold"
+                      style={{ flex: 1, padding: "0.3rem", fontSize: "0.7rem", height: "auto" }}
+                    >
+                      Set
+                    </button>
+                    {reminderTime && (
+                      <button
+                        onClick={handleReminderClear}
+                        style={{
+                          flex: 1,
+                          padding: "0.3rem",
+                          fontSize: "0.7rem",
+                          background: "rgba(239, 68, 68, 0.1)",
+                          border: "1px solid rgba(239, 68, 68, 0.2)",
+                          color: "#EF4444",
+                          borderRadius: "4px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowReminderPopover(false)}
+                      style={{
+                        padding: "0.3rem",
+                        fontSize: "0.7rem",
+                        background: "none",
+                        border: "1px solid var(--border-dim)",
+                        color: "var(--text-secondary)",
+                        borderRadius: "4px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Color Picker tool */}

@@ -36,6 +36,31 @@ interface TeamLeadsDirectoryProps {
 export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRole }: TeamLeadsDirectoryProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 50;
+  const totalRecords = teamLeads.length;
+  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalRecords);
+  const paginatedTeamLeads = teamLeads.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   // Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -44,6 +69,7 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
   const [onboardEmployeeId, setOnboardEmployeeId] = useState("");
   const [onboardPassword, setOnboardPassword] = useState("");
   const [onboardCompanyId, setOnboardCompanyId] = useState(companies[0]?.id || "");
+  const [onboardRole, setOnboardRole] = useState<"TEAM_LEAD" | "SALES_ASSOCIATE" | "IT_DEPARTMENT">("TEAM_LEAD");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleOnboardSubmit = (e: React.FormEvent) => {
@@ -57,20 +83,22 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
           email: onboardEmail,
           employeeId: onboardEmployeeId.trim(),
           password: onboardPassword.trim(),
-          companyId: onboardCompanyId
+          companyId: onboardCompanyId,
+          role: onboardRole
         });
 
         if (res.success) {
-          toast.success("Team Lead onboarded successfully!");
+          toast.success(`${onboardRole.replace("_", " ")} onboarded successfully!`);
           setShowAddModal(false);
           setOnboardFullName("");
           setOnboardEmail("");
           setOnboardEmployeeId("");
           setOnboardPassword("");
+          setOnboardRole("TEAM_LEAD");
           router.refresh();
         }
       } catch (err: any) {
-        setErrorMsg(err.message || "Failed to onboard Team Lead.");
+        setErrorMsg(err.message || "Failed to onboard user.");
       }
     });
   };
@@ -139,112 +167,207 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
           <p style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>Use the &quot;ADD TL&quot; button to onboard Team Leads.</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(440px, 1fr))", gap: "1.5rem" }}>
-          {teamLeads.map((tl) => (
-            <div key={tl.id} className="glass-panel" style={{
-              padding: "1.5rem",
-              border: "1px solid var(--border-dim)",
-              position: "relative",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1.25rem"
-            }}>
-              {/* Subtle top indicator bar */}
-              <div style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "3px",
-                background: "var(--gold-gradient)"
-              }} />
-
-              {/* Lead Details Header */}
-              <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(440px, 1fr))", gap: "1.5rem" }}>
+            {paginatedTeamLeads.map((tl) => (
+              <div key={tl.id} className="glass-panel" style={{
+                padding: "1.5rem",
+                border: "1px solid var(--border-dim)",
+                position: "relative",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.25rem"
+              }}>
+                {/* Subtle top indicator bar */}
                 <div style={{
-                  width: "3rem",
-                  height: "3rem",
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(251, 191, 36, 0.08)",
-                  border: "1px solid var(--border-gold)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--gold-premium)"
-                }}>
-                  <UserCheck size={22} />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>{tl.name || "Unnamed Leader"}</h3>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                    <Mail size={12} />
-                    <span>{tl.email}</span>
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "3px",
+                  background: "var(--gold-gradient)"
+                }} />
+
+                {/* Lead Details Header */}
+                <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                  <div style={{
+                    width: "3rem",
+                    height: "3rem",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(251, 191, 36, 0.08)",
+                    border: "1px solid var(--border-gold)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--gold-premium)"
+                  }}>
+                    <UserCheck size={22} />
                   </div>
-                  <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-                    <span className="badge active" style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem" }}>
-                      ID: {tl.employee?.employeeId || "N/A"}
-                    </span>
-                    <span className={`badge ${tl.status === 'APPROVED' ? 'active' : 'pending'}`} style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem" }}>
-                      {tl.status === 'APPROVED' ? 'ACTIVE' : tl.status}
-                    </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>{tl.name || "Unnamed Leader"}</h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                      <Mail size={12} />
+                      <span>{tl.email}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+                      <span className="badge active" style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem" }}>
+                        ID: {tl.employee?.employeeId || "N/A"}
+                      </span>
+                      <span className={`badge ${tl.status === 'APPROVED' ? 'active' : 'pending'}`} style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem" }}>
+                        {tl.status === 'APPROVED' ? 'ACTIVE' : tl.status}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <Users size={14} style={{ color: "var(--text-muted)" }} />
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{tl.associates.length} Associates</span>
                   </div>
                 </div>
-                
-                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <Users size={14} style={{ color: "var(--text-muted)" }} />
-                  <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{tl.associates.length} Associates</span>
+
+                {/* Team list section */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", borderTop: "1px solid var(--border-dim)", paddingTop: "1rem" }}>
+                  <h4 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--gold-primary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                    <Award size={14} />
+                    <span>Mapped Sales Team</span>
+                  </h4>
+
+                  {tl.associates.length === 0 ? (
+                    <div style={{
+                      background: "rgba(255, 255, 255, 0.01)",
+                      border: "1px dashed var(--border-dim)",
+                      borderRadius: "6px",
+                      padding: "1rem",
+                      textAlign: "center",
+                      fontSize: "0.75rem",
+                      color: "var(--text-muted)",
+                      fontStyle: "italic"
+                    }}>
+                      No associates mapped to this team lead.
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {tl.associates.map((assoc) => (
+                        <div key={assoc.id} style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "0.5rem 0.75rem",
+                          background: "rgba(255, 255, 255, 0.02)",
+                          border: "1px solid var(--border-dim)",
+                          borderRadius: "6px"
+                        }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem" }}>
+                            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{assoc.name || "N/A"}</span>
+                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{assoc.email}</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <span className={`badge ${assoc.status === 'APPROVED' ? 'active' : (assoc.status === 'PENDING' ? 'pending' : 'blocked')}`} style={{ fontSize: "0.65rem" }}>
+                              {assoc.status === 'APPROVED' ? 'ACTIVE' : assoc.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
+            ))}
+          </div>
 
-              {/* Team list section */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", borderTop: "1px solid var(--border-dim)", paddingTop: "1rem" }}>
-                <h4 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--gold-primary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                  <Award size={14} />
-                  <span>Mapped Sales Team</span>
-                </h4>
-
-                {tl.associates.length === 0 ? (
-                  <div style={{
-                    background: "rgba(255, 255, 255, 0.01)",
-                    border: "1px dashed var(--border-dim)",
+          {/* Premium Minimalist Pagination Control Bar */}
+          {totalRecords > 0 && (
+            <div className="glass-panel" style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "1rem 1.5rem",
+              background: "#FFFFFF",
+              border: "1px solid var(--border-dim)",
+              borderRadius: "var(--border-radius)",
+              flexWrap: "wrap",
+              gap: "1rem"
+            }}>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>
+                Showing {totalRecords === 0 ? 0 : startIndex + 1}-{endIndex} of {totalRecords} entries
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--border-dim)",
                     borderRadius: "6px",
-                    padding: "1rem",
-                    textAlign: "center",
-                    fontSize: "0.75rem",
-                    color: "var(--text-muted)",
-                    fontStyle: "italic"
-                  }}>
-                    No associates mapped to this team lead.
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                    {tl.associates.map((assoc) => (
-                      <div key={assoc.id} style={{
+                    padding: "0.35rem 0.75rem",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    color: currentPage === 1 ? "var(--text-muted)" : "var(--text-primary)",
+                    cursor: currentPage === 1 ? "default" : "pointer",
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  Previous
+                </button>
+
+                {/* Page numbers */}
+                {getPageNumbers().map((pageNum, idx) => {
+                  if (pageNum === '...') {
+                    return (
+                      <span key={`dots-${idx}`} style={{ padding: "0 0.5rem", color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                        ...
+                      </span>
+                    );
+                  }
+                  const isSelected = pageNum === currentPage;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum as number)}
+                      style={{
+                        background: isSelected ? "var(--gold-primary)" : "transparent",
+                        border: isSelected ? "1px solid var(--gold-primary)" : "1px solid var(--border-dim)",
+                        borderRadius: "6px",
+                        width: "32px",
+                        height: "32px",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "0.5rem 0.75rem",
-                        background: "rgba(255, 255, 255, 0.02)",
-                        border: "1px solid var(--border-dim)",
-                        borderRadius: "6px"
-                      }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem" }}>
-                          <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{assoc.name || "N/A"}</span>
-                          <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{assoc.email}</span>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <span className={`badge ${assoc.status === 'APPROVED' ? 'active' : (assoc.status === 'PENDING' ? 'pending' : 'blocked')}`} style={{ fontSize: "0.65rem" }}>
-                            {assoc.status === 'APPROVED' ? 'ACTIVE' : assoc.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                        justifyContent: "center",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        color: isSelected ? "#FFFFFF" : "var(--text-secondary)",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--border-dim)",
+                    borderRadius: "6px",
+                    padding: "0.35rem 0.75rem",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    color: currentPage === totalPages ? "var(--text-muted)" : "var(--text-primary)",
+                    cursor: currentPage === totalPages ? "default" : "pointer",
+                    opacity: currentPage === totalPages ? 0.5 : 1,
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  Next
+                </button>
               </div>
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -288,9 +411,9 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
             </button>
 
             <div>
-              <h3 className="text-gold-gradient" style={{ fontSize: "1.2rem", fontWeight: 800 }}>ONBOARD NEW TEAM LEADER</h3>
+              <h3 className="text-gold-gradient" style={{ fontSize: "1.2rem", fontWeight: 800 }}>ONBOARD NEW USER</h3>
               <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                Create an approved Team Leader account with active credentials.
+                Create an approved user account with explicit designated credentials.
               </p>
             </div>
 
@@ -325,6 +448,22 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
                   {companies.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
+                </select>
+              </div>
+
+              {/* Explicit Role Designation Dropdown Picker */}
+              <div className="form-group">
+                <label className="form-label">Role Designation</label>
+                <select
+                  value={onboardRole}
+                  onChange={(e) => setOnboardRole(e.target.value as any)}
+                  className="select-gold"
+                  disabled={isPending}
+                  required
+                >
+                  <option value="TEAM_LEAD">TEAM LEAD</option>
+                  <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
+                  <option value="IT_DEPARTMENT">IT DEPARTMENT</option>
                 </select>
               </div>
 
@@ -396,7 +535,7 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
                   style={{ flex: 1 }}
                   disabled={isPending}
                 >
-                  {isPending ? "Onboarding..." : "Onboard Team Lead"}
+                  {isPending ? "Onboarding..." : "Onboard User"}
                 </button>
               </div>
             </form>

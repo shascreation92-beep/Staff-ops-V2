@@ -44,6 +44,7 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("ALL");
   const [selectedStatus, setSelectedStatus] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const searchVal = searchParams.get("search");
@@ -54,6 +55,10 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
     if (platformVal !== null) setSelectedPlatform(platformVal);
     if (statusVal !== null) setSelectedStatus(statusVal);
   }, [searchParams]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedPlatform, selectedStatus]);
 
   const filteredAccounts = initialAccounts.filter((acc) => {
     // Search filter
@@ -72,6 +77,30 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
 
     return searchMatch && platformMatch && statusMatch;
   });
+
+  const ITEMS_PER_PAGE = 50;
+  const totalRecords = filteredAccounts.length;
+  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalRecords);
+  const paginatedAccounts = filteredAccounts.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const getStatusBadge = (status: string) => {
     const cleanStatus = status.replace(/^IT_/, "").replace(/_/g, " ");
@@ -248,7 +277,7 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
               </tr>
             </thead>
             <tbody>
-              {filteredAccounts.map((acc) => {
+              {paginatedAccounts.map((acc) => {
                 const creatorName = acc.user_account_createdByIdTouser.name || acc.user_account_createdByIdTouser.email;
                 const managerName = acc.user_account_createdByIdTouser.role === "TEAM_LEAD" 
                   ? "Self" 
@@ -261,7 +290,7 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
                     <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)" }}>{acc.platform.name}</td>
                     <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>{acc.serialCode}</td>
                     <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)" }}>{acc.idName}</td>
-                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>{acc.adsPublished.toString().padStart(2, "0")}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>{acc.adsPublished.toString()}</td>
                     <td style={{ padding: "0.5rem 0.6rem" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: "0.05rem" }}>
                         <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--text-primary)" }}>{formatDate(acc.createdAt)}</span>
@@ -274,6 +303,98 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
               })}
             </tbody>
           </table>
+        )}
+
+        {/* Premium Minimalist Pagination Control Bar */}
+        {totalRecords > 0 && (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "1rem 1.5rem",
+            borderTop: "1px solid var(--border-dim)",
+            background: "#FFFFFF",
+            flexWrap: "wrap",
+            gap: "1rem"
+          }}>
+            <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>
+              Showing {totalRecords === 0 ? 0 : startIndex + 1}-{endIndex} of {totalRecords} entries
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "6px",
+                  padding: "0.35rem 0.75rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: currentPage === 1 ? "var(--text-muted)" : "var(--text-primary)",
+                  cursor: currentPage === 1 ? "default" : "pointer",
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Previous
+              </button>
+
+              {/* Page numbers */}
+              {getPageNumbers().map((pageNum, idx) => {
+                if (pageNum === '...') {
+                  return (
+                    <span key={`dots-${idx}`} style={{ padding: "0 0.5rem", color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                      ...
+                    </span>
+                  );
+                }
+                const isSelected = pageNum === currentPage;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum as number)}
+                    style={{
+                      background: isSelected ? "var(--gold-primary)" : "transparent",
+                      border: isSelected ? "1px solid var(--gold-primary)" : "1px solid var(--border-dim)",
+                      borderRadius: "6px",
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      color: isSelected ? "#FFFFFF" : "var(--text-secondary)",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "6px",
+                  padding: "0.35rem 0.75rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: currentPage === totalPages ? "var(--text-muted)" : "var(--text-primary)",
+                  cursor: currentPage === totalPages ? "default" : "pointer",
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

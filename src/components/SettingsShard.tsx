@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import { 
   createAnnouncementAction 
 } from "@/app/actions/settings";
@@ -228,7 +228,7 @@ export default function SettingsShard({
   const [editAccountUserId, setEditAccountUserId] = useState("");
   const [editAccountName, setEditAccountName] = useState("");
   const [editAccountPassword, setEditAccountPassword] = useState("");
-  const [editAccountRole, setEditAccountRole] = useState<"TEAM_LEAD" | "SALES_ASSOCIATE">("SALES_ASSOCIATE");
+  const [editAccountRole, setEditAccountRole] = useState<"TEAM_LEAD" | "SALES_ASSOCIATE" | "IT_DEPARTMENT">("SALES_ASSOCIATE");
   const [editAccountStatus, setEditAccountStatus] = useState<"APPROVED" | "BLOCKED">("APPROVED");
   const [editAccountTeamLeadId, setEditAccountTeamLeadId] = useState<string | null>(null);
   const [editAccountError, setEditAccountError] = useState<string | null>(null);
@@ -236,36 +236,45 @@ export default function SettingsShard({
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [roleFilter, setRoleFilter] = useState("ALL");
-  const [tlFilter, setTlFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const staffUsers = users.filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE");
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const staffUsers = users.filter(u => u.role === "TEAM_LEAD" || u.role === "SALES_ASSOCIATE" || u.role === "IT_DEPARTMENT");
   const filteredUsers = staffUsers.filter(u => {
-    // 1. Search Query filter
     const q = searchQuery.toLowerCase().trim();
-    if (q) {
-      const matchQuery = (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q);
-      if (!matchQuery) return false;
-    }
-
-    // 2. Status filter
-    if (statusFilter !== "ALL") {
-      if (statusFilter === "ACTIVE" && u.status !== "APPROVED") return false;
-      if (statusFilter === "DISABLED" && u.status !== "BLOCKED" && u.status !== "REJECTED") return false;
-    }
-
-    // 3. Designation filter
-    if (roleFilter !== "ALL" && u.role !== roleFilter) return false;
-
-    // 4. Team Lead filter
-    if (tlFilter !== "ALL") {
-      if (tlFilter === "UNASSIGNED" && u.teamLeadId !== null) return false;
-      if (tlFilter !== "UNASSIGNED" && u.teamLeadId !== tlFilter) return false;
-    }
-
-    return true;
+    if (!q) return true;
+    return (
+      (u.name || "").toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q)
+    );
   });
+
+  const ITEMS_PER_PAGE = 50;
+  const totalRecords = filteredUsers.length;
+  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalRecords);
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const togglePasswordVisibility = (userId: string) => {
     setVisiblePasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
@@ -323,151 +332,137 @@ export default function SettingsShard({
 
   return (
     <>
-      {/* Title Row */}
-      <div style={{ padding: "0.5rem 1rem 1rem 1.25rem" }}>
-        <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>USER DIRECTORY</h2>
-        <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+      {/* Title Card */}
+      <div className="glass-panel mx-6 mt-6 mb-5" style={{
+        padding: "1rem 1.5rem",
+        background: "#FFFFFF",
+        border: "1px solid var(--border-dim)",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        zIndex: 40
+      }}>
+        <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0, lineHeight: "1.2" }}>USER DIRECTORY</h2>
+        <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, marginTop: "0.25rem" }}>
           Manage employee profiles, override passwords, set roles, and control active dashboard access.
         </p>
       </div>
 
-      {/* Search and Metrics Bar Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mx-6 mb-4" style={{
+      {/* Search & Analytics Card */}
+      <div className="glass-panel mx-6 mb-5" style={{
+        padding: "1rem 1.5rem",
         display: "flex",
         alignItems: "center",
-        justifyContent: "flex-start",
-        gap: "1.25rem",
-        flexWrap: "wrap"
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+        gap: "1.5rem",
+        background: "#FFFFFF",
+        border: "1px solid var(--border-dim)",
+        position: "relative",
+        zIndex: 40
       }}>
         {/* Search Input Field */}
-        <div style={{ position: "relative", flex: 1, maxWidth: "300px" }}>
-          <Search 
-            size={16} 
-            style={{ 
-              position: "absolute", 
-              left: "0.75rem", 
-              top: "50%", 
-              transform: "translateY(-50%)", 
-              color: "var(--text-muted)" 
-            }} 
-          />
+        <div style={{
+          position: "relative",
+          width: "260px",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          background: "#F9FAFB",
+          padding: "0.5rem 0.75rem",
+          height: "36px",
+          borderRadius: "6px",
+          border: "1px solid var(--border-dim)"
+        }}>
+          <Search size={16} style={{ color: "var(--text-muted)" }} />
           <input
             type="text"
             placeholder="Search by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input-gold"
             style={{
-              paddingLeft: "2.25rem",
-              height: "38px",
-              fontSize: "0.85rem",
-              width: "100%"
+              width: "100%",
+              border: "none",
+              outline: "none",
+              fontSize: "0.82rem",
+              background: "transparent",
+              color: "var(--text-primary)"
             }}
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-muted)",
+                fontSize: "1.2rem",
+                display: "flex",
+                alignItems: "center",
+                lineHeight: 1,
+                padding: 0
+              }}
+              title="Clear search"
+            >
+              ×
+            </button>
+          )}
         </div>
 
         {/* Counter Metrics Pills */}
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <span className="badge" style={{ background: "rgba(100, 116, 139, 0.04)", color: "var(--text-primary)", border: "1px solid var(--border-dim)", padding: "0.45rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, borderRadius: "10px", textTransform: "uppercase" }}>
-            Total Staff: {totalStaff}
-          </span>
-          <span className="badge" style={{ background: "rgba(16, 185, 129, 0.04)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.2)", padding: "0.45rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, borderRadius: "10px", textTransform: "uppercase" }}>
-            Active: {activeStaff}
-          </span>
-          <span className="badge" style={{ background: "rgba(239, 68, 68, 0.04)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.2)", padding: "0.45rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, borderRadius: "10px", textTransform: "uppercase" }}>
-            Disabled: {disabledStaff}
-          </span>
+          <div style={{
+            height: "36px",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            borderRadius: "6px",
+            padding: "0 0.75rem",
+            fontSize: "0.82rem",
+            color: "var(--text-primary)",
+            fontWeight: 700,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+          }}>
+            TOTAL STAFF: {totalStaff}
+          </div>
+          <div style={{
+            height: "36px",
+            background: "#FFFFFF",
+            border: "1px solid rgba(16, 185, 129, 0.25)",
+            borderRadius: "6px",
+            padding: "0 0.75rem",
+            fontSize: "0.82rem",
+            color: "#10B981",
+            fontWeight: 700,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.35rem",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+          }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" style={{ display: "inline-block" }} />
+            ACTIVE: {activeStaff}
+          </div>
+          <div style={{
+            height: "36px",
+            background: "#FFFFFF",
+            border: "1px solid rgba(239, 68, 68, 0.25)",
+            borderRadius: "6px",
+            padding: "0 0.75rem",
+            fontSize: "0.82rem",
+            color: "#EF4444",
+            fontWeight: 700,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+          }}>
+            DISABLED: {disabledStaff}
+          </div>
         </div>
-
-        {/* Filter: ALL STATUSES */}
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={{
-            color: "#0F172A",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            fontSize: "0.75rem",
-            letterSpacing: "0.05em",
-            padding: "0.5rem 2rem 0.5rem 1rem",
-            borderRadius: "10px",
-            border: "1px solid var(--border-dim)",
-            background: "#FFFFFF",
-            cursor: "pointer",
-            appearance: "none",
-            backgroundImage: "url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2310B981%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 0.5rem center",
-            backgroundSize: "1rem",
-            height: "38px"
-          }}
-        >
-          <option value="ALL">ALL STATUSES</option>
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="DISABLED">DISABLED</option>
-        </select>
-
-        {/* Filter: ALL DESIGNATIONS */}
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          style={{
-            color: "#0F172A",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            fontSize: "0.75rem",
-            letterSpacing: "0.05em",
-            padding: "0.5rem 2rem 0.5rem 1rem",
-            borderRadius: "10px",
-            border: "1px solid var(--border-dim)",
-            background: "#FFFFFF",
-            cursor: "pointer",
-            appearance: "none",
-            backgroundImage: "url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2310B981%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 0.5rem center",
-            backgroundSize: "1rem",
-            height: "38px"
-          }}
-        >
-          <option value="ALL">ALL DESIGNATIONS</option>
-          <option value="TEAM_LEAD">TEAM LEAD</option>
-          <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
-        </select>
-
-        {/* Filter: ALL TEAM LEADS */}
-        <select
-          value={tlFilter}
-          onChange={(e) => setTlFilter(e.target.value)}
-          style={{
-            color: "#0F172A",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            fontSize: "0.75rem",
-            letterSpacing: "0.05em",
-            padding: "0.5rem 2rem 0.5rem 1rem",
-            borderRadius: "10px",
-            border: "1px solid var(--border-dim)",
-            background: "#FFFFFF",
-            cursor: "pointer",
-            appearance: "none",
-            backgroundImage: "url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2310B981%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 0.5rem center",
-            backgroundSize: "1rem",
-            height: "38px"
-          }}
-        >
-          <option value="ALL">ALL TEAM LEADS</option>
-          <option value="UNASSIGNED">NO TEAM LEAD (UNASSIGNED)</option>
-          {users
-            .filter(u => u.role === "TEAM_LEAD")
-            .map(tl => (
-              <option key={tl.id} value={tl.id}>
-                {tl.name || tl.email}
-              </option>
-            ))}
-        </select>
       </div>
 
       {/* Main Table Container Card */}
@@ -485,14 +480,14 @@ export default function SettingsShard({
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length === 0 ? (
+              {totalRecords === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "3rem" }}>
                     No matching Team Leads or Sales Associates found in the system.
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map(u => (
+                paginatedUsers.map(u => (
                   <tr key={u.id}>
                     <td style={{ fontWeight: 600, padding: "0.75rem 1rem" }}>{u.name || "N/A"}</td>
                     <td style={{ color: "var(--text-secondary)", padding: "0.75rem 1rem" }}>{u.email}</td>
@@ -524,12 +519,24 @@ export default function SettingsShard({
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
                       <span 
-                        className={`badge ${u.role === "TEAM_LEAD" ? "developer" : "default"}`} 
+                        className={`badge ${u.role === "TEAM_LEAD" ? "developer" : (u.role === "IT_DEPARTMENT" ? "active" : "default")}`} 
                         style={{ 
                           fontSize: "0.7rem",
-                          background: u.role === "TEAM_LEAD" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                          color: u.role === "TEAM_LEAD" ? "#10B981" : "#3B82F6",
-                          border: u.role === "TEAM_LEAD" ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(59, 130, 246, 0.2)"
+                          background: u.role === "TEAM_LEAD" 
+                            ? "rgba(16, 185, 129, 0.1)" 
+                            : u.role === "IT_DEPARTMENT" 
+                              ? "rgba(167, 139, 250, 0.1)" 
+                              : "rgba(59, 130, 246, 0.1)",
+                          color: u.role === "TEAM_LEAD" 
+                            ? "#10B981" 
+                            : u.role === "IT_DEPARTMENT" 
+                              ? "#8B5CF6" 
+                              : "#3B82F6",
+                          border: u.role === "TEAM_LEAD" 
+                            ? "1px solid rgba(16, 185, 129, 0.2)" 
+                            : u.role === "IT_DEPARTMENT" 
+                              ? "1px solid rgba(167, 139, 250, 0.2)" 
+                              : "1px solid rgba(59, 130, 246, 0.2)"
                         }}
                       >
                         {u.role.replace(/_/g, " ")}
@@ -595,6 +602,98 @@ export default function SettingsShard({
             </tbody>
           </table>
         </div>
+
+        {/* Premium Minimalist Pagination Control Bar */}
+        {totalRecords > 0 && (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "1rem 0",
+            borderTop: "1px solid var(--border-dim)",
+            background: "#FFFFFF",
+            flexWrap: "wrap",
+            gap: "1rem"
+          }}>
+            <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>
+              Showing {totalRecords === 0 ? 0 : startIndex + 1}-{endIndex} of {totalRecords} entries
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "6px",
+                  padding: "0.35rem 0.75rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: currentPage === 1 ? "var(--text-muted)" : "var(--text-primary)",
+                  cursor: currentPage === 1 ? "default" : "pointer",
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Previous
+              </button>
+
+              {/* Page numbers */}
+              {getPageNumbers().map((pageNum, idx) => {
+                if (pageNum === '...') {
+                  return (
+                    <span key={`dots-${idx}`} style={{ padding: "0 0.5rem", color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                      ...
+                    </span>
+                  );
+                }
+                const isSelected = pageNum === currentPage;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum as number)}
+                    style={{
+                      background: isSelected ? "var(--gold-primary)" : "transparent",
+                      border: isSelected ? "1px solid var(--gold-primary)" : "1px solid var(--border-dim)",
+                      borderRadius: "6px",
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      color: isSelected ? "#FFFFFF" : "var(--text-secondary)",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "6px",
+                  padding: "0.35rem 0.75rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: currentPage === totalPages ? "var(--text-muted)" : "var(--text-primary)",
+                  cursor: currentPage === totalPages ? "default" : "pointer",
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Edit Team Lead Name Modal */}
@@ -908,8 +1007,9 @@ export default function SettingsShard({
                   className="select-gold"
                   disabled={isPending}
                 >
-                  <option value="SALES_ASSOCIATE">Sales Associate</option>
-                  <option value="TEAM_LEAD">Team Lead</option>
+                  <option value="TEAM_LEAD">TEAM LEAD</option>
+                  <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
+                  <option value="IT_DEPARTMENT">IT DEPARTMENT</option>
                 </select>
               </div>
 

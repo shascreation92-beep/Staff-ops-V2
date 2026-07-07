@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -16,13 +16,14 @@ import {
   LogOut,
   Key,
   ClipboardCheck,
-  Megaphone
+  Megaphone,
+  Wallet
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
 import { updateUserPasswordAction } from "@/app/actions/users";
 import { getPendingTLRequestsCountAction } from "@/app/actions/accounts";
-import { useEffect } from "react";
+import { useITConfig } from "./ITConfigProvider";
 
 const DatabaseCubeIcon = ({ className, size = 20 }: { className?: string; size?: number }) => (
   <svg
@@ -93,6 +94,15 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const [changePassError, setChangePassError] = useState<string | null>(null);
   const [changePassSuccess, setChangePassSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // IT Configurations state
+  const [showITConfigOverlay, setShowITConfigOverlay] = useState(false);
+  const { verificationCost, updateVerificationCost } = useITConfig();
+  const [tempCost, setTempCost] = useState(verificationCost.toString());
+
+  useEffect(() => {
+    setTempCost(verificationCost.toString());
+  }, [verificationCost]);
 
   // Dynamic notification count for TL requests
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
@@ -195,6 +205,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
     },
     { 
+      id: "it-management", 
+      label: "IT Management", 
+      path: "/it-management", 
+      icon: Shield,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
+    },
+    { 
       id: "settings", 
       label: user.role === "SUPER_ADMIN" ? "Platform Shard" : (user.role === "IT_DEPARTMENT" ? "User Management" : "Rule Engine"), 
       path: "/settings", 
@@ -214,6 +231,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       path: "/announcements", 
       icon: Megaphone,
       roles: ["COMPANY_OWNER", "IT_DEPARTMENT"] 
+    },
+    {
+      id: "it-config",
+      label: "IT Configurations",
+      path: "#it-config",
+      icon: Wallet,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]
     },
     { 
       id: "audit-logs", 
@@ -303,6 +327,38 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path;
+          
+          if (item.id === "it-config") {
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowITConfigOverlay(true);
+                }}
+                className="sidebar-item"
+                style={{
+                  background: "none",
+                  border: "none",
+                  width: "100%",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0.75rem 1rem",
+                  color: "var(--text-secondary)",
+                  borderRadius: "8px",
+                  fontSize: "0.88rem",
+                  fontWeight: 500,
+                  gap: "0.75rem"
+                }}
+              >
+                <Icon className="sidebar-icon" size={20} />
+                <span>{item.label}</span>
+              </button>
+            );
+          }
+
           return (
             <Link
               key={item.id}
@@ -431,6 +487,116 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* IT Configurations Sliding Panel Overlay */}
+      {showITConfigOverlay && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(15, 23, 42, 0.3)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          justifyContent: "flex-end",
+          animation: "fade-in 0.25s ease"
+        }}
+        onClick={() => setShowITConfigOverlay(false)}
+        >
+          <style dangerouslySetInnerHTML={{ __html: `
+            @keyframes slide-in-right {
+              from { transform: translateX(100%); }
+              to { transform: translateX(0); }
+            }
+          ` }} />
+          <div className="glass-panel" 
+            style={{
+              width: "360px",
+              height: "100%",
+              padding: "2rem",
+              background: "#FFFFFF",
+              borderLeft: "1px solid var(--border-dim)",
+              boxShadow: "var(--shadow-premium)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.5rem",
+              animation: "slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, textTransform: "uppercase", margin: 0 }}>
+                IT Configurations
+              </h2>
+              <button 
+                onClick={() => setShowITConfigOverlay(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.2rem" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: "1.4", margin: 0 }}>
+              Adjust operational cost configurations for unverified account verification tracking.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)", textTransform: "uppercase" }}>
+                Verification Cost per Account (PKR)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={tempCost}
+                onChange={(e) => setTempCost(e.target.value)}
+                placeholder="300"
+                className="input-gold"
+                style={{
+                  fontSize: "0.85rem",
+                  padding: "0.6rem 0.85rem"
+                }}
+              />
+              <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                This multiplier determines the estimated cost display on the overall dashboard.
+              </span>
+            </div>
+
+            <div style={{ display: "flex", gap: "1rem", marginTop: "auto" }}>
+              <button
+                type="button"
+                onClick={() => setShowITConfigOverlay(false)}
+                className="btn-glass"
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-gold"
+                style={{ flex: 1 }}
+                onClick={async () => {
+                  const val = parseFloat(tempCost);
+                  if (isNaN(val) || val < 0) {
+                    alert("Please enter a valid verification cost.");
+                    return;
+                  }
+                  const success = await updateVerificationCost(val);
+                  if (success) {
+                    setShowITConfigOverlay(false);
+                    // Force reload to refresh server component page states immediately
+                    window.location.reload();
+                  } else {
+                    alert("Failed to update IT configurations.");
+                  }
+                }}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}

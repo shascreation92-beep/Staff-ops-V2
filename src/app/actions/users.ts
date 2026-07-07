@@ -385,6 +385,7 @@ const OnboardTeamLeadSchema = z.object({
   employeeId: z.string().min(1, "Employee ID is required"),
   password: z.string().min(1, "Password is required"),
   companyId: z.string().optional(),
+  role: z.enum(["TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]).optional(),
 });
 
 export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeamLeadSchema>) {
@@ -395,7 +396,8 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { fullName, email, employeeId, password, companyId } = result.data;
+  const { fullName, email, employeeId, password, companyId, role } = result.data;
+  const targetRole = role || "TEAM_LEAD";
 
   // Determine Company ID
   let targetCompanyId = currentUser.companyId;
@@ -404,7 +406,7 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
   }
 
   if (!targetCompanyId) {
-    throw new Error("No company context found to assign Team Lead.");
+    throw new Error(`No company context found to assign ${targetRole.replace("_", " ")}.`);
   }
 
   const companyIdValue = targetCompanyId; // Assign to a stable variable for database queries
@@ -436,13 +438,13 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
     const newUserId = crypto.randomUUID();
     const newEmployeeId = crypto.randomUUID();
 
-    // Create User (Approved/Active Team Lead)
+    // Create User (Approved/Active)
     const newUser = await db.user.create({
       data: {
         id: newUserId,
         email,
         name: fullName,
-        role: "TEAM_LEAD",
+        role: targetRole,
         status: "APPROVED", // Directly active
         password,
         companyId: companyIdValue,
@@ -798,6 +800,9 @@ export async function updateTeamLeadNameAction(userId: string, newName: string) 
     });
 
     revalidatePath("/settings");
+    revalidatePath("/team-leads");
+    revalidatePath("/employees");
+    revalidatePath("/");
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Failed to update Team Lead profile.");
@@ -947,7 +952,7 @@ export async function editUserAccountAction(formData: {
   name: string;
   password?: string;
   status: "APPROVED" | "BLOCKED";
-  role: "TEAM_LEAD" | "SALES_ASSOCIATE";
+  role: "TEAM_LEAD" | "SALES_ASSOCIATE" | "IT_DEPARTMENT";
   teamLeadId?: string | null;
 }) {
   const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
