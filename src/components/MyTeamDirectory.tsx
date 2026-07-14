@@ -13,6 +13,7 @@ interface TeamMember {
   email: string;
   status: string;
   role: string;
+  image?: string | null;
   lastActiveAt: Date | null;
   employee?: {
     id: string;
@@ -294,8 +295,22 @@ function MemberCard({ member }: { member: TeamMember }) {
     >
       {/* Employee Database Profile (Employee DP / Front-Face) */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-        <div className="user-avatar-gold" style={{ width: "48px", height: "48px", fontSize: "1.1rem", flexShrink: 0, marginTop: "0.25rem" }}>
-          {initials}
+        <div className="user-avatar-gold" style={{
+          width: "48px",
+          height: "48px",
+          borderRadius: "50%",
+          flexShrink: 0,
+          marginTop: "0.25rem",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}>
+          <img 
+            src={member.image || "/uploads/avatars/default-avatar.png"} 
+            alt={member.name || "Associate"} 
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+          />
         </div>
         <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
           <span

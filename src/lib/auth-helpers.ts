@@ -42,28 +42,32 @@ export async function enforceAuth(allowedRoles?: user_role[]) {
     throw new Error("UNAUTHORIZED: Insufficient permissions for this operation.");
   }
 
-  // Fetch Team Lead's name dynamically if role is SALES_ASSOCIATE
+  // Fetch dynamic fields from DB (including image and team lead details)
   let teamLeadName: string | null = null;
-  if (session.user.role === "SALES_ASSOCIATE") {
-    try {
-      const dbUser = await db.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          user: {
-            select: { name: true }
-          }
+  let image: string | null = null;
+  try {
+    const dbUser = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        image: true,
+        user: {
+          select: { name: true }
         }
-      });
-      if (dbUser?.user) {
+      }
+    });
+    if (dbUser) {
+      image = dbUser.image;
+      if (dbUser.user) {
         teamLeadName = dbUser.user.name;
       }
-    } catch (err) {
-      console.error("Failed to fetch dynamic team lead name in enforceAuth:", err);
     }
+  } catch (err) {
+    console.error("Failed to fetch dynamic user database values in enforceAuth:", err);
   }
 
   return {
     ...session.user,
+    image,
     teamLeadName
   };
 }

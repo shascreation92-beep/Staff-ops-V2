@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import PendingOnboardingList from "@/components/PendingOnboardingList";
+import TeamWiseBreakdown from "@/components/TeamWiseBreakdown";
+
 
 export default async function DashboardPage() {
   // Enforce server-side authentication and status checks
@@ -229,6 +231,22 @@ export default async function DashboardPage() {
       };
     })
   );
+
+  const allSalesAssociates = await db.user.findMany({
+    where: {
+      ...companyFilter,
+      role: "SALES_ASSOCIATE",
+      isArchived: false
+    },
+    select: {
+      id: true,
+      name: true,
+      teamLeadId: true
+    },
+    orderBy: {
+      name: "asc"
+    }
+  });
 
   // Row 2 Queries: Facebook Dedicated Operations
   const [
@@ -919,198 +937,12 @@ export default async function DashboardPage() {
             </h2>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", marginBottom: "3rem" }}>
-            {teamLeadsStats.length === 0 ? (
-              <div className="glass-panel" style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.85rem", background: "#FFFFFF", border: "1px solid var(--border-dim)" }}>
-                No active Team Leads registered in the system.
-              </div>
-            ) : (
-              teamLeadsStats.map((tl) => (
-                <div key={tl.id} className="glass-panel" style={{
-                  padding: "1.5rem",
-                  background: "#FFFFFF",
-                  border: "1px solid var(--border-dim)",
-                  borderRadius: "12px",
-                  boxShadow: "var(--shadow-premium)"
-                }}>
-                  {/* Team Lead Info Header Row */}
-                  <div style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "1rem",
-                    borderBottom: "1px solid var(--border-dim)",
-                    paddingBottom: "1rem",
-                    marginBottom: "1.25rem"
-                  }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
-                      <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                        TEAM LEAD
-                      </span>
-                      <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                        {tl.name}
-                      </span>
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        {tl.email} • {tl.teamMembersCount} mapped associate{tl.teamMembersCount === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Sub-Row A (Facebook Operations) */}
-                  <div style={{ marginBottom: "0.75rem" }}>
-                    <span style={{
-                      fontSize: "0.65rem",
-                      fontWeight: 800,
-                      color: "#0250A1",
-                      background: "rgba(2, 80, 161, 0.08)",
-                      padding: "0.2rem 0.5rem",
-                      borderRadius: "4px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
-                      display: "inline-block"
-                    }}>
-                      Facebook Operations
-                    </span>
-                  </div>
-
-                  {/* Facebook Stats Sub-Grid */}
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-                    gap: "1rem"
-                  }}>
-                    {/* Stat 1: Total accounts */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Total IDs
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                        {tl.stats.fbAccounts}
-                      </span>
-                    </div>
-
-                    {/* Stat 2: Verified */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Verified IDs
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#10B981" }}>
-                        {tl.stats.verifiedAccounts}
-                      </span>
-                    </div>
-
-                    {/* Stat 3: Unverified */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Unverified IDs
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#F59E0B" }}>
-                        {tl.stats.unverifiedAccounts}
-                      </span>
-                    </div>
-
-                    {/* Stat 4: Marketplace Issue */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        MP Issues
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#EF4444" }}>
-                        {tl.stats.fbMarketplaceIssues}
-                      </span>
-                    </div>
-
-                    {/* Stat 5: Identity Issue */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Identity Issues
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#3B82F6" }}>
-                        {tl.stats.fbIdentityAccounts}
-                      </span>
-                    </div>
-
-                    {/* Stat 6: Suspended */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Suspended
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#D97706" }}>
-                        {tl.stats.fbSuspendedMarketplaces}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Clean Horizontal Splitter */}
-                  <hr style={{ border: 0, borderTop: "1px solid var(--border-dim)", margin: "1.25rem 0" }} />
-
-                  {/* Sub-Row B (Vinted Operations) */}
-                  <div style={{ marginBottom: "0.75rem" }}>
-                    <span style={{
-                      fontSize: "0.65rem",
-                      fontWeight: 800,
-                      color: "#EF4444",
-                      background: "rgba(239, 68, 68, 0.08)",
-                      padding: "0.2rem 0.5rem",
-                      borderRadius: "4px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
-                      display: "inline-block"
-                    }}>
-                      Vinted Operations
-                    </span>
-                  </div>
-
-                  {/* Vinted Stats Sub-Grid */}
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                    gap: "1rem"
-                  }}>
-                    {/* Stat 1: Total Vinted */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Total Vinted
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                        {tl.stats.vintedAccounts}
-                      </span>
-                    </div>
-
-                    {/* Stat 2: Verified Vinted */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Verified
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#10B981" }}>
-                        {tl.stats.vintedVerified}
-                      </span>
-                    </div>
-
-                    {/* Stat 3: Unverified Vinted */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Unverified
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#F59E0B" }}>
-                        {tl.stats.vintedUnverified}
-                      </span>
-                    </div>
-
-                    {/* Stat 4: Suspended Vinted */}
-                    <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                        Suspended
-                      </span>
-                      <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#EF4444" }}>
-                        {tl.stats.vintedSuspended}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <TeamWiseBreakdown
+            initialTeamLeadsStats={teamLeadsStats}
+            allSalesAssociates={allSalesAssociates}
+            allTeamLeads={companyTeamLeadsList.map(tl => ({ id: tl.id, name: tl.name }))}
+            currentUserRole={user.role}
+          />
         </>
       )}
 

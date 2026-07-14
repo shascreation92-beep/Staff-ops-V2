@@ -540,6 +540,7 @@ export async function getTLTeamMembersAction() {
       email: true,
       status: true,
       role: true,
+      image: true,
       lastActiveAt: true,
       employee: {
         select: {

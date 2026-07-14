@@ -24,6 +24,8 @@ import { user_role } from "@prisma/client";
 import { updateUserPasswordAction } from "@/app/actions/users";
 import { getPendingTLRequestsCountAction } from "@/app/actions/accounts";
 import { useITConfig } from "./ITConfigProvider";
+import { toast } from "react-hot-toast";
+import { useRef } from "react";
 
 const DatabaseCubeIcon = ({ className, size = 20 }: { className?: string; size?: number }) => (
   <svg
@@ -80,6 +82,7 @@ interface SidebarProps {
     role: user_role;
     companyName?: string | null;
     teamLeadName?: string | null;
+    image?: string | null;
   };
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -87,6 +90,116 @@ interface SidebarProps {
 
 export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
+
+  // Display Picture (DP) Crop and Upload state
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setImageSrc(reader.result as string);
+        setZoom(1);
+        setRotation(0);
+        setOffsetX(0);
+        setOffsetY(0);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setDragStart({ x: e.clientX - offsetX, y: e.clientY - offsetY });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (dragStart) {
+      setOffsetX(e.clientX - dragStart.x);
+      setOffsetY(e.clientY - dragStart.y);
+    }
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setDragStart(null);
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!imageSrc) return;
+    setIsUploading(true);
+
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = async () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      canvas.width = 250;
+      canvas.height = 250;
+
+      ctx.clearRect(0, 0, 250, 250);
+
+      // Circle clip path
+      ctx.beginPath();
+      ctx.arc(125, 125, 125, 0, Math.PI * 2);
+      ctx.clip();
+
+      ctx.translate(125, 125);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.scale(zoom, zoom);
+      ctx.translate(-125, -125);
+
+      const imgAspect = img.width / img.height;
+      let drawW = 250;
+      let drawH = 250;
+      let drawX = 0;
+      let drawY = 0;
+
+      if (imgAspect > 1) {
+        drawW = 250 * imgAspect;
+        drawX = (250 - drawW) / 2;
+      } else {
+        drawH = 250 / imgAspect;
+        drawY = (250 - drawH) / 2;
+      }
+
+      ctx.drawImage(img, drawX + offsetX, drawY + offsetY, drawW, drawH);
+
+      const croppedBase64 = canvas.toDataURL("image/png");
+
+      try {
+        const { uploadUserAvatarAction } = await import("@/app/actions/users");
+        const res = await uploadUserAvatarAction(croppedBase64);
+        if (res.success) {
+          toast.success("Display Picture saved successfully!");
+          setShowUploadModal(false);
+          setImageSrc(null);
+          setSelectedFile(null);
+          window.location.reload();
+        } else {
+          toast.error(res.error || "Failed to save avatar.");
+        }
+      } catch (err: any) {
+        toast.error("Upload failed: " + err.message);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+  };
 
   // Change Password state
   const [showChangePassModal, setShowChangePassModal] = useState(false);
@@ -168,6 +281,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       path: "/accounts", 
       icon: Database,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
+    },
+    {
+      id: "chat-space",
+      label: "Chat Workspace",
+      path: "/chat-space",
+      icon: MessageSquare,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]
     },
     {
       id: "master-accounts-pool",
@@ -299,9 +419,41 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           </button>
         )}
 
-        <div className="profile-avatar-container">
-          <div className="profile-avatar-circle">
-            {userInitials}
+        <style dangerouslySetInnerHTML={{ __html: `
+          .avatar-hover-overlay-btn {
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justifyContent: center;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            color: #FFFFFF;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 50%;
+          }
+          .profile-avatar-container:hover .avatar-hover-overlay-btn {
+            opacity: 1 !important;
+          }
+        ` }} />
+
+        <div 
+          className="profile-avatar-container"
+          onClick={() => setShowUploadModal(true)}
+          style={{ cursor: "pointer", position: "relative" }}
+          title="Upload Display Picture"
+        >
+          <div className="profile-avatar-circle" style={{ overflow: "hidden", position: "relative" }}>
+            <img 
+              src={user.image || "/uploads/avatars/default-avatar.png"} 
+              alt={user.name || "Operator"} 
+              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+            />
+            <div className="avatar-hover-overlay-btn">
+              📷
+            </div>
           </div>
         </div>
 
@@ -597,6 +749,181 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 Save
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* circular crop display picture upload modal */}
+      {showUploadModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(15, 23, 42, 0.3)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "460px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0 }}>
+                UPLOAD DISPLAY PICTURE
+              </h2>
+              <button 
+                onClick={() => { setShowUploadModal(false); setImageSrc(null); setSelectedFile(null); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.2rem" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
+              Select an image file, adjust zoom, rotate, and drag the picture inside the circle frame below.
+            </p>
+
+            {/* Hidden Input or Dropzone */}
+            {!imageSrc ? (
+              <div 
+                style={{
+                  border: "2px dashed var(--border-gold)",
+                  borderRadius: "8px",
+                  padding: "2rem 1rem",
+                  textAlign: "center",
+                  background: "#F9FAFB",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+                onClick={() => {
+                  const input = document.getElementById("avatar-file-input");
+                  if (input) input.click();
+                }}
+              >
+                <input 
+                  type="file" 
+                  id="avatar-file-input" 
+                  accept="image/*" 
+                  style={{ display: "none" }} 
+                  onChange={handleFileChange}
+                />
+                <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.5rem" }}>🖼️</span>
+                <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                  Click to choose image
+                </span>
+                <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", display: "block", marginTop: "0.25rem" }}>
+                  Supports PNG, JPG, WEBP (Max 5MB)
+                </span>
+              </div>
+            ) : (
+              /* Cropper / Preview Controls */
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem" }}>
+                {/* Circular Crop Frame with dragging */}
+                <div 
+                  style={{
+                    width: "180px",
+                    height: "180px",
+                    borderRadius: "50%",
+                    border: "3px solid var(--gold-glow)",
+                    overflow: "hidden",
+                    position: "relative",
+                    background: "#000",
+                    cursor: "grab"
+                  }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUpOrLeave}
+                  onMouseLeave={handleMouseUpOrLeave}
+                >
+                  <img 
+                    src={imageSrc} 
+                    alt="Preview" 
+                    draggable={false}
+                    style={{
+                      position: "absolute",
+                      transformOrigin: "center center",
+                      transform: `translate(${offsetX}px, ${offsetY}px) scale(${zoom}) rotate(${rotation}deg)`,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      userSelect: "none"
+                    }}
+                  />
+                </div>
+
+                {/* Crop Zoom & Rotation Sliders */}
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", minWidth: "50px" }}>Zoom</span>
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="3" 
+                      step="0.05"
+                      value={zoom} 
+                      onChange={(e) => setZoom(parseFloat(e.target.value))}
+                      style={{ flex: 1, accentColor: "var(--gold-primary)" }}
+                    />
+                    <span style={{ fontSize: "0.7rem", fontFamily: "var(--font-mono)", width: "30px", textAlign: "right" }}>
+                      {Math.round(zoom * 100)}%
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", minWidth: "50px" }}>Rotate</span>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="360" 
+                      step="1"
+                      value={rotation} 
+                      onChange={(e) => setRotation(parseInt(e.target.value))}
+                      style={{ flex: 1, accentColor: "var(--gold-primary)" }}
+                    />
+                    <span style={{ fontSize: "0.7rem", fontFamily: "var(--font-mono)", width: "30px", textAlign: "right" }}>
+                      {rotation}°
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: "flex", gap: "1rem", width: "100%" }}>
+                  <button
+                    type="button"
+                    onClick={() => { setImageSrc(null); setSelectedFile(null); }}
+                    className="btn-glass"
+                    style={{ flex: 1 }}
+                    disabled={isUploading}
+                  >
+                    Change Image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveAvatar}
+                    className="btn-gold"
+                    style={{ flex: 1 }}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? "Saving Avatar..." : "Save Photo"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Hidden canvas to perform circular crop */}
+            <canvas ref={canvasRef} style={{ display: "none" }} />
           </div>
         </div>
       )}

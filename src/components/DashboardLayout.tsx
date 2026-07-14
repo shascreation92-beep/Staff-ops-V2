@@ -22,6 +22,7 @@ interface DashboardLayoutProps {
     role: user_role;
     companyName?: string | null;
     teamLeadName?: string | null;
+    image?: string | null;
   };
 }
 

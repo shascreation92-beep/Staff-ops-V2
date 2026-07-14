@@ -208,20 +208,14 @@ export default function UserDirectoryList({ initialUsers }: UserDirectoryListPro
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: u.role === "TEAM_LEAD" ? "#0250A1" : "var(--gold-primary)",
-                      fontWeight: 700,
-                      fontSize: "1.1rem",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                      overflow: "hidden"
                     }}>
-                      {u.image ? (
-                        <img
-                          src={u.image}
-                          alt={u.name || "Avatar"}
-                          style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
-                        />
-                      ) : (
-                        initials
-                      )}
+                      <img
+                        src={u.image || "/uploads/avatars/default-avatar.png"}
+                        alt={u.name || "Avatar"}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                       <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={u.name || "Operator"}>

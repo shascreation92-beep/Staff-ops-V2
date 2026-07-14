@@ -47,6 +47,7 @@ export const config = {
     "/accounts/:path*",
     "/announcements/:path*",
     "/chat/:path*",
+    "/chat-space/:path*",
     "/settings/:path*",
     "/audit-logs/:path*",
     "/pending",

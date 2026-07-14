@@ -13,7 +13,8 @@ import {
   approveSalesAssociateAction,
   adminResetUserPasswordAction,
   toggleUserStatusAction,
-  editUserAccountAction
+  editUserAccountAction,
+  reassignAssociateAction
 } from "@/app/actions/users";
 import { 
   Sliders, 
@@ -30,7 +31,8 @@ import {
   Key,
   Eye,
   EyeOff,
-  Search
+  Search,
+  UserCheck
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
@@ -233,6 +235,13 @@ export default function SettingsShard({
   const [editAccountTeamLeadId, setEditAccountTeamLeadId] = useState<string | null>(null);
   const [editAccountError, setEditAccountError] = useState<string | null>(null);
 
+  // Reassign Associate State
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [reassignAssociateId, setReassignAssociateId] = useState("");
+  const [reassignAssociateName, setReassignAssociateName] = useState("");
+  const [reassignTeamLeadId, setReassignTeamLeadId] = useState<string | null>(null);
+  const [reassignError, setReassignError] = useState<string | null>(null);
+
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -312,6 +321,25 @@ export default function SettingsShard({
         }
       } catch (err: any) {
         setEditAccountError(err.message || "Failed to update user account.");
+      }
+    });
+  };
+
+  const handleReassignSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setReassignError(null);
+
+    startTransition(async () => {
+      try {
+        const res = await reassignAssociateAction(reassignAssociateId, reassignTeamLeadId);
+        if (res.success) {
+          setShowReassignModal(false);
+          setReassignAssociateId("");
+          setReassignAssociateName("");
+          setReassignTeamLeadId(null);
+        }
+      } catch (err: any) {
+        setReassignError(err.message || "Failed to reassign associate.");
       }
     });
   };
@@ -476,7 +504,7 @@ export default function SettingsShard({
                 <th style={{ padding: "0.75rem 1rem", width: "15%" }}>PASSWORD</th>
                 <th style={{ padding: "0.75rem 1rem", width: "15%" }}>DESIGNATION</th>
                 <th style={{ padding: "0.75rem 1rem", width: "15%" }}>STATUS</th>
-                <th style={{ textAlign: "right", padding: "0.75rem 1rem", width: "10%" }}>ACTIONS</th>
+                <th style={{ textAlign: "center", padding: "0.75rem 1rem", width: "15%" }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -577,24 +605,50 @@ export default function SettingsShard({
                         </button>
                       </div>
                     </td>
-                    <td style={{ textAlign: "right", padding: "0.75rem 1rem" }}>
-                      <button
-                        onClick={() => {
-                          setEditAccountUserId(u.id);
-                          setEditAccountName(u.name || "");
-                          setEditAccountPassword(u.password || "");
-                          setEditAccountRole(u.role === "TEAM_LEAD" ? "TEAM_LEAD" : "SALES_ASSOCIATE");
-                          setEditAccountStatus(u.status === "BLOCKED" ? "BLOCKED" : "APPROVED");
-                          setEditAccountTeamLeadId(u.teamLeadId);
-                          setEditAccountError(null);
-                          setShowEditAccountModal(true);
-                        }}
-                        className="btn-glass"
-                        style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
-                      >
-                        <Edit2 size={12} />
-                        <span>Edit Account</span>
-                      </button>
+                    <td style={{ padding: "0.75rem 1rem" }}>
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.75rem" }}>
+                        <button
+                          onClick={() => {
+                            setEditAccountUserId(u.id);
+                            setEditAccountName(u.name || "");
+                            setEditAccountPassword(u.password || "");
+                            setEditAccountRole(u.role === "TEAM_LEAD" ? "TEAM_LEAD" : "SALES_ASSOCIATE");
+                            setEditAccountStatus(u.status === "BLOCKED" ? "BLOCKED" : "APPROVED");
+                            setEditAccountTeamLeadId(u.teamLeadId);
+                            setEditAccountError(null);
+                            setShowEditAccountModal(true);
+                          }}
+                          className="btn-glass"
+                          style={{ padding: "0.25rem 0.5rem", height: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+                        >
+                          <Edit2 size={12} />
+                          <span>Edit Account</span>
+                        </button>
+                        {u.role === "SALES_ASSOCIATE" && (
+                          <button
+                            onClick={() => {
+                              setReassignAssociateId(u.id);
+                              setReassignAssociateName(u.name || u.email);
+                              setReassignTeamLeadId(u.teamLeadId);
+                              setReassignError(null);
+                              setShowReassignModal(true);
+                            }}
+                            className="btn-glass"
+                            style={{ 
+                              padding: "0.25rem 0.5rem", 
+                              height: "auto", 
+                              display: "inline-flex", 
+                              alignItems: "center", 
+                              gap: "0.25rem",
+                              color: "var(--gold-primary)",
+                              borderColor: "var(--border-gold)"
+                            }}
+                          >
+                            <UserCheck size={12} />
+                            <span>Reallocate</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -1069,6 +1123,99 @@ export default function SettingsShard({
                   disabled={isPending}
                 >
                   {isPending ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {showReassignModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(15, 23, 42, 0.3)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "460px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
+          }}>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>REASSIGN SALES ASSOCIATE</h2>
+
+            {reassignError && (
+              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+                {reassignError}
+              </div>
+            )}
+
+            <form onSubmit={handleReassignSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="form-group">
+                <label className="form-label">Associate Name</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={reassignAssociateName}
+                  className="input-gold"
+                  style={{ background: "#F3F4F6", cursor: "not-allowed" }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Assign Team Lead</label>
+                <select
+                  value={reassignTeamLeadId || ""}
+                  onChange={(e) => setReassignTeamLeadId(e.target.value ? e.target.value : null)}
+                  className="select-gold"
+                  disabled={isPending}
+                >
+                  <option value="">No Mapped Team Lead</option>
+                  {users
+                    .filter(u => u.role === "TEAM_LEAD" && u.status === "APPROVED")
+                    .map(tl => (
+                      <option key={tl.id} value={tl.id}>
+                        {tl.name || tl.email}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReassignModal(false);
+                    setReassignAssociateId("");
+                    setReassignAssociateName("");
+                    setReassignTeamLeadId(null);
+                  }}
+                  className="btn-glass"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold"
+                  style={{ flex: 1 }}
+                  disabled={isPending}
+                >
+                  {isPending ? "Reassigning..." : "Save Changes"}
                 </button>
               </div>
             </form>
