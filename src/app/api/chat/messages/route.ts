@@ -11,12 +11,32 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const contactId = searchParams.get("contactId");
+  const isGroup = searchParams.get("isGroup") === "true";
 
   if (!contactId) {
     return NextResponse.json({ error: "Contact ID is required" }, { status: 400 });
   }
 
   try {
+    if (isGroup) {
+      const messages = await db.chatgroupmessage.findMany({
+        where: { groupId: contactId },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              image: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "asc"
+        }
+      });
+      return NextResponse.json(messages);
+    }
+
     const messages = await db.chatmessage.findMany({
       where: {
         OR: [

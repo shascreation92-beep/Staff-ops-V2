@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useTransition } from "react";
-import { sendChatMessageAction } from "@/app/actions/chat";
+import { 
+  sendChatMessageAction, 
+  createChatGroupAction, 
+  togglePinChatAction, 
+  joinPublicGroupAction, 
+  sendGroupMessageAction 
+} from "@/app/actions/chat";
 import { useSearchParams } from "next/navigation";
 import { 
   Send, 
@@ -23,6 +29,7 @@ interface ChatShardProps {
     role: user_role;
     email?: string | null;
     name?: string | null;
+    image?: string | null;
   };
   users: any[];
   initialMessages: any[];
@@ -38,13 +45,18 @@ export default function ChatShard({
 
   const [isPending, startTransition] = useTransition();
   const [messages, setMessages] = useState<any[]>(initialMessages);
-  const [activeContact, setActiveContact] = useState<any | null>(() => {
-    if (contactId) {
-      const found = users.find(u => u.id === contactId);
-      if (found) return found;
-    }
-    return users.find(u => u.id !== currentUser.id) || null;
-  });
+  
+  // Group, Pinning, and modal states
+  const [joinedGroups, setJoinedGroups] = useState<any[]>([]);
+  const [discoverableGroups, setDiscoverableGroups] = useState<any[]>([]);
+  const [pins, setPins] = useState<any[]>([]);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupIsPrivate, setNewGroupIsPrivate] = useState(false);
+  const [newGroupMembers, setNewGroupMembers] = useState<string[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
+
+  const [activeContact, setActiveContact] = useState<any | null>(null);
   const [inputText, setInputText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -59,21 +71,56 @@ export default function ChatShard({
   const [broadcastMessageText, setBroadcastMessageText] = useState("");
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
-  // Filter contacts by search query
-  const filteredContacts = users.filter(u => 
-    u.id !== currentUser.id && 
-    (u.name || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Single-digit formatter helper
+  const formatNumber = (num: number | string) => {
+    const parsed = parseInt(num.toString(), 10);
+    if (isNaN(parsed)) return num;
+    return parsed.toString();
+  };
 
-  // Sync activeContact if query param contactId changes
-  useEffect(() => {
-    if (contactId) {
-      const found = users.find(u => u.id === contactId);
-      if (found) {
-        setActiveContact(found);
+  // Helper to check if a chat is pinned
+  const isPinned = (targetId: string) => {
+    return pins.some(p => p.targetId === targetId);
+  };
+
+  // Helper to calculate unread message count for direct contacts
+  const getUnreadCount = (contactId: string) => {
+    return messages.filter(m => m.senderId === contactId && m.receiverId === currentUser.id && !m.isRead).length;
+  };
+
+  // Fetch groups and pinning records
+  const fetchGroupsAndPins = async (selectContactId?: string) => {
+    try {
+      const res = await fetch("/api/chat/groups");
+      if (res.ok) {
+        const data = await res.json();
+        setJoinedGroups(data.joinedGroups || []);
+        setDiscoverableGroups(data.discoverableGroups || []);
+        setPins(data.pins || []);
+
+        // Initialize activeContact if not yet set
+        const targetId = selectContactId || contactId;
+        if (targetId) {
+          const groupFound = data.joinedGroups.find((g: any) => g.id === targetId);
+          if (groupFound) {
+            setActiveContact({ ...groupFound, isGroup: true });
+            return;
+          }
+          const userFound = users.find((u: any) => u.id === targetId);
+          if (userFound) {
+            setActiveContact(userFound);
+            return;
+          }
+        }
       }
+    } catch (err) {
+      console.error(err);
     }
-  }, [contactId, users]);
+  };
+
+  useEffect(() => {
+    fetchGroupsAndPins();
+  }, []);
 
   // Reset typing state and search on contact change
   useEffect(() => {
@@ -86,21 +133,23 @@ export default function ChatShard({
   useEffect(() => {
     const fetchLatestMessages = async () => {
       if (!activeContact || activeContact === "BROADCAST") return;
+      const isGroup = !!activeContact.isGroup;
       try {
-        const res = await fetch(`/api/chat/messages?contactId=${activeContact.id}`);
+        const res = await fetch(`/api/chat/messages?contactId=${activeContact.id}&isGroup=${isGroup}`);
         if (res.ok) {
           const data = await res.json();
           setMessages(data);
           
-          // If we receive simulated replies, stop the typing simulation
-          const hasReplied = data.some(
-            (m: any) => m.senderId === activeContact.id && (
-              m.message.includes("Copy that! Operations are fully monitored") ||
-              m.message.includes("System diagnosis payload sent successfully")
-            )
-          );
-          if (hasReplied) {
-            setIsTyping(false);
+          if (!isGroup) {
+            const hasReplied = data.some(
+              (m: any) => m.senderId === activeContact.id && (
+                m.message.includes("Copy that! Operations are fully monitored") ||
+                m.message.includes("System diagnosis payload sent successfully")
+              )
+            );
+            if (hasReplied) {
+              setIsTyping(false);
+            }
           }
         }
       } catch (err) {
@@ -120,7 +169,9 @@ export default function ChatShard({
 
   // Compute live statistics for the active colleague (Sales Associate or Team Lead)
   const getColleagueStats = (contact: any) => {
-    if (!contact || contact === "BROADCAST") return { totalIds: 0, fbAccounts: 0, vintedAccounts: 0, unverifiedAccounts: 0, suspendedAccounts: 0 };
+    if (!contact || contact === "BROADCAST" || contact.isGroup) {
+      return { totalIds: 0, fbAccounts: 0, vintedAccounts: 0, unverifiedAccounts: 0, suspendedAccounts: 0 };
+    }
     
     let allAccounts: any[] = [];
     if (contact.account_account_createdByIdTouser) {
@@ -128,7 +179,6 @@ export default function ChatShard({
     }
     
     if (contact.role === "TEAM_LEAD") {
-      // Find all team members belonging to this lead
       const teamMembers = users.filter(u => u.teamLeadId === contact.id);
       teamMembers.forEach(tm => {
         if (tm.account_account_createdByIdTouser) {
@@ -175,7 +225,6 @@ export default function ChatShard({
       return { label: "Active (Online)", color: "#10B981", isCritical: false, pulse: false };
     }
     
-    // Calculate critical ratio for all team leads to identify the weakest team lead
     const tls = users.filter(u => u.role === "TEAM_LEAD");
     let worstTlId = "";
     let highestRatio = 0;
@@ -192,7 +241,6 @@ export default function ChatShard({
     });
 
     const isMemberOfWeakestTeam = c.id === worstTlId || c.teamLeadId === worstTlId;
-    
     if (isMemberOfWeakestTeam && highestRatio > 0) {
       return { label: "🚨 Critical Alert", color: "#EF4444", isCritical: true, pulse: true };
     }
@@ -205,61 +253,140 @@ export default function ChatShard({
     return { label: "Active (Online)", color: "#10B981", isCritical: false, pulse: false };
   };
 
-  // Direct Message submit helper
-  const submitMessageDirectly = (text: string) => {
-    if (!activeContact || activeContact === "BROADCAST") return;
-    const tempId = crypto.randomUUID();
-    const optimisticMessage = {
-      id: tempId,
-      senderId: currentUser.id,
-      receiverId: activeContact.id,
-      message: text,
-      isRead: false,
-      createdAt: new Date().toISOString()
-    };
-    setMessages(prev => [...prev, optimisticMessage]);
-
+  // Group creation & Pinning toggle handlers
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return;
     startTransition(async () => {
       try {
-        await sendChatMessageAction({
-          receiverId: activeContact.id,
-          message: text
+        const res = await createChatGroupAction({
+          name: newGroupName,
+          isPrivate: newGroupIsPrivate,
+          initialMembers: newGroupMembers
         });
-
-        // Simulating interactive chatbot responses after sending
-        setTimeout(() => {
-          setIsTyping(true);
-        }, 1000);
-
-        setTimeout(async () => {
-          try {
-            let responseText = `Copy that! Operations are fully monitored. (${activeContact.role.replace("_", " ")})`;
-            if (text.includes("📎 ATTACHMENT")) {
-              responseText = `Received attachment log. System diagnosis payload sent successfully.`;
-            }
-
-            await fetch(`/api/chat/simulate-reply`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                senderId: activeContact.id,
-                receiverId: currentUser.id,
-                message: responseText
-              })
-            });
-            setIsTyping(false);
-          } catch (e) {
-            console.error(e);
-            setIsTyping(false);
-          }
-        }, 3500);
-
+        if (res.success) {
+          toast.success("Group created successfully!");
+          setShowCreateGroupModal(false);
+          setNewGroupName("");
+          setNewGroupIsPrivate(false);
+          setNewGroupMembers([]);
+          await fetchGroupsAndPins(res.groupId);
+        }
       } catch (err: any) {
-        toast.error(err.message || "Failed to transmit message.");
-        setMessages(prev => prev.filter(m => m.id !== tempId));
-        setIsTyping(false);
+        toast.error(err.message || "Failed to create group.");
       }
     });
+  };
+
+  const handleTogglePin = async (targetId: string, isGroup: boolean) => {
+    startTransition(async () => {
+      try {
+        const res = await togglePinChatAction(targetId, isGroup);
+        if (res.success) {
+          toast.success(res.pinned ? "Chat pinned!" : "Chat unpinned!");
+          await fetchGroupsAndPins();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to toggle pin.");
+      }
+    });
+  };
+
+  const handleJoinGroup = async (groupId: string) => {
+    startTransition(async () => {
+      try {
+        const res = await joinPublicGroupAction(groupId);
+        if (res.success) {
+          toast.success("Joined group successfully!");
+          setSearchTerm("");
+          await fetchGroupsAndPins(groupId);
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to join group.");
+      }
+    });
+  };
+
+  // Unified message submission helper (Group + Direct)
+  const submitMessage = (text: string) => {
+    if (!activeContact || activeContact === "BROADCAST") return;
+    const tempId = crypto.randomUUID();
+    const isGroup = !!activeContact.isGroup;
+
+    if (isGroup) {
+      const optimisticMessage = {
+        id: tempId,
+        groupId: activeContact.id,
+        senderId: currentUser.id,
+        message: text,
+        createdAt: new Date().toISOString(),
+        sender: {
+          id: currentUser.id,
+          name: currentUser.name || "Me",
+          image: currentUser.image
+        }
+      };
+      setMessages(prev => [...prev, optimisticMessage]);
+
+      startTransition(async () => {
+        try {
+          await sendGroupMessageAction(activeContact.id, text);
+        } catch (err: any) {
+          toast.error(err.message || "Failed to transmit group message.");
+          setMessages(prev => prev.filter(m => m.id !== tempId));
+        }
+      });
+    } else {
+      const optimisticMessage = {
+        id: tempId,
+        senderId: currentUser.id,
+        receiverId: activeContact.id,
+        message: text,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, optimisticMessage]);
+
+      startTransition(async () => {
+        try {
+          await sendChatMessageAction({
+            receiverId: activeContact.id,
+            message: text
+          });
+
+          // Simulated chatbot replies (Direct Messaging only)
+          setTimeout(() => {
+            setIsTyping(true);
+          }, 1000);
+
+          setTimeout(async () => {
+            try {
+              let responseText = `Copy that! Operations are fully monitored. (${activeContact.role.replace("_", " ")})`;
+              if (text.includes("📎 ATTACHMENT")) {
+                responseText = `Received attachment log. System diagnosis payload sent successfully.`;
+              }
+
+              await fetch(`/api/chat/simulate-reply`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  senderId: activeContact.id,
+                  receiverId: currentUser.id,
+                  message: responseText
+                })
+              });
+              setIsTyping(false);
+            } catch (e) {
+              console.error(e);
+              setIsTyping(false);
+            }
+          }, 3500);
+
+        } catch (err: any) {
+          toast.error(err.message || "Failed to transmit message.");
+          setMessages(prev => prev.filter(m => m.id !== tempId));
+        }
+      });
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -268,7 +395,6 @@ export default function ChatShard({
 
     const text = inputText.trim();
 
-    // Check if input is a slash command
     if (text.startsWith("/")) {
       executeSlashCommand(text);
       return;
@@ -276,7 +402,7 @@ export default function ChatShard({
 
     setInputText("");
     setShowEmojiPicker(false);
-    submitMessageDirectly(text);
+    submitMessage(text);
   };
 
   const executeSlashCommand = (cmd: string) => {
@@ -290,12 +416,12 @@ export default function ChatShard({
       toast.success("Chat history cleared from active session!");
     } else if (parsed === "/alert") {
       const text = "⚠️ PRIORITY OPERATIONS ALERT: Immediate performance optimization required for active ID allocations.";
-      submitMessageDirectly(text);
+      submitMessage(text);
       toast.success("Operations alert dispatched!");
     } else if (parsed === "/stats") {
       const stats = getColleagueStats(activeContact);
       const text = `📊 SYSTEM REPORT - ${activeContact.name}:\n• Total IDs: ${stats.totalIds}\n• Unverified: ${stats.unverifiedAccounts}\n• Suspended: ${stats.suspendedAccounts}\n• FB/Vinted: ${stats.fbAccounts}/${stats.vintedAccounts}`;
-      submitMessageDirectly(text);
+      submitMessage(text);
       toast.success("Colleague stats loaded into thread.");
     } else {
       toast.error("Unknown operational command. Use /stats, /alert, or /clear.");
@@ -365,11 +491,76 @@ export default function ChatShard({
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
+  // Helper to get last message timestamp for direct contact
+  const getDirectLastMessageTime = (contactId: string) => {
+    const threadMsgs = messages.filter(
+      m => (m.senderId === currentUser.id && m.receiverId === contactId) ||
+           (m.senderId === contactId && m.receiverId === currentUser.id)
+    );
+    if (threadMsgs.length === 0) return 0;
+    return new Date(threadMsgs[threadMsgs.length - 1].createdAt).getTime();
+  };
+
+  // Helper to determine if a contact is active (has messages exchanged)
+  const isDirectActive = (contactId: string) => {
+    return messages.some(
+      m => (m.senderId === currentUser.id && m.receiverId === contactId) ||
+           (m.senderId === contactId && m.receiverId === currentUser.id)
+    );
+  };
+
+  // Prepare sidebar lists based on search mode
+  let pinnedItems: any[] = [];
+  let activeConversations: any[] = [];
+  let searchableTeammates: any[] = [];
+  let searchableJoinedGroups: any[] = [];
+  let searchableDiscoverableGroups: any[] = [];
+
+  if (!searchTerm.trim()) {
+    // 1. PINNED items (both direct contacts and groups)
+    const pinnedUsers = users
+      .filter(u => u.id !== currentUser.id && isPinned(u.id))
+      .map(u => ({ ...u, isGroup: false, lastActiveTime: getDirectLastMessageTime(u.id) || new Date(u.createdAt).getTime() }));
+
+    const pinnedGps = joinedGroups
+      .filter(g => isPinned(g.id))
+      .map(g => ({ ...g, isGroup: true, lastActiveTime: new Date(g.messages?.[0]?.createdAt || g.createdAt).getTime() }));
+
+    pinnedItems = [...pinnedUsers, ...pinnedGps].sort((a, b) => b.lastActiveTime - a.lastActiveTime);
+
+    // 2. ACTIVE conversation rows (unpinned users with messages & joined groups)
+    const activeUsers = users
+      .filter(u => u.id !== currentUser.id && !isPinned(u.id) && isDirectActive(u.id))
+      .map(u => ({ ...u, isGroup: false, lastActiveTime: getDirectLastMessageTime(u.id) }));
+
+    const activeGps = joinedGroups
+      .filter(g => !isPinned(g.id))
+      .map(g => ({ ...g, isGroup: true, lastActiveTime: new Date(g.messages?.[0]?.createdAt || g.createdAt).getTime() }));
+
+    activeConversations = [...activeUsers, ...activeGps].sort((a, b) => b.lastActiveTime - a.lastActiveTime);
+  } else {
+    // Search mode
+    const searchLower = searchTerm.toLowerCase();
+    searchableTeammates = users.filter(
+      u => u.id !== currentUser.id && (u.name || "").toLowerCase().includes(searchLower)
+    );
+    searchableJoinedGroups = joinedGroups.filter(
+      g => (g.name || "").toLowerCase().includes(searchLower)
+    );
+    searchableDiscoverableGroups = discoverableGroups.filter(
+      g => (g.name || "").toLowerCase().includes(searchLower)
+    );
+  }
+
   // Filter messages belonging to the active thread and by search query
   const activeMessages = messages.filter(m => 
     activeContact && activeContact !== "BROADCAST" && (
-      (m.senderId === currentUser.id && m.receiverId === activeContact.id) ||
-      (m.senderId === activeContact.id && m.receiverId === currentUser.id)
+      activeContact.isGroup 
+        ? m.groupId === activeContact.id
+        : (
+            (m.senderId === currentUser.id && m.receiverId === activeContact.id) ||
+            (m.senderId === activeContact.id && m.receiverId === currentUser.id)
+          )
     )
   );
 
@@ -381,7 +572,7 @@ export default function ChatShard({
   const handleSendAttachment = (fileName: string, fileType: string) => {
     setShowAttachmentModal(false);
     const text = `📎 ATTACHMENT [${fileType}]: ${fileName}`;
-    submitMessageDirectly(text);
+    submitMessage(text);
     toast.success("Attachment file dispatched!");
   };
 
@@ -484,34 +675,40 @@ export default function ChatShard({
           </div>
         </div>
 
-        {/* Search */}
-        <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid var(--border-dim)" }}>
-          <div className="table-search-wrapper" style={{ width: "100%" }}>
+        {/* Search & Create Group Trigger */}
+        <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid var(--border-dim)", display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <div className="table-search-wrapper" style={{ width: "100%", flex: 1 }}>
             <Search className="header-search-icon" size={16} />
             <input
               type="text"
-              placeholder="Search team..."
+              placeholder="Search team or groups..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="header-search-input"
               style={{ fontSize: "0.8rem", padding: "0.4rem 0.5rem 0.4rem 2rem" }}
             />
           </div>
+          <button
+            type="button"
+            onClick={() => setShowCreateGroupModal(true)}
+            className="btn-gold"
+            style={{
+              padding: "0.4rem 0.75rem",
+              fontSize: "0.75rem",
+              borderRadius: "6px",
+              whiteSpace: "nowrap",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.25rem"
+            }}
+            title="Create New Group Space"
+          >
+            <span>+ Group</span>
+          </button>
         </div>
 
-        {/* Directory header */}
-        <div style={{
-          padding: "0.75rem 1rem 0.25rem 1rem",
-          fontSize: "0.7rem",
-          fontWeight: 700,
-          color: "var(--gold-premium)",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase"
-        }}>
-          Direct Communications
-        </div>
-
-        {/* User list container with independent scroll */}
+        {/* Directory lists container with independent scroll */}
         <div style={{ 
           flex: 1, 
           overflowY: "auto", 
@@ -521,72 +718,417 @@ export default function ChatShard({
           gap: "0.2rem",
           minHeight: 0
         }}>
-          {filteredContacts.length === 0 ? (
-            <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.75rem" }}>
-              No teammates found.
-            </div>
-          ) : (
-            filteredContacts.map((c) => {
-              const isActive = activeContact && activeContact !== "BROADCAST" && activeContact.id === c.id;
-              const initials = getInitials(c.name || "User");
-              const statusInfo = getColleagueStatusInfo(c);
-              
-              return (
-                <div
-                  key={c.id}
-                  onClick={() => setActiveContact(c)}
-                  className={`chat-channel-item ${isActive ? 'active' : ''}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    padding: "0.6rem 0.75rem",
-                    background: isActive ? "rgba(2, 80, 161, 0.06)" : "transparent",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    transition: "background 0.2s"
-                  }}
-                >
-                  <div className="user-avatar-gold" style={{
-                    width: "2rem",
-                    height: "2rem",
-                    borderRadius: "50%",
-                    position: "relative",
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
+          {!searchTerm.trim() ? (
+            <>
+              {/* Pinned Section */}
+              {pinnedItems.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "0.5rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase"
                   }}>
-                    <img 
-                      src={c.image || "/uploads/avatars/default-avatar.png"} 
-                      alt={c.name || "User"} 
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                    />
+                    📌 Pinned Chats
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                    <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isActive ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.name}
-                    </span>
-                    <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.role.replace(/_/g, " ")}
-                    </span>
-                  </div>
-                  
-                  {/* Dynamic Status Dot Indicator */}
-                  <div 
-                    className={statusInfo.pulse ? "pulse-critical-dot" : ""}
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: statusInfo.color,
-                      transition: "background 0.3s ease"
-                    }} 
-                    title={statusInfo.label}
-                  />
+                  {pinnedItems.map(item => {
+                    const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
+                    const unreadCount = !item.isGroup ? getUnreadCount(item.id) : 0;
+                    const statusInfo = !item.isGroup ? getColleagueStatusInfo(item) : null;
+
+                    return (
+                      <div
+                        key={`${item.isGroup ? 'gp' : 'dir'}-${item.id}`}
+                        onClick={() => setActiveContact(item)}
+                        className={`chat-channel-item ${isSelected ? 'active' : ''}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          padding: "0.6rem 0.75rem",
+                          background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          transition: "background 0.2s",
+                          position: "relative"
+                        }}
+                      >
+                        <div className="user-avatar-gold" style={{
+                          width: "2rem",
+                          height: "2rem",
+                          borderRadius: "50%",
+                          position: "relative",
+                          overflow: "hidden",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: item.isGroup ? "rgba(2, 80, 161, 0.08)" : "transparent"
+                        }}>
+                          {item.isGroup ? (
+                            <span style={{ fontSize: "0.95rem" }}>{item.isPrivate ? "🔒" : "#"}</span>
+                          ) : (
+                            <img 
+                              src={item.image || "/uploads/avatars/default-avatar.png"} 
+                              alt={item.name || "User"} 
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                            />
+                          )}
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {item.name}
+                          </span>
+                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {item.isGroup ? (item.isPrivate ? "Private Space" : "Public Channel") : item.role.replace(/_/g, " ")}
+                          </span>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTogglePin(item.id, item.isGroup);
+                            }}
+                            style={{ border: "none", background: "none", cursor: "pointer", padding: "0.2rem" }}
+                            title="Unpin Chat"
+                          >
+                            <span style={{ fontSize: "0.8rem", color: "#0250A1" }}>📌</span>
+                          </button>
+
+                          {unreadCount > 0 && (
+                            <div style={{
+                              background: "#0250A1",
+                              color: "#FFFFFF",
+                              fontSize: "0.65rem",
+                              fontWeight: 800,
+                              borderRadius: "50%",
+                              width: "16px",
+                              height: "16px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}>
+                              {formatNumber(unreadCount)}
+                            </div>
+                          )}
+
+                          {!item.isGroup && statusInfo && (
+                            <div 
+                              className={statusInfo.pulse ? "pulse-critical-dot" : ""}
+                              style={{
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                background: statusInfo.color,
+                                transition: "background 0.3s ease"
+                              }} 
+                              title={statusInfo.label}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Active Conversations Section */}
+              <div style={{
+                padding: "0.75rem 0.75rem 0.25rem 0.75rem",
+                fontSize: "0.68rem",
+                fontWeight: 700,
+                color: "var(--gold-premium)",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase"
+              }}>
+                💬 Recent Chats & Groups
+              </div>
+
+              {activeConversations.length === 0 && pinnedItems.length === 0 ? (
+                <div style={{ padding: "2rem 1.5rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                  No active chats or groups. Use search above to start a conversation or join a public group.
                 </div>
-              );
-            })
+              ) : (
+                activeConversations.map(item => {
+                  const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
+                  const unreadCount = !item.isGroup ? getUnreadCount(item.id) : 0;
+                  const statusInfo = !item.isGroup ? getColleagueStatusInfo(item) : null;
+
+                  return (
+                    <div
+                      key={`${item.isGroup ? 'gp' : 'dir'}-${item.id}`}
+                      onClick={() => setActiveContact(item)}
+                      className="chat-channel-item-container"
+                      style={{ position: "relative" }}
+                    >
+                      <div
+                        className={`chat-channel-item ${isSelected ? 'active' : ''}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          padding: "0.6rem 0.75rem",
+                          background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          transition: "background 0.2s"
+                        }}
+                      >
+                        <div className="user-avatar-gold" style={{
+                          width: "2rem",
+                          height: "2rem",
+                          borderRadius: "50%",
+                          position: "relative",
+                          overflow: "hidden",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: item.isGroup ? "rgba(2, 80, 161, 0.08)" : "transparent"
+                        }}>
+                          {item.isGroup ? (
+                            <span style={{ fontSize: "0.95rem" }}>{item.isPrivate ? "🔒" : "#"}</span>
+                          ) : (
+                            <img 
+                              src={item.image || "/uploads/avatars/default-avatar.png"} 
+                              alt={item.name || "User"} 
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                            />
+                          )}
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {item.name}
+                          </span>
+                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {item.isGroup ? (item.isPrivate ? "Private Space" : "Public Channel") : item.role.replace(/_/g, " ")}
+                          </span>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTogglePin(item.id, item.isGroup);
+                            }}
+                            className="hover-pin-btn"
+                            style={{ border: "none", background: "none", cursor: "pointer", padding: "0.2rem" }}
+                            title="Pin Chat"
+                          >
+                            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>📌</span>
+                          </button>
+
+                          {unreadCount > 0 && (
+                            <div style={{
+                              background: "#0250A1",
+                              color: "#FFFFFF",
+                              fontSize: "0.65rem",
+                              fontWeight: 800,
+                              borderRadius: "50%",
+                              width: "16px",
+                              height: "16px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}>
+                              {formatNumber(unreadCount)}
+                            </div>
+                          )}
+
+                          {!item.isGroup && statusInfo && (
+                            <div 
+                              className={statusInfo.pulse ? "pulse-critical-dot" : ""}
+                              style={{
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                background: statusInfo.color,
+                                transition: "background 0.3s ease"
+                              }} 
+                              title={statusInfo.label}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </>
+          ) : (
+            <>
+              {/* Search Results: Matching Teammates */}
+              {searchableTeammates.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "0.5rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase"
+                  }}>
+                    Teammates
+                  </div>
+                  {searchableTeammates.map(c => {
+                    const isSelected = activeContact && activeContact.id === c.id && !activeContact.isGroup;
+                    const statusInfo = getColleagueStatusInfo(c);
+
+                    return (
+                      <div
+                        key={`dir-search-${c.id}`}
+                        onClick={() => { setActiveContact(c); setSearchTerm(""); }}
+                        className={`chat-channel-item ${isSelected ? 'active' : ''}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          padding: "0.6rem 0.75rem",
+                          background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          transition: "background 0.2s"
+                        }}
+                      >
+                        <div className="user-avatar-gold" style={{ width: "2rem", height: "2rem", borderRadius: "50%", overflow: "hidden" }}>
+                          <img 
+                            src={c.image || "/uploads/avatars/default-avatar.png"} 
+                            alt={c.name || "User"} 
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                          />
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{c.name}</span>
+                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>{c.role.replace(/_/g, " ")}</span>
+                        </div>
+                        {statusInfo && (
+                          <div 
+                            className={statusInfo.pulse ? "pulse-critical-dot" : ""}
+                            style={{ width: "8px", height: "8px", borderRadius: "50%", background: statusInfo.color }}
+                            title={statusInfo.label}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Search Results: Joined Groups */}
+              {searchableJoinedGroups.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "0.75rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase"
+                  }}>
+                    My Groups
+                  </div>
+                  {searchableJoinedGroups.map(g => {
+                    const isSelected = activeContact && activeContact.id === g.id && activeContact.isGroup;
+
+                    return (
+                      <div
+                        key={`joined-gp-search-${g.id}`}
+                        onClick={() => { setActiveContact({ ...g, isGroup: true }); setSearchTerm(""); }}
+                        className={`chat-channel-item ${isSelected ? 'active' : ''}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          padding: "0.6rem 0.75rem",
+                          background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          transition: "background 0.2s"
+                        }}
+                      >
+                        <div className="user-avatar-gold" style={{
+                          width: "2rem",
+                          height: "2rem",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "rgba(2, 80, 161, 0.08)"
+                        }}>
+                          <span style={{ fontSize: "0.95rem" }}>{g.isPrivate ? "🔒" : "#"}</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{g.name}</span>
+                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>{g.isPrivate ? "Private Space" : "Public Channel"}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Search Results: Discoverable Groups */}
+              {searchableDiscoverableGroups.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "0.75rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase"
+                  }}>
+                    Joinable Public Groups
+                  </div>
+                  {searchableDiscoverableGroups.map(g => (
+                    <div
+                      key={`discover-gp-search-${g.id}`}
+                      className="chat-channel-item"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        padding: "0.6rem 0.75rem",
+                        borderRadius: "6px",
+                        cursor: "default"
+                      }}
+                    >
+                      <div className="user-avatar-gold" style={{
+                        width: "2rem",
+                        height: "2rem",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(2, 80, 161, 0.08)"
+                      }}>
+                        <span style={{ fontSize: "0.95rem" }}>#</span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{g.name}</span>
+                        <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Public Channel</span>
+                      </div>
+                      <button
+                        onClick={() => handleJoinGroup(g.id)}
+                        className="btn-gold"
+                        style={{ padding: "0.25rem 0.6rem", fontSize: "0.68rem", borderRadius: "4px" }}
+                      >
+                        Join
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {searchableTeammates.length === 0 && searchableJoinedGroups.length === 0 && searchableDiscoverableGroups.length === 0 && (
+                <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                  No match found for "{searchTerm}"
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -759,33 +1301,41 @@ export default function ChatShard({
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <div className="user-avatar-gold" style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", position: "relative", overflow: "visible" }}>
-                <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <img 
-                    src={activeContact.image || "/uploads/avatars/default-avatar.png"} 
-                    alt={activeContact.name || "User"} 
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                  />
+                <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: activeContact.isGroup ? "rgba(2, 80, 161, 0.08)" : "transparent" }}>
+                  {activeContact.isGroup ? (
+                    <span style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{activeContact.isPrivate ? "🔒" : "#"}</span>
+                  ) : (
+                    <img 
+                      src={activeContact.image || "/uploads/avatars/default-avatar.png"} 
+                      alt={activeContact.name || "User"} 
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                    />
+                  )}
                 </div>
                 {/* Active status dot on avatar */}
-                <div 
-                  className={activeStatusInfo?.pulse ? "pulse-critical-dot" : ""}
-                  style={{
-                    position: "absolute",
-                    bottom: "1px",
-                    right: "1px",
-                    width: "9px",
-                    height: "9px",
-                    borderRadius: "50%",
-                    background: activeStatusInfo?.color || "#10B981",
-                    border: "2px solid #FFFFFF",
-                    boxShadow: `0 0 4px ${activeStatusInfo?.color || "#10B981"}`
-                  }} 
-                />
+                {!activeContact.isGroup && (
+                  <div 
+                    className={activeStatusInfo?.pulse ? "pulse-critical-dot" : ""}
+                    style={{
+                      position: "absolute",
+                      bottom: "1px",
+                      right: "1px",
+                      width: "9px",
+                      height: "9px",
+                      borderRadius: "50%",
+                      background: activeStatusInfo?.color || "#10B981",
+                      border: "2px solid #FFFFFF",
+                      boxShadow: `0 0 4px ${activeStatusInfo?.color || "#10B981"}`
+                    }} 
+                  />
+                )}
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontSize: "0.95rem", fontWeight: 700 }}>{activeContact.name}</span>
                 <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 500 }}>
-                  {activeContact.role.replace(/_/g, " ")}
+                  {activeContact.isGroup 
+                    ? (activeContact.isPrivate ? "Private Space" : "Public Channel") 
+                    : activeContact.role.replace(/_/g, " ")}
                 </span>
               </div>
             </div>
@@ -893,6 +1443,11 @@ export default function ChatShard({
                       boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                       position: "relative"
                     }}>
+                      {activeContact.isGroup && !isOwn && (
+                        <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-premium)", marginBottom: "0.25rem", display: "block" }}>
+                          {m.sender?.name || "Colleague"}
+                        </span>
+                      )}
                       
                       {/* Structured media preview card for future image/thumbnail rendering */}
                       {isAttachment && (
@@ -1137,7 +1692,7 @@ export default function ChatShard({
         </div>
       )}
 
-      {/* Right Column details panel displaying active contact performance metrics */}
+      {/* Right Column details panel displaying active contact performance metrics or group details */}
       {activeContact && activeContact !== "BROADCAST" && (
         <div style={{
           borderLeft: "1px solid var(--border-dim)",
@@ -1150,20 +1705,24 @@ export default function ChatShard({
         }}>
           {/* Profile summary */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", textAlign: "center", paddingBottom: "1.5rem", borderBottom: "1px solid var(--border-dim)" }}>
-            <div className="user-avatar-gold" style={{ width: "4.25rem", height: "4.25rem", borderRadius: "50%", overflow: "hidden" }}>
-              <img 
-                src={activeContact.image || "/uploads/avatars/default-avatar.png"} 
-                alt={activeContact.name || "User"} 
-                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-              />
+            <div className="user-avatar-gold" style={{ width: "4.25rem", height: "4.25rem", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: activeContact.isGroup ? "rgba(2, 80, 161, 0.08)" : "transparent" }}>
+              {activeContact.isGroup ? (
+                <span style={{ fontSize: "1.8rem", fontWeight: "bold" }}>{activeContact.isPrivate ? "🔒" : "#"}</span>
+              ) : (
+                <img 
+                  src={activeContact.image || "/uploads/avatars/default-avatar.png"} 
+                  alt={activeContact.name || "User"} 
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                />
+              )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
               <h4 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{activeContact.name}</h4>
               <span style={{
                 fontSize: "0.65rem",
                 fontWeight: 800,
-                background: activeContact.role === "SUPER_ADMIN" ? "var(--gold-gradient)" : "rgba(2, 80, 161, 0.08)",
-                color: activeContact.role === "SUPER_ADMIN" ? "#FFFFFF" : "#0250A1",
+                background: activeContact.isGroup ? "var(--gold-gradient)" : (activeContact.role === "SUPER_ADMIN" ? "var(--gold-gradient)" : "rgba(2, 80, 161, 0.08)"),
+                color: (activeContact.isGroup || activeContact.role === "SUPER_ADMIN") ? "#FFFFFF" : "#0250A1",
                 padding: "0.2rem 0.5rem",
                 borderRadius: "4px",
                 textTransform: "uppercase",
@@ -1171,45 +1730,218 @@ export default function ChatShard({
                 display: "inline-block",
                 alignSelf: "center"
               }}>
-                {activeContact.role.replace(/_/g, " ")}
+                {activeContact.isGroup 
+                  ? (activeContact.isPrivate ? "Private Space" : "Public Channel") 
+                  : activeContact.role.replace(/_/g, " ")}
               </span>
-              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>{activeContact.email}</span>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                {activeContact.isGroup ? "Group Chat" : activeContact.email}
+              </span>
             </div>
           </div>
 
-          {/* Operational Stats Section */}
-          <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Operational Stats
-            </h5>
+          {/* Operational Stats or Group Info */}
+          {!activeContact.isGroup ? (
+            <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Operational Stats
+              </h5>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-              <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Total IDs</span>
-                <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{getColleagueStats(activeContact).totalIds}</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Total IDs</span>
+                  <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{formatNumber(getColleagueStats(activeContact).totalIds)}</span>
+                </div>
+                <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Unverified</span>
+                  <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).unverifiedAccounts > 0 ? "#F59E0B" : "var(--text-primary)" }}>
+                    {formatNumber(getColleagueStats(activeContact).unverifiedAccounts)}
+                  </span>
+                </div>
               </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Suspended</span>
+                  <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).suspendedAccounts > 0 ? "#EF4444" : "var(--text-primary)" }}>
+                    {formatNumber(getColleagueStats(activeContact).suspendedAccounts)}
+                  </span>
+                </div>
+                <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>FB / Vinted</span>
+                  <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", paddingTop: "0.25rem" }}>
+                    {formatNumber(getColleagueStats(activeContact).fbAccounts)} / {formatNumber(getColleagueStats(activeContact).vintedAccounts)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Group Info
+              </h5>
               <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Unverified</span>
-                <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).unverifiedAccounts > 0 ? "#F59E0B" : "var(--text-primary)" }}>
-                  {getColleagueStats(activeContact).unverifiedAccounts}
+                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Privacy Setting</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                  {activeContact.isPrivate ? "Private Space" : "Public Channel"}
                 </span>
               </div>
             </div>
+          )}
+        </div>
+      )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-              <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Suspended</span>
-                <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).suspendedAccounts > 0 ? "#EF4444" : "var(--text-primary)" }}>
-                  {getColleagueStats(activeContact).suspendedAccounts}
-                </span>
-              </div>
-              <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>FB / Vinted</span>
-                <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", paddingTop: "0.25rem" }}>
-                  {getColleagueStats(activeContact).fbAccounts} / {getColleagueStats(activeContact).vintedAccounts}
-                </span>
+      {/* Glassmorphic Group Creation Modal */}
+      {showCreateGroupModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(4px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999
+        }}>
+          <div 
+            className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl z-50"
+            style={{
+              width: "100%",
+              maxWidth: "440px",
+              border: "1px solid rgba(255, 255, 255, 0.4)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>Create Group</h3>
+              <button 
+                onClick={() => {
+                  setShowCreateGroupModal(false);
+                  setNewGroupName("");
+                  setNewGroupIsPrivate(false);
+                  setNewGroupMembers([]);
+                  setMemberSearch("");
+                }}
+                style={{ border: "none", background: "none", cursor: "pointer" }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+                Group Name
+              </label>
+              <input
+                type="text"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                placeholder="e.g. Operations Sync"
+                className="input-gold"
+                style={{ width: "100%", padding: "0.6rem" }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                Privacy Setting
+              </label>
+              <div style={{ display: "flex", gap: "1rem" }}>
+                <label style={{ 
+                  flex: 1, 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  gap: "0.25rem", 
+                  padding: "0.75rem", 
+                  borderRadius: "12px", 
+                  border: newGroupIsPrivate ? "1px solid var(--border-dim)" : "2px solid #0250A1", 
+                  background: newGroupIsPrivate ? "transparent" : "rgba(2, 80, 161, 0.04)", 
+                  cursor: "pointer" 
+                }}>
+                  <input 
+                    type="radio" 
+                    name="privacy" 
+                    checked={!newGroupIsPrivate} 
+                    onChange={() => setNewGroupIsPrivate(false)} 
+                    style={{ display: "none" }} 
+                  />
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700 }}># Public Channel</span>
+                  <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Open to all domain personnel</span>
+                </label>
+                <label style={{ 
+                  flex: 1, 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  gap: "0.25rem", 
+                  padding: "0.75rem", 
+                  borderRadius: "12px", 
+                  border: newGroupIsPrivate ? "2px solid #0250A1" : "1px solid var(--border-dim)", 
+                  background: newGroupIsPrivate ? "rgba(2, 80, 161, 0.04)" : "transparent", 
+                  cursor: "pointer" 
+                }}>
+                  <input 
+                    type="radio" 
+                    name="privacy" 
+                    checked={newGroupIsPrivate} 
+                    onChange={() => setNewGroupIsPrivate(true)} 
+                    style={{ display: "none" }} 
+                  />
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>🔒 Private Space</span>
+                  <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Invite-only; hidden from directory</span>
+                </label>
               </div>
             </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+                Invite Members ({formatNumber(newGroupMembers.length)} Invited)
+              </label>
+              <input
+                type="text"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                placeholder="Search colleagues to invite..."
+                className="input-gold"
+                style={{ width: "100%", padding: "0.4rem 0.6rem", fontSize: "0.8rem", marginBottom: "0.5rem" }}
+              />
+              <div style={{ maxHeight: "120px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.25rem", border: "1px solid var(--border-dim)", borderRadius: "8px", padding: "0.4rem", background: "#FFFFFF" }}>
+                {users
+                  .filter(u => u.id !== currentUser.id && (u.name || "").toLowerCase().includes(memberSearch.toLowerCase()))
+                  .map(u => {
+                    const isChecked = newGroupMembers.includes(u.id);
+                    return (
+                      <label key={u.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.25rem", cursor: "pointer", fontSize: "0.8rem" }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            if (isChecked) {
+                              setNewGroupMembers(prev => prev.filter(id => id !== u.id));
+                            } else {
+                              setNewGroupMembers(prev => [...prev, u.id]);
+                            }
+                          }}
+                        />
+                        <span>{u.name} ({u.role.replace(/_/g, " ")})</span>
+                      </label>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <button
+              onClick={handleCreateGroup}
+              disabled={isPending || !newGroupName.trim()}
+              className="btn-gold"
+              style={{ width: "100%", padding: "0.6rem" }}
+            >
+              {isPending ? "Creating Group..." : "Create Group"}
+            </button>
           </div>
         </div>
       )}

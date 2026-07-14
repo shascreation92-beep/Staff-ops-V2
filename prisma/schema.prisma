@@ -127,6 +127,7 @@ model company {
   platform      platform[]
   rule          rule[]
   user          user[]
+  chatgroup     chatgroup[]
 }
 
 model employee {
@@ -246,6 +247,10 @@ model user {
   user                                     user?            @relation("userTouser", fields: [teamLeadId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "User_teamLeadId_fkey")
   other_user                               user[]           @relation("userTouser")
   personalnote                             personalnote[]
+  chatpin                                  chatpin[]
+  chatgroupmember                          chatgroupmember[]
+  chatgroupmessage                         chatgroupmessage[]
+  chatgroup_created                        chatgroup[]      @relation("group_createdBy")
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -364,3 +369,58 @@ model personalnote {
   @@index([userId], map: "PersonalNote_userId_fkey")
   @@map("personal_notes")
 }
+
+model chatgroup {
+  id          String             @id
+  name        String
+  isPrivate   Boolean            @default(false)
+  companyId   String
+  createdById String
+  createdAt   DateTime           @default(now())
+  company     company            @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "ChatGroup_companyId_fkey")
+  createdBy   user               @relation("group_createdBy", fields: [createdById], references: [id], onDelete: Cascade, map: "ChatGroup_createdById_fkey")
+  members     chatgroupmember[]
+  messages    chatgroupmessage[]
+
+  @@index([companyId], map: "ChatGroup_companyId_fkey")
+  @@index([createdById], map: "ChatGroup_createdById_fkey")
+}
+
+model chatgroupmember {
+  id       String    @id
+  groupId  String
+  userId   String
+  joinedAt DateTime  @default(now())
+  group    chatgroup @relation(fields: [groupId], references: [id], onDelete: Cascade, map: "ChatGroupMember_groupId_fkey")
+  user     user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "ChatGroupMember_userId_fkey")
+
+  @@unique([groupId, userId], map: "ChatGroupMember_groupId_userId_key")
+  @@index([groupId], map: "ChatGroupMember_groupId_fkey")
+  @@index([userId], map: "ChatGroupMember_userId_fkey")
+}
+
+model chatgroupmessage {
+  id        String    @id
+  groupId   String
+  senderId  String
+  message   String    @db.Text
+  createdAt DateTime  @default(now())
+  group     chatgroup @relation(fields: [groupId], references: [id], onDelete: Cascade, map: "ChatGroupMessage_groupId_fkey")
+  sender    user      @relation(fields: [senderId], references: [id], onDelete: Cascade, map: "ChatGroupMessage_senderId_fkey")
+
+  @@index([groupId], map: "ChatGroupMessage_groupId_fkey")
+  @@index([senderId], map: "ChatGroupMessage_senderId_fkey")
+}
+
+model chatpin {
+  id        String   @id
+  userId    String
+  targetId  String
+  isGroup   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "ChatPin_userId_fkey")
+
+  @@unique([userId, targetId], map: "ChatPin_userId_targetId_key")
+  @@index([userId], map: "ChatPin_userId_fkey")
+}
+
