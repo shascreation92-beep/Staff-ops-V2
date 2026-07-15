@@ -970,7 +970,7 @@ export default function ChatShard({
     } else {
       setGroupDescInput("");
     }
-  }, [activeContact, activeMessages]);
+  }, [activeContact?.id]);
 
   const handleSaveGroupDescription = async () => {
     if (!activeContact || !activeContact.isGroup) return;
@@ -979,7 +979,7 @@ export default function ChatShard({
         const payload = `📢 DESCRIPTION: ${groupDescInput}`;
         const res = await sendGroupMessageAction(activeContact.id, payload);
         if (res.success) {
-          toast.success("Group notes updated successfully!");
+          toast.success("Group description updated successfully!");
           // Refresh message history
           const isGroup = !!activeContact.isGroup;
           const msgRes = await fetch(`/api/chat/messages?contactId=${activeContact.id}&isGroup=${isGroup}`);
@@ -2722,10 +2722,10 @@ export default function ChatShard({
               <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 Group Info
               </h5>
-              {/* Group Description / Notes Box */}
+              {/* Group Description Box */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Group Notes / Info
+                  Group Description
                 </span>
                 
                 {isGroupCreator ? (
@@ -2733,7 +2733,7 @@ export default function ChatShard({
                     <textarea
                       value={groupDescInput}
                       onChange={(e) => setGroupDescInput(e.target.value)}
-                      placeholder="Write description or notes for the group..."
+                      placeholder="Write description or info for the group..."
                       style={{
                         width: "100%",
                         height: "70px",
@@ -2761,7 +2761,7 @@ export default function ChatShard({
                         fontWeight: 700
                       }}
                     >
-                      Save Notes
+                      Save Description
                     </button>
                   </div>
                 ) : (
