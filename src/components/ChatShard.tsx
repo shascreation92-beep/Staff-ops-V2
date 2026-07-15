@@ -896,42 +896,44 @@ export default function ChatShard({
   };
 
   // Prepare sidebar lists based on search mode
-  let pinnedItems: any[] = [];
-  let activeConversations: any[] = [];
+  let pinnedGroups: any[] = [];
+  let pinnedChats: any[] = [];
+  let activeGroups: any[] = [];
+  let activeChats: any[] = [];
   let searchableTeammates: any[] = [];
   let searchableJoinedGroups: any[] = [];
   let searchableDiscoverableGroups: any[] = [];
 
   if (!searchTerm.trim()) {
-    // 1. PINNED items (both direct contacts and groups)
-    const pinnedUsers = users
+    // 1. PINNED items (separated into groups and chats)
+    pinnedChats = users
       .filter(u => u.id !== currentUser.id && isPinned(u.id))
-      .map(u => ({ ...u, isGroup: false, lastActiveTime: getDirectLastMessageTime(u.id) || new Date(u.createdAt).getTime() }));
+      .map(u => ({ ...u, isGroup: false, lastActiveTime: getDirectLastMessageTime(u.id) || new Date(u.createdAt).getTime() }))
+      .sort((a, b) => b.lastActiveTime - a.lastActiveTime);
 
-    const pinnedGps = joinedGroups
+    pinnedGroups = joinedGroups
       .filter(g => isPinned(g.id))
       .map(g => {
         const gpMsgs = messages.filter(m => m.groupId === g.id && !m.isDeleted);
         const lastMsgTime = gpMsgs.length > 0 ? new Date(gpMsgs[gpMsgs.length - 1].createdAt).getTime() : new Date(g.createdAt).getTime();
         return { ...g, isGroup: true, lastActiveTime: lastMsgTime };
-      });
-
-    pinnedItems = [...pinnedUsers, ...pinnedGps].sort((a, b) => b.lastActiveTime - a.lastActiveTime);
+      })
+      .sort((a, b) => b.lastActiveTime - a.lastActiveTime);
 
     // 2. ACTIVE conversation rows (unpinned users with messages & joined groups)
-    const activeUsers = users
+    activeChats = users
       .filter(u => u.id !== currentUser.id && !isPinned(u.id) && isDirectActive(u.id))
-      .map(u => ({ ...u, isGroup: false, lastActiveTime: getDirectLastMessageTime(u.id) }));
+      .map(u => ({ ...u, isGroup: false, lastActiveTime: getDirectLastMessageTime(u.id) }))
+      .sort((a, b) => b.lastActiveTime - a.lastActiveTime);
 
-    const activeGps = joinedGroups
+    activeGroups = joinedGroups
       .filter(g => !isPinned(g.id))
       .map(g => {
         const gpMsgs = messages.filter(m => m.groupId === g.id && !m.isDeleted);
         const lastMsgTime = gpMsgs.length > 0 ? new Date(gpMsgs[gpMsgs.length - 1].createdAt).getTime() : new Date(g.createdAt).getTime();
         return { ...g, isGroup: true, lastActiveTime: lastMsgTime };
-      });
-
-    activeConversations = [...activeUsers, ...activeGps].sort((a, b) => b.lastActiveTime - a.lastActiveTime);
+      })
+      .sort((a, b) => b.lastActiveTime - a.lastActiveTime);
   } else {
     // Search mode
     const searchLower = searchTerm.toLowerCase();
@@ -1267,8 +1269,8 @@ export default function ChatShard({
         }}>
           {!searchTerm.trim() ? (
             <>
-              {/* Pinned Section */}
-              {pinnedItems.length > 0 && (
+              {/* Pinned Groups Section */}
+              {pinnedGroups.length > 0 && (
                 <>
                   <div style={{
                     padding: "0.5rem 0.75rem 0.25rem 0.75rem",
@@ -1282,30 +1284,23 @@ export default function ChatShard({
                     gap: "0.3rem"
                   }}>
                     <Pin size={12} style={{ transform: "rotate(45deg)" }} />
-                    <span>Pinned Chats</span>
+                    <span>Pinned Groups</span>
                   </div>
-                  {pinnedItems.map(item => {
+                  {pinnedGroups.map(item => {
                     const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
-                    const unreadCount = !item.isGroup ? getUnreadCount(item.id) : 0;
-                    const statusInfo = !item.isGroup ? getColleagueStatusInfo(item) : null;
 
                     let subtitleText = "";
-                    if (item.isGroup) {
-                      const gpMsgs = messages.filter(m => m.groupId === item.id);
-                      const lastGpMsg = gpMsgs.length > 0 ? gpMsgs[gpMsgs.length - 1] : null;
-                      if (lastGpMsg) {
-                        subtitleText = lastGpMsg.isDeleted ? "🚫 This message was deleted" : `${lastGpMsg.sender?.name || "Colleague"}: ${lastGpMsg.message}`;
-                      } else {
-                        subtitleText = item.isPrivate ? "Private Space" : "Public Channel";
-                      }
+                    const gpMsgs = messages.filter(m => m.groupId === item.id);
+                    const lastGpMsg = gpMsgs.length > 0 ? gpMsgs[gpMsgs.length - 1] : null;
+                    if (lastGpMsg) {
+                      subtitleText = lastGpMsg.isDeleted ? "🚫 This message was deleted" : `${lastGpMsg.sender?.name || "Colleague"}: ${lastGpMsg.message}`;
                     } else {
-                      const lastMsgText = getDirectLastMessageText(item.id);
-                      subtitleText = lastMsgText ? lastMsgText : item.role.replace(/_/g, " ");
+                      subtitleText = item.isPrivate ? "Private Space" : "Public Channel";
                     }
 
                     return (
                       <div
-                        key={`${item.isGroup ? 'gp' : 'dir'}-${item.id}`}
+                        key={`pinned-gp-${item.id}`}
                         onClick={() => setActiveContact(item)}
                         onContextMenu={(e) => {
                           e.preventDefault();
@@ -1316,7 +1311,7 @@ export default function ChatShard({
                             type: "chat",
                             visible: true,
                             targetId: item.id,
-                            isGroup: item.isGroup,
+                            isGroup: true,
                             isPinned: true
                           });
                         }}
@@ -1342,17 +1337,101 @@ export default function ChatShard({
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          background: item.isGroup ? "rgba(2, 80, 161, 0.08)" : "transparent"
+                          background: "rgba(2, 80, 161, 0.08)"
                         }}>
-                          {item.isGroup ? (
-                            <span style={{ fontSize: "0.95rem" }}>{item.isPrivate ? "🔒" : "#"}</span>
-                          ) : (
-                            <img 
-                              src={item.image || "/uploads/avatars/default-avatar.png"} 
-                              alt={item.name || "User"} 
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                            />
-                          )}
+                          <span style={{ fontSize: "0.95rem" }}>{item.isPrivate ? "🔒" : "#"}</span>
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {item.name}
+                            </span>
+                            <span title="Pinned Chat" style={{ display: "inline-flex", opacity: 0.6 }}>
+                              <Pin size={11} style={{ transform: "rotate(45deg)", color: "#0250A1" }} />
+                            </span>
+                          </div>
+                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {subtitleText}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Pinned Chats Section */}
+              {pinnedChats.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "0.5rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}>
+                    <Pin size={12} style={{ transform: "rotate(45deg)" }} />
+                    <span>Pinned Chats</span>
+                  </div>
+                  {pinnedChats.map(item => {
+                    const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
+                    const unreadCount = getUnreadCount(item.id);
+                    const statusInfo = getColleagueStatusInfo(item);
+
+                    const lastMsgText = getDirectLastMessageText(item.id);
+                    const subtitleText = lastMsgText ? lastMsgText : item.role.replace(/_/g, " ");
+
+                    return (
+                      <div
+                        key={`pinned-chat-${item.id}`}
+                        onClick={() => setActiveContact(item)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            type: "chat",
+                            visible: true,
+                            targetId: item.id,
+                            isGroup: false,
+                            isPinned: true
+                          });
+                        }}
+                        className={`chat-channel-item ${isSelected ? 'active' : ''}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          padding: "0.6rem 0.75rem",
+                          background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          transition: "background 0.2s",
+                          position: "relative"
+                        }}
+                      >
+                        <div className="user-avatar-gold" style={{
+                          width: "2.25rem",
+                          height: "2.25rem",
+                          borderRadius: "50%",
+                          position: "relative",
+                          overflow: "hidden",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "transparent"
+                        }}>
+                          <img 
+                            src={item.image || "/uploads/avatars/default-avatar.png"} 
+                            alt={item.name || "User"} 
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                          />
                         </div>
 
                         <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
@@ -1387,7 +1466,7 @@ export default function ChatShard({
                             </div>
                           )}
 
-                          {!item.isGroup && statusInfo && (
+                          {statusInfo && (
                             <div 
                               className={statusInfo.pulse ? "pulse-critical-dot" : ""}
                               style={{
@@ -1407,34 +1486,27 @@ export default function ChatShard({
                 </>
               )}
 
-              {/* Active Conversations Section */}
-              <div style={{
-                padding: "0.75rem 0.75rem 0.25rem 0.75rem",
-                fontSize: "0.68rem",
-                fontWeight: 700,
-                color: "var(--gold-premium)",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.3rem"
-              }}>
-                <MessageSquare size={12} />
-                <span>Recent Chats & Groups</span>
-              </div>
+              {/* Recent Groups Section */}
+              {activeGroups.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "0.75rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}>
+                    <MessageSquare size={12} />
+                    <span>Recent Groups</span>
+                  </div>
+                  {activeGroups.map(item => {
+                    const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
 
-              {activeConversations.length === 0 && pinnedItems.length === 0 ? (
-                <div style={{ padding: "2rem 1.5rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                  No active chats or groups. Use search above to start a conversation or join a public group.
-                </div>
-              ) : (
-                activeConversations.map(item => {
-                  const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
-                  const unreadCount = !item.isGroup ? getUnreadCount(item.id) : 0;
-                  const statusInfo = !item.isGroup ? getColleagueStatusInfo(item) : null;
-
-                  let subtitleText = "";
-                  if (item.isGroup) {
+                    let subtitleText = "";
                     const gpMsgs = messages.filter(m => m.groupId === item.id);
                     const lastGpMsg = gpMsgs.length > 0 ? gpMsgs[gpMsgs.length - 1] : null;
                     if (lastGpMsg) {
@@ -1442,114 +1514,200 @@ export default function ChatShard({
                     } else {
                       subtitleText = item.isPrivate ? "Private Space" : "Public Channel";
                     }
-                  } else {
-                    const lastMsgText = getDirectLastMessageText(item.id);
-                    subtitleText = lastMsgText ? lastMsgText : item.role.replace(/_/g, " ");
-                  }
 
-                  return (
-                    <div
-                      key={`${item.isGroup ? 'gp' : 'dir'}-${item.id}`}
-                      onClick={() => setActiveContact(item)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setContextMenu({
-                          x: e.clientX,
-                          y: e.clientY,
-                          type: "chat",
-                          visible: true,
-                          targetId: item.id,
-                          isGroup: item.isGroup,
-                          isPinned: false
-                        });
-                      }}
-                      className="chat-channel-item-container"
-                      style={{ position: "relative" }}
-                    >
+                    return (
                       <div
-                        className={`chat-channel-item ${isSelected ? 'active' : ''}`}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          padding: "0.6rem 0.75rem",
-                          background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          transition: "background 0.2s"
+                        key={`recent-gp-${item.id}`}
+                        onClick={() => setActiveContact(item)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            type: "chat",
+                            visible: true,
+                            targetId: item.id,
+                            isGroup: true,
+                            isPinned: false
+                          });
                         }}
+                        className="chat-channel-item-container"
+                        style={{ position: "relative" }}
                       >
-                        <div className="user-avatar-gold" style={{
-                          width: "2.25rem",
-                          height: "2.25rem",
-                          borderRadius: "50%",
-                          position: "relative",
-                          overflow: "hidden",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: item.isGroup ? "rgba(2, 80, 161, 0.08)" : "transparent"
-                        }}>
-                          {item.isGroup ? (
+                        <div
+                          className={`chat-channel-item ${isSelected ? 'active' : ''}`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                            padding: "0.6rem 0.75rem",
+                            background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            transition: "background 0.2s"
+                          }}
+                        >
+                          <div className="user-avatar-gold" style={{
+                            width: "2.25rem",
+                            height: "2.25rem",
+                            borderRadius: "50%",
+                            position: "relative",
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(2, 80, 161, 0.08)"
+                          }}>
                             <span style={{ fontSize: "0.95rem" }}>{item.isPrivate ? "🔒" : "#"}</span>
-                          ) : (
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <span>{item.name}</span>
+                              {mutedGroups.includes(item.id) && (
+                                <VolumeX size={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                              )}
+                            </span>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {subtitleText}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Recent Chats Section */}
+              {activeChats.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "0.75rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}>
+                    <MessageSquare size={12} />
+                    <span>Recent Chats</span>
+                  </div>
+                  {activeChats.map(item => {
+                    const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
+                    const unreadCount = getUnreadCount(item.id);
+                    const statusInfo = getColleagueStatusInfo(item);
+
+                    const lastMsgText = getDirectLastMessageText(item.id);
+                    const subtitleText = lastMsgText ? lastMsgText : item.role.replace(/_/g, " ");
+
+                    return (
+                      <div
+                        key={`recent-chat-${item.id}`}
+                        onClick={() => setActiveContact(item)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            type: "chat",
+                            visible: true,
+                            targetId: item.id,
+                            isGroup: false,
+                            isPinned: false
+                          });
+                        }}
+                        className="chat-channel-item-container"
+                        style={{ position: "relative" }}
+                      >
+                        <div
+                          className={`chat-channel-item ${isSelected ? 'active' : ''}`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                            padding: "0.6rem 0.75rem",
+                            background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            transition: "background 0.2s"
+                          }}
+                        >
+                          <div className="user-avatar-gold" style={{
+                            width: "2.25rem",
+                            height: "2.25rem",
+                            borderRadius: "50%",
+                            position: "relative",
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "transparent"
+                          }}>
                             <img 
                               src={item.image || "/uploads/avatars/default-avatar.png"} 
                               alt={item.name || "User"} 
                               style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                             />
-                          )}
-                        </div>
+                          </div>
 
-                        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                            <span>{item.name}</span>
-                            {item.isGroup && mutedGroups.includes(item.id) && (
-                              <VolumeX size={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-                            )}
-                          </span>
-                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {subtitleText}
-                          </span>
-                        </div>
+                          <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <span>{item.name}</span>
+                            </span>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {subtitleText}
+                            </span>
+                          </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                          {unreadCount > 0 && (
-                            <div style={{
-                              background: "#0250A1",
-                              color: "#FFFFFF",
-                              fontSize: "0.65rem",
-                              fontWeight: 800,
-                              borderRadius: "50%",
-                              width: "16px",
-                              height: "16px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center"
-                            }}>
-                              {formatNumber(unreadCount)}
-                            </div>
-                          )}
-
-                          {!item.isGroup && statusInfo && (
-                            <div 
-                              className={statusInfo.pulse ? "pulse-critical-dot" : ""}
-                              style={{
-                                width: "8px",
-                                height: "8px",
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                            {unreadCount > 0 && (
+                              <div style={{
+                                background: "#0250A1",
+                                color: "#FFFFFF",
+                                fontSize: "0.65rem",
+                                fontWeight: 800,
                                 borderRadius: "50%",
-                                background: statusInfo.color,
-                                transition: "background 0.3s ease"
-                              }} 
-                              title={statusInfo.label}
-                            />
-                          )}
+                                width: "16px",
+                                height: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                              }}>
+                                {formatNumber(unreadCount)}
+                              </div>
+                            )}
+
+                            {statusInfo && (
+                              <div 
+                                className={statusInfo.pulse ? "pulse-critical-dot" : ""}
+                                style={{
+                                  width: "8px",
+                                  height: "8px",
+                                  borderRadius: "50%",
+                                  background: statusInfo.color,
+                                  transition: "background 0.3s ease"
+                                }} 
+                                title={statusInfo.label}
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </>
+              )}
+
+              {pinnedGroups.length === 0 && pinnedChats.length === 0 && activeGroups.length === 0 && activeChats.length === 0 && (
+                <div style={{ padding: "2rem 1.5rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                  No active chats or groups. Use search above to start a conversation or join a public group.
+                </div>
               )}
 
               {/* Discover Public Channels Section */}
@@ -3264,7 +3422,7 @@ export default function ChatShard({
             </div>
 
             <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.4rem", minHeight: "200px" }}>
-              {[...pinnedItems, ...activeConversations]
+              {[...pinnedGroups, ...pinnedChats, ...activeGroups, ...activeChats]
                 .filter(item => !forwardSearch.trim() || item.name.toLowerCase().includes(forwardSearch.toLowerCase()))
                 .map(item => {
                   const isSelected = selectedForwardTargets.some(t => t.id === item.id && t.isGroup === item.isGroup);
