@@ -6,7 +6,14 @@ import {
   createChatGroupAction, 
   togglePinChatAction, 
   joinPublicGroupAction, 
-  sendGroupMessageAction 
+  sendGroupMessageAction,
+  editChatMessageAction,
+  deleteChatMessageAction,
+  toggleStarMessageAction,
+  getStarredMessagesAction,
+  toggleEmojiReactionAction,
+  toggleDndModeAction,
+  forwardChatMessageAction
 } from "@/app/actions/chat";
 import { useSearchParams } from "next/navigation";
 import { 
@@ -30,6 +37,7 @@ interface ChatShardProps {
     email?: string | null;
     name?: string | null;
     image?: string | null;
+    isDnd?: boolean;
   };
   users: any[];
   initialMessages: any[];
@@ -45,6 +53,7 @@ export default function ChatShard({
 
   const [isPending, startTransition] = useTransition();
   const [messages, setMessages] = useState<any[]>(initialMessages);
+  const [allDirectMessages, setAllDirectMessages] = useState<any[]>(initialMessages);
   
   // Group, Pinning, and modal states
   const [joinedGroups, setJoinedGroups] = useState<any[]>([]);
@@ -65,6 +74,63 @@ export default function ChatShard({
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // DND status state
+  const [isDnd, setIsDnd] = useState(!!currentUser.isDnd);
+
+  // Message Forwarding states
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [forwardMessageContent, setForwardMessageContent] = useState("");
+  const [forwardSearch, setForwardSearch] = useState("");
+  const [selectedForwardTargets, setSelectedForwardTargets] = useState<{ id: string; isGroup: boolean }[]>([]);
+
+  // Starred messages states
+  const [showStarredDrawer, setShowStarredDrawer] = useState(false);
+  const [starredMessagesList, setStarredMessagesList] = useState<any[]>([]);
+  const [starredMessageIds, setStarredMessageIds] = useState<Set<string>>(new Set());
+
+  // Editing state
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  // Context Menu State
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    type: "message" | "chat";
+    visible: boolean;
+    targetId: string;
+    isGroup?: boolean;
+    messageText?: string;
+    isOwn?: boolean;
+    isStarred?: boolean;
+    isDeleted?: boolean;
+    isPinned?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const closeMenu = () => setContextMenu(null);
+    window.addEventListener("click", closeMenu);
+    window.addEventListener("contextmenu", closeMenu);
+    return () => {
+      window.removeEventListener("click", closeMenu);
+      window.removeEventListener("contextmenu", closeMenu);
+    };
+  }, []);
+
+  useEffect(() => {
+    const initStars = async () => {
+      try {
+        const starred = await getStarredMessagesAction();
+        setStarredMessageIds(new Set(starred.map((s: any) => s.id)));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    initStars();
+  }, []);
+
+  // Set to track tagged message alerts (so we don't alert multiple times per tag)
+  const notifiedMessageIds = useRef<Set<string>>(new Set());
 
   // Broadcast Panel states
   const [selectedBroadcastRecipients, setSelectedBroadcastRecipients] = useState<string[]>([]);
@@ -141,6 +207,26 @@ export default function ChatShard({
           setMessages(data);
           
           if (!isGroup) {
+            setAllDirectMessages(prev => {
+              const otherMsgs = prev.filter(m => 
+                !((m.senderId === currentUser.id && m.receiverId === activeContact.id) ||
+                  (m.senderId === activeContact.id && m.receiverId === currentUser.id))
+              );
+              return [...otherMsgs, ...data];
+            });
+          }
+
+          if (isGroup) {
+            data.forEach((m: any) => {
+              if (m.senderId !== currentUser.id) {
+                const mentionTag = `@${currentUser.name}`;
+                if (m.message.includes(mentionTag) && !notifiedMessageIds.current.has(m.id)) {
+                  notifiedMessageIds.current.add(m.id);
+                  alert(`🚨 HIGH-PRIORITY MENTION ALERT 🚨\n\n${m.sender?.name || "Colleague"} mentioned you in group:\n"${m.message}"`);
+                }
+              }
+            });
+          } else {
             const hasReplied = data.some(
               (m: any) => m.senderId === activeContact.id && (
                 m.message.includes("Copy that! Operations are fully monitored") ||
@@ -221,6 +307,9 @@ export default function ChatShard({
 
   // Compute dynamic operational status info for each colleague
   const getColleagueStatusInfo = (c: any) => {
+    if (c.isDnd) {
+      return { label: "DND (Do Not Disturb)", color: "#9CA3AF", isCritical: false, pulse: false };
+    }
     if (c.role === "SUPER_ADMIN") {
       return { label: "Active (Online)", color: "#10B981", isCritical: false, pulse: false };
     }
@@ -306,9 +395,215 @@ export default function ChatShard({
     });
   };
 
+  // DND Toggle handler
+  const handleToggleDnd = async () => {
+    startTransition(async () => {
+      try {
+        const res = await toggleDndModeAction();
+        if (res.success) {
+          setIsDnd(res.isDnd);
+          toast.success(res.isDnd ? "Do Not Disturb Activated (Zzz)" : "Do Not Disturb Deactivated");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to toggle DND.");
+      }
+    });
+  };
+
+  // Toggle Star / Bookmark handler
+  const handleToggleStar = async (messageId: string, isGroup: boolean) => {
+    try {
+      const res = await toggleStarMessageAction(messageId, isGroup);
+      if (res.success) {
+        toast.success(res.starred ? "Message Starred! ⭐️" : "Message Unstarred");
+        setStarredMessageIds(prev => {
+          const next = new Set(prev);
+          if (res.starred) {
+            next.add(messageId);
+          } else {
+            next.delete(messageId);
+          }
+          return next;
+        });
+        if (showStarredDrawer) {
+          const starred = await getStarredMessagesAction();
+          setStarredMessagesList(starred);
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle star.");
+    }
+  };
+
+  // Load Starred Drawer handler
+  const handleOpenStarredDrawer = async () => {
+    try {
+      const starred = await getStarredMessagesAction();
+      setStarredMessagesList(starred);
+      setShowStarredDrawer(true);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load starred messages.");
+    }
+  };
+
+  // Delete message for everyone handler
+  const handleDeleteMessage = async (messageId: string, isGroup: boolean) => {
+    setMessages(prev => prev.map(m => {
+      if (m.id === messageId) {
+        return { ...m, message: "🚫 This message was deleted", isDeleted: true };
+      }
+      return m;
+    }));
+    if (!isGroup) {
+      setAllDirectMessages(prev => prev.map(m => {
+        if (m.id === messageId) {
+          return { ...m, message: "🚫 This message was deleted", isDeleted: true };
+        }
+        return m;
+      }));
+    }
+
+    startTransition(async () => {
+      try {
+        await deleteChatMessageAction(messageId, isGroup);
+        toast.success("Message deleted for everyone.");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to delete message.");
+      }
+    });
+  };
+
+  // Emoji reaction handler
+  const handleToggleReaction = async (messageId: string, isGroup: boolean, emoji: string) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        let reactions = [];
+        try {
+          reactions = msg.reactions ? JSON.parse(msg.reactions) : [];
+        } catch (e) {
+          reactions = [];
+        }
+        const rIndex = reactions.findIndex((r: any) => r.emoji === emoji);
+        if (rIndex !== -1) {
+          const r = reactions[rIndex];
+          if (r.userIds.includes(currentUser.id)) {
+            r.userIds = r.userIds.filter((id: string) => id !== currentUser.id);
+          } else {
+            r.userIds.push(currentUser.id);
+          }
+          if (r.userIds.length === 0) reactions.splice(rIndex, 1);
+        } else {
+          reactions.push({ emoji, userIds: [currentUser.id] });
+        }
+        return { ...msg, reactions: JSON.stringify(reactions) };
+      }
+      return msg;
+    }));
+    if (!isGroup) {
+      setAllDirectMessages(prev => prev.map(msg => {
+        if (msg.id === messageId) {
+          let reactions = [];
+          try {
+            reactions = msg.reactions ? JSON.parse(msg.reactions) : [];
+          } catch (e) {
+            reactions = [];
+          }
+          const rIndex = reactions.findIndex((r: any) => r.emoji === emoji);
+          if (rIndex !== -1) {
+            const r = reactions[rIndex];
+            if (r.userIds.includes(currentUser.id)) {
+              r.userIds = r.userIds.filter((id: string) => id !== currentUser.id);
+            } else {
+              r.userIds.push(currentUser.id);
+            }
+            if (r.userIds.length === 0) reactions.splice(rIndex, 1);
+          } else {
+            reactions.push({ emoji, userIds: [currentUser.id] });
+          }
+          return { ...msg, reactions: JSON.stringify(reactions) };
+        }
+        return msg;
+      }));
+    }
+
+    startTransition(async () => {
+      try {
+        await toggleEmojiReactionAction(messageId, isGroup, emoji);
+      } catch (err: any) {
+        console.error(err);
+      }
+    });
+  };
+
+  // Forward message handler
+  const handleForwardMessageConfirm = async (targetId: string, isTargetGroup: boolean) => {
+    if (!forwardMessageContent) return;
+    
+    if (!isTargetGroup) {
+      const optimisticForward = {
+        id: crypto.randomUUID(),
+        senderId: currentUser.id,
+        receiverId: targetId,
+        message: forwardMessageContent,
+        isRead: false,
+        isForwarded: true,
+        createdAt: new Date().toISOString()
+      };
+      setAllDirectMessages(prev => [...prev, optimisticForward]);
+      if (activeContact && activeContact.id === targetId && !activeContact.isGroup) {
+        setMessages(prev => [...prev, optimisticForward]);
+      }
+    }
+
+    startTransition(async () => {
+      try {
+        await forwardChatMessageAction(forwardMessageContent, targetId, isTargetGroup);
+        toast.success("Message forwarded successfully!");
+        setShowForwardModal(false);
+        setForwardMessageContent("");
+        setForwardSearch("");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to forward message.");
+      }
+    });
+  };
+
   // Unified message submission helper (Group + Direct)
   const submitMessage = (text: string) => {
     if (!activeContact || activeContact === "BROADCAST") return;
+
+    if (editingMessageId) {
+      const isGroup = !!activeContact.isGroup;
+      const targetMsgId = editingMessageId;
+      setEditingMessageId(null);
+
+      // Optimistically update locally
+      setMessages(prev => prev.map(m => {
+        if (m.id === targetMsgId) {
+          return { ...m, message: text, isEdited: true, editedAt: new Date().toISOString() };
+        }
+        return m;
+      }));
+      if (!isGroup) {
+        setAllDirectMessages(prev => prev.map(m => {
+          if (m.id === targetMsgId) {
+            return { ...m, message: text, isEdited: true, editedAt: new Date().toISOString() };
+          }
+          return m;
+        }));
+      }
+
+      startTransition(async () => {
+        try {
+          await editChatMessageAction(targetMsgId, isGroup, text);
+          toast.success("Message updated!");
+        } catch (err: any) {
+          toast.error(err.message || "Failed to edit message.");
+        }
+      });
+      return;
+    }
+
     const tempId = crypto.randomUUID();
     const isGroup = !!activeContact.isGroup;
 
@@ -345,6 +640,7 @@ export default function ChatShard({
         createdAt: new Date().toISOString()
       };
       setMessages(prev => [...prev, optimisticMessage]);
+      setAllDirectMessages(prev => [...prev, optimisticMessage]);
 
       startTransition(async () => {
         try {
@@ -491,22 +787,41 @@ export default function ChatShard({
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
-  // Helper to get last message timestamp for direct contact
+  // Helper to get last message timestamp for direct contact (ignoring deleted messages)
   const getDirectLastMessageTime = (contactId: string) => {
-    const threadMsgs = messages.filter(
-      m => (m.senderId === currentUser.id && m.receiverId === contactId) ||
+    const threadMsgs = allDirectMessages.filter(
+      m => !m.isDeleted && (
+           (m.senderId === currentUser.id && m.receiverId === contactId) ||
            (m.senderId === contactId && m.receiverId === currentUser.id)
+      )
     );
     if (threadMsgs.length === 0) return 0;
     return new Date(threadMsgs[threadMsgs.length - 1].createdAt).getTime();
   };
 
-  // Helper to determine if a contact is active (has messages exchanged)
+  // Helper to determine if a contact is active (has non-deleted messages exchanged within the last 72 hours)
   const isDirectActive = (contactId: string) => {
-    return messages.some(
+    const threadMsgs = allDirectMessages.filter(
+      m => !m.isDeleted && (
+           (m.senderId === currentUser.id && m.receiverId === contactId) ||
+           (m.senderId === contactId && m.receiverId === currentUser.id)
+      )
+    );
+    if (threadMsgs.length === 0) return false;
+    const lastMsgTime = new Date(threadMsgs[threadMsgs.length - 1].createdAt).getTime();
+    return lastMsgTime >= Date.now() - 72 * 60 * 60 * 1000;
+  };
+
+  // Helper to get last message text preview for direct contact
+  const getDirectLastMessageText = (contactId: string) => {
+    const threadMsgs = allDirectMessages.filter(
       m => (m.senderId === currentUser.id && m.receiverId === contactId) ||
            (m.senderId === contactId && m.receiverId === currentUser.id)
     );
+    if (threadMsgs.length === 0) return null;
+    const lastMsg = threadMsgs[threadMsgs.length - 1];
+    if (lastMsg.isDeleted) return "🚫 This message was deleted";
+    return lastMsg.message;
   };
 
   // Prepare sidebar lists based on search mode
@@ -524,7 +839,11 @@ export default function ChatShard({
 
     const pinnedGps = joinedGroups
       .filter(g => isPinned(g.id))
-      .map(g => ({ ...g, isGroup: true, lastActiveTime: new Date(g.messages?.[0]?.createdAt || g.createdAt).getTime() }));
+      .map(g => {
+        const gpMsgs = messages.filter(m => m.groupId === g.id && !m.isDeleted);
+        const lastMsgTime = gpMsgs.length > 0 ? new Date(gpMsgs[gpMsgs.length - 1].createdAt).getTime() : new Date(g.createdAt).getTime();
+        return { ...g, isGroup: true, lastActiveTime: lastMsgTime };
+      });
 
     pinnedItems = [...pinnedUsers, ...pinnedGps].sort((a, b) => b.lastActiveTime - a.lastActiveTime);
 
@@ -535,7 +854,11 @@ export default function ChatShard({
 
     const activeGps = joinedGroups
       .filter(g => !isPinned(g.id))
-      .map(g => ({ ...g, isGroup: true, lastActiveTime: new Date(g.messages?.[0]?.createdAt || g.createdAt).getTime() }));
+      .map(g => {
+        const gpMsgs = messages.filter(m => m.groupId === g.id && !m.isDeleted);
+        const lastMsgTime = gpMsgs.length > 0 ? new Date(gpMsgs[gpMsgs.length - 1].createdAt).getTime() : new Date(g.createdAt).getTime();
+        return { ...g, isGroup: true, lastActiveTime: lastMsgTime };
+      });
 
     activeConversations = [...activeUsers, ...activeGps].sort((a, b) => b.lastActiveTime - a.lastActiveTime);
   } else {
@@ -622,6 +945,13 @@ export default function ChatShard({
         .pulse-critical-dot {
           animation: pulseAlert 1.5s infinite;
         }
+        .reaction-menu-emoji {
+          transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        }
+        .reaction-menu-emoji:hover {
+          transform: scale(1.3) translateY(-2px);
+          background: rgba(2, 80, 161, 0.1) !important;
+        }
       ` }} />
 
       {/* Sidebar (User List) - Independent Scroll Area */}
@@ -672,6 +1002,59 @@ export default function ChatShard({
             <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               Transmit to multiple colleagues
             </span>
+          </div>
+        </div>
+
+        {/* Do Not Disturb (DND) Operations Switch */}
+        <div style={{
+          padding: "0.5rem 1rem",
+          borderBottom: "1px solid var(--border-dim)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "rgba(255, 255, 255, 0.4)",
+          backdropFilter: "blur(4px)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ fontSize: "1rem" }}>{isDnd ? "💤" : "🟢"}</span>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)" }}>DND Operations</span>
+              <span style={{ fontSize: "0.62rem", color: "var(--text-muted)" }}>{isDnd ? "Suppressed Alerts" : "Receiving Alerts"}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={handleOpenStarredDrawer}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "1.1rem",
+                padding: "0.2rem",
+                display: "flex"
+              }}
+              title="Starred Bookmarks"
+            >
+              ⭐️
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleDnd}
+              style={{
+                padding: "0.25rem 0.6rem",
+                fontSize: "0.68rem",
+                borderRadius: "20px",
+                border: isDnd ? "1px solid #EF4444" : "1px solid #10B981",
+                background: isDnd ? "rgba(239, 68, 68, 0.08)" : "rgba(16, 185, 129, 0.08)",
+                color: isDnd ? "#EF4444" : "#10B981",
+                fontWeight: 800,
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              {isDnd ? "ON" : "OFF"}
+            </button>
           </div>
         </div>
 
@@ -738,10 +1121,37 @@ export default function ChatShard({
                     const unreadCount = !item.isGroup ? getUnreadCount(item.id) : 0;
                     const statusInfo = !item.isGroup ? getColleagueStatusInfo(item) : null;
 
+                    let subtitleText = "";
+                    if (item.isGroup) {
+                      const gpMsgs = messages.filter(m => m.groupId === item.id);
+                      const lastGpMsg = gpMsgs.length > 0 ? gpMsgs[gpMsgs.length - 1] : null;
+                      if (lastGpMsg) {
+                        subtitleText = lastGpMsg.isDeleted ? "🚫 This message was deleted" : `${lastGpMsg.sender?.name || "Colleague"}: ${lastGpMsg.message}`;
+                      } else {
+                        subtitleText = item.isPrivate ? "Private Space" : "Public Channel";
+                      }
+                    } else {
+                      const lastMsgText = getDirectLastMessageText(item.id);
+                      subtitleText = lastMsgText ? lastMsgText : item.role.replace(/_/g, " ");
+                    }
+
                     return (
                       <div
                         key={`${item.isGroup ? 'gp' : 'dir'}-${item.id}`}
                         onClick={() => setActiveContact(item)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            type: "chat",
+                            visible: true,
+                            targetId: item.id,
+                            isGroup: item.isGroup,
+                            isPinned: true
+                          });
+                        }}
                         className={`chat-channel-item ${isSelected ? 'active' : ''}`}
                         style={{
                           display: "flex",
@@ -756,8 +1166,8 @@ export default function ChatShard({
                         }}
                       >
                         <div className="user-avatar-gold" style={{
-                          width: "2rem",
-                          height: "2rem",
+                          width: "2.25rem",
+                          height: "2.25rem",
                           borderRadius: "50%",
                           position: "relative",
                           overflow: "hidden",
@@ -778,26 +1188,18 @@ export default function ChatShard({
                         </div>
 
                         <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.name}
-                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {item.name}
+                            </span>
+                            <span style={{ fontSize: "0.7rem", opacity: 0.6 }} title="Pinned Chat">📌</span>
+                          </div>
                           <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.isGroup ? (item.isPrivate ? "Private Space" : "Public Channel") : item.role.replace(/_/g, " ")}
+                            {subtitleText}
                           </span>
                         </div>
 
                         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTogglePin(item.id, item.isGroup);
-                            }}
-                            style={{ border: "none", background: "none", cursor: "pointer", padding: "0.2rem" }}
-                            title="Unpin Chat"
-                          >
-                            <span style={{ fontSize: "0.8rem", color: "#0250A1" }}>📌</span>
-                          </button>
-
                           {unreadCount > 0 && (
                             <div style={{
                               background: "#0250A1",
@@ -857,10 +1259,37 @@ export default function ChatShard({
                   const unreadCount = !item.isGroup ? getUnreadCount(item.id) : 0;
                   const statusInfo = !item.isGroup ? getColleagueStatusInfo(item) : null;
 
+                  let subtitleText = "";
+                  if (item.isGroup) {
+                    const gpMsgs = messages.filter(m => m.groupId === item.id);
+                    const lastGpMsg = gpMsgs.length > 0 ? gpMsgs[gpMsgs.length - 1] : null;
+                    if (lastGpMsg) {
+                      subtitleText = lastGpMsg.isDeleted ? "🚫 This message was deleted" : `${lastGpMsg.sender?.name || "Colleague"}: ${lastGpMsg.message}`;
+                    } else {
+                      subtitleText = item.isPrivate ? "Private Space" : "Public Channel";
+                    }
+                  } else {
+                    const lastMsgText = getDirectLastMessageText(item.id);
+                    subtitleText = lastMsgText ? lastMsgText : item.role.replace(/_/g, " ");
+                  }
+
                   return (
                     <div
                       key={`${item.isGroup ? 'gp' : 'dir'}-${item.id}`}
                       onClick={() => setActiveContact(item)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setContextMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          type: "chat",
+                          visible: true,
+                          targetId: item.id,
+                          isGroup: item.isGroup,
+                          isPinned: false
+                        });
+                      }}
                       className="chat-channel-item-container"
                       style={{ position: "relative" }}
                     >
@@ -878,8 +1307,8 @@ export default function ChatShard({
                         }}
                       >
                         <div className="user-avatar-gold" style={{
-                          width: "2rem",
-                          height: "2rem",
+                          width: "2.25rem",
+                          height: "2.25rem",
                           borderRadius: "50%",
                           position: "relative",
                           overflow: "hidden",
@@ -904,23 +1333,11 @@ export default function ChatShard({
                             {item.name}
                           </span>
                           <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.isGroup ? (item.isPrivate ? "Private Space" : "Public Channel") : item.role.replace(/_/g, " ")}
+                            {subtitleText}
                           </span>
                         </div>
 
                         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTogglePin(item.id, item.isGroup);
-                            }}
-                            className="hover-pin-btn"
-                            style={{ border: "none", background: "none", cursor: "pointer", padding: "0.2rem" }}
-                            title="Pin Chat"
-                          >
-                            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>📌</span>
-                          </button>
-
                           {unreadCount > 0 && (
                             <div style={{
                               background: "#0250A1",
@@ -1432,17 +1849,42 @@ export default function ChatShard({
                       width: "100%"
                     }}
                   >
-                    <div style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      background: isOwn ? "#0250A1" : "#EAEBEF",
-                      color: isOwn ? "#FFFFFF" : "var(--text-primary)",
-                      padding: "0.65rem 0.9rem",
-                      borderRadius: isOwn ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
-                      maxWidth: "60%",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                      position: "relative"
-                    }}>
+                    <div 
+                      onContextMenu={(e) => {
+                        if (m.isDeleted) return; // Deleted messages cannot have context menu actions
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setContextMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          type: "message",
+                          visible: true,
+                          targetId: m.id,
+                          isGroup: !!activeContact.isGroup,
+                          messageText: m.message,
+                          isOwn: isOwn,
+                          isStarred: starredMessageIds.has(m.id),
+                          isDeleted: !!m.isDeleted
+                        });
+                      }}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        background: m.isDeleted ? "rgba(0, 0, 0, 0.05)" : isOwn ? "#0250A1" : "#EAEBEF",
+                        color: m.isDeleted ? "var(--text-muted)" : isOwn ? "#FFFFFF" : "var(--text-primary)",
+                        padding: "0.65rem 0.9rem",
+                        borderRadius: isOwn ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
+                        maxWidth: "60%",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                        position: "relative"
+                      }}
+                    >
+                      {m.isForwarded && (
+                        <span style={{ fontSize: "0.65rem", fontStyle: "italic", opacity: 0.7, marginBottom: "0.2rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                          ↪️ Forwarded
+                        </span>
+                      )}
+
                       {activeContact.isGroup && !isOwn && (
                         <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-premium)", marginBottom: "0.25rem", display: "block" }}>
                           {m.sender?.name || "Colleague"}
@@ -1490,7 +1932,57 @@ export default function ChatShard({
                       {/* Message payload */}
                       <span style={{ fontSize: "0.86rem", lineHeight: "1.4", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
                         {isAttachment ? `Sent attachment file: ${fileName}` : cleanMessage}
+                        {m.isEdited && !m.isDeleted && (
+                          <span style={{ fontSize: "0.65rem", opacity: 0.6, marginLeft: "0.3rem", fontStyle: "italic" }}>(edited)</span>
+                        )}
                       </span>
+
+                      {/* Emoji Reactions display */}
+                      {(() => {
+                        let parsedReactions: any[] = [];
+                        try {
+                          parsedReactions = m.reactions ? JSON.parse(m.reactions) : [];
+                        } catch (e) {
+                          parsedReactions = [];
+                        }
+                        if (parsedReactions.length === 0) return null;
+                        return (
+                          <div style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "0.25rem",
+                            marginTop: "0.35rem"
+                          }}>
+                            {parsedReactions.map((r: any) => {
+                              const hasReacted = r.userIds.includes(currentUser.id);
+                              return (
+                                <div
+                                  key={r.emoji}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleReaction(m.id, !!activeContact.isGroup, r.emoji);
+                                  }}
+                                  style={{
+                                    background: hasReacted ? "rgba(2, 80, 161, 0.12)" : "rgba(0,0,0,0.04)",
+                                    border: hasReacted ? "1px solid rgba(2, 80, 161, 0.25)" : "1px solid rgba(0,0,0,0.06)",
+                                    padding: "0.1rem 0.35rem",
+                                    borderRadius: "10px",
+                                    fontSize: "0.68rem",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.15rem",
+                                    transition: "all 0.15s"
+                                  }}
+                                >
+                                  <span>{r.emoji}</span>
+                                  <span style={{ fontSize: "0.62rem", opacity: 0.8, color: hasReacted ? "#0250A1" : "var(--text-primary)" }}>{r.userIds.length}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
 
                       {/* Timestamp & Receipts checkmarks inside bubble (bottom-right) */}
                       <div style={{
@@ -1505,7 +1997,7 @@ export default function ChatShard({
                         fontFamily: "var(--font-mono)"
                       }}>
                         <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        {isOwn && (
+                        {isOwn && !m.isDeleted && (
                           m.isRead ? (
                             <CheckCheck size={11} style={{ color: "#34D399" }} />
                           ) : (
@@ -1943,6 +2435,418 @@ export default function ChatShard({
               {isPending ? "Creating Group..." : "Create Group"}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Starred Messages Glassmorphic Side Drawer */}
+      {showStarredDrawer && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          width: "360px",
+          height: "100%",
+          background: "rgba(255, 255, 255, 0.85)",
+          backdropFilter: "blur(20px)",
+          boxShadow: "-10px 0 30px rgba(0, 0, 0, 0.1)",
+          borderLeft: "1px solid rgba(255, 255, 255, 0.4)",
+          zIndex: 1000,
+          display: "flex",
+          flexDirection: "column",
+          transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+        }}>
+          <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border-dim)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ fontSize: "1.2rem" }}>⭐️</span>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0250A1" }}>Starred Bookmarks</h3>
+            </div>
+            <button 
+              onClick={() => setShowStarredDrawer(false)}
+              style={{ border: "none", background: "none", cursor: "pointer", display: "flex", padding: "0.25rem" }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {starredMessagesList.length === 0 ? (
+              <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", gap: "0.5rem" }}>
+                <span style={{ fontSize: "2rem" }}>⭐️</span>
+                <span style={{ fontSize: "0.8rem" }}>No starred messages.</span>
+              </div>
+            ) : (
+              starredMessagesList.map((m: any) => (
+                <div 
+                  key={m.id} 
+                  style={{
+                    background: "rgba(2, 80, 161, 0.03)",
+                    border: "1px solid rgba(2, 80, 161, 0.08)",
+                    borderRadius: "12px",
+                    padding: "0.75rem",
+                    position: "relative",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.4rem"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-premium)" }}>
+                      {m.senderName || "Colleague"}
+                    </span>
+                    <span style={{ fontSize: "0.58rem", color: "var(--text-muted)" }}>
+                      {new Date(m.createdAt).toLocaleDateString()} {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "0.78rem", color: "var(--text-primary)", whiteSpace: "pre-wrap", margin: 0, wordBreak: "break-word" }}>
+                    {m.message}
+                  </p>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.25rem" }}>
+                    <button
+                      onClick={() => handleToggleStar(m.id, !!m.groupId)}
+                      style={{ border: "none", background: "none", color: "var(--color-danger)", fontSize: "0.65rem", cursor: "pointer", fontWeight: 700 }}
+                    >
+                      Remove Bookmark
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Forward Message Modal */}
+      {showForwardModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(4px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999
+        }}>
+          <div 
+            className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl z-50"
+            style={{
+              width: "100%",
+              maxWidth: "400px",
+              border: "1px solid rgba(255, 255, 255, 0.4)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
+              maxHeight: "85vh"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>Forward Message</h3>
+              <button 
+                onClick={() => {
+                  setShowForwardModal(false);
+                  setForwardMessageContent("");
+                  setForwardSearch("");
+                  setSelectedForwardTargets([]);
+                }}
+                style={{ border: "none", background: "none", cursor: "pointer", display: "flex" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontStyle: "italic", background: "rgba(0,0,0,0.03)", padding: "0.5rem", borderRadius: "6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              "{forwardMessageContent}"
+            </p>
+
+            <div className="table-search-wrapper" style={{ width: "100%" }}>
+              <Search className="header-search-icon" size={14} />
+              <input
+                type="text"
+                placeholder="Search recent conversations..."
+                value={forwardSearch}
+                onChange={(e) => setForwardSearch(e.target.value)}
+                className="header-search-input"
+                style={{ fontSize: "0.8rem", padding: "0.4rem 0.5rem 0.4rem 2rem" }}
+              />
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.4rem", minHeight: "200px" }}>
+              {[...pinnedItems, ...activeConversations]
+                .filter(item => !forwardSearch.trim() || item.name.toLowerCase().includes(forwardSearch.toLowerCase()))
+                .map(item => {
+                  const isSelected = selectedForwardTargets.some(t => t.id === item.id && t.isGroup === item.isGroup);
+                  return (
+                    <label
+                      key={`${item.isGroup ? 'gp' : 'dir'}-${item.id}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        padding: "0.5rem 0.75rem",
+                        background: isSelected ? "rgba(2, 80, 161, 0.04)" : "transparent",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        border: "1px solid transparent",
+                        transition: "all 0.15s"
+                      }}
+                      className="chat-channel-item"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedForwardTargets(prev => [...prev, { id: item.id, isGroup: item.isGroup }]);
+                          } else {
+                            setSelectedForwardTargets(prev => prev.filter(t => !(t.id === item.id && t.isGroup === item.isGroup)));
+                          }
+                        }}
+                        style={{ accentColor: "#0250A1", cursor: "pointer" }}
+                      />
+                      <div style={{
+                        width: "1.75rem",
+                        height: "1.75rem",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(2, 80, 161, 0.08)",
+                        fontSize: "0.8rem"
+                      }} border-radius="50%">
+                        {item.isGroup ? (item.isPrivate ? "🔒" : "#") : (
+                          <img src={item.image || "/uploads/avatars/default-avatar.png"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        )}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.name}
+                        </span>
+                        <span style={{ fontSize: "0.62rem", color: "var(--text-muted)" }}>
+                          {item.isGroup ? "Group Channel" : "Direct Chat"}
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
+            </div>
+
+            <button
+              type="button"
+              disabled={selectedForwardTargets.length === 0}
+              onClick={() => {
+                selectedForwardTargets.forEach(t => {
+                  handleForwardMessageConfirm(t.id, t.isGroup);
+                });
+                setShowForwardModal(false);
+                setSelectedForwardTargets([]);
+              }}
+              className="btn-gold"
+              style={{ width: "100%", padding: "0.6rem", fontSize: "0.82rem", fontWeight: 800 }}
+            >
+              Confirm Forward ({selectedForwardTargets.length})
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sleek Glassmorphic Floating Context Menu */}
+      {contextMenu && contextMenu.visible && (
+        <div 
+          style={{
+            position: "fixed",
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px)",
+            borderRadius: "16px",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
+            border: "1px solid rgba(255, 255, 255, 0.5)",
+            padding: "0.5rem",
+            zIndex: 99999,
+            minWidth: "180px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.2rem"
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          {contextMenu.type === "message" ? (
+            <>
+              {/* Horizontal 7 Reactions Palette */}
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "0.25rem 0.5rem",
+                gap: "0.35rem",
+                borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                paddingBottom: "0.5rem",
+                marginBottom: "0.25rem"
+              }}>
+                {["👍", "❤️", "😂", "😮", "😢", "🙏", "🚀"].map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      handleToggleReaction(contextMenu.targetId, !!contextMenu.isGroup, emoji);
+                      setContextMenu(null);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      fontSize: "1.2rem",
+                      cursor: "pointer",
+                      padding: "0.2rem",
+                      borderRadius: "6px"
+                    }}
+                    className="reaction-menu-emoji"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+
+              {/* Menu Actions */}
+              <button
+                onClick={() => {
+                  handleToggleStar(contextMenu.targetId, !!contextMenu.isGroup);
+                  setContextMenu(null);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "8px",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  textAlign: "left",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  width: "100%"
+                }}
+                className="chat-channel-item"
+              >
+                <span>⭐️</span>
+                <span>{contextMenu.isStarred ? "Unstar Message" : "Star Message"}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setForwardMessageContent(contextMenu.messageText || "");
+                  setShowForwardModal(true);
+                  setContextMenu(null);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "8px",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  textAlign: "left",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  width: "100%"
+                }}
+                className="chat-channel-item"
+              >
+                <span>↪️</span>
+                <span>Forward Message</span>
+              </button>
+
+              {contextMenu.isOwn && (
+                <>
+                  <button
+                    onClick={() => {
+                      setEditingMessageId(contextMenu.targetId);
+                      setInputText(contextMenu.messageText || "");
+                      setContextMenu(null);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "8px",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      textAlign: "left",
+                      color: "var(--text-primary)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      width: "100%"
+                    }}
+                    className="chat-channel-item"
+                  >
+                    <span>✏️</span>
+                    <span>Edit Message</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleDeleteMessage(contextMenu.targetId, !!contextMenu.isGroup);
+                      setContextMenu(null);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "8px",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      textAlign: "left",
+                      color: "#EF4444",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      width: "100%"
+                    }}
+                    className="chat-channel-item"
+                  >
+                    <span>🚫</span>
+                    <span>Delete Message</span>
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                handleTogglePin(contextMenu.targetId, !!contextMenu.isGroup);
+                setContextMenu(null);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                padding: "0.5rem 0.75rem",
+                borderRadius: "8px",
+                fontSize: "0.78rem",
+                fontWeight: 600,
+                textAlign: "left",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                width: "100%"
+              }}
+              className="chat-channel-item"
+            >
+              <span>📌</span>
+              <span>{contextMenu.isPinned ? "Unpin Chat" : "Pin Chat"}</span>
+            </button>
+          )}
         </div>
       )}
 

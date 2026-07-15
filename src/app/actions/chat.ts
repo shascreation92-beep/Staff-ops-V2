@@ -228,3 +228,241 @@ export async function sendGroupMessageAction(groupId: string, message: string) {
   }
 }
 
+export async function editChatMessageAction(messageId: string, isGroup: boolean, newMessageContent: string) {
+  const user = await enforceAuth();
+  
+  if (isGroup) {
+    const msg = await db.chatgroupmessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new Error("Message not found.");
+    if (msg.senderId !== user.id) throw new Error("UNAUTHORIZED: You can only edit your own messages.");
+    
+    await db.chatgroupmessage.update({
+      where: { id: messageId },
+      data: {
+        message: newMessageContent,
+        isEdited: true,
+        editedAt: new Date()
+      }
+    });
+  } else {
+    const msg = await db.chatmessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new Error("Message not found.");
+    if (msg.senderId !== user.id) throw new Error("UNAUTHORIZED: You can only edit your own messages.");
+
+    await db.chatmessage.update({
+      where: { id: messageId },
+      data: {
+        message: newMessageContent,
+        isEdited: true,
+        editedAt: new Date()
+      }
+    });
+  }
+  revalidatePath("/chat-space");
+  return { success: true };
+}
+
+export async function deleteChatMessageAction(messageId: string, isGroup: boolean) {
+  const user = await enforceAuth();
+  
+  if (isGroup) {
+    const msg = await db.chatgroupmessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new Error("Message not found.");
+    if (msg.senderId !== user.id) throw new Error("UNAUTHORIZED: You can only delete your own messages.");
+
+    await db.chatgroupmessage.update({
+      where: { id: messageId },
+      data: {
+        message: "🚫 This message was deleted",
+        isDeleted: true
+      }
+    });
+  } else {
+    const msg = await db.chatmessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new Error("Message not found.");
+    if (msg.senderId !== user.id) throw new Error("UNAUTHORIZED: You can only delete your own messages.");
+
+    await db.chatmessage.update({
+      where: { id: messageId },
+      data: {
+        message: "🚫 This message was deleted",
+        isDeleted: true
+      }
+    });
+  }
+  revalidatePath("/chat-space");
+  return { success: true };
+}
+
+export async function toggleStarMessageAction(messageId: string, isGroup: boolean) {
+  const user = await enforceAuth();
+  
+  const existing = await db.chatstar.findFirst({
+    where: {
+      userId: user.id,
+      messageId: isGroup ? null : messageId,
+      groupMessageId: isGroup ? messageId : null
+    }
+  });
+
+  if (existing) {
+    await db.chatstar.delete({
+      where: { id: existing.id }
+    });
+    return { success: true, starred: false };
+  } else {
+    await db.chatstar.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        messageId: isGroup ? null : messageId,
+        groupMessageId: isGroup ? messageId : null
+      }
+    });
+    return { success: true, starred: true };
+  }
+}
+
+export async function getStarredMessagesAction() {
+  const user = await enforceAuth();
+  const stars = await db.chatstar.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" }
+  });
+
+  const starredItems = [];
+  for (const star of stars) {
+    if (star.messageId) {
+      const msg = await db.chatmessage.findUnique({
+        where: { id: star.messageId },
+        include: {
+          user_chatmessage_senderIdTouser: { select: { name: true } }
+        }
+      });
+      if (msg) starredItems.push({ ...msg, isGroup: false, senderName: msg.user_chatmessage_senderIdTouser.name });
+    } else if (star.groupMessageId) {
+      const msg = await db.chatgroupmessage.findUnique({
+        where: { id: star.groupMessageId },
+        include: {
+          sender: { select: { name: true } }
+        }
+      });
+      if (msg) starredItems.push({ ...msg, isGroup: true, senderName: msg.sender.name });
+    }
+  }
+  return starredItems;
+}
+
+export async function toggleEmojiReactionAction(messageId: string, isGroup: boolean, emoji: string) {
+  const user = await enforceAuth();
+
+  let currentReactionsStr: string | null = null;
+  if (isGroup) {
+    const msg = await db.chatgroupmessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new Error("Message not found.");
+    currentReactionsStr = msg.reactions;
+  } else {
+    const msg = await db.chatmessage.findUnique({ where: { id: messageId } });
+    if (!msg) throw new Error("Message not found.");
+    currentReactionsStr = msg.reactions;
+  }
+
+  let reactions: Array<{ emoji: string; userIds: string[] }> = [];
+  if (currentReactionsStr) {
+    try {
+      reactions = JSON.parse(currentReactionsStr);
+    } catch (e) {
+      reactions = [];
+    }
+  }
+
+  const existingEmojiIndex = reactions.findIndex(r => r.emoji === emoji);
+  if (existingEmojiIndex !== -1) {
+    const r = reactions[existingEmojiIndex];
+    if (r.userIds.includes(user.id)) {
+      r.userIds = r.userIds.filter(id => id !== user.id);
+    } else {
+      r.userIds.push(user.id);
+    }
+    if (r.userIds.length === 0) {
+      reactions.splice(existingEmojiIndex, 1);
+    }
+  } else {
+    reactions.push({ emoji, userIds: [user.id] });
+  }
+
+  const updatedReactionsStr = JSON.stringify(reactions);
+
+  if (isGroup) {
+    await db.chatgroupmessage.update({
+      where: { id: messageId },
+      data: { reactions: updatedReactionsStr }
+    });
+  } else {
+    await db.chatmessage.update({
+      where: { id: messageId },
+      data: { reactions: updatedReactionsStr }
+    });
+  }
+
+  revalidatePath("/chat-space");
+  return { success: true, reactions };
+}
+
+export async function toggleDndModeAction() {
+  const user = await enforceAuth();
+
+  const currentUserData = await db.user.findUnique({ where: { id: user.id } });
+  if (!currentUserData) throw new Error("User not found.");
+
+  const updatedUser = await db.user.update({
+    where: { id: user.id },
+    data: {
+      isDnd: !currentUserData.isDnd
+    }
+  });
+
+  revalidatePath("/chat-space");
+  return { success: true, isDnd: updatedUser.isDnd };
+}
+
+export async function forwardChatMessageAction(messageText: string, targetId: string, isTargetGroup: boolean) {
+  const user = await enforceAuth();
+
+  if (isTargetGroup) {
+    const membership = await db.chatgroupmember.findUnique({
+      where: { groupId_userId: { groupId: targetId, userId: user.id } }
+    });
+    if (!membership) throw new Error("UNAUTHORIZED: You are not a member of the target group.");
+
+    await db.chatgroupmessage.create({
+      data: {
+        id: crypto.randomUUID(),
+        groupId: targetId,
+        senderId: user.id,
+        message: messageText,
+        isForwarded: true
+      }
+    });
+  } else {
+    const receiver = await db.user.findUnique({ where: { id: targetId } });
+    if (!receiver) throw new Error("Recipient not found.");
+    if (user.role !== "SUPER_ADMIN" && receiver.role !== "SUPER_ADMIN" && receiver.companyId !== user.companyId) {
+      throw new Error("UNAUTHORIZED: You can only communicate within your company.");
+    }
+
+    await db.chatmessage.create({
+      data: {
+        id: crypto.randomUUID(),
+        senderId: user.id,
+        receiverId: targetId,
+        message: messageText,
+        isForwarded: true
+      }
+    });
+  }
+
+  revalidatePath("/chat-space");
+  return { success: true };
+}
+

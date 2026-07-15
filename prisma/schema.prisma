@@ -101,6 +101,12 @@ model chatmessage {
   user_chatmessage_receiverIdTouser user      @relation("chatmessage_receiverIdTouser", fields: [receiverId], references: [id], onDelete: Cascade, map: "ChatMessage_receiverId_fkey")
   user_chatmessage_senderIdTouser   user      @relation("chatmessage_senderIdTouser", fields: [senderId], references: [id], onDelete: Cascade, map: "ChatMessage_senderId_fkey")
 
+  isForwarded                       Boolean   @default(false)
+  isEdited                          Boolean   @default(false)
+  editedAt                          DateTime?
+  isDeleted                         Boolean   @default(false)
+  reactions                         String?   @db.Text
+
   @@index([receiverId], map: "ChatMessage_receiverId_fkey")
   @@index([senderId], map: "ChatMessage_senderId_fkey")
 }
@@ -233,6 +239,7 @@ model user {
   teamLeadId                               String?
   lastActiveAt                             DateTime?
   password                                 String?
+  isDnd                                    Boolean          @default(false)
   account_account_createdByIdTouser        account[]        @relation("account_createdByIdTouser")
   account_account_updatedByIdTouser        account[]        @relation("account_updatedByIdTouser")
   accounthistory                           accounthistory[]
@@ -251,6 +258,7 @@ model user {
   chatgroupmember                          chatgroupmember[]
   chatgroupmessage                         chatgroupmessage[]
   chatgroup_created                        chatgroup[]      @relation("group_createdBy")
+  chatstar                                 chatstar[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -408,6 +416,12 @@ model chatgroupmessage {
   group     chatgroup @relation(fields: [groupId], references: [id], onDelete: Cascade, map: "ChatGroupMessage_groupId_fkey")
   sender    user      @relation(fields: [senderId], references: [id], onDelete: Cascade, map: "ChatGroupMessage_senderId_fkey")
 
+  isForwarded                       Boolean   @default(false)
+  isEdited                          Boolean   @default(false)
+  editedAt                          DateTime?
+  isDeleted                         Boolean   @default(false)
+  reactions                         String?   @db.Text
+
   @@index([groupId], map: "ChatGroupMessage_groupId_fkey")
   @@index([senderId], map: "ChatGroupMessage_senderId_fkey")
 }
@@ -422,5 +436,18 @@ model chatpin {
 
   @@unique([userId, targetId], map: "ChatPin_userId_targetId_key")
   @@index([userId], map: "ChatPin_userId_fkey")
+}
+
+model chatstar {
+  id              String   @id
+  userId          String
+  messageId       String?
+  groupMessageId  String?
+  createdAt       DateTime @default(now())
+  user            user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "ChatStar_userId_fkey")
+
+  @@unique([userId, messageId], map: "ChatStar_userId_messageId_key")
+  @@unique([userId, groupMessageId], map: "ChatStar_userId_groupMessageId_key")
+  @@index([userId], map: "ChatStar_userId_fkey")
 }
 
