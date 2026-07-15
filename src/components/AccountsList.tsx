@@ -958,7 +958,7 @@ export default function AccountsList({
                         {(() => {
                           const d = new Date(acc.createdAt);
                           const datePart = `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()}`;
-                          const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                          const timePart = d.toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" });
                           return (
                             <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
                               <span style={{ fontWeight: 600 }}>{datePart}</span>
@@ -2050,7 +2050,7 @@ export default function AccountsList({
               <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontStyle: "italic", alignSelf: "flex-end" }}>
                 Last Updated by IT: {(() => {
                   const d = new Date(selectedITNotesTimestamp);
-                  return `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()} ${d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+                  return `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()} ${d.toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
                 })()}
               </span>
             </div>

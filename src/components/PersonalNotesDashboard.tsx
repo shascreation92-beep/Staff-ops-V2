@@ -109,7 +109,7 @@ const colorThemes: Record<string, { bg: string, border: string, headerBorder: st
 const formatDate = (dateInput: string | Date) => {
   const d = new Date(dateInput);
   const datePart = `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()}`;
-  const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const timePart = d.toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" });
   return `${datePart} | ${timePart}`;
 };
 
@@ -1879,7 +1879,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                   color: reminderTime ? "#0250A1" : "var(--text-muted)",
                   opacity: reminderTime ? 1 : 0.6
                 }}
-                title={reminderTime ? `Reminder active at ${new Date(reminderTime).toLocaleTimeString()}` : "Set Reminder Timer"}
+                title={reminderTime ? `Reminder active at ${new Date(reminderTime).toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit" })}` : "Set Reminder Timer"}
               >
                 <Clock size={14} />
               </button>

@@ -2017,7 +2017,7 @@ export default function ChatShard({
                         alignSelf: "flex-end",
                         fontFamily: "var(--font-mono)"
                       }}>
-                        <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{new Date(m.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                         {isOwn && !m.isDeleted && (
                           m.isRead ? (
                             <CheckCheck size={11} style={{ color: "#34D399" }} />
@@ -2515,7 +2515,7 @@ export default function ChatShard({
                       {m.senderName || "Colleague"}
                     </span>
                     <span style={{ fontSize: "0.58rem", color: "var(--text-muted)" }}>
-                      {new Date(m.createdAt).toLocaleDateString()} {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(m.createdAt).toLocaleDateString()} {new Date(m.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}
                     </span>
                   </div>
                   <p style={{ fontSize: "0.78rem", color: "var(--text-primary)", whiteSpace: "pre-wrap", margin: 0, wordBreak: "break-word" }}>

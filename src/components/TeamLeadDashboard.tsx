@@ -525,7 +525,7 @@ export default function TeamLeadDashboard({
                         {(() => {
                           const d = new Date(acc.createdAt);
                           const datePart = `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()}`;
-                          const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                          const timePart = d.toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" });
                           return (
                             <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
                               <span style={{ fontWeight: 600 }}>{datePart}</span>

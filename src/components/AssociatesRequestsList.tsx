@@ -157,7 +157,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                         const associateName = req.user_account_createdByIdTouser?.name || "Unknown Associate";
                         const d = new Date(req.createdAt);
                         const datePart = `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "short" })}, ${d.getFullYear()}`;
-                        const timePart = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                        const timePart = d.toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
                         return (
                           <tr key={req.id}>
