@@ -15,7 +15,10 @@ import {
   toggleDndModeAction,
   forwardChatMessageAction,
   leaveGroupAction,
-  deleteGroupAction
+  deleteGroupAction,
+  requestJoinGroupAction,
+  approveJoinRequestAction,
+  rejectJoinRequestAction
 } from "@/app/actions/chat";
 import { useSearchParams } from "next/navigation";
 import { 
@@ -34,6 +37,7 @@ import {
   Star,
   Pin,
   CornerUpRight,
+  CornerUpLeft,
   Edit3,
   Trash2,
   Lock,
@@ -119,6 +123,16 @@ export default function ChatShard({
     onConfirm: () => void;
   } | null>(null);
 
+  // Confirm Modal state
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [replyingTo, setReplyingTo] = useState<{
+    id: string;
+    senderName: string;
+    message: string;
+    isGroup: boolean;
+  } | null>(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+
   // Group description edit modal states
   const [showUpdateDescModal, setShowUpdateDescModal] = useState<boolean>(false);
   const [tempDescInput, setTempDescInput] = useState<string>("");
@@ -198,6 +212,47 @@ export default function ChatShard({
     });
   };
 
+  const handleRequestJoin = async (groupId: string) => {
+    startTransition(async () => {
+      try {
+        const res = await requestJoinGroupAction(groupId);
+        if (res.success) {
+          toast.success("Join request submitted to group creator!");
+          await fetchGroupsAndPins();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to submit join request.");
+      }
+    });
+  };
+
+  const handleApproveJoinRequest = async (requestId: string) => {
+    startTransition(async () => {
+      try {
+        const res = await approveJoinRequestAction(requestId);
+        if (res.success) {
+          toast.success("Member approved and added!");
+          await fetchGroupsAndPins();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to approve member.");
+      }
+    });
+  };
+
+  const handleRejectJoinRequest = async (requestId: string) => {
+    startTransition(async () => {
+      try {
+        const res = await rejectJoinRequestAction(requestId);
+        if (res.success) {
+          toast.success("Join request rejected.");
+          await fetchGroupsAndPins();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to reject request.");
+      }
+    });
+  };
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
@@ -270,6 +325,15 @@ export default function ChatShard({
         setJoinedGroups(data.joinedGroups || []);
         setDiscoverableGroups(data.discoverableGroups || []);
         setPins(data.pins || []);
+        setPendingRequests(data.pendingRequests || []);
+
+        // Dynamic update for activeContact to sync join requests
+        if (activeContact && activeContact.isGroup) {
+          const freshGroup = data.joinedGroups.find((g: any) => g.id === activeContact.id);
+          if (freshGroup) {
+            setActiveContact({ ...freshGroup, isGroup: true });
+          }
+        }
 
         // Initialize activeContact if not yet set
         const targetId = selectContactId || contactId;
@@ -718,6 +782,13 @@ export default function ChatShard({
     const tempId = crypto.randomUUID();
     const isGroup = !!activeContact.isGroup;
 
+    // Capture reply parameters at call time (and clear state)
+    const replyId = replyingTo?.id || null;
+    const replySenderId = replyingTo ? (messages.find(m => m.id === replyingTo.id) || allDirectMessages.find(m => m.id === replyingTo.id))?.senderId || null : null;
+    const replySenderName = replyingTo?.senderName || null;
+    const replyMessage = replyingTo?.message || null;
+    setReplyingTo(null);
+
     if (isGroup) {
       const optimisticMessage = {
         id: tempId,
@@ -725,6 +796,10 @@ export default function ChatShard({
         senderId: currentUser.id,
         message: text,
         createdAt: new Date().toISOString(),
+        replyToId: replyId,
+        replyToSenderId: replySenderId,
+        replyToSenderName: replySenderName,
+        replyToMessage: replyMessage,
         sender: {
           id: currentUser.id,
           name: currentUser.name || "Me",
@@ -735,7 +810,14 @@ export default function ChatShard({
 
       startTransition(async () => {
         try {
-          await sendGroupMessageAction(activeContact.id, text);
+          await sendGroupMessageAction(
+            activeContact.id,
+            text,
+            replyId,
+            replySenderId,
+            replySenderName,
+            replyMessage
+          );
         } catch (err: any) {
           toast.error(err.message || "Failed to transmit group message.");
           setMessages(prev => prev.filter(m => m.id !== tempId));
@@ -748,7 +830,11 @@ export default function ChatShard({
         receiverId: activeContact.id,
         message: text,
         isRead: false,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        replyToId: replyId,
+        replyToSenderId: replySenderId,
+        replyToSenderName: replySenderName,
+        replyToMessage: replyMessage
       };
       setMessages(prev => [...prev, optimisticMessage]);
       setAllDirectMessages(prev => [...prev, optimisticMessage]);
@@ -757,7 +843,11 @@ export default function ChatShard({
         try {
           await sendChatMessageAction({
             receiverId: activeContact.id,
-            message: text
+            message: text,
+            replyToId: replyId,
+            replyToSenderId: replySenderId,
+            replyToSenderName: replySenderName,
+            replyToMessage: replyMessage
           });
 
           // Simulated chatbot replies (Direct Messaging only)
@@ -1154,6 +1244,14 @@ export default function ChatShard({
         .reaction-menu-emoji:hover {
           transform: scale(1.3) translateY(-2px);
           background: rgba(2, 80, 161, 0.1) !important;
+        }
+        @keyframes replyPulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.02); box-shadow: 0 0 12px var(--gold-glow); background: rgba(245, 158, 11, 0.15) !important; }
+          100% { transform: scale(1); }
+        }
+        .reply-pulse-highlight {
+          animation: replyPulse 1.2s ease-in-out;
         }
       ` }} />
 
@@ -1799,13 +1897,30 @@ export default function ChatShard({
                         </span>
                         <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Public Channel</span>
                       </div>
-                      <button
-                        onClick={() => handleJoinGroup(g.id)}
-                        className="btn-gold"
-                        style={{ padding: "0.25rem 0.6rem", fontSize: "0.68rem", borderRadius: "4px", fontWeight: 700 }}
-                      >
-                        Join
-                      </button>
+                      {(() => {
+                        const hasRequested = pendingRequests.some(r => r.groupId === g.id);
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => !hasRequested && handleRequestJoin(g.id)}
+                            disabled={hasRequested}
+                            className={hasRequested ? "btn-muted" : "btn-gold"}
+                            style={{ 
+                              padding: "0.25rem 0.6rem", 
+                              fontSize: "0.68rem", 
+                              borderRadius: "4px", 
+                              fontWeight: 700,
+                              cursor: hasRequested ? "default" : "pointer",
+                              opacity: hasRequested ? 0.7 : 1,
+                              background: hasRequested ? "#E5E7EB" : "var(--gold-gradient)",
+                              color: hasRequested ? "#9CA3AF" : "#FFFFFF",
+                              border: "none"
+                            }}
+                          >
+                            {hasRequested ? "Requested" : "Join"}
+                          </button>
+                        );
+                      })()}
                     </div>
                   ))}
                 </>
@@ -2343,6 +2458,8 @@ export default function ChatShard({
                     }}
                   >
                     <div 
+                      id={`msg-bubble-${m.id}`}
+                      className={highlightedMessageId === m.id ? "reply-pulse-highlight" : ""}
                       onContextMenu={(e) => {
                         if (m.isDeleted) return; // Deleted messages cannot have context menu actions
                         e.preventDefault();
@@ -2369,7 +2486,8 @@ export default function ChatShard({
                         borderRadius: isOwn ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
                         maxWidth: "60%",
                         boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                        position: "relative"
+                        position: "relative",
+                        transition: "all 0.3s ease"
                       }}
                     >
                       {m.isForwarded && (
@@ -2382,6 +2500,46 @@ export default function ChatShard({
                         <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-premium)", marginBottom: "0.25rem", display: "block" }}>
                           {m.sender?.name || "Colleague"}
                         </span>
+                      )}
+
+                      {/* WhatsApp-style Reply Quote Card */}
+                      {m.replyToId && (
+                        <div 
+                          onClick={() => {
+                            const element = document.getElementById(`msg-bubble-${m.replyToId}`);
+                            if (element) {
+                              element.scrollIntoView({ behavior: "smooth", block: "center" });
+                              setHighlightedMessageId(m.replyToId);
+                              setTimeout(() => {
+                                setHighlightedMessageId(null);
+                              }, 1200);
+                            } else {
+                              toast.error("Message not found or too old to scroll to.");
+                            }
+                          }}
+                          style={{
+                            background: isOwn ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.05)",
+                            borderLeft: isOwn ? "3.5px solid #FFFFFF" : "3.5px solid var(--gold-premium)",
+                            padding: "0.4rem 0.6rem",
+                            borderRadius: "4px",
+                            marginBottom: "0.5rem",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "0.15rem",
+                            minWidth: "120px",
+                            maxWidth: "100%",
+                            transition: "background 0.2s"
+                          }}
+                          className="hover-opacity"
+                        >
+                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: isOwn ? "#FFFFFF" : "var(--gold-premium)" }}>
+                            {m.replyToSenderName || "Colleague"}
+                          </span>
+                          <span style={{ fontSize: "0.72rem", opacity: 0.9, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+                            {m.replyToMessage?.startsWith("📎 ATTACHMENT") ? "📎 Attachment File" : m.replyToMessage}
+                          </span>
+                        </div>
                       )}
                       
                       {/* Structured media preview card for future image/thumbnail rendering */}
@@ -2542,21 +2700,42 @@ export default function ChatShard({
                     gap: "1.25rem"
                   }}
                 >
-                  <Lock size={36} style={{ color: "#0250A1" }} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                    <h4 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Public Channel Locked</h4>
-                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0, lineHeight: "1.4" }}>
-                      You are not a member of <strong>{activeContact.name}</strong> yet. Join now to view transmissions and participate in conversations.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleJoinGroup(activeContact.id)}
-                    className="btn-gold"
-                    style={{ width: "100%", padding: "0.65rem 1rem", borderRadius: "10px", fontWeight: 700 }}
-                  >
-                    Join Now
-                  </button>
+                  {(() => {
+                    const hasRequested = pendingRequests.some(r => r.groupId === activeContact.id);
+                    return (
+                      <>
+                        <Lock size={36} style={{ color: "#0250A1" }} />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                          <h4 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                            {hasRequested ? "Join Request Pending Approval" : "Public Channel Locked"}
+                          </h4>
+                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0, lineHeight: "1.4" }}>
+                            {hasRequested 
+                              ? "Your request to join this channel has been sent. Please await approval from the group creator."
+                              : <>You are not a member of <strong>{activeContact.name}</strong> yet. Join now to view transmissions and participate in conversations.</>}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => !hasRequested && handleRequestJoin(activeContact.id)}
+                          disabled={hasRequested}
+                          className={hasRequested ? "btn-muted" : "btn-gold"}
+                          style={{ 
+                            width: "100%", 
+                            padding: "0.65rem 1rem", 
+                            borderRadius: "10px", 
+                            fontWeight: 700,
+                            cursor: hasRequested ? "default" : "pointer",
+                            background: hasRequested ? "#E5E7EB" : "var(--gold-gradient)",
+                            color: hasRequested ? "#9CA3AF" : "#FFFFFF",
+                            border: "none"
+                          }}
+                        >
+                          {hasRequested ? "Requested" : "Join Now"}
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             )}
@@ -2579,19 +2758,70 @@ export default function ChatShard({
               flexShrink: 0
             }}>
               <Lock size={12} style={{ color: "var(--text-muted)" }} />
-              <span>You must join this channel to participate in the conversation.</span>
+              <span>
+                {pendingRequests.some(r => r.groupId === activeContact.id)
+                  ? "Your join request is awaiting approval."
+                  : "You must join this channel to participate in the conversation."}
+              </span>
             </div>
           ) : (
-            <form onSubmit={handleSendMessage} style={{
-            padding: "1rem 1.5rem",
-            borderTop: "1px solid var(--border-dim)",
-            background: "#FFFFFF",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-            position: "relative",
-            flexShrink: 0
-          }}>
+            <div style={{ display: "flex", flexDirection: "column", background: "#FFFFFF", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
+              {/* WhatsApp Reply Preview Bar */}
+              {replyingTo && (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0.5rem 1.5rem",
+                  background: "rgba(2, 80, 161, 0.03)",
+                  borderBottom: "1px solid var(--border-dim)",
+                  position: "relative",
+                  animation: "slideInFromBottom 0.2s ease-out"
+                }}>
+                  <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    borderLeft: "3px solid var(--gold-glow)",
+                    paddingLeft: "0.75rem",
+                    minWidth: 0,
+                    flex: 1
+                  }}>
+                    <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--gold-premium)" }}>
+                      Replying to {replyingTo.senderName}
+                    </span>
+                    <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {replyingTo.message.startsWith("📎 ATTACHMENT") ? "📎 Attachment File" : replyingTo.message}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(null)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0.25rem",
+                      color: "var(--text-muted)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "50%"
+                    }}
+                    className="chat-channel-item"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              )}
+
+              <form onSubmit={handleSendMessage} style={{
+                padding: "1rem 1.5rem",
+                background: "#FFFFFF",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                position: "relative"
+              }}>
             
             {/* Interactive Slash Commands Popup suggestions */}
             {showCommandSuggestions && commandOptions.length > 0 && (
@@ -2787,6 +3017,7 @@ export default function ChatShard({
               <Send size={16} style={{ color: "var(--bg-primary)" }} />
             </button>
           </form>
+            </div>
           )}
         </div>
       ) : (
@@ -2958,6 +3189,78 @@ export default function ChatShard({
                   {currentDescriptionText || "No notes or description provided yet."}
                 </div>
               </div>
+
+              {/* Join Requests (Visible to Creator Only) */}
+              {isGroupCreator && activeContact.joinRequests && activeContact.joinRequests.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#EF4444", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                    <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "#EF4444" }} className="pulse-critical-dot" />
+                    <span>Join Requests ({activeContact.joinRequests.length})</span>
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", maxHeight: "120px", overflowY: "auto", paddingRight: "0.25rem" }}>
+                    {activeContact.joinRequests.map((req: any) => {
+                      if (!req?.user) return null;
+                      return (
+                        <div key={req.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.35rem 0.5rem", background: "#FFFFFF", borderRadius: "8px", border: "1px solid rgba(239, 68, 68, 0.15)", boxShadow: "0 1px 3px rgba(239,68,68,0.02)" }}>
+                          <div className="user-avatar-gold" style={{ width: "1.25rem", height: "1.25rem", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239, 68, 68, 0.08)" }}>
+                            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#EF4444" }}>{req.user.name?.[0]?.toUpperCase() || "?"}</span>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {req.user.name}
+                            </span>
+                          </div>
+                          
+                          <div style={{ display: "flex", gap: "0.3rem" }}>
+                            <button
+                              type="button"
+                              onClick={() => handleApproveJoinRequest(req.id)}
+                              className="chat-channel-item"
+                              style={{
+                                width: "22px",
+                                height: "22px",
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: "rgba(16, 185, 129, 0.1)",
+                                border: "1px solid rgba(16, 185, 129, 0.2)",
+                                color: "#10B981",
+                                cursor: "pointer",
+                                padding: 0
+                              }}
+                              title="Approve Request"
+                            >
+                              <Check size={11} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectJoinRequest(req.id)}
+                              className="chat-channel-item"
+                              style={{
+                                width: "22px",
+                                height: "22px",
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: "rgba(239, 68, 68, 0.1)",
+                                border: "1px solid rgba(239, 68, 68, 0.2)",
+                                color: "#EF4444",
+                                cursor: "pointer",
+                                padding: 0
+                              }}
+                              title="Reject Request"
+                            >
+                              <X size={11} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Members List */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -3621,6 +3924,47 @@ export default function ChatShard({
               </div>
 
               {/* Menu Actions */}
+              <button
+                onClick={() => {
+                  const targetMsg = messages.find(m => m.id === contextMenu.targetId) || allDirectMessages.find(m => m.id === contextMenu.targetId);
+                  let senderName = "Colleague";
+                  if (targetMsg) {
+                    if (targetMsg.senderId === currentUser.id) {
+                      senderName = "You";
+                    } else if (activeContact && !activeContact.isGroup) {
+                      senderName = activeContact.name || "Colleague";
+                    } else {
+                      senderName = targetMsg.sender?.name || "Colleague";
+                    }
+                  }
+                  setReplyingTo({
+                    id: contextMenu.targetId,
+                    senderName,
+                    message: contextMenu.messageText || "",
+                    isGroup: !!contextMenu.isGroup
+                  });
+                  setContextMenu(null);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "8px",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  textAlign: "left",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  width: "100%"
+                }}
+                className="chat-channel-item"
+              >
+                <CornerUpLeft size={14} style={{ color: "var(--text-muted)" }} />
+                <span>Reply</span>
+              </button>
               <button
                 onClick={() => {
                   handleToggleStar(contextMenu.targetId, !!contextMenu.isGroup);

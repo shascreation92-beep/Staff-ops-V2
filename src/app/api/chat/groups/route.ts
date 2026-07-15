@@ -47,6 +47,18 @@ export async function GET(req: Request) {
               }
             }
           }
+        },
+        joinRequests: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true
+              }
+            }
+          }
         }
       }
     });
@@ -66,10 +78,15 @@ export async function GET(req: Request) {
       where: { userId }
     });
 
+    const pendingRequests = await db.chatjoinrequest.findMany({
+      where: { userId }
+    });
+
     return NextResponse.json({
       joinedGroups,
       discoverableGroups,
-      pins
+      pins,
+      pendingRequests
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to fetch groups and pins" }, { status: 500 });

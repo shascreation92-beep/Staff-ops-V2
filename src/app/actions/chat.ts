@@ -7,7 +7,11 @@ import { z } from "zod";
 
 const SendMessageSchema = z.object({
   receiverId: z.string().min(1, "Recipient is required"),
-  message: z.string().min(1, "Message cannot be empty")
+  message: z.string().min(1, "Message cannot be empty"),
+  replyToId: z.string().optional().nullable(),
+  replyToSenderId: z.string().optional().nullable(),
+  replyToSenderName: z.string().optional().nullable(),
+  replyToMessage: z.string().optional().nullable()
 });
 
 export async function sendChatMessageAction(formData: z.infer<typeof SendMessageSchema>) {
@@ -18,7 +22,7 @@ export async function sendChatMessageAction(formData: z.infer<typeof SendMessage
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { receiverId, message } = result.data;
+  const { receiverId, message, replyToId, replyToSenderId, replyToSenderName, replyToMessage } = result.data;
 
   // Verify recipient exists
   const receiver = await db.user.findUnique({
@@ -42,7 +46,11 @@ export async function sendChatMessageAction(formData: z.infer<typeof SendMessage
         receiverId,
         message,
         isRead: false,
-        createdAt: new Date()
+        createdAt: new Date(),
+        replyToId,
+        replyToSenderId,
+        replyToSenderName,
+        replyToMessage
       }
     });
 
@@ -201,7 +209,135 @@ export async function joinPublicGroupAction(groupId: string) {
   return { success: true };
 }
 
-export async function sendGroupMessageAction(groupId: string, message: string) {
+export async function requestJoinGroupAction(groupId: string) {
+  const user = await enforceAuth();
+
+  const group = await db.chatgroup.findUnique({
+    where: {
+      id: groupId,
+      companyId: user.companyId || ""
+    }
+  });
+
+  if (!group) {
+    throw new Error("Group not found.");
+  }
+
+  // Check membership
+  const existingMember = await db.chatgroupmember.findUnique({
+    where: {
+      groupId_userId: {
+        groupId,
+        userId: user.id
+      }
+    }
+  });
+  if (existingMember) {
+    throw new Error("You are already a member of this group.");
+  }
+
+  // Check existing request
+  const existingReq = await db.chatjoinrequest.findUnique({
+    where: {
+      groupId_userId: {
+        groupId,
+        userId: user.id
+      }
+    }
+  });
+
+  if (!existingReq) {
+    await db.chatjoinrequest.create({
+      data: {
+        id: crypto.randomUUID(),
+        groupId,
+        userId: user.id,
+        status: "PENDING"
+      }
+    });
+  }
+
+  revalidatePath("/chat-space");
+  return { success: true, status: "PENDING" };
+}
+
+export async function approveJoinRequestAction(requestId: string) {
+  const user = await enforceAuth();
+
+  const req = await db.chatjoinrequest.findUnique({
+    where: { id: requestId },
+    include: { group: true, user: true }
+  });
+
+  if (!req) {
+    throw new Error("Join request not found.");
+  }
+
+  // Verify that the current user is the group creator
+  if (req.group.createdById !== user.id) {
+    throw new Error("UNAUTHORIZED: Only the group creator can approve join requests.");
+  }
+
+  // Create membership inside a transaction
+  await db.$transaction([
+    db.chatgroupmember.create({
+      data: {
+        id: crypto.randomUUID(),
+        groupId: req.groupId,
+        userId: req.userId
+      }
+    }),
+    db.chatgroupmessage.create({
+      data: {
+        id: crypto.randomUUID(),
+        groupId: req.groupId,
+        senderId: req.userId,
+        message: `📢 SYSTEM: ${req.user.name || "Colleague"} joined the channel`,
+        createdAt: new Date()
+      }
+    }),
+    db.chatjoinrequest.delete({
+      where: { id: requestId }
+    })
+  ]);
+
+  revalidatePath("/chat-space");
+  return { success: true };
+}
+
+export async function rejectJoinRequestAction(requestId: string) {
+  const user = await enforceAuth();
+
+  const req = await db.chatjoinrequest.findUnique({
+    where: { id: requestId },
+    include: { group: true }
+  });
+
+  if (!req) {
+    throw new Error("Join request not found.");
+  }
+
+  // Verify that the current user is the group creator
+  if (req.group.createdById !== user.id) {
+    throw new Error("UNAUTHORIZED: Only the group creator can reject join requests.");
+  }
+
+  await db.chatjoinrequest.delete({
+    where: { id: requestId }
+  });
+
+  revalidatePath("/chat-space");
+  return { success: true };
+}
+
+export async function sendGroupMessageAction(
+  groupId: string,
+  message: string,
+  replyToId?: string | null,
+  replyToSenderId?: string | null,
+  replyToSenderName?: string | null,
+  replyToMessage?: string | null
+) {
   const user = await enforceAuth();
 
   if (!message || message.trim() === "") {
@@ -228,7 +364,11 @@ export async function sendGroupMessageAction(groupId: string, message: string) {
         groupId,
         senderId: user.id,
         message,
-        createdAt: new Date()
+        createdAt: new Date(),
+        replyToId,
+        replyToSenderId,
+        replyToSenderName,
+        replyToMessage
       }
     });
 
@@ -563,6 +703,32 @@ export async function deleteGroupAction(groupId: string) {
 
   revalidatePath("/chat-space");
   return { success: true };
+}
+
+export async function getChatBadgeStatusAction() {
+  const user = await enforceAuth();
+  
+  // Count unread direct messages for this user
+  const unreadDirect = await db.chatmessage.count({
+    where: {
+      receiverId: user.id,
+      isRead: false
+    }
+  });
+
+  // Count pending join requests for groups created by this user
+  const pendingGroupRequests = await db.chatjoinrequest.count({
+    where: {
+      group: {
+        createdById: user.id
+      }
+    }
+  });
+
+  return {
+    hasUnread: unreadDirect > 0,
+    hasJoinRequests: pendingGroupRequests > 0
+  };
 }
 
 

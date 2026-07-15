@@ -234,6 +234,28 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     return () => clearInterval(interval);
   }, [user.role]);
 
+  // Dynamic chat notification states (unread messages, group join requests)
+  const [chatStatus, setChatStatus] = useState<{ hasUnread: boolean; hasJoinRequests: boolean }>({
+    hasUnread: false,
+    hasJoinRequests: false
+  });
+
+  useEffect(() => {
+    const fetchChatStatus = async () => {
+      try {
+        const { getChatBadgeStatusAction } = await import("@/app/actions/chat");
+        const status = await getChatBadgeStatusAction();
+        setChatStatus(status);
+      } catch (err) {
+        console.error("Failed to fetch chat status badge", err);
+      }
+    };
+
+    fetchChatStatus();
+    const interval = setInterval(fetchChatStatus, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   const handleChangePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setChangePassError(null);
@@ -540,6 +562,36 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 >
                   🔴 {pendingRequestsCount}
                 </span>
+              )}
+              {item.id === "chat-space" && (chatStatus.hasUnread || chatStatus.hasJoinRequests) && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+                  {chatStatus.hasJoinRequests && (
+                    <span 
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        background: "#0250A1",
+                        boxShadow: "0 0 6px #0250A1",
+                        display: "inline-block"
+                      }}
+                      title="Pending Join Requests"
+                    />
+                  )}
+                  {chatStatus.hasUnread && (
+                    <span 
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        background: "#10B981",
+                        boxShadow: "0 0 6px #10B981",
+                        display: "inline-block"
+                      }}
+                      title="Unread Messages"
+                    />
+                  )}
+                </div>
               )}
             </Link>
           );

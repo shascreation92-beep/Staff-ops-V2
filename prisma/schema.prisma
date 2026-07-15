@@ -107,6 +107,11 @@ model chatmessage {
   isDeleted                         Boolean   @default(false)
   reactions                         String?   @db.Text
 
+  replyToId                         String?
+  replyToSenderId                   String?
+  replyToSenderName                 String?
+  replyToMessage                    String?   @db.Text
+
   @@index([receiverId], map: "ChatMessage_receiverId_fkey")
   @@index([senderId], map: "ChatMessage_senderId_fkey")
 }
@@ -259,6 +264,7 @@ model user {
   chatgroupmessage                         chatgroupmessage[]
   chatgroup_created                        chatgroup[]      @relation("group_createdBy")
   chatstar                                 chatstar[]
+  chatjoinrequest                          chatjoinrequest[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -389,6 +395,7 @@ model chatgroup {
   createdBy   user               @relation("group_createdBy", fields: [createdById], references: [id], onDelete: Cascade, map: "ChatGroup_createdById_fkey")
   members     chatgroupmember[]
   messages    chatgroupmessage[]
+  joinRequests chatjoinrequest[]
 
   @@index([companyId], map: "ChatGroup_companyId_fkey")
   @@index([createdById], map: "ChatGroup_createdById_fkey")
@@ -422,6 +429,11 @@ model chatgroupmessage {
   isDeleted                         Boolean   @default(false)
   reactions                         String?   @db.Text
 
+  replyToId                         String?
+  replyToSenderId                   String?
+  replyToSenderName                 String?
+  replyToMessage                    String?   @db.Text
+
   @@index([groupId], map: "ChatGroupMessage_groupId_fkey")
   @@index([senderId], map: "ChatGroupMessage_senderId_fkey")
 }
@@ -449,5 +461,19 @@ model chatstar {
   @@unique([userId, messageId], map: "ChatStar_userId_messageId_key")
   @@unique([userId, groupMessageId], map: "ChatStar_userId_groupMessageId_key")
   @@index([userId], map: "ChatStar_userId_fkey")
+}
+
+model chatjoinrequest {
+  id        String    @id
+  groupId   String
+  userId    String
+  status    String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt DateTime  @default(now())
+  group     chatgroup @relation(fields: [groupId], references: [id], onDelete: Cascade, map: "ChatJoinRequest_groupId_fkey")
+  user      user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "ChatJoinRequest_userId_fkey")
+
+  @@unique([groupId, userId], map: "ChatJoinRequest_groupId_userId_key")
+  @@index([groupId], map: "ChatJoinRequest_groupId_fkey")
+  @@index([userId], map: "ChatJoinRequest_userId_fkey")
 }
 
