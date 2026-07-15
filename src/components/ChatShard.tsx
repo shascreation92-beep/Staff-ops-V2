@@ -25,7 +25,12 @@ import {
   CheckCheck,
   Activity,
   Paperclip,
-  X
+  X,
+  Megaphone,
+  Bell,
+  BellOff,
+  Star,
+  Pin
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import { toast } from "react-hot-toast";
@@ -993,7 +998,7 @@ export default function ChatShard({
             alignItems: "center",
             justifyContent: "center"
           }}>
-            📢
+            <Megaphone size={16} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
             <span style={{ fontSize: "0.82rem", fontWeight: 800, color: "var(--text-primary)" }}>
@@ -1016,7 +1021,11 @@ export default function ChatShard({
           backdropFilter: "blur(4px)"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontSize: "1rem" }}>{isDnd ? "💤" : "🟢"}</span>
+            {isDnd ? (
+              <BellOff size={16} style={{ color: "#EF4444" }} />
+            ) : (
+              <Bell size={16} style={{ color: "#10B981" }} />
+            )}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)" }}>DND Operations</span>
               <span style={{ fontSize: "0.62rem", color: "var(--text-muted)" }}>{isDnd ? "Suppressed Alerts" : "Receiving Alerts"}</span>
@@ -1030,13 +1039,12 @@ export default function ChatShard({
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                fontSize: "1.1rem",
                 padding: "0.2rem",
                 display: "flex"
               }}
               title="Starred Bookmarks"
             >
-              ⭐️
+              <Star size={18} style={{ color: "#F59E0B" }} fill="#F59E0B" />
             </button>
             <button
               type="button"
@@ -1112,9 +1120,13 @@ export default function ChatShard({
                     fontWeight: 700,
                     color: "var(--gold-premium)",
                     letterSpacing: "0.08em",
-                    textTransform: "uppercase"
+                    textTransform: "uppercase",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
                   }}>
-                    📌 Pinned Chats
+                    <Pin size={12} style={{ transform: "rotate(45deg)" }} />
+                    <span>Pinned Chats</span>
                   </div>
                   {pinnedItems.map(item => {
                     const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
@@ -1192,7 +1204,9 @@ export default function ChatShard({
                             <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {item.name}
                             </span>
-                            <span style={{ fontSize: "0.7rem", opacity: 0.6 }} title="Pinned Chat">📌</span>
+                            <span title="Pinned Chat" style={{ display: "inline-flex", opacity: 0.6 }}>
+                              <Pin size={11} style={{ transform: "rotate(45deg)", color: "#0250A1" }} />
+                            </span>
                           </div>
                           <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {subtitleText}
@@ -1244,9 +1258,13 @@ export default function ChatShard({
                 fontWeight: 700,
                 color: "var(--gold-premium)",
                 letterSpacing: "0.08em",
-                textTransform: "uppercase"
+                textTransform: "uppercase",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem"
               }}>
-                💬 Recent Chats & Groups
+                <MessageSquare size={12} />
+                <span>Recent Chats & Groups</span>
               </div>
 
               {activeConversations.length === 0 && pinnedItems.length === 0 ? (
