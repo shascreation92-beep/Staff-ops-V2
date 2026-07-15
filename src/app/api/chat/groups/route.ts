@@ -35,6 +35,18 @@ export async function GET(req: Request) {
             createdAt: "desc"
           },
           take: 1
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true
+              }
+            }
+          }
         }
       }
     });

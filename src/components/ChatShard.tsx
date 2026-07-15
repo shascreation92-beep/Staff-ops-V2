@@ -13,7 +13,8 @@ import {
   getStarredMessagesAction,
   toggleEmojiReactionAction,
   toggleDndModeAction,
-  forwardChatMessageAction
+  forwardChatMessageAction,
+  leaveGroupAction
 } from "@/app/actions/chat";
 import { useSearchParams } from "next/navigation";
 import { 
@@ -34,7 +35,11 @@ import {
   CornerUpRight,
   Edit3,
   Trash2,
-  Lock
+  Lock,
+  Volume2,
+  VolumeX,
+  LogOut,
+  AtSign
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import { toast } from "react-hot-toast";
@@ -100,6 +105,51 @@ export default function ChatShard({
 
   // Editing state
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  // Mute notifications state
+  const [mutedGroups, setMutedGroups] = useState<string[]>([]);
+
+  // Local persistence for muted notifications
+  useEffect(() => {
+    const stored = localStorage.getItem("muted_groups");
+    if (stored) {
+      try {
+        setMutedGroups(JSON.parse(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const handleToggleMuteGroup = (groupId: string) => {
+    const isMuted = mutedGroups.includes(groupId);
+    let updated: string[];
+    if (isMuted) {
+      updated = mutedGroups.filter(id => id !== groupId);
+      toast.success("Group notifications unmuted.");
+    } else {
+      updated = [...mutedGroups, groupId];
+      toast.success("Group notifications muted.");
+    }
+    setMutedGroups(updated);
+    localStorage.setItem("muted_groups", JSON.stringify(updated));
+  };
+
+  const handleLeaveGroup = async (groupId: string) => {
+    if (!confirm("Are you sure you want to leave this group?")) return;
+    startTransition(async () => {
+      try {
+        const res = await leaveGroupAction(groupId);
+        if (res.success) {
+          toast.success("Left group successfully!");
+          setActiveContact(null);
+          await fetchGroupsAndPins();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to leave group.");
+      }
+    });
+  };
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
@@ -231,7 +281,9 @@ export default function ChatShard({
                 const mentionTag = `@${currentUser.name}`;
                 if (m.message.includes(mentionTag) && !notifiedMessageIds.current.has(m.id)) {
                   notifiedMessageIds.current.add(m.id);
-                  alert(`🚨 HIGH-PRIORITY MENTION ALERT 🚨\n\n${m.sender?.name || "Colleague"} mentioned you in group:\n"${m.message}"`);
+                  if (!mutedGroups.includes(activeContact.id)) {
+                    alert(`🚨 HIGH-PRIORITY MENTION ALERT 🚨\n\n${m.sender?.name || "Colleague"} mentioned you in group:\n"${m.message}"`);
+                  }
                 }
               }
             });
@@ -908,6 +960,31 @@ export default function ChatShard({
     toast.success("Attachment file dispatched!");
   };
 
+  const renderMessageContentWithMentions = (text: string, isOwnMessage: boolean) => {
+    if (!text) return null;
+    const parts = text.split(/(\s+)/);
+    return parts.map((part, index) => {
+      if (part.startsWith("@")) {
+        return (
+          <span 
+            key={index} 
+            style={{ 
+              fontWeight: 800, 
+              color: isOwnMessage ? "#FFFFFF" : "#0250A1",
+              background: isOwnMessage ? "rgba(255, 255, 255, 0.25)" : "rgba(2, 80, 161, 0.08)",
+              padding: "0.05rem 0.25rem",
+              borderRadius: "4px",
+              display: "inline-block"
+            }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   const emojis = ["👍", "👌", "🔥", "🤝", "🚀", "💻", "✅", "⚠️", "👑", "👀"];
 
   // Slash commands auto-suggestions
@@ -917,6 +994,36 @@ export default function ChatShard({
     { name: "/alert", desc: "Dispatch a high-priority warning alert notification" },
     { name: "/clear", desc: "Clear local thread message histories" }
   ].filter(c => c.name.toLowerCase().startsWith(inputText.toLowerCase()));
+
+  // Mentions autocomplete logic
+  const activeGroupDetails = activeContact && activeContact.isGroup
+    ? joinedGroups.find((g: any) => g.id === activeContact.id)
+    : null;
+  const activeGroupMembers = activeGroupDetails?.members?.map((m: any) => m.user) || [];
+
+  const mentionMatch = inputText.match(/@(\w*)$/);
+  const showMentionSuggestions = !!(activeContact && activeContact.isGroup && mentionMatch);
+  const mentionQuery = mentionMatch ? mentionMatch[1].toLowerCase() : "";
+
+  const mentionOptions = showMentionSuggestions
+    ? [
+        { id: "all", name: "all", label: "all (Mention everyone)" },
+        ...activeGroupMembers
+          .filter((m: any) => m && m.name && m.id !== currentUser.id)
+          .map((m: any) => ({ id: m.id, name: m.name, label: m.name }))
+      ].filter(o => o.name.toLowerCase().startsWith(mentionQuery))
+    : [];
+
+  const handleSelectMention = (name: string) => {
+    setInputText(prev => {
+      const match = prev.match(/@(\w*)$/);
+      if (match) {
+        const index = match.index ?? 0;
+        return prev.substring(0, index) + `@${name} `;
+      }
+      return prev;
+    });
+  };
 
   const activeStatusInfo = activeContact && activeContact !== "BROADCAST" ? getColleagueStatusInfo(activeContact) : null;
 
@@ -1355,8 +1462,11 @@ export default function ChatShard({
                         </div>
 
                         <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.name}
+                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span>{item.name}</span>
+                            {item.isGroup && mutedGroups.includes(item.id) && (
+                              <VolumeX size={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                            )}
                           </span>
                           <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {subtitleText}
@@ -1921,6 +2031,35 @@ export default function ChatShard({
               </div>
             ) : (
               filteredMessages.map((m) => {
+                const isSystem = m.message.startsWith("📢 SYSTEM:");
+                if (isSystem) {
+                  const systemText = m.message.replace("📢 SYSTEM: ", "");
+                  return (
+                    <div 
+                      key={m.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        margin: "0.5rem 0",
+                        width: "100%"
+                      }}
+                    >
+                      <div className="glass-panel" style={{
+                        background: "rgba(0, 0, 0, 0.05)",
+                        color: "var(--text-muted)",
+                        fontSize: "0.68rem",
+                        fontWeight: 600,
+                        padding: "0.25rem 0.75rem",
+                        borderRadius: "12px",
+                        fontFamily: "var(--font-sans)",
+                        textAlign: "center"
+                      }}>
+                        {systemText}
+                      </div>
+                    </div>
+                  );
+                }
+
                 const isOwn = m.senderId === currentUser.id;
                 const isAttachment = m.message.startsWith("📎 ATTACHMENT");
                 
@@ -2028,7 +2167,9 @@ export default function ChatShard({
 
                       {/* Message payload */}
                       <span style={{ fontSize: "0.86rem", lineHeight: "1.4", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
-                        {isAttachment ? `Sent attachment file: ${fileName}` : cleanMessage}
+                        {isAttachment 
+                          ? `Sent attachment file: ${fileName}` 
+                          : renderMessageContentWithMentions(cleanMessage, isOwn)}
                         {m.isEdited && !m.isDeleted && (
                           <span style={{ fontSize: "0.65rem", opacity: 0.6, marginLeft: "0.3rem", fontStyle: "italic" }}>(edited)</span>
                         )}
@@ -2230,6 +2371,49 @@ export default function ChatShard({
                   >
                     <strong style={{ color: "#0250A1" }}>{c.name}</strong>
                     <span style={{ color: "var(--text-muted)" }}>{c.desc}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Interactive Mentions Autocomplete Popup suggestions */}
+            {showMentionSuggestions && mentionOptions.length > 0 && (
+              <div className="glass-panel" style={{
+                position: "absolute",
+                bottom: "100%",
+                left: "1.5rem",
+                right: "1.5rem",
+                marginBottom: "0.5rem",
+                padding: "0.5rem",
+                background: "#FFFFFF",
+                zIndex: 200,
+                boxShadow: "0 -4px 20px rgba(0,0,0,0.08)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.25rem",
+                maxHeight: "200px",
+                overflowY: "auto"
+              }}>
+                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--gold-premium)", padding: "0.25rem 0.5rem", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                  <AtSign size={10} />
+                  <span>Mention Channel Members</span>
+                </div>
+                {mentionOptions.map(o => (
+                  <div
+                    key={o.id}
+                    onClick={() => handleSelectMention(o.name)}
+                    style={{
+                      padding: "0.4rem 0.5rem",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "0.78rem"
+                    }}
+                    className="chat-channel-item"
+                  >
+                    <strong style={{ color: "#0250A1" }}>@{o.name}</strong>
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.68rem" }}>{o.label}</span>
                   </div>
                 ))}
               </div>
@@ -2448,6 +2632,79 @@ export default function ChatShard({
                 <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>
                   {activeContact.isPrivate ? "Private Space" : "Public Channel"}
                 </span>
+              </div>
+
+              {/* Members List */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Members ({activeGroupMembers.length})
+                </span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", maxHeight: "160px", overflowY: "auto", paddingRight: "0.25rem" }}>
+                  {activeGroupMembers.map((m: any) => {
+                    if (!m) return null;
+                    return (
+                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.3rem 0.5rem", background: "#FFFFFF", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+                        <div className="user-avatar-gold" style={{ width: "1.25rem", height: "1.25rem", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(2, 80, 161, 0.08)" }}>
+                          <span style={{ fontSize: "0.65rem", fontWeight: 700 }}>{m.name?.[0]?.toUpperCase() || "?"}</span>
+                        </div>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                          {m.name}
+                        </span>
+                        {m.id === currentUser.id && (
+                          <span style={{ fontSize: "0.58rem", color: "var(--gold-premium)", fontWeight: 800 }}>You</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => handleToggleMuteGroup(activeContact.id)}
+                  className="btn-gold"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    fontSize: "0.78rem",
+                    padding: "0.5rem",
+                    borderRadius: "10px",
+                    fontWeight: 700,
+                    width: "100%",
+                    background: mutedGroups.includes(activeContact.id) ? "var(--text-muted)" : "var(--gold-gradient)"
+                  }}
+                >
+                  {mutedGroups.includes(activeContact.id) ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                  <span>{mutedGroups.includes(activeContact.id) ? "Unmute Notifications" : "Mute Notifications"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleLeaveGroup(activeContact.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    fontSize: "0.78rem",
+                    padding: "0.5rem",
+                    borderRadius: "10px",
+                    fontWeight: 700,
+                    width: "100%",
+                    border: "1px solid #EF4444",
+                    background: "transparent",
+                    color: "#EF4444",
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <LogOut size={14} />
+                  <span>Leave Group</span>
+                </button>
               </div>
             </div>
           )}
@@ -3006,31 +3263,89 @@ export default function ChatShard({
               )}
             </>
           ) : (
-            <button
-              onClick={() => {
-                handleTogglePin(contextMenu.targetId, !!contextMenu.isGroup);
-                setContextMenu(null);
-              }}
-              style={{
-                background: "none",
-                border: "none",
-                padding: "0.5rem 0.75rem",
-                borderRadius: "8px",
-                fontSize: "0.78rem",
-                fontWeight: 600,
-                textAlign: "left",
-                color: "var(--text-primary)",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                width: "100%"
-              }}
-              className="chat-channel-item"
-            >
-              <Pin size={14} style={{ color: "var(--text-muted)", transform: "rotate(45deg)" }} />
-              <span>{contextMenu.isPinned ? "Unpin Chat" : "Pin Chat"}</span>
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  handleTogglePin(contextMenu.targetId, !!contextMenu.isGroup);
+                  setContextMenu(null);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "8px",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  textAlign: "left",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  width: "100%"
+                }}
+                className="chat-channel-item"
+              >
+                <Pin size={14} style={{ color: "var(--text-muted)", transform: "rotate(45deg)" }} />
+                <span>{contextMenu.isPinned ? "Unpin Chat" : "Pin Chat"}</span>
+              </button>
+
+              {contextMenu.isGroup && (
+                <>
+                  <button
+                    onClick={() => {
+                      handleToggleMuteGroup(contextMenu.targetId);
+                      setContextMenu(null);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "8px",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      textAlign: "left",
+                      color: "var(--text-primary)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      width: "100%"
+                    }}
+                    className="chat-channel-item"
+                  >
+                    <VolumeX size={14} style={{ color: "var(--text-muted)" }} />
+                    <span>{mutedGroups.includes(contextMenu.targetId) ? "Unmute Notifications" : "Mute Notifications"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleLeaveGroup(contextMenu.targetId);
+                      setContextMenu(null);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "8px",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      textAlign: "left",
+                      color: "#EF4444",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      width: "100%"
+                    }}
+                    className="chat-channel-item"
+                  >
+                    <LogOut size={14} style={{ color: "#EF4444" }} />
+                    <span>Leave Group</span>
+                  </button>
+                </>
+              )}
+            </>
           )}
         </div>
       )}

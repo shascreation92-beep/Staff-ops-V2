@@ -184,6 +184,17 @@ export async function joinPublicGroupAction(groupId: string) {
         userId: user.id
       }
     });
+
+    // Create system join message
+    await db.chatgroupmessage.create({
+      data: {
+        id: crypto.randomUUID(),
+        groupId: groupId,
+        senderId: user.id,
+        message: `📢 SYSTEM: ${user.name || "Colleague"} joined the channel`,
+        createdAt: new Date()
+      }
+    });
   }
 
   revalidatePath("/chat-space");
@@ -461,6 +472,47 @@ export async function forwardChatMessageAction(messageText: string, targetId: st
       }
     });
   }
+
+  revalidatePath("/chat-space");
+  return { success: true };
+}
+
+export async function leaveGroupAction(groupId: string) {
+  const user = await enforceAuth();
+
+  const membership = await db.chatgroupmember.findUnique({
+    where: {
+      groupId_userId: {
+        groupId,
+        userId: user.id
+      }
+    }
+  });
+
+  if (!membership) {
+    throw new Error("You are not a member of this group.");
+  }
+
+  // Create system leave message before deleting membership (so we can bypass checks if needed, or create it as user)
+  await db.chatgroupmessage.create({
+    data: {
+      id: crypto.randomUUID(),
+      groupId,
+      senderId: user.id,
+      message: `📢 SYSTEM: ${user.name || "Colleague"} left the channel`,
+      createdAt: new Date()
+    }
+  });
+
+  // Delete membership
+  await db.chatgroupmember.delete({
+    where: {
+      groupId_userId: {
+        groupId,
+        userId: user.id
+      }
+    }
+  });
 
   revalidatePath("/chat-space");
   return { success: true };
