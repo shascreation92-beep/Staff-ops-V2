@@ -1396,6 +1396,67 @@ export default function ChatShard({
                   );
                 })
               )}
+
+              {/* Discover Public Channels Section */}
+              {!searchTerm.trim() && discoverableGroups.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "1rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    borderTop: "1px solid var(--border-dim)",
+                    marginTop: "0.5rem"
+                  }}>
+                    <Activity size={12} />
+                    <span>Discover Public Channels</span>
+                  </div>
+                  {discoverableGroups.map(g => (
+                    <div
+                      key={`sidebar-discover-${g.id}`}
+                      className="chat-channel-item"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        padding: "0.6rem 0.75rem",
+                        borderRadius: "6px",
+                        cursor: "default"
+                      }}
+                    >
+                      <div className="user-avatar-gold" style={{
+                        width: "2rem",
+                        height: "2rem",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(2, 80, 161, 0.08)"
+                      }}>
+                        <span style={{ fontSize: "0.95rem", color: "#0250A1", fontWeight: 800 }}>#</span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {g.name}
+                        </span>
+                        <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Public Channel</span>
+                      </div>
+                      <button
+                        onClick={() => handleJoinGroup(g.id)}
+                        className="btn-gold"
+                        style={{ padding: "0.25rem 0.6rem", fontSize: "0.68rem", borderRadius: "4px", fontWeight: 700 }}
+                      >
+                        Join
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
             </>
           ) : (
             <>
