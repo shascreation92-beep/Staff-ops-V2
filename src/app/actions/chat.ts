@@ -534,8 +534,28 @@ export async function deleteGroupAction(groupId: string) {
     throw new Error("UNAUTHORIZED: Only the group creator can delete this group.");
   }
 
+  // Find all messages in the group to delete their stars
+  const messages = await db.chatgroupmessage.findMany({
+    where: { groupId },
+    select: { id: true }
+  });
+  const messageIds = messages.map(m => m.id);
+
   // Delete all members, messages and the group itself in a transaction
   await db.$transaction([
+    // Delete any stars on the group messages
+    db.chatstar.deleteMany({
+      where: {
+        groupMessageId: { in: messageIds }
+      }
+    }),
+    // Delete any pins of this group
+    db.chatpin.deleteMany({
+      where: {
+        targetId: groupId,
+        isGroup: true
+      }
+    }),
     db.chatgroupmember.deleteMany({ where: { groupId } }),
     db.chatgroupmessage.deleteMany({ where: { groupId } }),
     db.chatgroup.delete({ where: { id: groupId } })

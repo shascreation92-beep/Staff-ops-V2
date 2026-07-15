@@ -2962,51 +2962,58 @@ export default function ChatShard({
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.5rem" }}>
+              {/* Action Buttons Row */}
+              <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem", justifyContent: "center", alignItems: "center" }}>
                 <button
                   type="button"
                   onClick={() => handleToggleMuteGroup(activeContact.id)}
-                  className="btn-gold"
                   style={{
+                    flex: 1,
+                    height: "36px",
+                    borderRadius: "10px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.78rem",
-                    padding: "0.5rem",
-                    borderRadius: "10px",
+                    gap: "0.4rem",
+                    border: "1px solid var(--border-dim)",
+                    background: mutedGroups.includes(activeContact.id) ? "rgba(0, 0, 0, 0.05)" : "rgba(2, 80, 161, 0.04)",
+                    color: mutedGroups.includes(activeContact.id) ? "var(--text-muted)" : "#0250A1",
+                    cursor: "pointer",
+                    fontSize: "0.75rem",
                     fontWeight: 700,
-                    width: "100%",
-                    background: mutedGroups.includes(activeContact.id) ? "var(--text-muted)" : "var(--gold-gradient)"
+                    transition: "all 0.2s"
                   }}
+                  className="chat-channel-item"
+                  title={mutedGroups.includes(activeContact.id) ? "Unmute Notifications" : "Mute Notifications"}
                 >
-                  {mutedGroups.includes(activeContact.id) ? <Volume2 size={14} /> : <VolumeX size={14} />}
-                  <span>{mutedGroups.includes(activeContact.id) ? "Unmute Notifications" : "Mute Notifications"}</span>
+                  {mutedGroups.includes(activeContact.id) ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                  <span>Mute</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleLeaveGroup(activeContact.id)}
                   style={{
+                    flex: 1,
+                    height: "36px",
+                    borderRadius: "10px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.5rem",
-                    fontSize: "0.78rem",
-                    padding: "0.5rem",
-                    borderRadius: "10px",
-                    fontWeight: 700,
-                    width: "100%",
-                    border: "1px solid #EF4444",
-                    background: "transparent",
+                    gap: "0.4rem",
+                    border: "1px solid rgba(239, 68, 68, 0.2)",
+                    background: "rgba(239, 68, 68, 0.04)",
                     color: "#EF4444",
                     cursor: "pointer",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
                     transition: "all 0.2s"
                   }}
+                  className="chat-channel-item"
+                  title="Leave Group"
                 >
-                  <LogOut size={14} />
-                  <span>Leave Group</span>
+                  <LogOut size={15} />
+                  <span>Leave</span>
                 </button>
 
                 {isGroupCreator && (
@@ -3014,24 +3021,26 @@ export default function ChatShard({
                     type="button"
                     onClick={() => handleDeleteGroup(activeContact.id)}
                     style={{
+                      flex: 1,
+                      height: "36px",
+                      borderRadius: "10px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0.5rem",
-                      fontSize: "0.78rem",
-                      padding: "0.5rem",
-                      borderRadius: "10px",
-                      fontWeight: 700,
-                      width: "100%",
+                      gap: "0.4rem",
                       border: "none",
                       background: "#EF4444",
                       color: "#FFFFFF",
                       cursor: "pointer",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
                       transition: "all 0.2s"
                     }}
+                    className="chat-channel-item"
+                    title="Delete Group"
                   >
-                    <Trash2 size={14} />
-                    <span>Delete Group</span>
+                    <Trash2 size={15} />
+                    <span>Delete</span>
                   </button>
                 )}
               </div>
