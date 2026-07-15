@@ -33,7 +33,8 @@ import {
   Pin,
   CornerUpRight,
   Edit3,
-  Trash2
+  Trash2,
+  Lock
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import { toast } from "react-hot-toast";
@@ -2320,14 +2321,20 @@ export default function ChatShard({
           zIndex: 9999
         }}>
           <div 
-            className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl z-50"
             style={{
               width: "100%",
               maxWidth: "440px",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              borderRadius: "24px",
+              padding: "2rem",
+              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.15)",
+              border: "1px solid rgba(255, 255, 255, 0.5)",
               display: "flex",
               flexDirection: "column",
-              gap: "1.25rem"
+              gap: "1.25rem",
+              zIndex: 50
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2340,7 +2347,7 @@ export default function ChatShard({
                   setNewGroupMembers([]);
                   setMemberSearch("");
                 }}
-                style={{ border: "none", background: "none", cursor: "pointer" }}
+                style={{ border: "none", background: "none", cursor: "pointer", display: "flex", padding: "0.25rem" }}
               >
                 <X size={20} />
               </button>
@@ -2356,7 +2363,7 @@ export default function ChatShard({
                 onChange={(e) => setNewGroupName(e.target.value)}
                 placeholder="e.g. Operations Sync"
                 className="input-gold"
-                style={{ width: "100%", padding: "0.6rem" }}
+                style={{ width: "100%", padding: "0.65rem 0.8rem", borderRadius: "10px" }}
               />
             </div>
 
@@ -2370,11 +2377,12 @@ export default function ChatShard({
                   display: "flex", 
                   flexDirection: "column", 
                   gap: "0.25rem", 
-                  padding: "0.75rem", 
+                  padding: "0.85rem", 
                   borderRadius: "12px", 
                   border: newGroupIsPrivate ? "1px solid var(--border-dim)" : "2px solid #0250A1", 
                   background: newGroupIsPrivate ? "transparent" : "rgba(2, 80, 161, 0.04)", 
-                  cursor: "pointer" 
+                  cursor: "pointer",
+                  transition: "all 0.2s"
                 }}>
                   <input 
                     type="radio" 
@@ -2383,19 +2391,23 @@ export default function ChatShard({
                     onChange={() => setNewGroupIsPrivate(false)} 
                     style={{ display: "none" }} 
                   />
-                  <span style={{ fontSize: "0.85rem", fontWeight: 700 }}># Public Channel</span>
-                  <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Open to all domain personnel</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.3rem", color: "var(--text-primary)" }}>
+                    <span style={{ color: "#0250A1", fontWeight: 800, fontSize: "1rem" }}>#</span>
+                    <span>Public Channel</span>
+                  </span>
+                  <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", lineHeight: "1.2" }}>Open to all domain personnel</span>
                 </label>
                 <label style={{ 
                   flex: 1, 
                   display: "flex", 
                   flexDirection: "column", 
                   gap: "0.25rem", 
-                  padding: "0.75rem", 
+                  padding: "0.85rem", 
                   borderRadius: "12px", 
                   border: newGroupIsPrivate ? "2px solid #0250A1" : "1px solid var(--border-dim)", 
                   background: newGroupIsPrivate ? "rgba(2, 80, 161, 0.04)" : "transparent", 
-                  cursor: "pointer" 
+                  cursor: "pointer",
+                  transition: "all 0.2s"
                 }}>
                   <input 
                     type="radio" 
@@ -2404,8 +2416,11 @@ export default function ChatShard({
                     onChange={() => setNewGroupIsPrivate(true)} 
                     style={{ display: "none" }} 
                   />
-                  <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>🔒 Private Space</span>
-                  <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Invite-only; hidden from directory</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.3rem", color: "var(--text-primary)" }}>
+                    <Lock size={12} style={{ color: "#0250A1" }} />
+                    <span>Private Space</span>
+                  </span>
+                  <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", lineHeight: "1.2" }}>Invite-only; hidden from directory</span>
                 </label>
               </div>
             </div>
@@ -2420,9 +2435,9 @@ export default function ChatShard({
                 onChange={(e) => setMemberSearch(e.target.value)}
                 placeholder="Search colleagues to invite..."
                 className="input-gold"
-                style={{ width: "100%", padding: "0.4rem 0.6rem", fontSize: "0.8rem", marginBottom: "0.5rem" }}
+                style={{ width: "100%", padding: "0.65rem 0.8rem", borderRadius: "10px", fontSize: "0.8rem", marginBottom: "0.5rem" }}
               />
-              <div style={{ maxHeight: "120px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.25rem", border: "1px solid var(--border-dim)", borderRadius: "8px", padding: "0.4rem", background: "#FFFFFF" }}>
+              <div style={{ maxHeight: "140px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.25rem", border: "1px solid var(--border-dim)", borderRadius: "10px", padding: "0.5rem 0.75rem", background: "#FFFFFF" }}>
                 {users
                   .filter(u => u.id !== currentUser.id && (u.name || "").toLowerCase().includes(memberSearch.toLowerCase()))
                   .map(u => {
@@ -2451,7 +2466,7 @@ export default function ChatShard({
               onClick={handleCreateGroup}
               disabled={isPending || !newGroupName.trim()}
               className="btn-gold"
-              style={{ width: "100%", padding: "0.6rem" }}
+              style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: "12px", fontWeight: 700, marginTop: "0.5rem" }}
             >
               {isPending ? "Creating Group..." : "Create Group"}
             </button>
