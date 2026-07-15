@@ -111,6 +111,14 @@ export default function ChatShard({
   // Right Details Panel collapse state
   const [showRightPanel, setShowRightPanel] = useState<boolean>(true);
 
+  // Confirm Modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   // Group description edit modal states
   const [showUpdateDescModal, setShowUpdateDescModal] = useState<boolean>(false);
   const [tempDescInput, setTempDescInput] = useState<string>("");
@@ -145,33 +153,47 @@ export default function ChatShard({
   };
 
   const handleLeaveGroup = async (groupId: string) => {
-    if (!confirm("Are you sure you want to leave this group?")) return;
-    startTransition(async () => {
-      try {
-        const res = await leaveGroupAction(groupId);
-        if (res.success) {
-          toast.success("Left group successfully!");
-          setActiveContact(null);
-          await fetchGroupsAndPins();
-        }
-      } catch (err: any) {
-        toast.error(err.message || "Failed to leave group.");
+    setConfirmModal({
+      visible: true,
+      title: "Leave Group Space",
+      message: "Are you sure you want to leave this group? You will no longer receive notifications or messages from this channel.",
+      onConfirm: async () => {
+        setConfirmModal(null);
+        startTransition(async () => {
+          try {
+            const res = await leaveGroupAction(groupId);
+            if (res.success) {
+              toast.success("Left group successfully!");
+              setActiveContact(null);
+              await fetchGroupsAndPins();
+            }
+          } catch (err: any) {
+            toast.error(err.message || "Failed to leave group.");
+          }
+        });
       }
     });
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (!confirm("Are you sure you want to delete this group? This action is permanent and will delete all messages, history, and member access.")) return;
-    startTransition(async () => {
-      try {
-        const res = await deleteGroupAction(groupId);
-        if (res.success) {
-          toast.success("Group deleted successfully!");
-          setActiveContact(null);
-          await fetchGroupsAndPins();
-        }
-      } catch (err: any) {
-        toast.error(err.message || "Failed to delete group.");
+    setConfirmModal({
+      visible: true,
+      title: "Delete Group Space",
+      message: "Are you sure you want to delete this group? This action is permanent and will delete all messages, history, and member access.",
+      onConfirm: async () => {
+        setConfirmModal(null);
+        startTransition(async () => {
+          try {
+            const res = await deleteGroupAction(groupId);
+            if (res.success) {
+              toast.success("Group deleted successfully!");
+              setActiveContact(null);
+              await fetchGroupsAndPins();
+            }
+          } catch (err: any) {
+            toast.error(err.message || "Failed to delete group.");
+          }
+        });
       }
     });
   };
@@ -3827,6 +3849,89 @@ export default function ChatShard({
               )}
             </>
           )}
+        </div>
+      )}
+
+      {confirmModal && confirmModal.visible && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(4px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 99999
+        }}>
+          <div 
+            style={{
+              width: "100%",
+              maxWidth: "380px",
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              borderRadius: "24px",
+              padding: "1.75rem",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.5)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem",
+              position: "relative"
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                {confirmModal.title}
+              </h3>
+              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: 0, lineHeight: "1.4" }}>
+                {confirmModal.message}
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={() => setConfirmModal(null)}
+                style={{
+                  flex: 1,
+                  padding: "0.6rem 1rem",
+                  borderRadius: "12px",
+                  fontWeight: 700,
+                  background: "transparent",
+                  border: "1px solid var(--border-dim)",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: "0.78rem"
+                }}
+                className="chat-channel-item"
+              >
+                Cancel
+              </button>
+              
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                disabled={isPending}
+                className="btn-gold"
+                style={{
+                  flex: 1,
+                  padding: "0.6rem 1rem",
+                  borderRadius: "12px",
+                  fontWeight: 700,
+                  fontSize: "0.78rem",
+                  background: confirmModal.title.includes("Delete") ? "#EF4444" : "var(--gold-gradient)",
+                  color: "#FFFFFF",
+                  border: "none",
+                  cursor: "pointer"
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
