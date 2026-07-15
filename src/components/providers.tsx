@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnnouncementProvider } from "./AnnouncementProvider";
 import { ITConfigProvider } from "./ITConfigProvider";
 
+import { Toaster } from "react-hot-toast";
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -22,6 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AnnouncementProvider>
           <ITConfigProvider>
             {children}
+            <Toaster position="top-right" reverseOrder={false} />
           </ITConfigProvider>
         </AnnouncementProvider>
       </QueryClientProvider>
