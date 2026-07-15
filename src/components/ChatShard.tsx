@@ -920,10 +920,14 @@ export default function ChatShard({
 
   const activeStatusInfo = activeContact && activeContact !== "BROADCAST" ? getColleagueStatusInfo(activeContact) : null;
 
+  const isGroupMember = activeContact && activeContact !== "BROADCAST" && activeContact.isGroup
+    ? joinedGroups.some(g => g.id === activeContact.id)
+    : true;
+
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: activeContact && activeContact !== "BROADCAST" ? "280px 1fr 300px" : "280px 1fr",
+      gridTemplateColumns: activeContact && activeContact !== "BROADCAST" && isGroupMember ? "280px 1fr 300px" : "280px 1fr",
       height: "100%",
       flex: 1,
       minHeight: 0,
@@ -1896,9 +1900,19 @@ export default function ChatShard({
             flexDirection: "column",
             gap: "1.25rem",
             background: "#FAFBFB",
-            minHeight: 0
+            minHeight: 0,
+            position: "relative"
           }}>
-            {filteredMessages.length === 0 ? (
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem",
+              flex: 1,
+              filter: !isGroupMember ? "blur(6px)" : "none",
+              pointerEvents: !isGroupMember ? "none" : "auto",
+              userSelect: !isGroupMember ? "none" : "auto"
+            }}>
+              {filteredMessages.length === 0 ? (
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyItems: "center", justifyContent: "center", color: "var(--text-muted)", gap: "0.5rem" }}>
                 <MessageSquare size={36} style={{ color: "var(--border-gold)" }} />
                 <span style={{ fontSize: "0.8rem" }}>
@@ -2093,11 +2107,84 @@ export default function ChatShard({
                 );
               })
             )}
+            </div>
             <div ref={messagesEndRef} />
+
+            {/* Locked Group Overlay CTA */}
+            {!isGroupMember && (
+              <div style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                background: "rgba(255, 255, 255, 0.4)",
+                backdropFilter: "blur(4px)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+                padding: "2rem"
+              }}>
+                <div 
+                  className="glass-panel"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.95)",
+                    backdropFilter: "blur(20px)",
+                    borderRadius: "20px",
+                    padding: "2rem",
+                    textAlign: "center",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.5)",
+                    maxWidth: "340px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "1.25rem"
+                  }}
+                >
+                  <Lock size={36} style={{ color: "#0250A1" }} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                    <h4 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Public Channel Locked</h4>
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0, lineHeight: "1.4" }}>
+                      You are not a member of <strong>{activeContact.name}</strong> yet. Join now to view transmissions and participate in conversations.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleJoinGroup(activeContact.id)}
+                    className="btn-gold"
+                    style={{ width: "100%", padding: "0.65rem 1rem", borderRadius: "10px", fontWeight: 700 }}
+                  >
+                    Join Now
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Pinned Input Bar at Bottom */}
-          <form onSubmit={handleSendMessage} style={{
+          {!isGroupMember ? (
+            <div style={{
+              padding: "1.1rem 1.5rem",
+              borderTop: "1px solid var(--border-dim)",
+              background: "#FAFBFB",
+              textAlign: "center",
+              fontSize: "0.78rem",
+              color: "var(--text-muted)",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.4rem",
+              flexShrink: 0
+            }}>
+              <Lock size={12} style={{ color: "var(--text-muted)" }} />
+              <span>You must join this channel to participate in the conversation.</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSendMessage} style={{
             padding: "1rem 1.5rem",
             borderTop: "1px solid var(--border-dim)",
             background: "#FFFFFF",
@@ -2259,6 +2346,7 @@ export default function ChatShard({
               <Send size={16} style={{ color: "var(--bg-primary)" }} />
             </button>
           </form>
+          )}
         </div>
       ) : (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", gap: "0.5rem" }}>
@@ -2268,7 +2356,7 @@ export default function ChatShard({
       )}
 
       {/* Right Column details panel displaying active contact performance metrics or group details */}
-      {activeContact && activeContact !== "BROADCAST" && (
+      {activeContact && activeContact !== "BROADCAST" && isGroupMember && (
         <div style={{
           borderLeft: "1px solid var(--border-dim)",
           background: "#F9FAFB",
