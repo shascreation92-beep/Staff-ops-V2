@@ -110,9 +110,9 @@ export default function ChatShard({
   // Right Details Panel collapse state
   const [showRightPanel, setShowRightPanel] = useState<boolean>(true);
 
-  // Group description/notes state
-  const [groupDescInput, setGroupDescInput] = useState("");
-  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  // Group description edit modal states
+  const [showUpdateDescModal, setShowUpdateDescModal] = useState<boolean>(false);
+  const [tempDescInput, setTempDescInput] = useState<string>("");
 
   // Mute notifications state
   const [mutedGroups, setMutedGroups] = useState<string[]>([]);
@@ -261,7 +261,7 @@ export default function ChatShard({
     setChatSearchQuery("");
     setShowChatSearch(false);
     setShowRightPanel(true);
-    setIsEditingDesc(false);
+    setShowUpdateDescModal(false);
   }, [activeContact]);
 
   // Poll for new messages every 3 seconds to simulate real-time updates
@@ -963,29 +963,15 @@ export default function ChatShard({
     !m.message.startsWith("📢 DESCRIPTION:")
   );
 
-  // Group description notes parsing and saving
-  useEffect(() => {
-    if (activeContact && activeContact.isGroup) {
-      const descMsg = [...activeMessages].reverse().find(m => m.message.startsWith("📢 DESCRIPTION:"));
-      const descText = descMsg ? descMsg.message.replace("📢 DESCRIPTION: ", "") : "";
-      if (!isEditingDesc) {
-        setGroupDescInput(descText);
-      }
-    } else {
-      setGroupDescInput("");
-      setIsEditingDesc(false);
-    }
-  }, [activeContact?.id, activeMessages, isEditingDesc]);
-
-  const handleSaveGroupDescription = async () => {
+  const handleUpdateDescriptionFromModal = async () => {
     if (!activeContact || !activeContact.isGroup) return;
     startTransition(async () => {
       try {
-        const payload = `📢 DESCRIPTION: ${groupDescInput}`;
+        const payload = `📢 DESCRIPTION: ${tempDescInput}`;
         const res = await sendGroupMessageAction(activeContact.id, payload);
         if (res.success) {
           toast.success("Group description updated successfully!");
-          setIsEditingDesc(false); // Reset editing flag so the input can refresh and lock in the saved text
+          setShowUpdateDescModal(false);
           // Refresh message history
           const isGroup = !!activeContact.isGroup;
           const msgRes = await fetch(`/api/chat/messages?contactId=${activeContact.id}&isGroup=${isGroup}`);
@@ -995,7 +981,7 @@ export default function ChatShard({
           }
         }
       } catch (err: any) {
-        toast.error(err.message || "Failed to save group description.");
+        toast.error(err.message || "Failed to update description.");
       }
     });
   };
@@ -2730,64 +2716,49 @@ export default function ChatShard({
               </h5>
               {/* Group Description Box */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Group Description
-                </span>
-                
-                {isGroupCreator ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                    <textarea
-                      value={groupDescInput}
-                      onChange={(e) => {
-                        setGroupDescInput(e.target.value);
-                        setIsEditingDesc(true);
-                      }}
-                      placeholder="Write description or info for the group..."
-                      style={{
-                        width: "100%",
-                        height: "70px",
-                        fontSize: "0.78rem",
-                        padding: "0.5rem",
-                        borderRadius: "8px",
-                        border: "1px solid var(--border-dim)",
-                        outline: "none",
-                        resize: "none",
-                        fontFamily: "var(--font-sans)",
-                        background: "#FFFFFF",
-                        color: "var(--text-primary)"
-                      }}
-                    />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Group Description
+                  </span>
+                  {isGroupCreator && (
                     <button
                       type="button"
-                      onClick={handleSaveGroupDescription}
-                      disabled={groupDescInput.trim() === currentDescriptionText.trim() || isPending}
-                      className="btn-gold"
-                      style={{
-                        padding: "0.35rem 0.75rem",
-                        fontSize: "0.7rem",
-                        borderRadius: "6px",
-                        alignSelf: "flex-end",
-                        fontWeight: 700
+                      onClick={() => {
+                        setTempDescInput(currentDescriptionText);
+                        setShowUpdateDescModal(true);
                       }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "var(--gold-premium)",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "0.2rem",
+                        borderRadius: "4px",
+                        transition: "opacity 0.2s"
+                      }}
+                      className="hover-opacity"
+                      title="Update Group Description"
                     >
-                      Save Description
+                      <Edit3 size={12} />
                     </button>
-                  </div>
-                ) : (
-                  <div style={{ 
-                    padding: "0.75rem", 
-                    background: "#FFFFFF", 
-                    borderRadius: "8px", 
-                    border: "1px solid var(--border-dim)", 
-                    fontSize: "0.78rem", 
-                    color: currentDescriptionText ? "var(--text-secondary)" : "var(--text-muted)",
-                    lineHeight: "1.4",
-                    whiteSpace: "pre-wrap",
-                    minHeight: "45px"
-                  }}>
-                    {currentDescriptionText || "No notes or description provided yet."}
-                  </div>
-                )}
+                  )}
+                </div>
+                
+                <div style={{ 
+                  padding: "0.75rem", 
+                  background: "#FFFFFF", 
+                  borderRadius: "8px", 
+                  border: "1px solid var(--border-dim)", 
+                  fontSize: "0.78rem", 
+                  color: currentDescriptionText ? "var(--text-secondary)" : "var(--text-muted)",
+                  lineHeight: "1.4",
+                  whiteSpace: "pre-wrap",
+                  minHeight: "45px"
+                }}>
+                  {currentDescriptionText || "No notes or description provided yet."}
+                </div>
               </div>
 
               {/* Members List */}
@@ -3036,7 +3007,128 @@ export default function ChatShard({
         </div>
       )}
 
-      {/* Starred Messages Glassmorphic Side Drawer */}
+      {/* Glassmorphic Group Description Update Modal */}
+      {showUpdateDescModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(4px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999
+        }}>
+          <div 
+            className="glass-panel"
+            style={{
+              width: "100%",
+              maxWidth: "440px",
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              borderRadius: "24px",
+              padding: "2rem",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.5)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem",
+              position: "relative"
+            }}
+          >
+            <button
+              onClick={() => setShowUpdateDescModal(false)}
+              style={{
+                position: "absolute",
+                top: "1.25rem",
+                right: "1.25rem",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-muted)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0.25rem",
+                borderRadius: "50%"
+              }}
+              className="chat-channel-item"
+              title="Close"
+            >
+              <X size={16} />
+            </button>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Update Group Description</h3>
+              <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>Provide a summary or info about this group space.</p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                Description Notes
+              </label>
+              <textarea
+                value={tempDescInput}
+                onChange={(e) => setTempDescInput(e.target.value)}
+                placeholder="Write description or info for the group..."
+                style={{
+                  width: "100%",
+                  height: "120px",
+                  fontSize: "0.82rem",
+                  padding: "0.65rem 0.8rem",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-dim)",
+                  outline: "none",
+                  resize: "none",
+                  fontFamily: "var(--font-sans)",
+                  background: "#FFFFFF",
+                  color: "var(--text-primary)"
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <button
+                type="button"
+                onClick={() => setShowUpdateDescModal(false)}
+                style={{
+                  flex: 1,
+                  padding: "0.75rem 1rem",
+                  borderRadius: "12px",
+                  fontWeight: 700,
+                  background: "transparent",
+                  border: "1px solid var(--border-dim)",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer"
+                }}
+                className="chat-channel-item"
+              >
+                Cancel
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleUpdateDescriptionFromModal}
+                disabled={isPending}
+                className="btn-gold"
+                style={{
+                  flex: 1,
+                  padding: "0.75rem 1rem",
+                  borderRadius: "12px",
+                  fontWeight: 700
+                }}
+              >
+                {isPending ? "Saving..." : "Save Description"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {showStarredDrawer && (
         <div style={{
           position: "fixed",
