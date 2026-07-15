@@ -2968,52 +2968,44 @@ export default function ChatShard({
                   type="button"
                   onClick={() => handleToggleMuteGroup(activeContact.id)}
                   style={{
-                    flex: 1,
-                    height: "36px",
-                    borderRadius: "10px",
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.4rem",
                     border: "1px solid var(--border-dim)",
                     background: mutedGroups.includes(activeContact.id) ? "rgba(0, 0, 0, 0.05)" : "rgba(2, 80, 161, 0.04)",
                     color: mutedGroups.includes(activeContact.id) ? "var(--text-muted)" : "#0250A1",
                     cursor: "pointer",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
                     transition: "all 0.2s"
                   }}
                   className="chat-channel-item"
                   title={mutedGroups.includes(activeContact.id) ? "Unmute Notifications" : "Mute Notifications"}
                 >
-                  {mutedGroups.includes(activeContact.id) ? <Volume2 size={15} /> : <VolumeX size={15} />}
-                  <span>Mute</span>
+                  {mutedGroups.includes(activeContact.id) ? <Volume2 size={16} /> : <VolumeX size={16} />}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleLeaveGroup(activeContact.id)}
                   style={{
-                    flex: 1,
-                    height: "36px",
-                    borderRadius: "10px",
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.4rem",
                     border: "1px solid rgba(239, 68, 68, 0.2)",
                     background: "rgba(239, 68, 68, 0.04)",
                     color: "#EF4444",
                     cursor: "pointer",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
                     transition: "all 0.2s"
                   }}
                   className="chat-channel-item"
                   title="Leave Group"
                 >
-                  <LogOut size={15} />
-                  <span>Leave</span>
+                  <LogOut size={16} />
                 </button>
 
                 {isGroupCreator && (
@@ -3021,26 +3013,22 @@ export default function ChatShard({
                     type="button"
                     onClick={() => handleDeleteGroup(activeContact.id)}
                     style={{
-                      flex: 1,
-                      height: "36px",
-                      borderRadius: "10px",
+                      width: "38px",
+                      height: "38px",
+                      borderRadius: "50%",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0.4rem",
                       border: "none",
                       background: "#EF4444",
                       color: "#FFFFFF",
                       cursor: "pointer",
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
                       transition: "all 0.2s"
                     }}
                     className="chat-channel-item"
                     title="Delete Group"
                   >
-                    <Trash2 size={15} />
-                    <span>Delete</span>
+                    <Trash2 size={16} />
                   </button>
                 )}
               </div>
