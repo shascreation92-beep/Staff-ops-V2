@@ -30,7 +30,10 @@ import {
   Bell,
   BellOff,
   Star,
-  Pin
+  Pin,
+  CornerUpRight,
+  Edit3,
+  Trash2
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import { toast } from "react-hot-toast";
@@ -1042,7 +1045,7 @@ export default function ChatShard({
                 padding: "0.2rem",
                 display: "flex"
               }}
-              title="Starred Bookmarks"
+              title="Starred Messages"
             >
               <Star size={18} style={{ color: "#F59E0B" }} fill="#F59E0B" />
             </button>
@@ -2475,8 +2478,8 @@ export default function ChatShard({
         }}>
           <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border-dim)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "1.2rem" }}>⭐️</span>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0250A1" }}>Starred Bookmarks</h3>
+              <Star size={20} style={{ color: "#F59E0B" }} fill="#F59E0B" />
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0250A1" }}>Starred Messages</h3>
             </div>
             <button 
               onClick={() => setShowStarredDrawer(false)}
@@ -2489,7 +2492,7 @@ export default function ChatShard({
           <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             {starredMessagesList.length === 0 ? (
               <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", gap: "0.5rem" }}>
-                <span style={{ fontSize: "2rem" }}>⭐️</span>
+                <Star size={32} style={{ color: "var(--text-muted)", opacity: 0.5 }} />
                 <span style={{ fontSize: "0.8rem" }}>No starred messages.</span>
               </div>
             ) : (
@@ -2750,7 +2753,7 @@ export default function ChatShard({
                 }}
                 className="chat-channel-item"
               >
-                <span>⭐️</span>
+                <Star size={14} style={{ color: contextMenu.isStarred ? "#F59E0B" : "var(--text-muted)" }} fill={contextMenu.isStarred ? "#F59E0B" : "none"} />
                 <span>{contextMenu.isStarred ? "Unstar Message" : "Star Message"}</span>
               </button>
 
@@ -2777,7 +2780,7 @@ export default function ChatShard({
                 }}
                 className="chat-channel-item"
               >
-                <span>↪️</span>
+                <CornerUpRight size={14} style={{ color: "var(--text-muted)" }} />
                 <span>Forward Message</span>
               </button>
 
@@ -2806,7 +2809,7 @@ export default function ChatShard({
                     }}
                     className="chat-channel-item"
                   >
-                    <span>✏️</span>
+                    <Edit3 size={14} style={{ color: "var(--text-muted)" }} />
                     <span>Edit Message</span>
                   </button>
 
@@ -2832,7 +2835,7 @@ export default function ChatShard({
                     }}
                     className="chat-channel-item"
                   >
-                    <span>🚫</span>
+                    <Trash2 size={14} style={{ color: "#EF4444" }} />
                     <span>Delete Message</span>
                   </button>
                 </>
@@ -2861,7 +2864,7 @@ export default function ChatShard({
               }}
               className="chat-channel-item"
             >
-              <span>📌</span>
+              <Pin size={14} style={{ color: "var(--text-muted)", transform: "rotate(45deg)" }} />
               <span>{contextMenu.isPinned ? "Unpin Chat" : "Pin Chat"}</span>
             </button>
           )}
