@@ -39,7 +39,8 @@ import {
   Volume2,
   VolumeX,
   LogOut,
-  AtSign
+  AtSign,
+  Info
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import { toast } from "react-hot-toast";
@@ -105,6 +106,9 @@ export default function ChatShard({
 
   // Editing state
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  // Right Details Panel collapse state
+  const [showRightPanel, setShowRightPanel] = useState<boolean>(true);
 
   // Mute notifications state
   const [mutedGroups, setMutedGroups] = useState<string[]>([]);
@@ -252,6 +256,7 @@ export default function ChatShard({
     setIsTyping(false);
     setChatSearchQuery("");
     setShowChatSearch(false);
+    setShowRightPanel(true);
   }, [activeContact]);
 
   // Poll for new messages every 3 seconds to simulate real-time updates
@@ -1034,7 +1039,7 @@ export default function ChatShard({
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: activeContact && activeContact !== "BROADCAST" && isGroupMember ? "280px 1fr 300px" : "280px 1fr",
+      gridTemplateColumns: activeContact && activeContact !== "BROADCAST" && isGroupMember && showRightPanel ? "280px 1fr 300px" : "280px 1fr",
       height: "100%",
       flex: 1,
       minHeight: 0,
@@ -1971,8 +1976,26 @@ export default function ChatShard({
                   </button>
                 </div>
               ) : (
-                <button onClick={() => setShowChatSearch(true)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                <button onClick={() => setShowChatSearch(true)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--text-muted)" }} title="Search messages">
                   <Search size={18} />
+                </button>
+              )}
+
+              {/* Toggle Profile / Details Panel Button */}
+              {isGroupMember && (
+                <button 
+                  onClick={() => setShowRightPanel(!showRightPanel)} 
+                  style={{ 
+                    border: "none", 
+                    background: "none", 
+                    cursor: "pointer", 
+                    color: showRightPanel ? "var(--gold-premium)" : "var(--text-muted)",
+                    display: "flex",
+                    alignItems: "center"
+                  }}
+                  title={showRightPanel ? "Hide Details Panel" : "Show Details Panel"}
+                >
+                  <Info size={18} />
                 </button>
               )}
 
@@ -2540,7 +2563,7 @@ export default function ChatShard({
       )}
 
       {/* Right Column details panel displaying active contact performance metrics or group details */}
-      {activeContact && activeContact !== "BROADCAST" && isGroupMember && (
+      {activeContact && activeContact !== "BROADCAST" && isGroupMember && showRightPanel && (
         <div style={{
           borderLeft: "1px solid var(--border-dim)",
           background: "#F9FAFB",
@@ -2548,8 +2571,34 @@ export default function ChatShard({
           flexDirection: "column",
           height: "100%",
           overflowY: "auto",
-          padding: "1.5rem"
+          padding: "1.5rem",
+          position: "relative"
         }}>
+          {/* Close Panel Button */}
+          <button
+            type="button"
+            onClick={() => setShowRightPanel(false)}
+            style={{
+              position: "absolute",
+              top: "1rem",
+              right: "1rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0.25rem",
+              borderRadius: "50%",
+              transition: "background 0.2s"
+            }}
+            className="chat-channel-item"
+            title="Collapse Details Panel"
+          >
+            <X size={16} />
+          </button>
+
           {/* Profile summary */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", textAlign: "center", paddingBottom: "1.5rem", borderBottom: "1px solid var(--border-dim)" }}>
             <div className="user-avatar-gold" style={{ width: "4.25rem", height: "4.25rem", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: activeContact.isGroup ? "rgba(2, 80, 161, 0.08)" : "transparent" }}>
