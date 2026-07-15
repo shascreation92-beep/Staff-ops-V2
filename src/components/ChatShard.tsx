@@ -110,6 +110,9 @@ export default function ChatShard({
   // Right Details Panel collapse state
   const [showRightPanel, setShowRightPanel] = useState<boolean>(true);
 
+  // Group description/notes state
+  const [groupDescInput, setGroupDescInput] = useState("");
+
   // Mute notifications state
   const [mutedGroups, setMutedGroups] = useState<string[]>([]);
 
@@ -954,9 +957,42 @@ export default function ChatShard({
   );
 
   const filteredMessages = activeMessages.filter(m => 
-    !chatSearchQuery.trim() || 
-    m.message.toLowerCase().includes(chatSearchQuery.toLowerCase())
+    (!chatSearchQuery.trim() || m.message.toLowerCase().includes(chatSearchQuery.toLowerCase())) &&
+    !m.message.startsWith("📢 DESCRIPTION:")
   );
+
+  // Group description notes parsing and saving
+  useEffect(() => {
+    if (activeContact && activeContact.isGroup) {
+      const descMsg = [...activeMessages].reverse().find(m => m.message.startsWith("📢 DESCRIPTION:"));
+      const descText = descMsg ? descMsg.message.replace("📢 DESCRIPTION: ", "") : "";
+      setGroupDescInput(descText);
+    } else {
+      setGroupDescInput("");
+    }
+  }, [activeContact, activeMessages]);
+
+  const handleSaveGroupDescription = async () => {
+    if (!activeContact || !activeContact.isGroup) return;
+    startTransition(async () => {
+      try {
+        const payload = `📢 DESCRIPTION: ${groupDescInput}`;
+        const res = await sendGroupMessageAction(activeContact.id, payload);
+        if (res.success) {
+          toast.success("Group notes updated successfully!");
+          // Refresh message history
+          const isGroup = !!activeContact.isGroup;
+          const msgRes = await fetch(`/api/chat/messages?contactId=${activeContact.id}&isGroup=${isGroup}`);
+          if (msgRes.ok) {
+            const data = await msgRes.json();
+            setMessages(data);
+          }
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to save group notes.");
+      }
+    });
+  };
 
   const handleSendAttachment = (fileName: string, fileType: string) => {
     setShowAttachmentModal(false);
@@ -1035,6 +1071,14 @@ export default function ChatShard({
   const isGroupMember = activeContact && activeContact !== "BROADCAST" && activeContact.isGroup
     ? joinedGroups.some(g => g.id === activeContact.id)
     : true;
+
+  const isGroupCreator = activeContact && activeContact.isGroup && activeContact.createdById === currentUser.id;
+  const groupDescriptionMessage = activeContact && activeContact.isGroup
+    ? [...activeMessages].reverse().find(m => m.message.startsWith("📢 DESCRIPTION:"))
+    : null;
+  const currentDescriptionText = groupDescriptionMessage 
+    ? groupDescriptionMessage.message.replace("📢 DESCRIPTION: ", "")
+    : "";
 
   return (
     <div style={{
@@ -2630,9 +2674,11 @@ export default function ChatShard({
                   ? (activeContact.isPrivate ? "Private Space" : "Public Channel") 
                   : activeContact.role.replace(/_/g, " ")}
               </span>
-              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-                {activeContact.isGroup ? "Group Chat" : activeContact.email}
-              </span>
+              {!activeContact.isGroup && (
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                  {activeContact.email}
+                </span>
+              )}
             </div>
           </div>
 
@@ -2676,11 +2722,63 @@ export default function ChatShard({
               <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 Group Info
               </h5>
-              <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Privacy Setting</span>
-                <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                  {activeContact.isPrivate ? "Private Space" : "Public Channel"}
+              {/* Group Description / Notes Box */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Group Notes / Info
                 </span>
+                
+                {isGroupCreator ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                    <textarea
+                      value={groupDescInput}
+                      onChange={(e) => setGroupDescInput(e.target.value)}
+                      placeholder="Write description or notes for the group..."
+                      style={{
+                        width: "100%",
+                        height: "70px",
+                        fontSize: "0.78rem",
+                        padding: "0.5rem",
+                        borderRadius: "8px",
+                        border: "1px solid var(--border-dim)",
+                        outline: "none",
+                        resize: "none",
+                        fontFamily: "var(--font-sans)",
+                        background: "#FFFFFF",
+                        color: "var(--text-primary)"
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveGroupDescription}
+                      disabled={groupDescInput.trim() === currentDescriptionText.trim() || isPending}
+                      className="btn-gold"
+                      style={{
+                        padding: "0.35rem 0.75rem",
+                        fontSize: "0.7rem",
+                        borderRadius: "6px",
+                        alignSelf: "flex-end",
+                        fontWeight: 700
+                      }}
+                    >
+                      Save Notes
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ 
+                    padding: "0.75rem", 
+                    background: "#FFFFFF", 
+                    borderRadius: "8px", 
+                    border: "1px solid var(--border-dim)", 
+                    fontSize: "0.78rem", 
+                    color: currentDescriptionText ? "var(--text-secondary)" : "var(--text-muted)",
+                    lineHeight: "1.4",
+                    whiteSpace: "pre-wrap",
+                    minHeight: "45px"
+                  }}>
+                    {currentDescriptionText || "No notes or description provided yet."}
+                  </div>
+                )}
               </div>
 
               {/* Members List */}
