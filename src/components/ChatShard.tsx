@@ -112,6 +112,7 @@ export default function ChatShard({
 
   // Group description/notes state
   const [groupDescInput, setGroupDescInput] = useState("");
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
 
   // Mute notifications state
   const [mutedGroups, setMutedGroups] = useState<string[]>([]);
@@ -260,6 +261,7 @@ export default function ChatShard({
     setChatSearchQuery("");
     setShowChatSearch(false);
     setShowRightPanel(true);
+    setIsEditingDesc(false);
   }, [activeContact]);
 
   // Poll for new messages every 3 seconds to simulate real-time updates
@@ -966,11 +968,14 @@ export default function ChatShard({
     if (activeContact && activeContact.isGroup) {
       const descMsg = [...activeMessages].reverse().find(m => m.message.startsWith("📢 DESCRIPTION:"));
       const descText = descMsg ? descMsg.message.replace("📢 DESCRIPTION: ", "") : "";
-      setGroupDescInput(descText);
+      if (!isEditingDesc) {
+        setGroupDescInput(descText);
+      }
     } else {
       setGroupDescInput("");
+      setIsEditingDesc(false);
     }
-  }, [activeContact?.id]);
+  }, [activeContact?.id, activeMessages, isEditingDesc]);
 
   const handleSaveGroupDescription = async () => {
     if (!activeContact || !activeContact.isGroup) return;
@@ -980,6 +985,7 @@ export default function ChatShard({
         const res = await sendGroupMessageAction(activeContact.id, payload);
         if (res.success) {
           toast.success("Group description updated successfully!");
+          setIsEditingDesc(false); // Reset editing flag so the input can refresh and lock in the saved text
           // Refresh message history
           const isGroup = !!activeContact.isGroup;
           const msgRes = await fetch(`/api/chat/messages?contactId=${activeContact.id}&isGroup=${isGroup}`);
@@ -989,7 +995,7 @@ export default function ChatShard({
           }
         }
       } catch (err: any) {
-        toast.error(err.message || "Failed to save group notes.");
+        toast.error(err.message || "Failed to save group description.");
       }
     });
   };
@@ -2732,7 +2738,10 @@ export default function ChatShard({
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                     <textarea
                       value={groupDescInput}
-                      onChange={(e) => setGroupDescInput(e.target.value)}
+                      onChange={(e) => {
+                        setGroupDescInput(e.target.value);
+                        setIsEditingDesc(true);
+                      }}
                       placeholder="Write description or info for the group..."
                       style={{
                         width: "100%",
