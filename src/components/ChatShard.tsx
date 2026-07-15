@@ -21,6 +21,7 @@ import {
   rejectJoinRequestAction
 } from "@/app/actions/chat";
 import { useSearchParams } from "next/navigation";
+import { EMOJI_DATASET } from "./emojis";
 import { 
   Send, 
   Search, 
@@ -132,6 +133,23 @@ export default function ChatShard({
     isGroup: boolean;
   } | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [recentEmojis, setRecentEmojis] = useState<string[]>([]);
+  const [emojiSearchQuery, setEmojiSearchQuery] = useState("");
+  const [activeEmojiCategory, setActiveEmojiCategory] = useState("smileys");
+  const [reactionTarget, setReactionTarget] = useState<{ messageId: string; isGroup: boolean } | null>(null);
+  const [hoveredEmojiName, setHoveredEmojiName] = useState<string | null>(null);
+
+  // Initialize recents from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("frequently_used_emojis");
+    if (stored) {
+      try {
+        setRecentEmojis(JSON.parse(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
 
   // Group description edit modal states
   const [showUpdateDescModal, setShowUpdateDescModal] = useState<boolean>(false);
@@ -979,9 +997,25 @@ export default function ChatShard({
     });
   };
 
+  const handleSelectEmoji = (emojiChar: string, emojiName: string) => {
+    // Add to recents
+    setRecentEmojis(prev => {
+      const next = [emojiChar, ...prev.filter(e => e !== emojiChar)].slice(0, 16);
+      localStorage.setItem("frequently_used_emojis", JSON.stringify(next));
+      return next;
+    });
+
+    if (reactionTarget) {
+      handleToggleReaction(reactionTarget.messageId, reactionTarget.isGroup, emojiChar);
+      setReactionTarget(null);
+      setShowEmojiPicker(false);
+    } else {
+      setInputText(prev => prev + emojiChar);
+    }
+  };
+
   const addEmoji = (emoji: string) => {
-    setInputText(prev => prev + emoji);
-    setShowEmojiPicker(false);
+    handleSelectEmoji(emoji, "");
   };
 
   const getInitials = (name: string) => {
@@ -2966,7 +3000,10 @@ export default function ChatShard({
             <div style={{ position: "relative" }}>
               <button
                 type="button"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                onClick={() => {
+                  setShowEmojiPicker(!showEmojiPicker);
+                  if (reactionTarget) setReactionTarget(null); // Clear reaction target if closed
+                }}
                 style={{ background: "none", border: "none", color: "var(--gold-premium)", cursor: "pointer", display: "flex" }}
               >
                 <Smile size={20} />
@@ -2978,22 +3015,253 @@ export default function ChatShard({
                   bottom: "100%",
                   left: 0,
                   marginBottom: "0.5rem",
-                  padding: "0.5rem",
+                  padding: "0.75rem",
                   display: "flex",
-                  gap: "0.35rem",
-                  zIndex: 100,
-                  background: "#FFFFFF"
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                  zIndex: 200,
+                  background: "#FFFFFF",
+                  width: "320px",
+                  height: "360px",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "12px",
+                  overflow: "hidden"
                 }}>
-                  {emojis.map(e => (
-                    <button
-                      key={e}
-                      type="button"
-                      onClick={() => addEmoji(e)}
-                      style={{ background: "none", border: "none", fontSize: "1.15rem", cursor: "pointer", padding: "0.2rem" }}
-                    >
-                      {e}
-                    </button>
-                  ))}
+                  {reactionTarget && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "0.35rem 0.5rem",
+                      background: "rgba(239, 68, 68, 0.05)",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(239, 68, 68, 0.1)",
+                      marginBottom: "0.25rem",
+                      flexShrink: 0
+                    }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#EF4444" }}>Reacting to message</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReactionTarget(null);
+                          setShowEmojiPicker(false);
+                        }}
+                        style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.68rem", color: "#EF4444" }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Search Bar inside Picker */}
+                  <div style={{ display: "flex", gap: "0.35rem", alignItems: "center", flexShrink: 0 }}>
+                    <div className="table-search-wrapper" style={{ width: "100%", flex: 1, position: "relative" }}>
+                      <Search className="header-search-icon" size={14} style={{ left: "0.6rem" }} />
+                      <input
+                        type="text"
+                        placeholder="Search emoji..."
+                        value={emojiSearchQuery}
+                        onChange={(e) => setEmojiSearchQuery(e.target.value)}
+                        className="header-search-input"
+                        style={{ fontSize: "0.78rem", padding: "0.35rem 0.5rem 0.35rem 1.8rem", borderRadius: "6px" }}
+                      />
+                      {emojiSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setEmojiSearchQuery("")}
+                          style={{
+                            position: "absolute",
+                            right: "0.5rem",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "none",
+                            border: "none",
+                            color: "var(--text-muted)",
+                            cursor: "pointer",
+                            padding: 0
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* WhatsApp style Category Selector Tabs */}
+                  {!emojiSearchQuery && (
+                    <div style={{
+                      display: "flex",
+                      gap: "0.25rem",
+                      justifyContent: "space-between",
+                      borderBottom: "1px solid var(--border-dim)",
+                      paddingBottom: "0.35rem",
+                      flexShrink: 0
+                    }}>
+                      {/* Recents Tab */}
+                      {recentEmojis.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveEmojiCategory("recents")}
+                          style={{
+                            background: activeEmojiCategory === "recents" ? "rgba(2, 80, 161, 0.08)" : "none",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "1rem",
+                            width: "28px",
+                            height: "28px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "background 0.2s"
+                          }}
+                          title="Frequently Used"
+                        >
+                          🕒
+                        </button>
+                      )}
+                      {EMOJI_DATASET.map(cat => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setActiveEmojiCategory(cat.id)}
+                          style={{
+                            background: activeEmojiCategory === cat.id ? "rgba(2, 80, 161, 0.08)" : "none",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "1rem",
+                            width: "28px",
+                            height: "28px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "background 0.2s"
+                          }}
+                          title={cat.name}
+                        >
+                          {cat.icon}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Scrollable Emojis Grid Area */}
+                  <div style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(8, 1fr)",
+                    gap: "0.35rem",
+                    padding: "0.2rem",
+                    alignContent: "start",
+                    minHeight: 0
+                  }}>
+                    {(() => {
+                      if (emojiSearchQuery.trim()) {
+                        const query = emojiSearchQuery.toLowerCase();
+                        const matches: any[] = [];
+                        EMOJI_DATASET.forEach(cat => {
+                          cat.emojis.forEach(emoji => {
+                            if (emoji.name.includes(query) || emoji.keywords.some(k => k.includes(query))) {
+                              matches.push(emoji);
+                            }
+                          });
+                        });
+
+                        if (matches.length === 0) {
+                          return (
+                            <div style={{ gridColumn: "span 8", textAlign: "center", padding: "2rem 0", color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                              No emojis found.
+                            </div>
+                          );
+                        }
+
+                        return matches.map(emoji => (
+                          <button
+                            key={`search-${emoji.char}`}
+                            type="button"
+                            onClick={() => handleSelectEmoji(emoji.char, emoji.name)}
+                            onMouseEnter={() => setHoveredEmojiName(emoji.name)}
+                            onMouseLeave={() => setHoveredEmojiName(null)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              fontSize: "1.3rem",
+                              cursor: "pointer",
+                              padding: "0.25rem",
+                              borderRadius: "6px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              transition: "transform 0.1s"
+                            }}
+                            className="reaction-menu-emoji"
+                          >
+                            {emoji.char}
+                          </button>
+                        ));
+                      } else {
+                        // Display active category emojis
+                        let list: any[] = [];
+                        if (activeEmojiCategory === "recents") {
+                          list = recentEmojis.map(char => {
+                            // Find matching metadata from dataset if available
+                            let match: any = null;
+                            EMOJI_DATASET.forEach(c => {
+                              const found = c.emojis.find(e => e.char === char);
+                              if (found) match = found;
+                            });
+                            return match || { char, name: "recently used" };
+                          });
+                        } else {
+                          const category = EMOJI_DATASET.find(c => c.id === activeEmojiCategory);
+                          list = category ? category.emojis : [];
+                        }
+
+                        return list.map((emoji, index) => (
+                          <button
+                            key={`cat-${emoji.char}-${index}`}
+                            type="button"
+                            onClick={() => handleSelectEmoji(emoji.char, emoji.name)}
+                            onMouseEnter={() => setHoveredEmojiName(emoji.name)}
+                            onMouseLeave={() => setHoveredEmojiName(null)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              fontSize: "1.3rem",
+                              cursor: "pointer",
+                              padding: "0.25rem",
+                              borderRadius: "6px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              transition: "transform 0.1s"
+                            }}
+                            className="reaction-menu-emoji"
+                          >
+                            {emoji.char}
+                          </button>
+                        ));
+                      }
+                    })()}
+                  </div>
+
+                  {/* Bottom description bar (WhatsApp-style) */}
+                  <div style={{
+                    padding: "0.35rem 0.5rem 0.1rem 0.5rem",
+                    fontSize: "0.7rem",
+                    color: "var(--text-muted)",
+                    borderTop: "1px solid var(--border-dim)",
+                    textTransform: "capitalize",
+                    flexShrink: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap"
+                  }}>
+                    {hoveredEmojiName || (reactionTarget ? "React with any emoji" : "Select emoji")}
+                  </div>
                 </div>
               )}
             </div>
@@ -3901,26 +4169,46 @@ export default function ChatShard({
                 paddingBottom: "0.5rem",
                 marginBottom: "0.25rem"
               }}>
-                {["👍", "❤️", "😂", "😮", "😢", "🙏", "🚀"].map(emoji => (
-                  <button
-                    key={emoji}
-                    onClick={() => {
-                      handleToggleReaction(contextMenu.targetId, !!contextMenu.isGroup, emoji);
-                      setContextMenu(null);
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      fontSize: "1.2rem",
-                      cursor: "pointer",
-                      padding: "0.2rem",
-                      borderRadius: "6px"
-                    }}
-                    className="reaction-menu-emoji"
-                  >
-                    {emoji}
-                  </button>
-                ))}
+                {[...["👍", "❤️", "😂", "😮", "😢", "🙏", "🚀"], "+"].map(emoji => {
+                  const isMore = emoji === "+";
+                  return (
+                    <button
+                      key={emoji}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isMore) {
+                          setReactionTarget({
+                            messageId: contextMenu.targetId,
+                            isGroup: !!contextMenu.isGroup
+                          });
+                          setShowEmojiPicker(true);
+                        } else {
+                          handleToggleReaction(contextMenu.targetId, !!contextMenu.isGroup, emoji);
+                        }
+                        setContextMenu(null);
+                      }}
+                      style={{
+                        background: isMore ? "rgba(2, 80, 161, 0.05)" : "none",
+                        border: isMore ? "1px dashed rgba(2, 80, 161, 0.25)" : "none",
+                        fontSize: isMore ? "0.85rem" : "1.2rem",
+                        cursor: "pointer",
+                        padding: isMore ? "0.2rem 0.4rem" : "0.2rem",
+                        borderRadius: "6px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "28px",
+                        height: "28px",
+                        fontWeight: isMore ? "bold" : "normal",
+                        color: isMore ? "#0250A1" : "inherit"
+                      }}
+                      className="reaction-menu-emoji"
+                      title={isMore ? "React with any emoji..." : undefined}
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Menu Actions */}
