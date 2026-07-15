@@ -14,7 +14,8 @@ import {
   toggleEmojiReactionAction,
   toggleDndModeAction,
   forwardChatMessageAction,
-  leaveGroupAction
+  leaveGroupAction,
+  deleteGroupAction
 } from "@/app/actions/chat";
 import { useSearchParams } from "next/navigation";
 import { 
@@ -158,6 +159,23 @@ export default function ChatShard({
       }
     });
   };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm("Are you sure you want to delete this group? This action is permanent and will delete all messages, history, and member access.")) return;
+    startTransition(async () => {
+      try {
+        const res = await deleteGroupAction(groupId);
+        if (res.success) {
+          toast.success("Group deleted successfully!");
+          setActiveContact(null);
+          await fetchGroupsAndPins();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to delete group.");
+      }
+    });
+  };
+
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
@@ -1361,6 +1379,100 @@ export default function ChatShard({
                 </>
               )}
 
+              {/* Recent Groups Section */}
+              {activeGroups.length > 0 && (
+                <>
+                  <div style={{
+                    padding: "0.75rem 0.75rem 0.25rem 0.75rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    color: "var(--gold-premium)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}>
+                    <MessageSquare size={12} />
+                    <span>Recent Groups</span>
+                  </div>
+                  {activeGroups.map(item => {
+                    const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
+
+                    let subtitleText = "";
+                    const gpMsgs = messages.filter(m => m.groupId === item.id);
+                    const lastGpMsg = gpMsgs.length > 0 ? gpMsgs[gpMsgs.length - 1] : null;
+                    if (lastGpMsg) {
+                      subtitleText = lastGpMsg.isDeleted ? "🚫 This message was deleted" : `${lastGpMsg.sender?.name || "Colleague"}: ${lastGpMsg.message}`;
+                    } else {
+                      subtitleText = item.isPrivate ? "Private Space" : "Public Channel";
+                    }
+
+                    return (
+                      <div
+                        key={`recent-gp-${item.id}`}
+                        onClick={() => setActiveContact(item)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            type: "chat",
+                            visible: true,
+                            targetId: item.id,
+                            isGroup: true,
+                            isPinned: false
+                          });
+                        }}
+                        className="chat-channel-item-container"
+                        style={{ position: "relative" }}
+                      >
+                        <div
+                          className={`chat-channel-item ${isSelected ? 'active' : ''}`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                            padding: "0.6rem 0.75rem",
+                            background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            transition: "background 0.2s"
+                          }}
+                        >
+                          <div className="user-avatar-gold" style={{
+                            width: "2.25rem",
+                            height: "2.25rem",
+                            borderRadius: "50%",
+                            position: "relative",
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(2, 80, 161, 0.08)"
+                          }}>
+                            <span style={{ fontSize: "0.95rem" }}>{item.isPrivate ? "🔒" : "#"}</span>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <span>{item.name}</span>
+                              {mutedGroups.includes(item.id) && (
+                                <VolumeX size={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                              )}
+                            </span>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {subtitleText}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
               {/* Pinned Chats Section */}
               {pinnedChats.length > 0 && (
                 <>
@@ -1479,100 +1591,6 @@ export default function ChatShard({
                               title={statusInfo.label}
                             />
                           )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </>
-              )}
-
-              {/* Recent Groups Section */}
-              {activeGroups.length > 0 && (
-                <>
-                  <div style={{
-                    padding: "0.75rem 0.75rem 0.25rem 0.75rem",
-                    fontSize: "0.68rem",
-                    fontWeight: 700,
-                    color: "var(--gold-premium)",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.3rem"
-                  }}>
-                    <MessageSquare size={12} />
-                    <span>Recent Groups</span>
-                  </div>
-                  {activeGroups.map(item => {
-                    const isSelected = activeContact && activeContact.id === item.id && !!activeContact.isGroup === item.isGroup;
-
-                    let subtitleText = "";
-                    const gpMsgs = messages.filter(m => m.groupId === item.id);
-                    const lastGpMsg = gpMsgs.length > 0 ? gpMsgs[gpMsgs.length - 1] : null;
-                    if (lastGpMsg) {
-                      subtitleText = lastGpMsg.isDeleted ? "🚫 This message was deleted" : `${lastGpMsg.sender?.name || "Colleague"}: ${lastGpMsg.message}`;
-                    } else {
-                      subtitleText = item.isPrivate ? "Private Space" : "Public Channel";
-                    }
-
-                    return (
-                      <div
-                        key={`recent-gp-${item.id}`}
-                        onClick={() => setActiveContact(item)}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setContextMenu({
-                            x: e.clientX,
-                            y: e.clientY,
-                            type: "chat",
-                            visible: true,
-                            targetId: item.id,
-                            isGroup: true,
-                            isPinned: false
-                          });
-                        }}
-                        className="chat-channel-item-container"
-                        style={{ position: "relative" }}
-                      >
-                        <div
-                          className={`chat-channel-item ${isSelected ? 'active' : ''}`}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.75rem",
-                            padding: "0.6rem 0.75rem",
-                            background: isSelected ? "rgba(2, 80, 161, 0.06)" : "transparent",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            transition: "background 0.2s"
-                          }}
-                        >
-                          <div className="user-avatar-gold" style={{
-                            width: "2.25rem",
-                            height: "2.25rem",
-                            borderRadius: "50%",
-                            position: "relative",
-                            overflow: "hidden",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "rgba(2, 80, 161, 0.08)"
-                          }}>
-                            <span style={{ fontSize: "0.95rem" }}>{item.isPrivate ? "🔒" : "#"}</span>
-                          </div>
-
-                          <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                              <span>{item.name}</span>
-                              {mutedGroups.includes(item.id) && (
-                                <VolumeX size={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-                              )}
-                            </span>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {subtitleText}
-                            </span>
-                          </div>
                         </div>
                       </div>
                     );
@@ -2990,6 +3008,32 @@ export default function ChatShard({
                   <LogOut size={14} />
                   <span>Leave Group</span>
                 </button>
+
+                {isGroupCreator && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteGroup(activeContact.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.5rem",
+                      fontSize: "0.78rem",
+                      padding: "0.5rem",
+                      borderRadius: "10px",
+                      fontWeight: 700,
+                      width: "100%",
+                      border: "none",
+                      background: "#EF4444",
+                      color: "#FFFFFF",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    <span>Delete Group</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -3749,6 +3793,39 @@ export default function ChatShard({
                     <LogOut size={14} style={{ color: "#EF4444" }} />
                     <span>Leave Group</span>
                   </button>
+
+                  {(() => {
+                    const gp = joinedGroups.find((g: any) => g.id === contextMenu.targetId);
+                    const isCreator = gp && gp.createdById === currentUser.id;
+                    if (!isCreator) return null;
+                    return (
+                      <button
+                        onClick={() => {
+                          handleDeleteGroup(contextMenu.targetId);
+                          setContextMenu(null);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: "0.5rem 0.75rem",
+                          borderRadius: "8px",
+                          fontSize: "0.78rem",
+                          fontWeight: 600,
+                          textAlign: "left",
+                          color: "#EF4444",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          width: "100%"
+                        }}
+                        className="chat-channel-item"
+                      >
+                        <Trash2 size={14} style={{ color: "#EF4444" }} />
+                        <span>Delete Group</span>
+                      </button>
+                    );
+                  })()}
                 </>
               )}
             </>

@@ -518,3 +518,31 @@ export async function leaveGroupAction(groupId: string) {
   return { success: true };
 }
 
+export async function deleteGroupAction(groupId: string) {
+  const user = await enforceAuth();
+
+  const group = await db.chatgroup.findUnique({
+    where: { id: groupId }
+  });
+
+  if (!group) {
+    throw new Error("Group not found.");
+  }
+
+  // Verify that the current user is the creator of the group
+  if (group.createdById !== user.id) {
+    throw new Error("UNAUTHORIZED: Only the group creator can delete this group.");
+  }
+
+  // Delete all members, messages and the group itself in a transaction
+  await db.$transaction([
+    db.chatgroupmember.deleteMany({ where: { groupId } }),
+    db.chatgroupmessage.deleteMany({ where: { groupId } }),
+    db.chatgroup.delete({ where: { id: groupId } })
+  ]);
+
+  revalidatePath("/chat-space");
+  return { success: true };
+}
+
+
