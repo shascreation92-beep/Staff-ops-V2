@@ -3163,7 +3163,7 @@ export default function ChatShard({
 
                 <button
                   type="button"
-                  onClick={() => handleSendAttachment("error_diagnostics.png", "image")}
+                  onClick={() => handleSendAttachment("error_diagnostics.png", "image", "1.2 MB")}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
                   className="chat-channel-item"
                 >
@@ -3171,7 +3171,7 @@ export default function ChatShard({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSendAttachment("sys_blockage.txt", "log")}
+                  onClick={() => handleSendAttachment("sys_blockage.txt", "log", "8 KB")}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
                   className="chat-channel-item"
                 >
@@ -3179,7 +3179,7 @@ export default function ChatShard({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSendAttachment("operations_roster.csv", "csv")}
+                  onClick={() => handleSendAttachment("operations_roster.csv", "csv", "12 KB")}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
                   className="chat-channel-item"
                 >
