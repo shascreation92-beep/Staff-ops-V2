@@ -910,35 +910,6 @@ export default function ChatShard({
             replyToSenderName: replySenderName,
             replyToMessage: replyMessage
           });
-
-          // Simulated chatbot replies (Direct Messaging only)
-          setTimeout(() => {
-            setIsTyping(true);
-          }, 1000);
-
-          setTimeout(async () => {
-            try {
-              let responseText = `Copy that! Operations are fully monitored. (${activeContact.role.replace("_", " ")})`;
-              if (text.includes("📎 ATTACHMENT")) {
-                responseText = `Received attachment log. System diagnosis payload sent successfully.`;
-              }
-
-              await fetch(`/api/chat/simulate-reply`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  senderId: activeContact.id,
-                  receiverId: currentUser.id,
-                  message: responseText
-                })
-              });
-              setIsTyping(false);
-            } catch (e) {
-              console.error(e);
-              setIsTyping(false);
-            }
-          }, 3500);
-
         } catch (err: any) {
           toast.error(err.message || "Failed to transmit message.");
           setMessages(prev => prev.filter(m => m.id !== tempId));
