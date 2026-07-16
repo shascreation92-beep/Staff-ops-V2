@@ -14,7 +14,22 @@ export async function GET(req: Request) {
   const isGroup = searchParams.get("isGroup") === "true";
 
   if (!contactId) {
-    return NextResponse.json({ error: "Contact ID is required" }, { status: 400 });
+    try {
+      const allMsgs = await db.chatmessage.findMany({
+        where: {
+          OR: [
+            { senderId: session.user.id },
+            { receiverId: session.user.id }
+          ]
+        },
+        orderBy: {
+          createdAt: "asc"
+        }
+      });
+      return NextResponse.json(allMsgs);
+    } catch (error: any) {
+      return NextResponse.json({ error: error.message || "Failed to fetch all messages" }, { status: 500 });
+    }
   }
 
   try {
@@ -36,6 +51,18 @@ export async function GET(req: Request) {
       });
       return NextResponse.json(messages);
     }
+
+    // Automatically mark direct messages as read when loading thread
+    await db.chatmessage.updateMany({
+      where: {
+        senderId: contactId,
+        receiverId: session.user.id,
+        isRead: false
+      },
+      data: {
+        isRead: true
+      }
+    });
 
     const messages = await db.chatmessage.findMany({
       where: {

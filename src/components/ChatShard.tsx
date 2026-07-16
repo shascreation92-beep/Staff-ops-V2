@@ -331,7 +331,7 @@ export default function ChatShard({
 
   // Helper to calculate unread message count for direct contacts
   const getUnreadCount = (contactId: string) => {
-    return messages.filter(m => m.senderId === contactId && m.receiverId === currentUser.id && !m.isRead).length;
+    return allDirectMessages.filter(m => m.senderId === contactId && m.receiverId === currentUser.id && !m.isRead).length;
   };
 
   // Fetch groups and pinning records
@@ -440,6 +440,25 @@ export default function ChatShard({
     const interval = setInterval(fetchLatestMessages, 3000);
     return () => clearInterval(interval);
   }, [activeContact]);
+
+  // Poll globally for all direct messages every 5 seconds to keep sidebar unread badges fresh
+  useEffect(() => {
+    const pollAllMessages = async () => {
+      try {
+        const res = await fetch("/api/chat/messages");
+        if (res.ok) {
+          const data = await res.json();
+          setAllDirectMessages(data);
+        }
+      } catch (err) {
+        console.error("Failed to poll all messages globally:", err);
+      }
+    };
+
+    pollAllMessages();
+    const interval = setInterval(pollAllMessages, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -1666,7 +1685,16 @@ export default function ChatShard({
                     return (
                       <div
                         key={`pinned-chat-${item.id}`}
-                        onClick={() => setActiveContact(item)}
+                        onClick={() => {
+                          setActiveContact(item);
+                          setAllDirectMessages(prev => 
+                            prev.map(m => 
+                              m.senderId === item.id && m.receiverId === currentUser.id 
+                                ? { ...m, isRead: true } 
+                                : m
+                            )
+                          );
+                        }}
                         onContextMenu={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -1797,7 +1825,16 @@ export default function ChatShard({
                     return (
                       <div
                         key={`recent-chat-${item.id}`}
-                        onClick={() => setActiveContact(item)}
+                        onClick={() => {
+                          setActiveContact(item);
+                          setAllDirectMessages(prev => 
+                            prev.map(m => 
+                              m.senderId === item.id && m.receiverId === currentUser.id 
+                                ? { ...m, isRead: true } 
+                                : m
+                            )
+                          );
+                        }}
                         onContextMenu={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -2005,7 +2042,17 @@ export default function ChatShard({
                     return (
                       <div
                         key={`dir-search-${c.id}`}
-                        onClick={() => { setActiveContact(c); setSearchTerm(""); }}
+                        onClick={() => {
+                          setActiveContact(c);
+                          setSearchTerm("");
+                          setAllDirectMessages(prev => 
+                            prev.map(m => 
+                              m.senderId === c.id && m.receiverId === currentUser.id 
+                                ? { ...m, isRead: true } 
+                                : m
+                            )
+                          );
+                        }}
                         className={`chat-channel-item ${isSelected ? 'active' : ''}`}
                         style={{
                           display: "flex",
