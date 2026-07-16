@@ -2340,20 +2340,37 @@ export default function ChatShard({
                       border: "2px solid #FFFFFF",
                       boxShadow: `0 0 4px ${activeStatusInfo?.color || "#10B981"}`
                     }} 
+                    title={activeStatusInfo?.label || "Active (Online)"}
                   />
                 )}
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontSize: "0.95rem", fontWeight: 700 }}>{activeContact.name}</span>
-                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 500 }}>
-                  {activeContact.isGroup 
-                    ? (activeContact.isPrivate ? "Private Space" : "Public Channel") 
-                    : activeContact.role.replace(/_/g, " ")}
-                </span>
+                {isTyping ? (
+                  <span style={{ 
+                    fontSize: "0.7rem", 
+                    color: "#0250A1", 
+                    fontWeight: 700, 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: "0.15rem" 
+                  }}>
+                    <span className="w-1 h-1 rounded-full bg-[#0250A1] animate-bounce" style={{ display: "inline-block", animationDelay: "0ms" }} />
+                    <span className="w-1 h-1 rounded-full bg-[#0250A1] animate-bounce" style={{ display: "inline-block", animationDelay: "150ms" }} />
+                    <span className="w-1 h-1 rounded-full bg-[#0250A1] animate-bounce" style={{ display: "inline-block", animationDelay: "300ms" }} />
+                    <span>typing...</span>
+                  </span>
+                ) : (
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 500 }}>
+                    {activeContact.isGroup 
+                      ? (activeContact.isPrivate ? "Private Space" : "Public Channel") 
+                      : activeContact.role.replace(/_/g, " ")}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Message History Search and Status / Typing Indicators */}
+            {/* Message History Search and Utility Icons (Aligned to Right Corner) */}
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               {showChatSearch ? (
                 <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", border: "1px solid var(--border-dim)", borderRadius: "4px", padding: "0.2rem 0.5rem" }}>
@@ -2370,7 +2387,7 @@ export default function ChatShard({
                   </button>
                 </div>
               ) : (
-                <button onClick={() => setShowChatSearch(true)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--text-muted)" }} title="Search messages">
+                <button onClick={() => setShowChatSearch(true)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }} title="Search messages">
                   <Search size={18} />
                 </button>
               )}
@@ -2392,31 +2409,6 @@ export default function ChatShard({
                   <Info size={18} />
                 </button>
               )}
-
-              <div style={{ display: "flex", alignItems: "center", minWidth: "120px", justifyContent: "flex-end" }}>
-                {isTyping ? (
-                  <span style={{ 
-                    fontSize: "0.75rem", 
-                    color: "#0250A1", 
-                    fontWeight: 700, 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: "0.25rem" 
-                  }}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#0250A1] animate-bounce" style={{ display: "inline-block", animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#0250A1] animate-bounce" style={{ display: "inline-block", animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#0250A1] animate-bounce" style={{ display: "inline-block", animationDelay: "300ms" }} />
-                    <span>typing...</span>
-                  </span>
-                ) : (
-                  activeStatusInfo && activeStatusInfo.label !== "Active (Online)" && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: activeStatusInfo?.color || "#10B981", fontWeight: 700 }}>
-                      <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: activeStatusInfo?.color || "#10B981" }} className={activeStatusInfo?.pulse ? "pulse-critical-dot" : ""} />
-                      <span style={{ textTransform: "uppercase" }}>{activeStatusInfo?.label}</span>
-                    </div>
-                  )
-                )}
-              </div>
             </div>
           </div>
 
