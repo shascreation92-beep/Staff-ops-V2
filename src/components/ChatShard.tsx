@@ -106,6 +106,7 @@ export default function ChatShard({
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const attachmentModalRef = useRef<HTMLDivElement>(null);
 
   // DND status state
   const [isDnd, setIsDnd] = useState(!!currentUser.isDnd);
@@ -481,6 +482,19 @@ export default function ChatShard({
     function handleClickOutside(event: MouseEvent) {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
         setShowEmojiPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Close attachment modal when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (attachmentModalRef.current && !attachmentModalRef.current.contains(event.target as Node)) {
+        setShowAttachmentModal(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -3205,7 +3219,7 @@ export default function ChatShard({
 
             {/* Attachment selector popup */}
             {showAttachmentModal && (
-              <div className="glass-panel" style={{
+              <div ref={attachmentModalRef} className="glass-panel" style={{
                 position: "absolute",
                 bottom: "100%",
                 left: "1.5rem",
@@ -3216,60 +3230,23 @@ export default function ChatShard({
                 display: "flex",
                 flexDirection: "column",
                 gap: "0.5rem",
-                width: "240px",
+                width: "180px",
                 boxShadow: "var(--shadow-premium)"
               }}>
                 <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase" }}>
-                  Select or Upload File
+                  File Operations
                 </div>
                 
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                    setShowAttachmentModal(false);
+                  }}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--gold-premium)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.25rem" }}
                   className="chat-channel-item"
                 >
                   📁 Upload from Device
-                </button>
-
-                <div style={{ borderTop: "1px solid var(--border-dim)", margin: "0.25rem 0" }} />
-
-                <div style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
-                  Simulated Files
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPendingAttachment({ name: "error_diagnostics.png", type: "image", size: "1.2 MB", url: "/uploads/avatars/default-avatar.png" });
-                    setShowAttachmentModal(false);
-                  }}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
-                  className="chat-channel-item"
-                >
-                  🖼️ error_diagnostics.png
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPendingAttachment({ name: "sys_blockage.txt", type: "log", size: "8 KB", url: "/uploads/avatars/default-avatar.png" });
-                    setShowAttachmentModal(false);
-                  }}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
-                  className="chat-channel-item"
-                >
-                  📄 sys_blockage.txt
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPendingAttachment({ name: "operations_roster.csv", type: "csv", size: "12 KB", url: "/uploads/avatars/default-avatar.png" });
-                    setShowAttachmentModal(false);
-                  }}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
-                  className="chat-channel-item"
-                >
-                  📊 operations_roster.csv
                 </button>
               </div>
             )}
