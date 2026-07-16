@@ -2409,10 +2409,12 @@ export default function ChatShard({
                     <span>typing...</span>
                   </span>
                 ) : (
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: activeStatusInfo?.color || "#10B981", fontWeight: 700 }}>
-                    <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: activeStatusInfo?.color || "#10B981" }} className={activeStatusInfo?.pulse ? "pulse-critical-dot" : ""} />
-                    <span style={{ textTransform: "uppercase" }}>{activeStatusInfo?.label}</span>
-                  </div>
+                  activeStatusInfo && activeStatusInfo.label !== "Active (Online)" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: activeStatusInfo?.color || "#10B981", fontWeight: 700 }}>
+                      <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: activeStatusInfo?.color || "#10B981" }} className={activeStatusInfo?.pulse ? "pulse-critical-dot" : ""} />
+                      <span style={{ textTransform: "uppercase" }}>{activeStatusInfo?.label}</span>
+                    </div>
+                  )
                 )}
               </div>
             </div>
