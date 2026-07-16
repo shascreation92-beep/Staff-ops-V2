@@ -96,6 +96,14 @@ export default function ChatShard({
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Pending staged attachment state
+  const [pendingAttachment, setPendingAttachment] = useState<{
+    name: string;
+    type: string;
+    size: string;
+    url: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
@@ -941,7 +949,8 @@ export default function ChatShard({
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !activeContact || activeContact === "BROADCAST") return;
+    if (!inputText.trim() && !pendingAttachment) return;
+    if (!activeContact || activeContact === "BROADCAST") return;
 
     const text = inputText.trim();
 
@@ -952,7 +961,15 @@ export default function ChatShard({
 
     setInputText("");
     setShowEmojiPicker(false);
-    submitMessage(text);
+
+    if (pendingAttachment) {
+      const filePayload = `📎 ATTACHMENT [${pendingAttachment.type}]: ${pendingAttachment.name}|${pendingAttachment.size}::${pendingAttachment.url}`;
+      const consolidated = text ? `${filePayload}\n${text}` : filePayload;
+      setPendingAttachment(null);
+      submitMessage(consolidated);
+    } else {
+      submitMessage(text);
+    }
   };
 
   const executeSlashCommand = (cmd: string) => {
@@ -1253,7 +1270,12 @@ export default function ChatShard({
         sizeText = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
       }
 
-      handleSendAttachment(file.name, fileType, sizeText, data.fileUrl);
+      setPendingAttachment({
+        name: file.name,
+        type: fileType,
+        size: sizeText,
+        url: data.fileUrl
+      });
     } catch (err: any) {
       toast.dismiss(uploadToastId);
       toast.error(err.message || "Failed to upload file.");
@@ -2625,9 +2647,20 @@ export default function ChatShard({
                 let fileSizeInfo = "";
                 let fileUrl = "";
                 let cleanMessage = m.message;
+                let attachmentPart = "";
+                let userTextPart = m.message;
 
                 if (isAttachment) {
-                  const match = m.message.match(/📎 ATTACHMENT \[(.*?)\]: (.*?)(?:\|(.*?))?(?:::(.*))?$/);
+                  const newlineIdx = m.message.indexOf("\n");
+                  if (newlineIdx !== -1) {
+                    attachmentPart = m.message.substring(0, newlineIdx);
+                    userTextPart = m.message.substring(newlineIdx + 1).trim();
+                  } else {
+                    attachmentPart = m.message;
+                    userTextPart = "";
+                  }
+                  
+                  const match = attachmentPart.match(/📎 ATTACHMENT \[(.*?)\]: (.*?)(?:\|(.*?))?(?:::(.*))?$/);
                   if (match) {
                     fileType = match[1];
                     fileName = match[2];
@@ -2755,10 +2788,16 @@ export default function ChatShard({
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              fontSize: "1.2rem",
-                              fontWeight: "bold"
+                              overflow: "hidden",
+                              flexShrink: 0
                             }}>
-                              {fileType === "image" ? "🖼️" : fileType === "csv" ? "📊" : "📄"}
+                              {fileType === "image" && fileUrl ? (
+                                <img src={fileUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={fileName} />
+                              ) : (
+                                <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
+                                  {fileType === "image" ? "🖼️" : fileType === "csv" ? "📊" : "📄"}
+                                </span>
+                              )}
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", textAlign: "left" }}>
                               <span style={{ fontSize: "0.75rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -2781,7 +2820,7 @@ export default function ChatShard({
                       {/* Message payload */}
                       <span style={{ fontSize: "0.86rem", lineHeight: "1.4", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
                         {isAttachment 
-                          ? `Sent attachment file: ${fileName}` 
+                          ? (userTextPart ? renderMessageContentWithMentions(userTextPart, isOwn) : `Sent attachment file: ${fileName}`) 
                           : renderMessageContentWithMentions(cleanMessage, isOwn)}
                         {m.isEdited && !m.isDeleted && (
                           <span style={{ fontSize: "0.65rem", opacity: 0.6, marginLeft: "0.3rem", fontStyle: "italic" }}>(edited)</span>
@@ -3027,6 +3066,73 @@ export default function ChatShard({
                 position: "relative"
               }}>
             
+            {/* Staged Pending Attachment preview bar */}
+            {pendingAttachment && (
+              <div className="glass-panel" style={{
+                position: "absolute",
+                bottom: "100%",
+                left: "1.5rem",
+                right: "1.5rem",
+                marginBottom: "0.5rem",
+                padding: "0.5rem 1rem",
+                background: "rgba(2, 80, 161, 0.03)",
+                border: "1px dashed rgba(2, 80, 161, 0.15)",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.75rem",
+                zIndex: 200
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", overflow: "hidden" }}>
+                  <div style={{
+                    width: "2rem",
+                    height: "2rem",
+                    background: "rgba(2, 80, 161, 0.08)",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    overflow: "hidden"
+                  }}>
+                    {pendingAttachment.type === "image" ? (
+                      <img src={pendingAttachment.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="thumbnail" />
+                    ) : (
+                      <span style={{ fontSize: "1rem" }}>
+                        {pendingAttachment.type === "csv" ? "📊" : "📄"}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", textAlign: "left" }}>
+                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {pendingAttachment.name}
+                    </span>
+                    <span style={{ fontSize: "0.62rem", color: "var(--text-muted)" }}>
+                      {pendingAttachment.size} • Staged file
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPendingAttachment(null)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0.25rem",
+                    color: "#EF4444",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                  title="Remove attachment"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            
             {/* Interactive Slash Commands Popup suggestions */}
             {showCommandSuggestions && commandOptions.length > 0 && (
               <div className="glass-panel" style={{
@@ -3163,7 +3269,10 @@ export default function ChatShard({
 
                 <button
                   type="button"
-                  onClick={() => handleSendAttachment("error_diagnostics.png", "image", "1.2 MB")}
+                  onClick={() => {
+                    setPendingAttachment({ name: "error_diagnostics.png", type: "image", size: "1.2 MB", url: "/uploads/avatars/default-avatar.png" });
+                    setShowAttachmentModal(false);
+                  }}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
                   className="chat-channel-item"
                 >
@@ -3171,7 +3280,10 @@ export default function ChatShard({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSendAttachment("sys_blockage.txt", "log", "8 KB")}
+                  onClick={() => {
+                    setPendingAttachment({ name: "sys_blockage.txt", type: "log", size: "8 KB", url: "/uploads/avatars/default-avatar.png" });
+                    setShowAttachmentModal(false);
+                  }}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
                   className="chat-channel-item"
                 >
@@ -3179,7 +3291,10 @@ export default function ChatShard({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSendAttachment("operations_roster.csv", "csv", "12 KB")}
+                  onClick={() => {
+                    setPendingAttachment({ name: "operations_roster.csv", type: "csv", size: "12 KB", url: "/uploads/avatars/default-avatar.png" });
+                    setShowAttachmentModal(false);
+                  }}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--text-secondary)" }}
                   className="chat-channel-item"
                 >
@@ -3637,7 +3752,7 @@ export default function ChatShard({
 
             <button
               type="submit"
-              disabled={isPending || !inputText.trim()}
+              disabled={isPending || (!inputText.trim() && !pendingAttachment)}
               className="btn-gold"
               style={{ width: "40px", height: "40px", padding: 0 }}
             >
