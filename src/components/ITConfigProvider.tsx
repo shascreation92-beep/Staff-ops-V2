@@ -4,8 +4,12 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
 interface ITConfigContextType {
-  verificationCost: number;
-  updateVerificationCost: (cost: number) => Promise<boolean>;
+  verificationCost: number; // Legacy alias for facebookCost
+  facebookCost: number;
+  vintedCost: number;
+  updateVerificationCost: (cost: number) => Promise<boolean>; // Legacy alias for updateFacebookCost
+  updateFacebookCost: (cost: number) => Promise<boolean>;
+  updateVintedCost: (cost: number) => Promise<boolean>;
   loading: boolean;
 }
 
@@ -13,7 +17,8 @@ const ITConfigContext = createContext<ITConfigContextType | undefined>(undefined
 
 export function ITConfigProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
-  const [verificationCost, setVerificationCost] = useState<number>(300);
+  const [facebookCost, setFacebookCost] = useState<number>(300);
+  const [vintedCost, setVintedCost] = useState<number>(300);
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchCost = async () => {
@@ -21,8 +26,11 @@ export function ITConfigProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/it-config");
       if (res.ok) {
         const data = await res.json();
-        if (typeof data.cost === "number") {
-          setVerificationCost(data.cost);
+        if (typeof data.facebookCost === "number") {
+          setFacebookCost(data.facebookCost);
+        }
+        if (typeof data.vintedCost === "number") {
+          setVintedCost(data.vintedCost);
         }
       }
     } catch (err) {
@@ -40,26 +48,52 @@ export function ITConfigProvider({ children }: { children: React.ReactNode }) {
     fetchCost();
   }, [session?.user?.id]);
 
-  const updateVerificationCost = async (newCost: number): Promise<boolean> => {
+  const updateFacebookCost = async (newCost: number): Promise<boolean> => {
     try {
       const res = await fetch("/api/it-config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cost: newCost })
+        body: JSON.stringify({ facebookCost: newCost })
       });
       if (res.ok) {
-        setVerificationCost(newCost);
+        setFacebookCost(newCost);
         return true;
       }
       return false;
     } catch (err) {
-      console.error("Failed to update IT config", err);
+      console.error("Failed to update Facebook config", err);
+      return false;
+    }
+  };
+
+  const updateVintedCost = async (newCost: number): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/it-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vintedCost: newCost })
+      });
+      if (res.ok) {
+        setVintedCost(newCost);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to update Vinted config", err);
       return false;
     }
   };
 
   return (
-    <ITConfigContext.Provider value={{ verificationCost, updateVerificationCost, loading }}>
+    <ITConfigContext.Provider value={{ 
+      verificationCost: facebookCost, 
+      facebookCost, 
+      vintedCost, 
+      updateVerificationCost: updateFacebookCost, 
+      updateFacebookCost, 
+      updateVintedCost, 
+      loading 
+    }}>
       {children}
     </ITConfigContext.Provider>
   );

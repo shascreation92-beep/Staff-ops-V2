@@ -12,15 +12,32 @@ export async function GET() {
 
   const companyId = session.user.companyId || "";
   if (!companyId) {
-    return NextResponse.json({ cost: 300 }); // Default fallback for system users without company
+    return NextResponse.json({ facebookCost: 300, vintedCost: 300 });
   }
 
   try {
-    const costRule = await db.rule.findFirst({
-      where: { companyId, key: "verification_cost" }
+    const rules = await db.rule.findMany({
+      where: {
+        companyId,
+        key: { in: ["facebook_verification_cost", "vinted_verification_cost", "verification_cost"] }
+      }
     });
-    const cost = costRule ? (parseFloat(costRule.value) || 300) : 300;
-    return NextResponse.json({ cost });
+
+    const facebookCostRule = rules.find(r => r.key === "facebook_verification_cost");
+    const vintedCostRule = rules.find(r => r.key === "vinted_verification_cost");
+    const fallbackCostRule = rules.find(r => r.key === "verification_cost");
+
+    const facebookCost = facebookCostRule 
+      ? (parseFloat(facebookCostRule.value) || 300) 
+      : fallbackCostRule 
+        ? (parseFloat(fallbackCostRule.value) || 300) 
+        : 300;
+
+    const vintedCost = vintedCostRule 
+      ? (parseFloat(vintedCostRule.value) || 300) 
+      : 300;
+
+    return NextResponse.json({ facebookCost, vintedCost });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to fetch cost" }, { status: 500 });
   }
@@ -38,39 +55,65 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { cost } = await req.json();
-    const costValue = parseFloat(cost);
-    if (isNaN(costValue) || costValue < 0) {
-      return NextResponse.json({ error: "Invalid cost value" }, { status: 400 });
-    }
-
-    const costStr = String(costValue);
-
-    const existingRule = await db.rule.findUnique({
-      where: {
-        key_companyId: { key: "verification_cost", companyId }
+    const body = await req.json();
+    
+    if (body.facebookCost !== undefined) {
+      const fbVal = parseFloat(body.facebookCost);
+      if (isNaN(fbVal) || fbVal < 0) {
+        return NextResponse.json({ error: "Invalid Facebook cost value" }, { status: 400 });
       }
-    });
-
-    if (existingRule) {
-      await db.rule.update({
-        where: { id: existingRule.id },
-        data: { value: costStr, updatedAt: new Date() }
+      const fbStr = String(fbVal);
+      const existingFbRule = await db.rule.findUnique({
+        where: { key_companyId: { key: "facebook_verification_cost", companyId } }
       });
-    } else {
-      await db.rule.create({
-        data: {
-          id: crypto.randomUUID(),
-          name: "Verification Cost per Account",
-          key: "verification_cost",
-          value: costStr,
-          companyId,
-          updatedAt: new Date()
-        }
-      });
+      if (existingFbRule) {
+        await db.rule.update({
+          where: { id: existingFbRule.id },
+          data: { value: fbStr, updatedAt: new Date() }
+        });
+      } else {
+        await db.rule.create({
+          data: {
+            id: crypto.randomUUID(),
+            name: "Facebook Verification Cost",
+            key: "facebook_verification_cost",
+            value: fbStr,
+            companyId,
+            updatedAt: new Date()
+          }
+        });
+      }
     }
 
-    return NextResponse.json({ success: true, cost: costValue });
+    if (body.vintedCost !== undefined) {
+      const vintedVal = parseFloat(body.vintedCost);
+      if (isNaN(vintedVal) || vintedVal < 0) {
+        return NextResponse.json({ error: "Invalid Vinted cost value" }, { status: 400 });
+      }
+      const vintedStr = String(vintedVal);
+      const existingVintedRule = await db.rule.findUnique({
+        where: { key_companyId: { key: "vinted_verification_cost", companyId } }
+      });
+      if (existingVintedRule) {
+        await db.rule.update({
+          where: { id: existingVintedRule.id },
+          data: { value: vintedStr, updatedAt: new Date() }
+        });
+      } else {
+        await db.rule.create({
+          data: {
+            id: crypto.randomUUID(),
+            name: "Vinted Verification Cost",
+            key: "vinted_verification_cost",
+            value: vintedStr,
+            companyId,
+            updatedAt: new Date()
+          }
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to update cost" }, { status: 500 });
   }

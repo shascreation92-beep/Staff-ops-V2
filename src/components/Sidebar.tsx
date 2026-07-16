@@ -235,12 +235,17 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
   // IT Configurations state
   const [showITConfigOverlay, setShowITConfigOverlay] = useState(false);
-  const { verificationCost, updateVerificationCost } = useITConfig();
-  const [tempCost, setTempCost] = useState(verificationCost.toString());
+  const { facebookCost, vintedCost, updateFacebookCost, updateVintedCost } = useITConfig();
+  const [tempFbCost, setTempFbCost] = useState(facebookCost.toString());
+  const [tempVintedCost, setTempVintedCost] = useState(vintedCost.toString());
 
   useEffect(() => {
-    setTempCost(verificationCost.toString());
-  }, [verificationCost]);
+    setTempFbCost(facebookCost.toString());
+  }, [facebookCost]);
+
+  useEffect(() => {
+    setTempVintedCost(vintedCost.toString());
+  }, [vintedCost]);
 
   // Dynamic notification count for TL requests
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
@@ -804,59 +809,102 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: "1.4", margin: 0 }}>
               Adjust operational cost configurations for unverified account verification tracking.
             </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", margin: "1rem 0" }}>
+               {/* Facebook verification cost input */}
+               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                 <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                   <span style={{
+                     width: "8px",
+                     height: "8px",
+                     borderRadius: "50%",
+                     background: "#1877F2",
+                     display: "inline-block"
+                   }} />
+                   <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                     Facebook Verification Cost (PKR)
+                   </label>
+                 </div>
+                 <input
+                   type="number"
+                   min="0"
+                   value={tempFbCost}
+                   onChange={(e) => setTempFbCost(e.target.value)}
+                   placeholder="300"
+                   className="input-gold"
+                   style={{
+                     fontSize: "0.85rem",
+                     padding: "0.6rem 0.85rem"
+                   }}
+                 />
+                 <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", lineHeight: "1.3" }}>
+                   Used to calculate the estimated cost for unverified Facebook accounts.
+                 </span>
+               </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)", textTransform: "uppercase" }}>
-                Verification Cost per Account (PKR)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={tempCost}
-                onChange={(e) => setTempCost(e.target.value)}
-                placeholder="300"
-                className="input-gold"
-                style={{
-                  fontSize: "0.85rem",
-                  padding: "0.6rem 0.85rem"
-                }}
-              />
-              <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
-                This multiplier determines the estimated cost display on the overall dashboard.
-              </span>
-            </div>
+               {/* Vinted verification cost input */}
+               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                 <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                   <span style={{
+                     width: "8px",
+                     height: "8px",
+                     borderRadius: "50%",
+                     background: "#00A896",
+                     display: "inline-block"
+                   }} />
+                   <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                     Vinted Verification Cost (PKR)
+                   </label>
+                 </div>
+                 <input
+                   type="number"
+                   min="0"
+                   value={tempVintedCost}
+                   onChange={(e) => setTempVintedCost(e.target.value)}
+                   placeholder="300"
+                   className="input-gold"
+                   style={{
+                     fontSize: "0.85rem",
+                     padding: "0.6rem 0.85rem"
+                   }}
+                 />
+                 <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", lineHeight: "1.3" }}>
+                   Used to calculate the estimated cost for unverified Vinted accounts.
+                 </span>
+               </div>
+             </div>
 
-            <div style={{ display: "flex", gap: "1rem", marginTop: "auto" }}>
-              <button
-                type="button"
-                onClick={() => setShowITConfigOverlay(false)}
-                className="btn-glass"
-                style={{ flex: 1 }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn-gold"
-                style={{ flex: 1 }}
-                onClick={async () => {
-                  const val = parseFloat(tempCost);
-                  if (isNaN(val) || val < 0) {
-                    alert("Please enter a valid verification cost.");
-                    return;
-                  }
-                  const success = await updateVerificationCost(val);
-                  if (success) {
-                    setShowITConfigOverlay(false);
-                    // Force reload to refresh server component page states immediately
-                    window.location.reload();
-                  } else {
-                    alert("Failed to update IT configurations.");
-                  }
-                }}
-              >
-                Save
-              </button>
+             <div style={{ display: "flex", gap: "1rem", marginTop: "auto" }}>
+               <button
+                 type="button"
+                 onClick={() => setShowITConfigOverlay(false)}
+                 className="btn-glass"
+                 style={{ flex: 1 }}
+               >
+                 Cancel
+               </button>
+               <button
+                 type="button"
+                 className="btn-gold"
+                 style={{ flex: 1 }}
+                 onClick={async () => {
+                   const fbVal = parseFloat(tempFbCost);
+                   const vintedVal = parseFloat(tempVintedCost);
+                   if (isNaN(fbVal) || fbVal < 0 || isNaN(vintedVal) || vintedVal < 0) {
+                     alert("Please enter valid verification costs.");
+                     return;
+                   }
+                   const successFb = await updateFacebookCost(fbVal);
+                   const successVinted = await updateVintedCost(vintedVal);
+                   if (successFb && successVinted) {
+                     setShowITConfigOverlay(false);
+                     window.location.reload();
+                   } else {
+                     alert("Failed to update IT configurations.");
+                   }
+                 }}
+               >
+                 Save
+               </button>
             </div>
           </div>
         </div>
