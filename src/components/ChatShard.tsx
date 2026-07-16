@@ -95,6 +95,7 @@ export default function ChatShard({
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   // DND status state
   const [isDnd, setIsDnd] = useState(!!currentUser.isDnd);
@@ -464,6 +465,19 @@ export default function ChatShard({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Compute live statistics for the active colleague (Sales Associate or Team Lead)
   const getColleagueStats = (contact: any) => {
@@ -3080,7 +3094,7 @@ export default function ChatShard({
             )}
             
             {/* Emoji Picker trigger */}
-            <div style={{ position: "relative" }}>
+            <div ref={emojiPickerRef} style={{ position: "relative" }}>
               <button
                 type="button"
                 onClick={() => {
