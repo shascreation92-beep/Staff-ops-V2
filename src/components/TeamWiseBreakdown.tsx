@@ -97,7 +97,7 @@ export default function TeamWiseBreakdown({
             return (
               <div 
                 key={tl.id} 
-                className={`glass-panel ${isCritical ? 'border-red-400/80 shadow-[0_0_15px_rgba(239,68,68,0.12)] animate-pulse' : ''}`}
+                className={`glass-panel ${isCritical ? 'border-red-400/80 shadow-[0_0_15px_rgba(239,68,68,0.12)]' : ''}`}
                 style={{
                   padding: "1.5rem",
                   borderRadius: "12px",
