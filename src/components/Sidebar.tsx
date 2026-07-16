@@ -17,12 +17,14 @@ import {
   Key,
   ClipboardCheck,
   Megaphone,
-  Wallet
+  Wallet,
+  Pencil
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
 import { updateUserPasswordAction } from "@/app/actions/users";
 import { getPendingTLRequestsCountAction } from "@/app/actions/accounts";
+import { updateUserBioAction } from "@/app/actions/profile";
 import { useITConfig } from "./ITConfigProvider";
 import { toast } from "react-hot-toast";
 import { useRef } from "react";
@@ -83,6 +85,7 @@ interface SidebarProps {
     companyName?: string | null;
     teamLeadName?: string | null;
     image?: string | null;
+    bio?: string | null;
   };
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -100,6 +103,28 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+
+  // User Bio States
+  const [showBioModal, setShowBioModal] = useState(false);
+  const [bioInput, setBioInput] = useState(user.bio || "");
+  const [currentBio, setCurrentBio] = useState(user.bio || "");
+  const [isUpdatingBio, setIsUpdatingBio] = useState(false);
+
+  const handleUpdateBio = async () => {
+    setIsUpdatingBio(true);
+    try {
+      const res = await updateUserBioAction(bioInput);
+      if (res.success) {
+        setCurrentBio(res.bio || "");
+        setShowBioModal(false);
+        toast.success("Bio updated successfully!");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update bio.");
+    } finally {
+      setIsUpdatingBio(false);
+    }
+  };
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -480,13 +505,45 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         </div>
 
         <div className="profile-info">
-          <span className="profile-greeting">HELLO</span>
           <span className="profile-name" title={`${user.name || "Operator"} - ${getDesignation(user.role)}`}>
             <strong>{user.name || "Operator"}</strong> - <span className="profile-designation">{getDesignation(user.role)}</span>
           </span>
           <span className="profile-email" title={user.email || ""}>
             {user.email || ""}
           </span>
+          <div style={{ 
+            marginTop: "0.4rem", 
+            padding: "0.4rem 0.5rem", 
+            background: "rgba(2, 80, 161, 0.04)", 
+            borderRadius: "6px", 
+            border: "1px dashed rgba(2, 80, 161, 0.15)",
+            display: "flex", 
+            flexDirection: "column",
+            gap: "0.2rem",
+            position: "relative"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.05em" }}>User Bio</span>
+              <button 
+                type="button" 
+                onClick={() => setShowBioModal(true)} 
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "var(--gold-premium)" }}
+                title="Edit Bio"
+              >
+                <Pencil size={9} />
+              </button>
+            </div>
+            <p style={{ 
+              fontSize: "0.68rem", 
+              color: currentBio ? "var(--text-secondary)" : "var(--text-muted)", 
+              margin: 0, 
+              lineHeight: "1.3",
+              wordBreak: "break-word",
+              fontStyle: currentBio ? "normal" : "italic"
+            }}>
+              {currentBio || "No bio added yet. Click edit icon to add bio."}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -976,6 +1033,96 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
             {/* Hidden canvas to perform circular crop */}
             <canvas ref={canvasRef} style={{ display: "none" }} />
+          </div>
+        </div>
+      )}
+
+      {/* Glassmorphic User Bio Update Modal */}
+      {showBioModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(15, 23, 42, 0.3)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "400px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Update User Bio</h3>
+              <button 
+                type="button" 
+                onClick={() => setShowBioModal(false)} 
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Brief Biography (Max 200 chars)
+              </label>
+              <textarea
+                rows={4}
+                value={bioInput}
+                maxLength={200}
+                onChange={(e) => setBioInput(e.target.value)}
+                placeholder="Write a brief about yourself or operational role..."
+                style={{
+                  width: "100%",
+                  padding: "0.6rem 0.75rem",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-dim)",
+                  fontSize: "0.82rem",
+                  outline: "none",
+                  resize: "none",
+                  fontFamily: "inherit",
+                  background: "#F9FAFB"
+                }}
+              />
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>
+                  {bioInput.length}/200
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+              <button
+                type="button"
+                className="btn-glass"
+                onClick={() => setShowBioModal(false)}
+                style={{ padding: "0.5rem 1rem", fontSize: "0.78rem" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-gold"
+                onClick={handleUpdateBio}
+                disabled={isUpdatingBio}
+                style={{ padding: "0.5rem 1.25rem", fontSize: "0.78rem" }}
+              >
+                {isUpdatingBio ? "Saving..." : "Save Bio"}
+              </button>
+            </div>
           </div>
         </div>
       )}

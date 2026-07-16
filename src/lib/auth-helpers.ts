@@ -50,6 +50,7 @@ export async function enforceAuth(allowedRoles?: user_role[]) {
       where: { id: session.user.id },
       select: {
         image: true,
+        bio: true,
         user: {
           select: { name: true }
         }
@@ -60,6 +61,12 @@ export async function enforceAuth(allowedRoles?: user_role[]) {
       if (dbUser.user) {
         teamLeadName = dbUser.user.name;
       }
+      return {
+        ...session.user,
+        image,
+        bio: dbUser.bio || null,
+        teamLeadName
+      };
     }
   } catch (err) {
     console.error("Failed to fetch dynamic user database values in enforceAuth:", err);
@@ -68,6 +75,7 @@ export async function enforceAuth(allowedRoles?: user_role[]) {
   return {
     ...session.user,
     image,
+    bio: null,
     teamLeadName
   };
 }

@@ -23,6 +23,7 @@ interface DashboardLayoutProps {
     companyName?: string | null;
     teamLeadName?: string | null;
     image?: string | null;
+    bio?: string | null;
   };
 }
 

@@ -245,6 +245,7 @@ model user {
   lastActiveAt                             DateTime?
   password                                 String?
   isDnd                                    Boolean          @default(false)
+  bio                                      String?          @db.Text
   account_account_createdByIdTouser        account[]        @relation("account_createdByIdTouser")
   account_account_updatedByIdTouser        account[]        @relation("account_updatedByIdTouser")
   accounthistory                           accounthistory[]
