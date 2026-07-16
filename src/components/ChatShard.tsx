@@ -94,6 +94,8 @@ export default function ChatShard({
   const [showChatSearch, setShowChatSearch] = useState(false);
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
@@ -1196,11 +1198,69 @@ export default function ChatShard({
     });
   };
 
-  const handleSendAttachment = (fileName: string, fileType: string) => {
+  const handleSendAttachment = (fileName: string, fileType: string, fileSize?: string, fileUrl?: string) => {
     setShowAttachmentModal(false);
-    const text = `📎 ATTACHMENT [${fileType}]: ${fileName}`;
+    const text = fileUrl
+      ? `📎 ATTACHMENT [${fileType}]: ${fileName}${fileSize ? `|${fileSize}` : ""}${fileUrl ? `::${fileUrl}` : ""}`
+      : `📎 ATTACHMENT [${fileType}]: ${fileName}`;
     submitMessage(text);
     toast.success("Attachment file dispatched!");
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Enforce 50MB limit
+    const maxBytes = 50 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      toast.error("File exceeds maximum size of 50MB.");
+      e.target.value = ""; // clear input
+      return;
+    }
+
+    setIsUploading(true);
+    setShowAttachmentModal(false);
+    const uploadToastId = toast.loading(`Uploading "${file.name}"...`);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/chat/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to upload file.");
+      }
+
+      toast.dismiss(uploadToastId);
+      toast.success("File uploaded successfully!");
+
+      // Determine general fileType category
+      let fileType = "file";
+      if (file.type.startsWith("image/")) fileType = "image";
+      else if (file.type === "text/csv") fileType = "csv";
+      else if (file.name.endsWith(".csv")) fileType = "csv";
+      else if (file.name.endsWith(".txt") || file.name.endsWith(".log")) fileType = "log";
+
+      // Format readable file size
+      let sizeText = `${(file.size / 1024).toFixed(1)} KB`;
+      if (file.size > 1024 * 1024) {
+        sizeText = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      handleSendAttachment(file.name, fileType, sizeText, data.fileUrl);
+    } catch (err: any) {
+      toast.dismiss(uploadToastId);
+      toast.error(err.message || "Failed to upload file.");
+    } finally {
+      setIsUploading(false);
+      e.target.value = ""; // clear input
+    }
   };
 
   const renderMessageContentWithMentions = (text: string, isOwnMessage: boolean) => {
@@ -2562,13 +2622,17 @@ export default function ChatShard({
                 
                 let fileName = "";
                 let fileType = "";
+                let fileSizeInfo = "";
+                let fileUrl = "";
                 let cleanMessage = m.message;
 
                 if (isAttachment) {
-                  const match = m.message.match(/📎 ATTACHMENT \[(.*?)\]: (.*)/);
+                  const match = m.message.match(/📎 ATTACHMENT \[(.*?)\]: (.*?)(?:\|(.*?))?(?:::(.*))?$/);
                   if (match) {
                     fileType = match[1];
                     fileName = match[2];
+                    fileSizeInfo = match[3] || "";
+                    fileUrl = match[4] || "";
                   }
                 }
 
@@ -2668,42 +2732,51 @@ export default function ChatShard({
                       )}
                       
                       {/* Structured media preview card for future image/thumbnail rendering */}
-                      {isAttachment && (
-                        <div className="media-preview-container" style={{
-                          background: isOwn ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.04)",
-                          border: "1px solid rgba(0, 0, 0, 0.08)",
-                          borderRadius: "8px",
-                          padding: "0.75rem",
-                          marginBottom: "0.5rem",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          width: "220px"
-                        }}>
-                          <div style={{
-                            width: "2.25rem",
-                            height: "2.25rem",
-                            background: isOwn ? "#FFFFFF" : "var(--gold-primary)",
-                            color: isOwn ? "#0250A1" : "#FFFFFF",
-                            borderRadius: "6px",
+                      {isAttachment && (() => {
+                        const previewCard = (
+                          <div className="media-preview-container" style={{
+                            background: isOwn ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.04)",
+                            border: "1px solid rgba(0, 0, 0, 0.08)",
+                            borderRadius: "8px",
+                            padding: "0.75rem",
+                            marginBottom: "0.5rem",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "1.2rem",
-                            fontWeight: "bold"
+                            gap: "0.75rem",
+                            width: "220px",
+                            cursor: fileUrl ? "pointer" : "default"
                           }}>
-                            {fileType === "image" ? "🖼️" : fileType === "csv" ? "📊" : "📄"}
+                            <div style={{
+                              width: "2.25rem",
+                              height: "2.25rem",
+                              background: isOwn ? "#FFFFFF" : "var(--gold-primary)",
+                              color: isOwn ? "#0250A1" : "#FFFFFF",
+                              borderRadius: "6px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "1.2rem",
+                              fontWeight: "bold"
+                            }}>
+                              {fileType === "image" ? "🖼️" : fileType === "csv" ? "📊" : "📄"}
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", textAlign: "left" }}>
+                              <span style={{ fontSize: "0.75rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {fileName}
+                              </span>
+                              <span style={{ fontSize: "0.62rem", opacity: 0.8 }}>
+                                {fileSizeInfo || (fileType === "image" ? "PNG Image" : fileType === "csv" ? "CSV Sheet" : "File Attachment")}
+                              </span>
+                            </div>
                           </div>
-                          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                            <span style={{ fontSize: "0.75rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {fileName}
-                            </span>
-                            <span style={{ fontSize: "0.62rem", opacity: 0.8 }}>
-                              {fileType === "image" ? "1.2 MB • PNG Image" : fileType === "csv" ? "12 KB • CSV Sheet" : "8 KB • Text Log"}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                        );
+
+                        return fileUrl ? (
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", color: "inherit", display: "inline-block" }}>
+                            {previewCard}
+                          </a>
+                        ) : previewCard;
+                      })()}
 
                       {/* Message payload */}
                       <span style={{ fontSize: "0.86rem", lineHeight: "1.4", wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
@@ -3038,11 +3111,17 @@ export default function ChatShard({
             )}
 
             {/* Attachment Clip selector button */}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              style={{ display: "none" }} 
+              onChange={handleFileChange} 
+            />
             <button
               type="button"
               onClick={() => setShowAttachmentModal(!showAttachmentModal)}
               style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex" }}
-              title="Simulate Attachment"
+              title="Add Attachment"
             >
               <Paperclip size={20} />
             </button>
@@ -3064,8 +3143,24 @@ export default function ChatShard({
                 boxShadow: "var(--shadow-premium)"
               }}>
                 <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase" }}>
-                  Select Simulated File
+                  Select or Upload File
                 </div>
+                
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", textAlign: "left", padding: "0.25rem 0", color: "var(--gold-premium)", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.25rem" }}
+                  className="chat-channel-item"
+                >
+                  📁 Upload from Device
+                </button>
+
+                <div style={{ borderTop: "1px solid var(--border-dim)", margin: "0.25rem 0" }} />
+
+                <div style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                  Simulated Files
+                </div>
+
                 <button
                   type="button"
                   onClick={() => handleSendAttachment("error_diagnostics.png", "image")}
