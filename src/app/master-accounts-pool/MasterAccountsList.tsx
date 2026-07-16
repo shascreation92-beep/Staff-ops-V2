@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Mail, Shield, User, CircleDot, Database } from "lucide-react";
+import { Search, Mail, Shield, User, CircleDot, Database, MessageSquare, Lock, Copy, Check, X } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { useSearchParams } from "next/navigation";
+import { updateAccount2FACodeAction } from "@/app/actions/accounts";
+import { toast } from "react-hot-toast";
 
 interface Account {
   id: string;
@@ -13,6 +15,7 @@ interface Account {
   status: string;
   issueType?: string | null;
   createdAt: Date | string;
+  comment?: string | null;
   platform: {
     id: string;
     name: string;
@@ -46,6 +49,19 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
   const [selectedStatus, setSelectedStatus] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // 2FA Comments Modal States
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [twoFactorInput, setTwoFactorInput] = useState("");
+  const [isSaving2FA, setIsSaving2FA] = useState(false);
+  const [copiedState, setCopiedState] = useState(false);
+
+  const [accountsList, setAccountsList] = useState<Account[]>(initialAccounts);
+
+  useEffect(() => {
+    setAccountsList(initialAccounts);
+  }, [initialAccounts]);
+
   useEffect(() => {
     const searchVal = searchParams.get("search");
     const platformVal = searchParams.get("platform");
@@ -60,7 +76,7 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
     setCurrentPage(1);
   }, [searchTerm, selectedPlatform, selectedStatus]);
 
-  const filteredAccounts = initialAccounts.filter((acc) => {
+  const filteredAccounts = accountsList.filter((acc) => {
     // Search filter
     const term = searchTerm.toLowerCase();
     const serialMatch = acc.serialCode.toLowerCase().includes(term);
@@ -156,6 +172,30 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
     const mins = d.getMinutes().toString().padStart(2, "0");
     const secs = d.getSeconds().toString().padStart(2, "0");
     return `${hrs}:${mins}:${secs}`;
+  };
+
+  const handleSave2FA = async () => {
+    if (!editingAccount) return;
+    setIsSaving2FA(true);
+    try {
+      const res = await updateAccount2FACodeAction(editingAccount.id, twoFactorInput);
+      if (res.success) {
+        setAccountsList(prev => 
+          prev.map(acc => 
+            acc.id === editingAccount.id 
+              ? { ...acc, comment: twoFactorInput } 
+              : acc
+          )
+        );
+        setShow2FAModal(false);
+        setEditingAccount(null);
+        toast.success("2FA credentials saved successfully!");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update 2FA code.");
+    } finally {
+      setIsSaving2FA(false);
+    }
   };
 
   return (
@@ -266,14 +306,15 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
           <table className="compact-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: "900px" }}>
             <thead>
               <tr style={{ background: "#0250A1" }}>
-                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)" }}>ADDED BY</th>
-                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)" }}>TEAM LEAD</th>
-                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)" }}>PLATFORM</th>
-                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)" }}>ID SERIAL</th>
-                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)" }}>ID NAME</th>
-                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)" }}>ADS PUB.</th>
-                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)" }}>TIME OF ENTRY</th>
-                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)" }}>STATUS</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>ADDED BY</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>TEAM LEAD</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>PLATFORM</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>ID SERIAL</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>ID NAME</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>ADS PUB.</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>TIME OF ENTRY</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>2FA</th>
+                <th style={{ color: "#FFFFFF", padding: "0.5rem 0.6rem", fontSize: "0.8rem", fontWeight: 700, borderBottom: "1.5px solid var(--border-gold)", textAlign: "center" }}>STATUS</th>
               </tr>
             </thead>
             <tbody>
@@ -285,19 +326,66 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
 
                 return (
                   <tr key={acc.id} style={{ borderBottom: "1px solid var(--border-dim)" }}>
-                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>{creatorName}</td>
-                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)" }}>{managerName}</td>
-                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)" }}>{acc.platform.name}</td>
-                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>{acc.serialCode}</td>
-                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)" }}>{acc.idName}</td>
-                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>{acc.adsPublished.toString()}</td>
-                    <td style={{ padding: "0.5rem 0.6rem" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.05rem" }}>
+                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)", textAlign: "center" }}>{creatorName}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)", textAlign: "center" }}>{managerName}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)", textAlign: "center" }}>{acc.platform.name}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", textAlign: "center" }}>{acc.serialCode}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", color: "var(--text-secondary)", textAlign: "center" }}>{acc.idName}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", textAlign: "center" }}>{acc.adsPublished.toString()}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", textAlign: "center" }}>
+                      <div style={{ display: "inline-flex", flexDirection: "column", gap: "0.05rem", alignItems: "center" }}>
                         <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--text-primary)" }}>{formatDate(acc.createdAt)}</span>
                         <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>{formatTime(acc.createdAt)}</span>
                       </div>
                     </td>
-                    <td style={{ padding: "0.5rem 0.6rem" }}>{getStatusBadge(acc.status)}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", textAlign: "center" }}>
+                      {currentUserRole === "IT_DEPARTMENT" || currentUserRole === "SUPER_ADMIN" ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingAccount(acc);
+                            setTwoFactorInput(acc.comment || "");
+                            setCopiedState(false);
+                            setShow2FAModal(true);
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: acc.comment ? "var(--gold-premium)" : "var(--text-muted)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "0.25rem",
+                            borderRadius: "4px",
+                            transition: "all 0.2s"
+                          }}
+                          title={acc.comment ? "View / Edit 2FA Credentials" : "Add 2FA Credentials"}
+                        >
+                          <MessageSquare size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => toast.error("Access restricted: 2FA codes are only visible to the IT Department.")}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "var(--text-muted)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "0.25rem",
+                            opacity: 0.6
+                          }}
+                          title="2FA Locked - IT Department Only"
+                        >
+                          <Lock size={14} />
+                        </button>
+                      )}
+                    </td>
+                    <td style={{ padding: "0.5rem 0.6rem", textAlign: "center" }}>{getStatusBadge(acc.status)}</td>
                   </tr>
                 );
               })}
@@ -397,6 +485,122 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
           </div>
         )}
       </div>
+
+      {/* Secure 2FA comments Modal */}
+      {show2FAModal && editingAccount && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(15, 23, 42, 0.3)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "420px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>2FA Credentials</h3>
+                <span style={{ fontSize: "0.68rem", color: "var(--gold-premium)", fontWeight: 700 }}>
+                  ID Serial: {editingAccount.serialCode}
+                </span>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => { setShow2FAModal(false); setEditingAccount(null); }} 
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  2FA Codes / Comments
+                </label>
+                {twoFactorInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(twoFactorInput);
+                      setCopiedState(true);
+                      setTimeout(() => setCopiedState(false), 2000);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "0.65rem",
+                      color: copiedState ? "#10B981" : "var(--gold-primary)",
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.2rem"
+                    }}
+                  >
+                    {copiedState ? <Check size={11} /> : <Copy size={11} />}
+                    {copiedState ? "Copied!" : "Copy Code"}
+                  </button>
+                )}
+              </div>
+              <textarea
+                rows={5}
+                value={twoFactorInput}
+                onChange={(e) => setTwoFactorInput(e.target.value)}
+                placeholder="Paste the 2FA secret key, backup codes, or authenticator configuration..."
+                style={{
+                  width: "100%",
+                  padding: "0.6rem 0.75rem",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-dim)",
+                  fontSize: "0.82rem",
+                  outline: "none",
+                  resize: "none",
+                  fontFamily: "inherit",
+                  background: "#F9FAFB",
+                  lineHeight: "1.4"
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+              <button
+                type="button"
+                className="btn-glass"
+                onClick={() => { setShow2FAModal(false); setEditingAccount(null); }}
+                style={{ padding: "0.5rem 1rem", fontSize: "0.78rem" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-gold"
+                onClick={handleSave2FA}
+                disabled={isSaving2FA}
+                style={{ padding: "0.5rem 1.25rem", fontSize: "0.78rem" }}
+              >
+                {isSaving2FA ? "Saving..." : "Save Codes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

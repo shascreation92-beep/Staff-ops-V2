@@ -737,3 +737,55 @@ export async function updateAccountITNotesAction(accountId: string, itNotes: str
     throw new Error(error.message || "Failed to update IT comments.");
   }
 }
+
+export async function updateAccount2FACodeAction(accountId: string, twoFactorCode: string) {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"]);
+
+  // Fetch the account to check exists
+  const account = await db.account.findUnique({
+    where: { id: accountId }
+  });
+
+  if (!account) {
+    throw new Error("Account not found.");
+  }
+
+  // Multi-tenant check
+  if (user.role !== "SUPER_ADMIN" && account.companyId !== user.companyId) {
+    throw new Error("UNAUTHORIZED: Access denied.");
+  }
+
+  try {
+    const updatedAccount = await db.account.update({
+      where: { id: accountId },
+      data: {
+        comment: twoFactorCode,
+        updatedById: user.id,
+        updatedAt: new Date()
+      }
+    });
+
+    // Log the change
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "",
+      userRole: user.role,
+      action: "UPDATE_2FA",
+      entity: "account",
+      entityId: accountId,
+      oldValue: account.comment || "",
+      newValue: twoFactorCode
+    });
+
+    try {
+      revalidatePath("/accounts");
+      revalidatePath("/master-accounts-pool");
+    } catch (revalErr: any) {
+      console.warn("Non-fatal revalidation warning:", revalErr.message || revalErr);
+    }
+
+    return { success: true, account: updatedAccount };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update 2FA code.");
+  }
+}
