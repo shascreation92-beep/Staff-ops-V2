@@ -1693,22 +1693,40 @@ export default function ChatShard({
                           position: "relative"
                         }}
                       >
-                        <div className="user-avatar-gold" style={{
-                          width: "2.25rem",
-                          height: "2.25rem",
-                          borderRadius: "50%",
-                          position: "relative",
-                          overflow: "hidden",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: "transparent"
-                        }}>
-                          <img 
-                            src={item.image || "/uploads/avatars/default-avatar.png"} 
-                            alt={item.name || "User"} 
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                          />
+                        <div style={{ position: "relative" }}>
+                          <div className="user-avatar-gold" style={{
+                            width: "2.25rem",
+                            height: "2.25rem",
+                            borderRadius: "50%",
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "transparent"
+                          }}>
+                            <img 
+                              src={item.image || "/uploads/avatars/default-avatar.png"} 
+                              alt={item.name || "User"} 
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                            />
+                          </div>
+                          {statusInfo && (
+                            <div 
+                              className={statusInfo.pulse ? "pulse-critical-dot" : ""}
+                              style={{
+                                position: "absolute",
+                                bottom: "-2px",
+                                right: "-2px",
+                                width: "9px",
+                                height: "9px",
+                                borderRadius: "50%",
+                                background: statusInfo.color,
+                                border: "2px solid #FFFFFF",
+                                boxShadow: `0 0 4px ${statusInfo.color}`
+                              }} 
+                              title={statusInfo.label}
+                            />
+                          )}
                         </div>
 
                         <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
@@ -1743,19 +1761,7 @@ export default function ChatShard({
                             </div>
                           )}
 
-                          {statusInfo && (
-                            <div 
-                              className={statusInfo.pulse ? "pulse-critical-dot" : ""}
-                              style={{
-                                width: "8px",
-                                height: "8px",
-                                borderRadius: "50%",
-                                background: statusInfo.color,
-                                transition: "background 0.3s ease"
-                              }} 
-                              title={statusInfo.label}
-                            />
-                          )}
+
                         </div>
                       </div>
                     );
@@ -1821,23 +1827,41 @@ export default function ChatShard({
                             transition: "background 0.2s"
                           }}
                         >
-                          <div className="user-avatar-gold" style={{
-                            width: "2.25rem",
-                            height: "2.25rem",
-                            borderRadius: "50%",
-                            position: "relative",
-                            overflow: "hidden",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "transparent"
-                          }}>
-                            <img 
-                              src={item.image || "/uploads/avatars/default-avatar.png"} 
-                              alt={item.name || "User"} 
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                            />
-                          </div>
+                           <div style={{ position: "relative" }}>
+                             <div className="user-avatar-gold" style={{
+                               width: "2.25rem",
+                               height: "2.25rem",
+                               borderRadius: "50%",
+                               overflow: "hidden",
+                               display: "flex",
+                               alignItems: "center",
+                               justifyContent: "center",
+                               background: "transparent"
+                             }}>
+                               <img 
+                                 src={item.image || "/uploads/avatars/default-avatar.png"} 
+                                 alt={item.name || "User"} 
+                                 style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                               />
+                             </div>
+                             {statusInfo && (
+                               <div 
+                                 className={statusInfo.pulse ? "pulse-critical-dot" : ""}
+                                 style={{
+                                   position: "absolute",
+                                   bottom: "-2px",
+                                   right: "-2px",
+                                   width: "9px",
+                                   height: "9px",
+                                   borderRadius: "50%",
+                                   background: statusInfo.color,
+                                   border: "2px solid #FFFFFF",
+                                   boxShadow: `0 0 4px ${statusInfo.color}`
+                                 }} 
+                                 title={statusInfo.label}
+                               />
+                             )}
+                           </div>
 
                           <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
                             <span style={{ fontSize: "0.85rem", fontWeight: 600, color: isSelected ? "var(--text-primary)" : "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.25rem" }}>
@@ -1866,19 +1890,7 @@ export default function ChatShard({
                               </div>
                             )}
 
-                            {statusInfo && (
-                              <div 
-                                className={statusInfo.pulse ? "pulse-critical-dot" : ""}
-                                style={{
-                                  width: "8px",
-                                  height: "8px",
-                                  borderRadius: "50%",
-                                  background: statusInfo.color,
-                                  transition: "background 0.3s ease"
-                                }} 
-                                title={statusInfo.label}
-                              />
-                            )}
+
                           </div>
                         </div>
                       </div>
@@ -2006,24 +2018,37 @@ export default function ChatShard({
                           transition: "background 0.2s"
                         }}
                       >
-                        <div className="user-avatar-gold" style={{ width: "2rem", height: "2rem", borderRadius: "50%", overflow: "hidden" }}>
-                          <img 
-                            src={c.image || "/uploads/avatars/default-avatar.png"} 
-                            alt={c.name || "User"} 
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                          />
+                        <div style={{ position: "relative" }}>
+                          <div className="user-avatar-gold" style={{ width: "2rem", height: "2rem", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <img 
+                              src={c.image || "/uploads/avatars/default-avatar.png"} 
+                              alt={c.name || "User"} 
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                            />
+                          </div>
+                          {statusInfo && (
+                            <div 
+                              className={statusInfo.pulse ? "pulse-critical-dot" : ""}
+                              style={{
+                                position: "absolute",
+                                bottom: "-2px",
+                                right: "-2px",
+                                width: "9px",
+                                height: "9px",
+                                borderRadius: "50%",
+                                background: statusInfo.color,
+                                border: "2px solid #FFFFFF",
+                                boxShadow: `0 0 4px ${statusInfo.color}`
+                              }} 
+                              title={statusInfo.label}
+                            />
+                          )}
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
                           <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>{c.name}</span>
                           <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>{c.role.replace(/_/g, " ")}</span>
                         </div>
-                        {statusInfo && (
-                          <div 
-                            className={statusInfo.pulse ? "pulse-critical-dot" : ""}
-                            style={{ width: "8px", height: "8px", borderRadius: "50%", background: statusInfo.color }}
-                            title={statusInfo.label}
-                          />
-                        )}
+
                       </div>
                     );
                   })}
