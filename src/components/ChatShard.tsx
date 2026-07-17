@@ -3820,59 +3820,88 @@ export default function ChatShard({
 
           {/* Operational Stats or Group Info */}
           {!activeContact.isGroup ? (
-            currentUser.role !== "SALES_ASSOCIATE" ? (
-              <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Operational Stats
-                </h5>
+            activeContact.role === "TEAM_LEAD" || activeContact.role === "SALES_ASSOCIATE" ? (
+              currentUser.role !== "SALES_ASSOCIATE" ? (
+                <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Operational Stats
+                  </h5>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                  <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Total IDs</span>
-                    <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{formatNumber(getColleagueStats(activeContact).totalIds)}</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                    <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Total IDs</span>
+                      <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{formatNumber(getColleagueStats(activeContact).totalIds)}</span>
+                    </div>
+                    <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Unverified</span>
+                      <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).unverifiedAccounts > 0 ? "#F59E0B" : "var(--text-primary)" }}>
+                        {formatNumber(getColleagueStats(activeContact).unverifiedAccounts)}
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Unverified</span>
-                    <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).unverifiedAccounts > 0 ? "#F59E0B" : "var(--text-primary)" }}>
-                      {formatNumber(getColleagueStats(activeContact).unverifiedAccounts)}
-                    </span>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                    <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Suspended</span>
+                      <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).suspendedAccounts > 0 ? "#EF4444" : "var(--text-primary)" }}>
+                        {formatNumber(getColleagueStats(activeContact).suspendedAccounts)}
+                      </span>
+                    </div>
+                    <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>FB / Vinted</span>
+                      <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", paddingTop: "0.25rem" }}>
+                        {formatNumber(getColleagueStats(activeContact).fbAccounts)} / {formatNumber(getColleagueStats(activeContact).vintedAccounts)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                  <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Suspended</span>
-                    <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).suspendedAccounts > 0 ? "#EF4444" : "var(--text-primary)" }}>
-                      {formatNumber(getColleagueStats(activeContact).suspendedAccounts)}
-                    </span>
-                  </div>
-                  <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>FB / Vinted</span>
-                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", paddingTop: "0.25rem" }}>
-                      {formatNumber(getColleagueStats(activeContact).fbAccounts)} / {formatNumber(getColleagueStats(activeContact).vintedAccounts)}
-                    </span>
-                  </div>
+              ) : (
+                <div style={{ 
+                  marginTop: "1.5rem", 
+                  padding: "1.25rem 1rem", 
+                  background: "rgba(2, 80, 161, 0.02)", 
+                  border: "1px solid rgba(2, 80, 161, 0.08)", 
+                  borderRadius: "10px", 
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.4rem"
+                }}>
+                  <span style={{ fontSize: "1.25rem" }}>🔒</span>
+                  <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Operational Stats Locked
+                  </h5>
+                  <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: "1.3" }}>
+                    Colleague operational performance metrics are only visible to supervisors and administrators.
+                  </p>
                 </div>
-              </div>
+              )
             ) : (
               <div style={{ 
                 marginTop: "1.5rem", 
                 padding: "1.25rem 1rem", 
                 background: "rgba(2, 80, 161, 0.02)", 
-                border: "1px solid rgba(2, 80, 161, 0.08)", 
+                border: "1px dashed rgba(2, 80, 161, 0.15)", 
                 borderRadius: "10px", 
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "0.4rem"
+                textAlign: "left"
               }}>
-                <span style={{ fontSize: "1.25rem" }}>🔒</span>
-                <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Operational Stats Locked
+                <h5 style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-premium)", margin: "0 0 0.4rem 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  System Scope & Role
                 </h5>
-                <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: "1.3" }}>
-                  Colleague operational performance metrics are only visible to supervisors and administrators.
+                <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 0.25rem 0" }}>
+                  {activeContact.role === "COMPANY_OWNER" 
+                    ? "Firm Management" 
+                    : activeContact.role === "IT_DEPARTMENT" 
+                      ? "IT Operations & Configs" 
+                      : "System Administration"}
+                </p>
+                <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: 0, lineHeight: "1.35" }}>
+                  {activeContact.role === "COMPANY_OWNER" 
+                    ? "Responsible for overseeing firm metrics, supervisor directories, and high-level team operational statuses." 
+                    : activeContact.role === "IT_DEPARTMENT" 
+                      ? "Responsible for system-wide configuration controls, 2FA credentials, user authentications, and security logs." 
+                      : "Platform administrator responsible for multi-tenant scopes, global settings, and database alignments."}
                 </p>
               </div>
             )
