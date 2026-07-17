@@ -139,6 +139,7 @@ model company {
   rule          rule[]
   user          user[]
   chatgroup     chatgroup[]
+  specialrequest specialrequest[]
 }
 
 model employee {
@@ -266,6 +267,7 @@ model user {
   chatgroup_created                        chatgroup[]      @relation("group_createdBy")
   chatstar                                 chatstar[]
   chatjoinrequest                          chatjoinrequest[]
+  specialrequest                           specialrequest[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -476,5 +478,25 @@ model chatjoinrequest {
   @@unique([groupId, userId], map: "ChatJoinRequest_groupId_userId_key")
   @@index([groupId], map: "ChatJoinRequest_groupId_fkey")
   @@index([userId], map: "ChatJoinRequest_userId_fkey")
+}
+
+model specialrequest {
+  id          String   @id
+  companyId   String
+  requesterId String
+  title       String
+  description String   @db.Text
+  category    String   // "IT" or "COMPANY"
+  status      String   @default("PENDING") // "PENDING", "IN_PROGRESS", "RESOLVED", "REJECTED"
+  priority    String   @default("MEDIUM")  // "LOW", "MEDIUM", "HIGH", "URGENT"
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "SpecialRequest_companyId_fkey")
+  requester   user     @relation(fields: [requesterId], references: [id], onDelete: Cascade, map: "SpecialRequest_requesterId_fkey")
+
+  @@index([companyId], map: "SpecialRequest_companyId_fkey")
+  @@index([requesterId], map: "SpecialRequest_requesterId_fkey")
 }
 

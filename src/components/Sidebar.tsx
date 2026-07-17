@@ -18,7 +18,8 @@ import {
   ClipboardCheck,
   Megaphone,
   Wallet,
-  Pencil
+  Pencil,
+  HelpCircle
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -396,6 +397,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       path: "/personal-notes", 
       icon: FileText,
       roles: ["TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
+    },
+    { 
+      id: "special-requests", 
+      label: ["TEAM_LEAD", "SALES_ASSOCIATE"].includes(user.role) ? "Special Request" : "Special Requests", 
+      path: "/special-requests", 
+      icon: HelpCircle,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     { 
       id: "announcements", 
