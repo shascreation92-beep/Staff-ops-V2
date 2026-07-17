@@ -349,7 +349,7 @@ export default function SpecialRequestsList({
                       if (ccIds.length === 0) return null;
                       return (
                         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
-                          <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.02em" }}>CC'd:</span>
+                          <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.02em" }}>CC&apos;d:</span>
                           {ccIds.map(id => {
                             const found = companyUsers?.find(cu => cu.id === id);
                             const displayName = found ? (found.name || found.email) : "Colleague";
@@ -544,7 +544,7 @@ export default function SpecialRequestsList({
                       if (filtered.length === 0) {
                         return (
                           <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.25rem 0" }}>
-                            No colleagues found matching "{ccSearchQuery}"
+                            No colleagues found matching &quot;{ccSearchQuery}&quot;
                           </span>
                         );
                       }
@@ -601,8 +601,8 @@ export default function SpecialRequestsList({
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.3)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100, padding: "1rem" }}>
           <div className="glass-panel" style={{ width: "100%", maxWidth: "460px", background: "#FFFFFF", border: "1px solid var(--border-dim)", padding: "1.5rem", borderRadius: "12px", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <div>
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>Manage Request: "{selectedTicket.title}"</h3>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>Update the ticket's status and add resolution remarks.</p>
+              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>Manage Request: &quot;{selectedTicket.title}&quot;</h3>
+              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>Update the ticket&apos;s status and add resolution remarks.</p>
             </div>
 
             <form onSubmit={handleUpdateStatus} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>

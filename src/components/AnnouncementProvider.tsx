@@ -262,7 +262,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  const openAnnouncementById = async (noteId: string) => {
+  async function openAnnouncementById(noteId: string) {
     if (noteId.startsWith("global-")) {
       const realAnnId = noteId.replace("global-", "");
       const found = announcements.find(a => a.id === realAnnId);
@@ -279,7 +279,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
     } catch (e: any) {
       alert(e.message || "Failed to load announcement details.");
     }
-  };
+  }
 
   const handleAcknowledgeAlert = (annId: string) => {
     const updated = [...acknowledgedAlerts, annId];
