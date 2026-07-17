@@ -140,6 +140,7 @@ model company {
   user          user[]
   chatgroup     chatgroup[]
   specialrequest specialrequest[]
+  tenanttrendsconfig tenanttrendsconfig?
 }
 
 model employee {
@@ -500,4 +501,26 @@ model specialrequest {
   @@index([companyId], map: "SpecialRequest_companyId_fkey")
   @@index([requesterId], map: "SpecialRequest_requesterId_fkey")
 }
+
+model uktrend {
+  id           String   @id
+  keyword      String
+  traffic      String
+  spikePercent Int
+  newsUrl      String   @db.Text
+  newsTitle    String   @db.Text
+  newsSource   String
+  category     String   // "BEDS", "SOFAS", "WARDROBES", "GENERAL"
+  createdAt    DateTime @default(now())
+}
+
+model tenanttrendsconfig {
+  id              String   @id
+  companyId       String   @unique
+  defaultCategory String   @default("ALL")
+  notes           String?  @db.Text
+  updatedAt       DateTime @updatedAt
+  company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "TenantTrendsConfig_companyId_fkey")
+}
+
 

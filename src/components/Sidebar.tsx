@@ -19,7 +19,8 @@ import {
   Megaphone,
   Wallet,
   Pencil,
-  HelpCircle
+  HelpCircle,
+  TrendingUp
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -426,6 +427,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       path: "/special-requests", 
       icon: HelpCircle,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
+    },
+    {
+      id: "uk-market-trends",
+      label: "UK Market Trends",
+      path: "/uk-market-trends",
+      icon: TrendingUp,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]
     },
     { 
       id: "announcements", 
