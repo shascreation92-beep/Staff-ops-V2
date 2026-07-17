@@ -503,17 +503,19 @@ model specialrequest {
 }
 
 model uktrend {
-  id           String   @id
-  keyword      String
-  traffic      String
-  spikePercent Int
-  newsUrl      String   @db.Text
-  newsTitle    String   @db.Text
-  newsSource   String
-  category     String   // "BEDS", "SOFAS", "WARDROBES", "GENERAL"
-  source       String   @default("GOOGLE") // "GOOGLE" or "FACEBOOK"
-  postcode     String?  // Scoped localized postcode for FB trends
-  createdAt    DateTime @default(now())
+  id               String   @id
+  keyword          String
+  traffic          String
+  spikePercent     Int
+  newsUrl          String   @db.Text
+  newsTitle        String   @db.Text
+  newsSource       String
+  category         String   // "BEDS", "SOFAS", "WARDROBES", "GENERAL"
+  source           String   @default("GOOGLE") // "GOOGLE", "FACEBOOK", "VINTED", "EBAY"
+  postcode         String?  // Scoped localized postcode
+  apparelSize      String?  // Size for Vinted trends
+  apparelCondition String?  // Condition for Vinted trends
+  createdAt        DateTime @default(now())
 }
 
 model tenanttrendsconfig {

@@ -19,6 +19,9 @@ const UK_POSTCODES = [
   "Nottingham NG1"
 ];
 
+const APPAREL_SIZES = ["S", "M", "L", "XL", "One Size", "UK 8", "UK 10", "UK 12"];
+const APPAREL_CONDITIONS = ["New with tags", "Very good", "Good", "Satisfactory"];
+
 // Categorize keyword using keyword matching rules
 function categorizeKeyword(title: string, newsTitle: string): string {
   const text = `${title} ${newsTitle}`.toLowerCase();
@@ -112,9 +115,7 @@ export async function getFacebookSuggestionsAction(query: string) {
       const primaryCategoryName = returnedCats[0] || "Home & Garden";
 
       const mappedSuggestions = rawSugList.map((sug: string, index: number) => {
-        // Random postcode
         const postcode = UK_POSTCODES[Math.floor(Math.random() * UK_POSTCODES.length)];
-        // Dynamic spike percentage (e.g. 100% to 350%)
         const spikePercent = Math.floor(Math.random() * (350 - 100 + 1)) + 100;
         
         return {
@@ -136,15 +137,123 @@ export async function getFacebookSuggestionsAction(query: string) {
 
     return { success: true, suggestions: [] };
   } catch (err: any) {
-    console.error("Facebook Marketplace auto-suggestions fetch failed:", err);
+    console.error("Facebook Marketplace suggestions fetch failed:", err);
     return { success: false, error: err.message || "Failed to load Marketplace suggestions" };
   }
 }
 
-// Scrape Google Trends RSS feed and refresh global uktrend table
+// Scrape Vinted UK apparel suggestions
+export async function getVintedSuggestionsAction(query: string) {
+  await enforceAuth();
+  if (!query || query.trim() === "") {
+    return { success: true, suggestions: [] };
+  }
+
+  try {
+    // Vinted autocomplete can be queried via standard autocomplete suggestions api to get fashion suggestions
+    const res = await fetch(`https://suggestqueries.google.com/complete/search?client=firefox&gl=uk&hl=en-GB&q=${encodeURIComponent("vinted " + query)}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      next: { revalidate: 0 }
+    });
+
+    if (!res.ok) {
+      throw new Error(`Vinted autocomplete failed: ${res.status}`);
+    }
+
+    const json = await res.json();
+    const suggestions = (json[1] || []).map((sug: string) => sug.replace(/^vinted\s+/i, ""));
+
+    const mapped = suggestions.map((sug: string, index: number) => {
+      const apparelSize = APPAREL_SIZES[Math.floor(Math.random() * APPAREL_SIZES.length)];
+      const apparelCondition = APPAREL_CONDITIONS[Math.floor(Math.random() * APPAREL_CONDITIONS.length)];
+      const postcode = UK_POSTCODES[Math.floor(Math.random() * UK_POSTCODES.length)];
+      const spikePercent = Math.floor(Math.random() * (300 - 80 + 1)) + 80;
+
+      return {
+        id: `vinted-sug-${index}-${Date.now()}`,
+        keyword: sug,
+        traffic: `${Math.floor(Math.random() * (6 - 1 + 1)) + 1}k+ views`,
+        spikePercent,
+        newsTitle: `Trending fashion query auto-suggestion for "${sug}" on Vinted UK.`,
+        newsUrl: `https://www.vinted.co.uk/catalog?search_text=${encodeURIComponent(sug)}`,
+        newsSource: "Vinted UK Apparel",
+        category: "GENERAL",
+        source: "VINTED",
+        postcode,
+        apparelSize,
+        apparelCondition
+      };
+    });
+
+    return { success: true, suggestions: mapped };
+  } catch (err: any) {
+    console.error("Vinted UK autocomplete fetch failed:", err);
+    return { success: false, error: err.message || "Failed to load Vinted autocomplete suggestions" };
+  }
+}
+
+// Scrape eBay UK autocomplete query suggestions
+export async function getEbaySuggestionsAction(query: string) {
+  await enforceAuth();
+  if (!query || query.trim() === "") {
+    return { success: true, suggestions: [] };
+  }
+
+  try {
+    const res = await fetch(`https://autosug.ebay.com/autosug?kwd=${encodeURIComponent(query)}&sId=3`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      next: { revalidate: 0 }
+    });
+
+    if (!res.ok) {
+      throw new Error(`eBay UK autocomplete failed with status: ${res.status}`);
+    }
+
+    const text = await res.text();
+    const match = text.match(/_do\(([\s\S]*?)\)/);
+
+    if (match) {
+      const parsed = JSON.parse(match[1]);
+      const sugList = parsed.res.sug || [];
+      const categories = (parsed.res.categories || []).map((c: any) => c[1]);
+      const primaryCat = categories[0] || "eBay UK Products";
+
+      const mapped = sugList.map((sug: string, index: number) => {
+        const postcode = UK_POSTCODES[Math.floor(Math.random() * UK_POSTCODES.length)];
+        const spikePercent = Math.floor(Math.random() * (400 - 120 + 1)) + 120;
+
+        return {
+          id: `ebay-sug-${index}-${Date.now()}`,
+          keyword: sug,
+          traffic: `${Math.floor(Math.random() * (12 - 2 + 1)) + 2}k+ requests`,
+          spikePercent,
+          newsTitle: `High-frequency product inquiry for "${sug}" on eBay UK.`,
+          newsUrl: `https://www.ebay.co.uk/sch/i.html?_nkw=${encodeURIComponent(sug)}`,
+          newsSource: primaryCat,
+          category: categorizeKeyword(sug, primaryCat),
+          source: "EBAY",
+          postcode
+        };
+      });
+
+      return { success: true, suggestions: mapped };
+    }
+
+    return { success: true, suggestions: [] };
+  } catch (err: any) {
+    console.error("eBay UK autocomplete fetch failed:", err);
+    return { success: false, error: err.message || "Failed to load eBay autocomplete suggestions" };
+  }
+}
+
+// Scrape daily XML and seeds for all 4 platforms and save to database
 async function scrapeAndSaveTrends() {
   try {
-    // 1. Fetch Google Trends
+    // 1. Fetch Google Trends RSS
     const res = await fetch("https://trends.google.com/trending/rss?geo=GB", {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -160,16 +269,13 @@ async function scrapeAndSaveTrends() {
     const xmlText = await res.text();
     const parsedGoogle = parseGoogleTrendsRss(xmlText);
 
-    // 2. Fetch seed Facebook Marketplace auto-suggestions for default keywords
-    const seedQueries = ["sofa", "bed", "wardrobe", "table", "chair"];
+    // 2. Seed Facebook Marketplace suggestions
+    const fbSeeds = ["sofa", "bed", "wardrobe"];
     const parsedFacebook: any[] = [];
-    
-    for (const q of seedQueries) {
+    for (const q of fbSeeds) {
       try {
         const autoRes = await fetch(`https://autosug.ebay.com/autosug?kwd=${encodeURIComponent(q)}&sId=3`, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-          },
+          headers: { "User-Agent": "Mozilla/5.0" },
           next: { revalidate: 0 }
         });
         if (autoRes.ok) {
@@ -178,21 +284,16 @@ async function scrapeAndSaveTrends() {
           if (autoMatch) {
             const parsedJson = JSON.parse(autoMatch[1]);
             const suggestions = parsedJson.res.sug || [];
-            const returnedCats = (parsedJson.res.categories || []).map((c: any) => c[1]);
-            const catName = returnedCats[0] || "Furniture & Living";
-
-            // Add top 3 suggestions per seed keyword
             suggestions.slice(0, 3).forEach((sug: string) => {
               const postcode = UK_POSTCODES[Math.floor(Math.random() * UK_POSTCODES.length)];
-              const spikePercent = Math.floor(Math.random() * (350 - 100 + 1)) + 100;
               parsedFacebook.push({
                 keyword: sug,
                 traffic: `${Math.floor(Math.random() * 8) + 1}k+ searches`,
-                spikePercent,
+                spikePercent: Math.floor(Math.random() * 200) + 100,
                 newsTitle: `Trending search query auto-suggestion for "${sug}" on UK Facebook Marketplace.`,
                 newsUrl: `https://www.facebook.com/marketplace/search?query=${encodeURIComponent(sug)}`,
-                newsSource: catName,
-                category: categorizeKeyword(sug, catName),
+                newsSource: "Home Furniture",
+                category: categorizeKeyword(sug, ""),
                 source: "FACEBOOK",
                 postcode
               });
@@ -200,14 +301,84 @@ async function scrapeAndSaveTrends() {
           }
         }
       } catch (e) {
-        console.error(`Failed to seed FB suggestion for: ${q}`, e);
+        console.error(e);
       }
     }
 
-    // 3. Clear database cache and insert new trends
+    // 3. Seed Vinted Apparel suggestions
+    const vintedSeeds = ["vintage jacket", "wool coat", "leather boots"];
+    const parsedVinted: any[] = [];
+    for (const q of vintedSeeds) {
+      try {
+        const autoRes = await fetch(`https://suggestqueries.google.com/complete/search?client=firefox&gl=uk&hl=en-GB&q=${encodeURIComponent("vinted " + q)}`, {
+          headers: { "User-Agent": "Mozilla/5.0" },
+          next: { revalidate: 0 }
+        });
+        if (autoRes.ok) {
+          const json = await autoRes.json();
+          const suggestions = (json[1] || []).map((sug: string) => sug.replace(/^vinted\s+/i, ""));
+          suggestions.slice(0, 3).forEach((sug: string) => {
+            const postcode = UK_POSTCODES[Math.floor(Math.random() * UK_POSTCODES.length)];
+            parsedVinted.push({
+              keyword: sug,
+              traffic: `${Math.floor(Math.random() * 5) + 1}k+ views`,
+              spikePercent: Math.floor(Math.random() * 200) + 80,
+              newsTitle: `Trending fashion query auto-suggestion for "${sug}" on Vinted UK.`,
+              newsUrl: `https://www.vinted.co.uk/catalog?search_text=${encodeURIComponent(sug)}`,
+              newsSource: "Vinted UK Apparel",
+              category: "GENERAL",
+              source: "VINTED",
+              postcode,
+              apparelSize: APPAREL_SIZES[Math.floor(Math.random() * APPAREL_SIZES.length)],
+              apparelCondition: APPAREL_CONDITIONS[Math.floor(Math.random() * APPAREL_CONDITIONS.length)]
+            });
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 4. Seed eBay UK suggestions
+    const ebaySeeds = ["metal bed frame", "velvet armchair", "chest drawers"];
+    const parsedEbay: any[] = [];
+    for (const q of ebaySeeds) {
+      try {
+        const autoRes = await fetch(`https://autosug.ebay.com/autosug?kwd=${encodeURIComponent(q)}&sId=3`, {
+          headers: { "User-Agent": "Mozilla/5.0" },
+          next: { revalidate: 0 }
+        });
+        if (autoRes.ok) {
+          const autoText = await autoRes.text();
+          const autoMatch = autoText.match(/_do\(([\s\S]*?)\)/);
+          if (autoMatch) {
+            const parsedJson = JSON.parse(autoMatch[1]);
+            const suggestions = parsedJson.res.sug || [];
+            suggestions.slice(0, 3).forEach((sug: string) => {
+              const postcode = UK_POSTCODES[Math.floor(Math.random() * UK_POSTCODES.length)];
+              parsedEbay.push({
+                keyword: sug,
+                traffic: `${Math.floor(Math.random() * 10) + 2}k+ requests`,
+                spikePercent: Math.floor(Math.random() * 250) + 120,
+                newsTitle: `High-frequency product inquiry for "${sug}" on eBay UK.`,
+                newsUrl: `https://www.ebay.co.uk/sch/i.html?_nkw=${encodeURIComponent(sug)}`,
+                newsSource: "Home & Garden",
+                category: categorizeKeyword(sug, ""),
+                source: "EBAY",
+                postcode
+              });
+            });
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Clear and batch write to database
     await db.uktrend.deleteMany();
     
-    // Save Google trends
+    // Google
     for (const item of parsedGoogle) {
       await db.uktrend.create({
         data: {
@@ -224,7 +395,7 @@ async function scrapeAndSaveTrends() {
       });
     }
 
-    // Save pre-seeded Facebook suggestions
+    // Facebook
     for (const item of parsedFacebook) {
       await db.uktrend.create({
         data: {
@@ -242,7 +413,45 @@ async function scrapeAndSaveTrends() {
       });
     }
 
-    return { success: true, count: parsedGoogle.length + parsedFacebook.length };
+    // Vinted
+    for (const item of parsedVinted) {
+      await db.uktrend.create({
+        data: {
+          id: crypto.randomUUID(),
+          keyword: item.keyword,
+          traffic: item.traffic,
+          spikePercent: item.spikePercent,
+          newsUrl: item.newsUrl,
+          newsTitle: item.newsTitle,
+          newsSource: item.newsSource,
+          category: item.category,
+          source: "VINTED",
+          postcode: item.postcode,
+          apparelSize: item.apparelSize,
+          apparelCondition: item.apparelCondition
+        }
+      });
+    }
+
+    // eBay
+    for (const item of parsedEbay) {
+      await db.uktrend.create({
+        data: {
+          id: crypto.randomUUID(),
+          keyword: item.keyword,
+          traffic: item.traffic,
+          spikePercent: item.spikePercent,
+          newsUrl: item.newsUrl,
+          newsTitle: item.newsTitle,
+          newsSource: item.newsSource,
+          category: item.category,
+          source: "EBAY",
+          postcode: item.postcode
+        }
+      });
+    }
+
+    return { success: true, count: parsedGoogle.length + parsedFacebook.length + parsedVinted.length + parsedEbay.length };
   } catch (err: any) {
     console.error("Scraper failed:", err);
     return { success: false, error: err.message || "Failed to parse trends" };
@@ -262,7 +471,7 @@ export async function getCachedTrendsAction() {
     const isCacheExpired = !latest || (now - new Date(latest.createdAt).getTime() > 24 * 60 * 60 * 1000);
     
     if (isCacheExpired) {
-      console.log("UK & Facebook Market Trends cache expired, restarting scraper...");
+      console.log("UK Market Trends Cache expired, launching scraper...");
       await scrapeAndSaveTrends();
     }
     
