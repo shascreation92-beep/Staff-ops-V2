@@ -271,6 +271,12 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     hasJoinRequests: false
   });
 
+  // Dynamic special requests status dot
+  const [specialRequestStatus, setSpecialRequestStatus] = useState<{ hasUnread: boolean; dotColor: "red" | "orange" | "green" | null }>({
+    hasUnread: false,
+    dotColor: null
+  });
+
   useEffect(() => {
     const fetchChatStatus = async () => {
       try {
@@ -284,6 +290,22 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
     fetchChatStatus();
     const interval = setInterval(fetchChatStatus, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchSpecialRequestStatus = async () => {
+      try {
+        const { getSpecialRequestsBadgeStatusAction } = await import("@/app/actions/special-requests");
+        const status = await getSpecialRequestsBadgeStatusAction();
+        setSpecialRequestStatus(status);
+      } catch (err) {
+        console.error("Failed to fetch special requests badge status", err);
+      }
+    };
+
+    fetchSpecialRequestStatus();
+    const interval = setInterval(fetchSpecialRequestStatus, 5000); // Poll every 5 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -661,6 +683,30 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                       title="Unread Messages"
                     />
                   )}
+                </div>
+              )}
+              {item.id === "special-requests" && specialRequestStatus.hasUnread && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+                  <span 
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: specialRequestStatus.dotColor === "red" 
+                        ? "#EF4444" 
+                        : specialRequestStatus.dotColor === "orange" 
+                          ? "#F59E0B" 
+                          : "#10B981",
+                      boxShadow: specialRequestStatus.dotColor === "red" 
+                        ? "0 0 8px #EF4444" 
+                        : specialRequestStatus.dotColor === "orange" 
+                          ? "0 0 8px #F59E0B" 
+                          : "0 0 8px #10B981",
+                      display: "inline-block",
+                      animation: specialRequestStatus.dotColor === "red" ? "pulse 1.5s infinite" : "none"
+                    }}
+                    title={`${specialRequestStatus.dotColor === "red" ? "Urgent" : specialRequestStatus.dotColor === "orange" ? "Pending" : "Normal"} Support Request`}
+                  />
                 </div>
               )}
             </Link>

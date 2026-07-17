@@ -105,6 +105,7 @@ export default function ChatShard({
     url: string;
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const attachmentModalRef = useRef<HTMLDivElement>(null);
 
@@ -472,10 +473,36 @@ export default function ChatShard({
     return () => clearInterval(interval);
   }, []);
 
-  // Scroll to bottom on new message
+  // Smart Scroll to bottom logic
+  const lastMessageCount = useRef(messages.length);
+  const scrollToBottom = (behavior: "auto" | "smooth" = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  // 1. Force scroll to bottom on contact switch
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    scrollToBottom("auto");
+  }, [activeContact]);
+
+  // 2. Scroll to bottom on message list updates if user is already at the bottom
+  useEffect(() => {
+    const prevCount = lastMessageCount.current;
+    lastMessageCount.current = messages.length;
+
+    // Scroll only if messages count increased
+    if (messages.length > prevCount) {
+      const container = messagesContainerRef.current;
+      const isUserSender = messages[messages.length - 1]?.senderId === currentUser.id;
+      
+      const isNearBottom = container
+        ? (container.scrollHeight - container.scrollTop - container.clientHeight < 120)
+        : true;
+
+      if (isUserSender || isNearBottom) {
+        scrollToBottom("smooth");
+      }
+    }
+  }, [messages, currentUser.id]);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -2566,17 +2593,20 @@ export default function ChatShard({
           </div>
 
           {/* Message Feed - Independent Scroll Region */}
-          <div style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "1.5rem",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.25rem",
-            background: "#FAFBFB",
-            minHeight: 0,
-            position: "relative"
-          }}>
+          <div 
+            ref={messagesContainerRef}
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "1.5rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem",
+              background: "#FAFBFB",
+              minHeight: 0,
+              position: "relative"
+            }}
+          >
             <div style={{
               display: "flex",
               flexDirection: "column",
@@ -4512,19 +4542,24 @@ export default function ChatShard({
           zIndex: 9999
         }}>
           <div 
-            className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl z-50"
+            className="glass-panel"
             style={{
               width: "100%",
-              maxWidth: "400px",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
+              maxWidth: "420px",
+              background: "rgba(255, 255, 255, 0.96)",
+              backdropFilter: "blur(20px)",
+              borderRadius: "24px",
+              padding: "1.75rem",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.5)",
               display: "flex",
               flexDirection: "column",
-              gap: "1rem",
+              gap: "1.2rem",
               maxHeight: "85vh"
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>Forward Message</h3>
+              <h3 style={{ fontSize: "1.15rem", fontWeight: 800, color: "#0250A1", margin: 0 }}>Forward Message</h3>
               <button 
                 onClick={() => {
                   setShowForwardModal(false);
@@ -4532,29 +4567,67 @@ export default function ChatShard({
                   setForwardSearch("");
                   setSelectedForwardTargets([]);
                 }}
-                style={{ border: "none", background: "none", cursor: "pointer", display: "flex" }}
+                style={{ border: "none", background: "none", cursor: "pointer", display: "flex", padding: "0.25rem", color: "var(--text-muted)" }}
+                className="hover-opacity"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontStyle: "italic", background: "rgba(0,0,0,0.03)", padding: "0.5rem", borderRadius: "6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{
+              background: "rgba(2, 80, 161, 0.04)",
+              borderLeft: "3.5px solid var(--gold-premium)",
+              padding: "0.6rem 0.8rem",
+              borderRadius: "8px",
+              fontSize: "0.78rem",
+              color: "var(--text-secondary)",
+              maxHeight: "60px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }}>
               "{forwardMessageContent}"
-            </p>
+            </div>
 
-            <div className="table-search-wrapper" style={{ width: "100%" }}>
-              <Search className="header-search-icon" size={14} />
+            <div style={{ position: "relative", width: "100%" }}>
+              <Search 
+                size={14} 
+                style={{ 
+                  position: "absolute", 
+                  left: "0.75rem", 
+                  top: "50%", 
+                  transform: "translateY(-50%)", 
+                  color: "var(--text-muted)" 
+                }} 
+              />
               <input
                 type="text"
                 placeholder="Search recent conversations..."
                 value={forwardSearch}
                 onChange={(e) => setForwardSearch(e.target.value)}
-                className="header-search-input"
-                style={{ fontSize: "0.8rem", padding: "0.4rem 0.5rem 0.4rem 2rem" }}
+                style={{ 
+                  fontSize: "0.82rem", 
+                  padding: "0.55rem 0.75rem 0.55rem 2.2rem",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-dim)",
+                  background: "rgba(15, 23, 42, 0.02)",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                  width: "100%",
+                  boxSizing: "border-box"
+                }}
               />
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.4rem", minHeight: "200px" }}>
+            <div style={{ 
+              flex: 1, 
+              overflowY: "auto", 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: "0.5rem", 
+              maxHeight: "280px",
+              paddingRight: "0.25rem"
+            }}>
               {[...pinnedGroups, ...pinnedChats, ...activeGroups, ...activeChats]
                 .filter(item => !forwardSearch.trim() || item.name.toLowerCase().includes(forwardSearch.toLowerCase()))
                 .map(item => {
@@ -4566,11 +4639,11 @@ export default function ChatShard({
                         display: "flex",
                         alignItems: "center",
                         gap: "0.75rem",
-                        padding: "0.5rem 0.75rem",
-                        background: isSelected ? "rgba(2, 80, 161, 0.04)" : "transparent",
-                        borderRadius: "8px",
+                        padding: "0.6rem 0.8rem",
+                        background: isSelected ? "rgba(2, 80, 161, 0.05)" : "transparent",
+                        borderRadius: "12px",
                         cursor: "pointer",
-                        border: "1px solid transparent",
+                        border: isSelected ? "1px solid rgba(2, 80, 161, 0.15)" : "1px solid var(--border-dim)",
                         transition: "all 0.15s"
                       }}
                       className="chat-channel-item"
@@ -4585,28 +4658,29 @@ export default function ChatShard({
                             setSelectedForwardTargets(prev => prev.filter(t => !(t.id === item.id && t.isGroup === item.isGroup)));
                           }
                         }}
-                        style={{ accentColor: "#0250A1", cursor: "pointer" }}
+                        style={{ accentColor: "var(--gold-premium)", cursor: "pointer" }}
                       />
                       <div style={{
-                        width: "1.75rem",
-                        height: "1.75rem",
+                        width: "1.85rem",
+                        height: "1.85rem",
                         borderRadius: "50%",
                         overflow: "hidden",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         background: "rgba(2, 80, 161, 0.08)",
-                        fontSize: "0.8rem"
-                      }} border-radius="50%">
+                        fontSize: "0.85rem",
+                        flexShrink: 0
+                      }}>
                         {item.isGroup ? (item.isPrivate ? "🔒" : "#") : (
                           <img src={item.image || "/uploads/avatars/default-avatar.png"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         )}
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                        <span style={{ fontSize: "0.8rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {item.name}
                         </span>
-                        <span style={{ fontSize: "0.62rem", color: "var(--text-muted)" }}>
+                        <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>
                           {item.isGroup ? "Group Channel" : "Direct Chat"}
                         </span>
                       </div>
@@ -4626,7 +4700,7 @@ export default function ChatShard({
                 setSelectedForwardTargets([]);
               }}
               className="btn-gold"
-              style={{ width: "100%", padding: "0.6rem", fontSize: "0.82rem", fontWeight: 800 }}
+              style={{ width: "100%", padding: "0.7rem", fontSize: "0.88rem", fontWeight: 800, marginTop: "0.4rem" }}
             >
               Confirm Forward ({selectedForwardTargets.length})
             </button>

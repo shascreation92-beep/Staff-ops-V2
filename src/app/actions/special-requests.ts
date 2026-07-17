@@ -9,7 +9,8 @@ const CreateTicketSchema = z.object({
   category: z.enum(["IT", "COMPANY"]),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
   title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required")
+  description: z.string().min(1, "Description is required"),
+  ccUserIds: z.array(z.string()).optional()
 });
 
 export async function createSpecialRequestAction(formData: z.infer<typeof CreateTicketSchema>) {
@@ -21,7 +22,7 @@ export async function createSpecialRequestAction(formData: z.infer<typeof Create
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { category, priority, title, description } = result.data;
+  const { category, priority, title, description, ccUserIds } = result.data;
   const companyId = user.companyId;
 
   if (!companyId) {
@@ -40,7 +41,8 @@ export async function createSpecialRequestAction(formData: z.infer<typeof Create
         priority,
         title,
         description,
-        status: "PENDING"
+        status: "PENDING",
+        ccUserIds: ccUserIds && ccUserIds.length > 0 ? JSON.stringify(ccUserIds) : null
       }
     });
 
@@ -72,6 +74,21 @@ export async function createSpecialRequestAction(formData: z.infer<typeof Create
           userId: mgr.id,
           title: `New Special Request: ${title}`,
           message: `${user.name || "An employee"} submitted a ${priority} ticket under ${category}.`,
+          type: "SPECIAL_REQUEST",
+          isRead: false,
+          isArchived: false
+        }))
+      });
+    }
+
+    // Create notifications for CC'd users
+    if (ccUserIds && ccUserIds.length > 0) {
+      await db.notification.createMany({
+        data: ccUserIds.map(uid => ({
+          id: crypto.randomUUID(),
+          userId: uid,
+          title: `CC'd on Support Request: ${title}`,
+          message: `${user.name || "A colleague"} looped you into a ticket under ${category}.`,
           type: "SPECIAL_REQUEST",
           isRead: false,
           isArchived: false
@@ -144,6 +161,28 @@ export async function updateSpecialRequestStatusAction(
       }
     });
 
+    // Notify CC'd users if any
+    if (ticket.ccUserIds) {
+      try {
+        const ccIds: string[] = JSON.parse(ticket.ccUserIds);
+        if (ccIds.length > 0) {
+          await db.notification.createMany({
+            data: ccIds.map(uid => ({
+              id: crypto.randomUUID(),
+              userId: uid,
+              title: `CC Ticket Status Update: ${status}`,
+              message: `Ticket "${ticket.title}" you are CC'd on was updated to ${status}.`,
+              type: "SPECIAL_REQUEST",
+              isRead: false,
+              isArchived: false
+            }))
+          });
+        }
+      } catch (err) {
+        console.error("Failed to parse ccUserIds for notifications", err);
+      }
+    }
+
     revalidatePath("/special-requests");
     return { success: true, ticket: updatedRequest };
   } catch (error: any) {
@@ -187,14 +226,134 @@ export async function getSpecialRequestsAction() {
       });
     }
 
-    // Sales Associates and Team Leads only see tickets they created
+    // Sales Associates and Team Leads only see tickets they created OR are CC'd on
     return await db.specialrequest.findMany({
-      where: { requesterId: user.id },
+      where: {
+        companyId,
+        OR: [
+          { requesterId: user.id },
+          { ccUserIds: { contains: user.id } }
+        ]
+      },
       include: { requester: true },
       orderBy: { createdAt: "desc" }
     });
   } catch (error) {
     console.error("Failed to fetch special requests:", error);
     return [];
+  }
+}
+
+export async function getSpecialRequestsBadgeStatusAction() {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]);
+
+  try {
+    // 1. Fetch all unread notifications of type SPECIAL_REQUEST for this user
+    const unreadNotifications = await db.notification.findMany({
+      where: {
+        userId: user.id,
+        type: "SPECIAL_REQUEST",
+        isRead: false
+      }
+    });
+
+    if (unreadNotifications.length === 0) {
+      return { hasUnread: false, dotColor: null };
+    }
+
+    // 2. Query tickets in the user's scope to find the highest priority among the unread notifications
+    let tickets: any[] = [];
+    if (user.role === "SUPER_ADMIN") {
+      tickets = await db.specialrequest.findMany({ where: { status: { in: ["PENDING", "IN_PROGRESS"] } } });
+    } else if (user.role === "COMPANY_OWNER") {
+      tickets = await db.specialrequest.findMany({ where: { companyId: user.companyId } });
+    } else if (user.role === "IT_DEPARTMENT") {
+      tickets = await db.specialrequest.findMany({ where: { companyId: user.companyId, category: "IT" } });
+    } else {
+      tickets = await db.specialrequest.findMany({
+        where: {
+          OR: [
+            { requesterId: user.id },
+            { ccUserIds: { contains: user.id } }
+          ]
+        }
+      });
+    }
+
+    let hasUrgent = false;
+    let hasPendingOrMedium = false;
+    let hasNormal = false;
+
+    for (const notif of unreadNotifications) {
+      const msgUpper = notif.message.toUpperCase();
+      const titleUpper = notif.title.toUpperCase();
+
+      if (msgUpper.includes("URGENT") || titleUpper.includes("URGENT")) {
+        hasUrgent = true;
+      } else if (
+        msgUpper.includes("HIGH") || 
+        msgUpper.includes("MEDIUM") || 
+        msgUpper.includes("PENDING") ||
+        msgUpper.includes("IN_PROGRESS") ||
+        titleUpper.includes("HIGH") ||
+        titleUpper.includes("MEDIUM") ||
+        titleUpper.includes("PENDING") ||
+        titleUpper.includes("IN_PROGRESS")
+      ) {
+        hasPendingOrMedium = true;
+      } else {
+        hasNormal = true;
+      }
+    }
+
+    // Fallback: If we couldn't determine from notification message texts, check active tickets priorities
+    if (!hasUrgent && !hasPendingOrMedium && !hasNormal) {
+      const activeTickets = tickets.filter(t => t.status === "PENDING" || t.status === "IN_PROGRESS");
+      if (activeTickets.some(t => t.priority === "URGENT")) {
+        hasUrgent = true;
+      } else if (activeTickets.some(t => t.priority === "HIGH" || t.priority === "MEDIUM")) {
+        hasPendingOrMedium = true;
+      } else if (activeTickets.some(t => t.priority === "LOW")) {
+        hasNormal = true;
+      }
+    }
+
+    let dotColor: "red" | "orange" | "green" = "green";
+    if (hasUrgent) {
+      dotColor = "red";
+    } else if (hasPendingOrMedium) {
+      dotColor = "orange";
+    }
+
+    return {
+      hasUnread: true,
+      dotColor
+    };
+  } catch (error) {
+    console.error("Failed to query special requests badge status:", error);
+    return { hasUnread: false, dotColor: null };
+  }
+}
+
+export async function markSpecialRequestsAsReadAction() {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]);
+
+  try {
+    await db.notification.updateMany({
+      where: {
+        userId: user.id,
+        type: "SPECIAL_REQUEST",
+        isRead: false
+      },
+      data: {
+        isRead: true
+      }
+    });
+
+    revalidatePath("/special-requests");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to mark ticket notifications as read:", error);
+    throw new Error(error.message || "Failed to mark notifications as read.");
   }
 }

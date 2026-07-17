@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useTransition, useState } from "react";
+import React, { useTransition, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   createSpecialRequestAction, 
-  updateSpecialRequestStatusAction 
+  updateSpecialRequestStatusAction,
+  markSpecialRequestsAsReadAction
 } from "@/app/actions/special-requests";
 import { 
   Ticket, 
@@ -27,11 +28,13 @@ interface SpecialRequestsListProps {
     role: string;
     name: string | null;
   };
+  companyUsers?: any[];
 }
 
 export default function SpecialRequestsList({ 
   initialRequests, 
-  currentUser 
+  currentUser,
+  companyUsers = []
 }: SpecialRequestsListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -49,6 +52,8 @@ export default function SpecialRequestsList({
     title: "",
     description: ""
   });
+  const [selectedCcUserIds, setSelectedCcUserIds] = useState<string[]>([]);
+  const [ccSearchQuery, setCcSearchQuery] = useState("");
 
   // Action/Resolution Modal state
   const [showActionModal, setShowActionModal] = useState(false);
@@ -58,6 +63,17 @@ export default function SpecialRequestsList({
 
   const isRequester = ["TEAM_LEAD", "SALES_ASSOCIATE"].includes(currentUser.role);
   const isHandler = ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"].includes(currentUser.role);
+
+  useEffect(() => {
+    const clearNotifications = async () => {
+      try {
+        await markSpecialRequestsAsReadAction();
+      } catch (err) {
+        console.error("Failed to mark ticket notifications as read on load", err);
+      }
+    };
+    clearNotifications();
+  }, []);
 
   // Filter logic
   const filteredRequests = requests.filter(req => {
@@ -87,7 +103,8 @@ export default function SpecialRequestsList({
           category: newTicket.category,
           priority: newTicket.priority,
           title: newTicket.title,
-          description: newTicket.description
+          description: newTicket.description,
+          ccUserIds: selectedCcUserIds
         });
 
         if (res.success) {
@@ -99,6 +116,8 @@ export default function SpecialRequestsList({
             title: "",
             description: ""
           });
+          setSelectedCcUserIds([]);
+          setCcSearchQuery("");
           // Update local state by adding the new ticket to top
           const ticketWithRequester = {
             ...res.ticket,
@@ -322,6 +341,37 @@ export default function SpecialRequestsList({
                   <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginTop: "0.4rem", lineHeight: "1.4", whiteSpace: "pre-wrap" }}>
                     {req.description}
                   </p>
+
+                  {/* CC Tag badges */}
+                  {req.ccUserIds && (() => {
+                    try {
+                      const ccIds: string[] = JSON.parse(req.ccUserIds);
+                      if (ccIds.length === 0) return null;
+                      return (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
+                          <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.02em" }}>CC'd:</span>
+                          {ccIds.map(id => {
+                            const found = companyUsers?.find(cu => cu.id === id);
+                            const displayName = found ? (found.name || found.email) : "Colleague";
+                            return (
+                              <span key={id} style={{ 
+                                fontSize: "0.65rem", 
+                                color: "var(--text-secondary)", 
+                                background: "rgba(15, 23, 42, 0.04)", 
+                                padding: "0.1rem 0.4rem", 
+                                borderRadius: "4px",
+                                border: "1px solid var(--border-dim)"
+                              }}>
+                                {displayName}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      );
+                    } catch (e) {
+                      return null;
+                    }
+                  })()}
                 </div>
 
                 {/* Footer Meta Details & Resolve Action Trigger */}
@@ -449,6 +499,79 @@ export default function SpecialRequestsList({
                   style={{ fontSize: "0.82rem", padding: "0.55rem", resize: "none" }}
                 />
               </div>
+
+              {/* Carbon Copy (CC) Option */}
+              {companyUsers && companyUsers.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <label style={{ fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)" }}>
+                    Carbon Copy (CC) Colleagues
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="🔍 Search colleagues by name..."
+                    value={ccSearchQuery}
+                    onChange={e => setCcSearchQuery(e.target.value)}
+                    style={{
+                      fontSize: "0.75rem",
+                      padding: "0.4rem 0.6rem",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border-dim)",
+                      background: "rgba(15, 23, 42, 0.02)",
+                      color: "var(--text-primary)",
+                      outline: "none",
+                      width: "100%",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                  <div style={{ 
+                    maxHeight: "100px", 
+                    overflowY: "auto", 
+                    border: "1px solid var(--border-dim)", 
+                    borderRadius: "8px", 
+                    padding: "0.5rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.4rem",
+                    background: "rgba(15, 23, 42, 0.01)"
+                  }}>
+                    {(() => {
+                      const filtered = companyUsers.filter(u => {
+                        const name = (u.name || "").toLowerCase();
+                        const email = (u.email || "").toLowerCase();
+                        const query = ccSearchQuery.toLowerCase();
+                        return name.includes(query) || email.includes(query);
+                      });
+                      if (filtered.length === 0) {
+                        return (
+                          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", padding: "0.25rem 0" }}>
+                            No colleagues found matching "{ccSearchQuery}"
+                          </span>
+                        );
+                      }
+                      return filtered.map(u => (
+                        <label key={u.id} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.75rem", cursor: "pointer", color: "var(--text-primary)" }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCcUserIds.includes(u.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCcUserIds(prev => [...prev, u.id]);
+                              } else {
+                                setSelectedCcUserIds(prev => prev.filter(id => id !== u.id));
+                              }
+                            }}
+                            style={{ accentColor: "var(--gold-premium)" }}
+                          />
+                          <span>{u.name || u.email} ({u.role.replace("_", " ")})</span>
+                        </label>
+                      ));
+                    })()}
+                  </div>
+                  <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", lineHeight: "1.2" }}>
+                    Selected colleagues will receive notifications and will be authorized to view this ticket.
+                  </span>
+                </div>
+              )}
 
               <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
                 <button

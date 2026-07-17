@@ -490,6 +490,7 @@ model specialrequest {
   status      String   @default("PENDING") // "PENDING", "IN_PROGRESS", "RESOLVED", "REJECTED"
   priority    String   @default("MEDIUM")  // "LOW", "MEDIUM", "HIGH", "URGENT"
   notes       String?  @db.Text
+  ccUserIds   String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

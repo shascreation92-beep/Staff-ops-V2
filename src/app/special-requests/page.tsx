@@ -21,9 +21,33 @@ export default async function SpecialRequestsPage() {
 
   const requests = await getSpecialRequestsAction();
 
+  let companyUsers: any[] = [];
+  if (user.companyId) {
+    companyUsers = await db.user.findMany({
+      where: {
+        companyId: user.companyId,
+        isArchived: false,
+        id: { not: user.id }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      },
+      orderBy: {
+        name: "asc"
+      }
+    });
+  }
+
   return (
     <DashboardLayout user={{ ...user, companyName }}>
-      <SpecialRequestsList initialRequests={requests} currentUser={user} />
+      <SpecialRequestsList 
+        initialRequests={requests} 
+        currentUser={user} 
+        companyUsers={companyUsers}
+      />
     </DashboardLayout>
   );
 }
