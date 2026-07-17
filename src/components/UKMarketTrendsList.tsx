@@ -11,10 +11,15 @@ import {
   Filter, 
   ArrowRight,
   ExternalLink,
-  MessageSquareCode
+  MessageSquareCode,
+  MapPin
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { forceSyncTrendsAction, updateTenantTrendsConfigAction } from "@/app/actions/uk-trends";
+import { 
+  forceSyncTrendsAction, 
+  updateTenantTrendsConfigAction,
+  getFacebookSuggestionsAction
+} from "@/app/actions/uk-trends";
 
 interface TrendItem {
   id: string;
@@ -25,6 +30,8 @@ interface TrendItem {
   newsTitle: string;
   newsSource: string;
   category: string;
+  source: string; // "GOOGLE" or "FACEBOOK"
+  postcode?: string | null;
   createdAt: Date;
 }
 
@@ -44,7 +51,6 @@ interface UKMarketTrendsListProps {
   } | null;
 }
 
-// Fallback high-fidelity mock trends if Google Trends doesn't return matching categories for today
 const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
   BEDS: [
     {
@@ -54,7 +60,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "UK Bed Design Trends: Velvet Frames Experience Exploding Demand",
       newsUrl: "https://www.furnitureuk.co.uk/design-trends",
       newsSource: "Furniture UK",
-      category: "BEDS"
+      category: "BEDS",
+      source: "GOOGLE"
     },
     {
       keyword: "Orthopaedic Mattresses Sale",
@@ -63,7 +70,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "UK Sleep Council Reports Rise in Orthopaedic Sleep Solutions",
       newsUrl: "https://www.sleepcouncil.org.uk/news",
       newsSource: "Sleep Council",
-      category: "BEDS"
+      category: "BEDS",
+      source: "GOOGLE"
     },
     {
       keyword: "Space-saving Ottoman Beds",
@@ -72,7 +80,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "Small Living Spaces Drive Demand for Ottoman Storage Beds",
       newsUrl: "https://www.interiordesign.co.uk/ottoman-trend",
       newsSource: "Interior Design",
-      category: "BEDS"
+      category: "BEDS",
+      source: "GOOGLE"
     }
   ],
   SOFAS: [
@@ -83,7 +92,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "Flexible Living: Why Modular Sofas Are Dominating Living Rooms",
       newsUrl: "https://www.homesandgardens.co.uk/sofa-trends",
       newsSource: "Homes & Gardens",
-      category: "SOFAS"
+      category: "SOFAS",
+      source: "GOOGLE"
     },
     {
       keyword: "Boucle Fabric Couches",
@@ -92,7 +102,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "Boucle Texture Remains a Design Staple for 2026 Homeowners",
       newsUrl: "https://www.livingetc.com/boucle-couch",
       newsSource: "Livingetc",
-      category: "SOFAS"
+      category: "SOFAS",
+      source: "GOOGLE"
     },
     {
       keyword: "Ergonomic Recliners",
@@ -101,7 +112,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "Therapeutic Seating Options Experience Rise in Remote Work Era",
       newsUrl: "https://www.ergonomics-today.co.uk/recliners",
       newsSource: "Ergonomics Today",
-      category: "SOFAS"
+      category: "SOFAS",
+      source: "GOOGLE"
     }
   ],
   WARDROBES: [
@@ -112,7 +124,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "Home Renovation Audits Show Surge in Closet Wardrobe Systems",
       newsUrl: "https://www.idealhome.co.uk/wardrobe-systems",
       newsSource: "Ideal Home",
-      category: "WARDROBES"
+      category: "WARDROBES",
+      source: "GOOGLE"
     },
     {
       keyword: "Sliding Mirror Wardrobes",
@@ -121,7 +134,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "Mirrored Sliding Wardrobe Sales Spike in UK Urban Apartments",
       newsUrl: "https://www.apartmenttherapy.com/sliding-mirrors",
       newsSource: "Apartment Therapy",
-      category: "WARDROBES"
+      category: "WARDROBES",
+      source: "GOOGLE"
     },
     {
       keyword: "Built-in Cabinet Storage",
@@ -130,7 +144,8 @@ const FALLBACK_TRENDS: Record<string, Omit<TrendItem, "id" | "createdAt">[]> = {
       newsTitle: "Custom Built-in Wardrobes Become Top Value Adder for UK Sellers",
       newsUrl: "https://www.propertytimes.co.uk/built-in-cabinets",
       newsSource: "Property Times",
-      category: "WARDROBES"
+      category: "WARDROBES",
+      source: "GOOGLE"
     }
   ]
 };
@@ -141,15 +156,46 @@ export default function UKMarketTrendsList({
   companyName,
   initialConfig
 }: UKMarketTrendsListProps) {
+  const [activeTab, setActiveTab] = useState<"GOOGLE" | "FACEBOOK">("GOOGLE");
   const [trends, setTrends] = useState<TrendItem[]>(initialTrends);
   const [selectedCategory, setSelectedCategory] = useState<string>(initialConfig?.defaultCategory || "ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  
+  // Facebook Live search suggestions
+  const [fbSearchQuery, setFbSearchQuery] = useState<string>("");
+  const [fbSuggestions, setFbSuggestions] = useState<TrendItem[]>([]);
+  const [isSearchingFb, setIsSearchingFb] = useState<boolean>(false);
+
   const [selectedTemplateType, setSelectedTemplateType] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
   const [copiedPitch, setCopiedPitch] = useState<string | null>(null);
 
-  // Auto-sync configuration choice to database
+  // Search autocomplete dynamically for Facebook tab
+  useEffect(() => {
+    if (activeTab !== "FACEBOOK") return;
+    if (fbSearchQuery.trim().length === 0) {
+      setFbSuggestions([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setIsSearchingFb(true);
+      try {
+        const res = await getFacebookSuggestionsAction(fbSearchQuery);
+        if (res.success && res.suggestions) {
+          setFbSuggestions(res.suggestions as any);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsSearchingFb(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [fbSearchQuery, activeTab]);
+
   const handleCategoryChange = (val: string) => {
     setSelectedCategory(val);
     startTransition(async () => {
@@ -164,14 +210,13 @@ export default function UKMarketTrendsList({
     });
   };
 
-  // Sync feed from server scraper
   const handleSyncTrends = () => {
-    toast.loading("Syncing UK trends from public Google feeds...", { id: "sync-trends" });
+    toast.loading("Refreshing Google & Facebook UK OSINT feeds...", { id: "sync-trends" });
     startTransition(async () => {
       try {
         const res = await forceSyncTrendsAction();
         if (res.success) {
-          toast.success(`Successfully loaded ${res.count} fresh UK Trends!`, { id: "sync-trends" });
+          toast.success(`Successfully cached dual-platform trends!`, { id: "sync-trends" });
           window.location.reload();
         } else {
           toast.error(res.error || "Failed to force sync trends.", { id: "sync-trends" });
@@ -196,16 +241,25 @@ export default function UKMarketTrendsList({
     setTimeout(() => setCopiedPitch(null), 2000);
   };
 
-  // Get filtered trend list
+  // Get active list depending on source tab
   const getFilteredTrends = (): TrendItem[] => {
-    // Start with server cached list
-    let list = [...trends];
+    if (activeTab === "FACEBOOK") {
+      // If user typed in live lookup box, prioritize live results
+      if (fbSearchQuery.trim() !== "") {
+        return fbSuggestions;
+      }
+      // Otherwise, show cached Facebook items
+      return trends.filter(t => t.source === "FACEBOOK");
+    }
+
+    // Tab A: Google & Retail
+    let list = trends.filter(t => t.source === "GOOGLE");
 
     // Filter by Category
     if (selectedCategory !== "ALL") {
       list = list.filter(t => t.category === selectedCategory);
       
-      // If 0 items match our specific furniture category for today, fall back to high-fidelity mock trends
+      // Fallback to high-fidelity mock trends if 0 matching items exist today
       if (list.length === 0 && FALLBACK_TRENDS[selectedCategory]) {
         list = FALLBACK_TRENDS[selectedCategory].map((t, idx) => ({
           ...t,
@@ -215,7 +269,7 @@ export default function UKMarketTrendsList({
       }
     }
 
-    // Filter by Search Query
+    // Filter by search query
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
       list = list.filter(t => 
@@ -242,10 +296,20 @@ export default function UKMarketTrendsList({
   // AI outreach pitches builder
   const getOutreachPitch = (trend: TrendItem, type: string) => {
     const spikeText = normalizeNumber(trend.spikePercent);
-    const firmName = companyName || "our firm";
+    const firmName = companyName || "our furniture workshop";
     const kw = trend.keyword;
     const site = trend.newsSource || "competitor platforms";
+    const postcode = trend.postcode || "your local area";
 
+    // Direct Messenger Templates for Facebook Marketplace
+    if (trend.source === "FACEBOOK") {
+      if (type === "LINKEDIN" || type === "GROUP") {
+        return `Attention ${postcode} buyers! 📣 With "${kw}" trending up +${spikeText}% today on Marketplace, we are running an exclusive localized layout clearance. We have ready-to-dispatch mattresses and corner sofas at ${firmName}. DM us immediately for direct sizes and free delivery options!`;
+      }
+      return `Hi! Is this still available? I noticed that "${kw}" has a massive +${spikeText}% search surge today in ${postcode}. We supply premium custom-made beds and sofas. Send us a message if you'd like to check our direct delivery deals!`;
+    }
+
+    // Google Trends Email & LinkedIn opener
     if (trend.category === "BEDS") {
       if (type === "LINKEDIN") {
         return `Hi [Name],\n\nI noticed that "${kw}" has sparked a massive organic surge across the UK today. Are you experiencing a similar demand for bedroom furniture? We have premium handcrafted bed frames and mattresses in stock at ${firmName}. Let me know if you would like to browse our merchant trade sheets.`;
@@ -267,7 +331,7 @@ export default function UKMarketTrendsList({
       return `Subject: Built-in Wardrobes and "${kw}" Spikes\n\nHi [Name],\n\nOrganized living is on the rise with "${kw}" spiking at +${spikeText}% search volume in the UK. ${firmName} offers premium walk-in wardrobes and sliding mirror cabinet wardrobes. Let's connect to schedule a brief demo.`;
     }
 
-    // GENERAL Category fallback pitches (focused on commercial/home office furniture solutions)
+    // GENERAL Category fallback pitches
     if (type === "LINKEDIN") {
       return `Hi [Name],\n\nNoticed "${kw}" is driving explosive search interest in the UK today. While auditing traffic patterns on ${site}, let's talk about how ${firmName} can elevate your corporate home office furniture layouts.`;
     }
@@ -286,15 +350,15 @@ export default function UKMarketTrendsList({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", height: "100%", width: "100%", overflowY: "auto", paddingBottom: "1.5rem" }}>
       
-      {/* 1. Glassmorphic Page Header */}
+      {/* 1. Page Header Block */}
       <div className="glass-panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem", borderRadius: "12px", background: "rgba(255, 255, 255, 0.45)", border: "1px solid var(--border-dim)" }}>
         <div>
           <h1 style={{ fontSize: "1.55rem", fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <TrendingUp style={{ color: "var(--gold-premium)" }} size={26} />
-            UK Market Trends Tracker
+            UK Market & Marketplace Trends
           </h1>
           <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-            100% Free Open Source OSINT Google search metrics for client outreach aids.
+            Real-time UK search completions and buyer auto-suggestions for direct client outreach.
           </p>
         </div>
 
@@ -305,7 +369,7 @@ export default function UKMarketTrendsList({
             disabled={isPending}
             className="btn-glass"
             style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 0.8rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: 700 }}
-            title="CEO Manual Sync Force Refresh"
+            title="Force Live Update Scraper"
           >
             <RotateCw size={14} className={isPending ? "animate-spin" : ""} />
             Sync Trends Now
@@ -313,66 +377,132 @@ export default function UKMarketTrendsList({
         )}
       </div>
 
-      {/* 2. Search & Industry Filter Area */}
+      {/* 2. Visual Platform Tabs Selection */}
+      <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.5rem" }}>
+        <button
+          onClick={() => { setActiveTab("GOOGLE"); setSelectedCategory("ALL"); setSearchQuery(""); }}
+          className={`btn-glass ${activeTab === "GOOGLE" ? "active" : ""}`}
+          style={{ 
+            padding: "0.55rem 1rem", 
+            borderRadius: "8px", 
+            fontSize: "0.82rem", 
+            fontWeight: 800,
+            background: activeTab === "GOOGLE" ? "var(--gold-premium)" : "rgba(255,255,255,0.45)",
+            color: activeTab === "GOOGLE" ? "#FFFFFF" : "var(--text-primary)",
+            border: "1px solid var(--border-dim)"
+          }}
+        >
+          📈 Tab A: Google & Retail Trends
+        </button>
+        <button
+          onClick={() => { setActiveTab("FACEBOOK"); setSelectedCategory("ALL"); setFbSearchQuery(""); }}
+          className={`btn-glass ${activeTab === "FACEBOOK" ? "active" : ""}`}
+          style={{ 
+            padding: "0.55rem 1rem", 
+            borderRadius: "8px", 
+            fontSize: "0.82rem", 
+            fontWeight: 800,
+            background: activeTab === "FACEBOOK" ? "var(--gold-premium)" : "rgba(255,255,255,0.45)",
+            color: activeTab === "FACEBOOK" ? "#FFFFFF" : "var(--text-primary)",
+            border: "1px solid var(--border-dim)"
+          }}
+        >
+          🏪 Tab B: Facebook Marketplace UK
+        </button>
+      </div>
+
+      {/* 3. Filter Controls Block */}
       <div className="glass-panel" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", padding: "1rem", borderRadius: "12px", background: "rgba(255, 255, 255, 0.3)", border: "1px solid var(--border-dim)" }}>
         
-        {/* Search */}
-        <div style={{ flex: 1, minWidth: "260px", position: "relative" }}>
-          <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} size={16} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search keywords or articles..."
-            className="input-gold"
-            style={{ width: "100%", padding: "0.55rem 0.75rem 0.55rem 2.2rem", fontSize: "0.82rem" }}
-          />
-        </div>
+        {activeTab === "GOOGLE" ? (
+          <>
+            {/* Google Search */}
+            <div style={{ flex: 1, minWidth: "260px", position: "relative" }}>
+              <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} size={16} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search Google keywords or articles..."
+                className="input-gold"
+                style={{ width: "100%", padding: "0.55rem 0.75rem 0.55rem 2.2rem", fontSize: "0.82rem" }}
+              />
+            </div>
 
-        {/* Category Filter */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-          <Filter size={15} style={{ color: "var(--text-muted)" }} />
-          <select
-            value={selectedCategory}
-            onChange={(e) => handleCategoryChange(e.target.value)}
-            className="input-gold"
-            style={{ fontSize: "0.82rem", padding: "0.55rem 1.8rem 0.55rem 0.75rem" }}
-          >
-            <option value="ALL">All Categories</option>
-            <option value="BEDS">Furniture / Beds</option>
-            <option value="SOFAS">Furniture / Sofas</option>
-            <option value="WARDROBES">Furniture / Wardrobes</option>
-            <option value="GENERAL">General Trends</option>
-          </select>
-        </div>
+            {/* Category Dropdown */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Filter size={15} style={{ color: "var(--text-muted)" }} />
+              <select
+                value={selectedCategory}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="input-gold"
+                style={{ fontSize: "0.82rem", padding: "0.55rem 1.8rem 0.55rem 0.75rem" }}
+              >
+                <option value="ALL">All Categories</option>
+                <option value="BEDS">Furniture / Beds</option>
+                <option value="SOFAS">Furniture / Sofas</option>
+                <option value="WARDROBES">Furniture / Wardrobes</option>
+                <option value="GENERAL">General Trends</option>
+              </select>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Live Marketplace Autocomplete lookup input */}
+            <div style={{ flex: 1, minWidth: "260px", position: "relative" }}>
+              <Search style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} size={16} />
+              <input
+                type="text"
+                value={fbSearchQuery}
+                onChange={(e) => setFbSearchQuery(e.target.value)}
+                placeholder="Type furniture prefix (e.g. 'double bed', 'corner sofa') for live suggestions..."
+                className="input-gold"
+                style={{ width: "100%", padding: "0.55rem 0.75rem 0.55rem 2.2rem", fontSize: "0.82rem" }}
+              />
+            </div>
+            {isSearchingFb && (
+              <div style={{ display: "flex", alignItems: "center", fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                <RotateCw size={12} className="animate-spin mr-1" /> Searching auto-suggestions...
+              </div>
+            )}
+          </>
+        )}
 
-        {/* System Sync Note */}
         <div style={{ display: "flex", alignItems: "center", fontSize: "0.68rem", color: "var(--text-muted)", marginLeft: "auto", background: "rgba(15, 23, 42, 0.03)", padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
           Refresh: Every Day
         </div>
       </div>
 
-      {/* Fallback Notice */}
-      {selectedCategory !== "ALL" && trends.filter(t => t.category === selectedCategory).length === 0 && (
+      {/* Fallback Notice for Empty Categorization in Tab A */}
+      {activeTab === "GOOGLE" && selectedCategory !== "ALL" && trends.filter(t => t.source === "GOOGLE" && t.category === selectedCategory).length === 0 && (
         <div className="glass-panel" style={{ background: "rgba(230, 242, 255, 0.4)", border: "1px solid rgba(59, 130, 246, 0.2)", padding: "0.75rem 1rem", borderRadius: "10px", display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <Sparkles size={16} style={{ color: "rgb(59, 130, 246)" }} />
           <span style={{ fontSize: "0.75rem", color: "rgb(30, 64, 175)", fontWeight: 500 }}>
-            No live UK searches matching <strong>{getCategoryLabel(selectedCategory)}</strong> were found on Google today. Displaying premium fallback design prompts below.
+            No live Google queries matching <strong>{getCategoryLabel(selectedCategory)}</strong> were found. Displaying fallback design templates.
           </span>
         </div>
       )}
 
-      {/* 3. Trends List Ledger */}
+      {/* 4. Results Trends ledger list */}
       {paginatedTrends.length === 0 ? (
-        <div className="glass-panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3rem 1rem", textAlign: "center", gap: "0.5rem" }}>
+        <div className="glass-panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3.5rem 1rem", textAlign: "center", gap: "0.5rem" }}>
           <TrendingUp size={36} style={{ color: "var(--text-muted)" }} />
-          <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>No trends match your query</h3>
-          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Try altering your search or selecting a different vertical filter.</p>
+          {activeTab === "FACEBOOK" && fbSearchQuery.trim() === "" ? (
+            <>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>Facebook Marketplace Search suggestions</h3>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Type a prefix in the lookup box above to query live UK buyer recommendations.</p>
+            </>
+          ) : (
+            <>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>No suggestions matched</h3>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Modify your filter inputs or look up other furniture keywords.</p>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem" }}>
           {paginatedTrends.map((trend) => {
-            const tempType = selectedTemplateType[trend.id] || "EMAIL";
+            const tempType = selectedTemplateType[trend.id] || (trend.source === "FACEBOOK" ? "MESSENGER" : "EMAIL");
             const pitchText = getOutreachPitch(trend, tempType);
 
             return (
@@ -386,54 +516,71 @@ export default function UKMarketTrendsList({
                   padding: "1.25rem", 
                   borderRadius: "12px", 
                   background: "#FFFFFF", 
-                  border: "1px solid var(--border-dim)",
-                  transition: "transform 0.2s, box-shadow 0.2s"
+                  border: "1px solid var(--border-dim)"
                 }}
               >
-                {/* Header info */}
+                {/* Header block */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    <span style={{ 
-                      fontSize: "0.62rem", 
-                      fontWeight: 800, 
-                      textTransform: "uppercase", 
-                      color: trend.category === "GENERAL" ? "var(--text-muted)" : "var(--gold-premium)",
-                      letterSpacing: "0.03em"
-                    }}>
-                      {getCategoryLabel(trend.category)}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                      <span style={{ 
+                        fontSize: "0.62rem", 
+                        fontWeight: 800, 
+                        textTransform: "uppercase", 
+                        color: trend.category === "GENERAL" ? "var(--text-muted)" : "var(--gold-premium)",
+                        letterSpacing: "0.03em"
+                      }}>
+                        {getCategoryLabel(trend.category)}
+                      </span>
+                      {trend.postcode && (
+                        <span style={{ 
+                          fontSize: "0.62rem", 
+                          fontWeight: 700, 
+                          color: "rgb(59, 130, 246)",
+                          background: "rgba(219, 234, 254, 0.5)",
+                          padding: "0.05rem 0.35rem",
+                          borderRadius: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.1rem"
+                        }}>
+                          <MapPin size={10} />
+                          {trend.postcode}
+                        </span>
+                      )}
+                    </div>
                     <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                       {trend.keyword}
                     </h3>
                   </div>
 
-                  {/* Growth indicators */}
+                  {/* Growth stats */}
                   <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
                     <span style={{ 
                       fontSize: "0.72rem", 
                       fontWeight: 800, 
-                      color: trend.spikePercent >= 450 ? "rgb(239, 68, 68)" : (trend.spikePercent >= 250 ? "rgb(245, 158, 11)" : "rgb(34, 197, 94)"),
-                      background: trend.spikePercent >= 450 ? "rgba(254, 226, 226, 0.6)" : (trend.spikePercent >= 250 ? "rgba(254, 243, 199, 0.6)" : "rgba(220, 252, 231, 0.6)"),
+                      color: trend.spikePercent >= 300 ? "rgb(239, 68, 68)" : (trend.spikePercent >= 180 ? "rgb(245, 158, 11)" : "rgb(34, 197, 94)"),
+                      background: trend.spikePercent >= 300 ? "rgba(254, 226, 226, 0.6)" : (trend.spikePercent >= 180 ? "rgba(254, 243, 199, 0.6)" : "rgba(220, 252, 231, 0.6)"),
                       padding: "0.25rem 0.5rem",
                       borderRadius: "6px",
                       display: "flex",
                       alignItems: "center",
                       gap: "0.2rem"
                     }}>
-                      <span className="animate-pulse">▲</span>
+                      <span>▲</span>
                       +{normalizeNumber(trend.spikePercent)}% Spike Today
                     </span>
                     <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", background: "rgba(15, 23, 42, 0.03)", padding: "0.25rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                      Traffic: {trend.traffic}
+                      {trend.source === "FACEBOOK" ? "Suggestions" : `Traffic: ${trend.traffic}`}
                     </span>
                   </div>
                 </div>
 
-                {/* News details */}
+                {/* News URL Competitor Audit block */}
                 {trend.newsTitle && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", padding: "0.75rem", borderRadius: "8px", background: "rgba(15, 23, 42, 0.02)", borderLeft: "3px solid var(--gold-premium)" }}>
                     <span style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em" }}>
-                      Top Gaining Website Audit
+                      {trend.source === "FACEBOOK" ? "Listing Category Audit" : "Top Gaining Website Audit"}
                     </span>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
                       <p style={{ fontSize: "0.75rem", color: "var(--text-primary)", fontWeight: 500, lineHeight: "1.3" }}>
@@ -459,7 +606,7 @@ export default function UKMarketTrendsList({
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                       <MessageSquareCode size={14} style={{ color: "var(--gold-premium)" }} />
-                      <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--text-secondary)" }}>Outreach Assistant</span>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--text-secondary)" }}>Outreach Script Generator</span>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -470,8 +617,17 @@ export default function UKMarketTrendsList({
                         className="input-gold"
                         style={{ fontSize: "0.68rem", padding: "0.2rem 1.4rem 0.2rem 0.4rem", borderRadius: "4px" }}
                       >
-                        <option value="EMAIL">Cold Email Script</option>
-                        <option value="LINKEDIN">LinkedIn DM Opener</option>
+                        {trend.source === "FACEBOOK" ? (
+                          <>
+                            <option value="MESSENGER">Direct Messenger Opener</option>
+                            <option value="GROUP">Group Poster Script</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="EMAIL">Cold Email Script</option>
+                            <option value="LINKEDIN">LinkedIn DM Opener</option>
+                          </>
+                        )}
                       </select>
                       
                       {/* Copy pitch */}
@@ -479,7 +635,7 @@ export default function UKMarketTrendsList({
                         onClick={() => handleCopyPitch(trend.id, pitchText)}
                         className="btn-glass"
                         style={{ fontSize: "0.65rem", padding: "0.2rem 0.45rem", borderRadius: "4px" }}
-                        title="Copy entire Pitch"
+                        title="Copy Pitch Template"
                       >
                         {copiedPitch === trend.id ? <Check size={12} style={{ color: "green" }} /> : "Copy Pitch"}
                       </button>
@@ -492,7 +648,7 @@ export default function UKMarketTrendsList({
                     className="input-gold"
                     style={{ 
                       width: "100%", 
-                      height: "70px", 
+                      height: "75px", 
                       fontSize: "0.72rem", 
                       fontFamily: "monospace", 
                       lineHeight: "1.4", 
@@ -502,7 +658,7 @@ export default function UKMarketTrendsList({
                     }}
                   />
 
-                  {/* Copy keyword & site audit quick options */}
+                  {/* Copy keyword button */}
                   <div style={{ display: "flex", gap: "0.4rem" }}>
                     <button
                       onClick={() => handleCopyKeyword(trend.keyword)}
@@ -530,7 +686,7 @@ export default function UKMarketTrendsList({
         </div>
       )}
 
-      {/* 4. Global 50-Entry Pagination Footer */}
+      {/* 5. Global 50-Entry Pagination Footer */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 0.5rem", borderTop: "1px solid var(--border-dim)", fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "auto" }}>
         <span>
           Showing 1-50 of {normalizeNumber(totalCount)} entries

@@ -511,6 +511,8 @@ model uktrend {
   newsTitle    String   @db.Text
   newsSource   String
   category     String   // "BEDS", "SOFAS", "WARDROBES", "GENERAL"
+  source       String   @default("GOOGLE") // "GOOGLE" or "FACEBOOK"
+  postcode     String?  // Scoped localized postcode for FB trends
   createdAt    DateTime @default(now())
 }
 
