@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createAnnouncementAction } from "@/app/actions/settings";
 import { toast } from "react-hot-toast";
+import { formatDate12h } from "@/lib/date-formatter";
 
 interface Announcement {
   id: string;
@@ -167,7 +168,7 @@ export default function BroadcastComposer({ currentUser, initialAnnouncements }:
                       {ann.content}
                     </p>
                     <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", marginTop: "0.1rem" }}>
-                      Sent: {new Date(ann.createdAt).toLocaleString()} | Scope: {ann.company?.name || "Active Tenant"}
+                      Sent: {formatDate12h(ann.createdAt, true)} | Scope: {ann.company?.name || "Active Tenant"}
                     </span>
                   </div>
                 );

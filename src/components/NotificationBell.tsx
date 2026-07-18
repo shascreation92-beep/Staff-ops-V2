@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bell, Check, Archive, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { formatDate12h } from "@/lib/date-formatter";
 import { useAnnouncements } from "./AnnouncementProvider";
 
 function timeAgo(dateStr: string): string {
@@ -255,7 +256,7 @@ export default function NotificationBell() {
                     {cleanMessage(n.message)}
                   </p>
                   <span
-                    title={new Date(n.createdAt).toLocaleString()}
+                    title={formatDate12h(n.createdAt, true)}
                     style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", cursor: "help" }}
                   >
                     {timeAgo(n.createdAt)}

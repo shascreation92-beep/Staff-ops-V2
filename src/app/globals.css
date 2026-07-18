@@ -1489,3 +1489,29 @@ textarea::placeholder {
     grid-template-columns: 1fr;
   }
 }
+
+/* Responsive Date-Time Compression */
+.hide-seconds-mobile {
+  display: none;
+}
+.show-seconds-desktop {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .show-seconds-desktop {
+    display: none !important;
+  }
+  .hide-seconds-mobile {
+    display: inline !important;
+  }
+}
+@media (min-width: 769px) {
+  .show-seconds-desktop {
+    display: inline !important;
+  }
+  .hide-seconds-mobile {
+    display: none !important;
+  }
+}
+

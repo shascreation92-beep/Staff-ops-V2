@@ -6,6 +6,7 @@ import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X
 import NotificationBell from "./NotificationBell";
 import { toast } from "react-hot-toast";
 import { saveAssociateEmployeeITAction } from "@/app/actions/employees";
+import { formatDate12h } from "@/lib/date-formatter";
 
 interface TeamMember {
   id: string;
@@ -219,7 +220,8 @@ function MemberCard({ member }: { member: TeamMember }) {
         day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-      })
+        hour12: true
+      }).replace(/am/i, "AM").replace(/pm/i, "PM")
     : "Never";
 
   // Calculate if associate is online (active in the last 5 minutes)

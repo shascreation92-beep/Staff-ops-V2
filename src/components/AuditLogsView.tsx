@@ -12,6 +12,7 @@ import {
   Eye
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
+import { formatDate12h } from "@/lib/date-formatter";
 
 interface AuditLogsViewProps {
   auditLogs: any[];
@@ -140,8 +141,9 @@ export default function AuditLogsView({
                 ) : (
                   paginatedAudits.map((log) => (
                     <tr key={log.id}>
-                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
-                        {new Date(log.createdAt).toLocaleString()}
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+                        <span className="show-seconds-desktop">{formatDate12h(log.createdAt, true)}</span>
+                        <span className="hide-seconds-mobile" style={{ display: "none" }}>{formatDate12h(log.createdAt, false)}</span>
                       </td>
                       <td style={{ fontWeight: 600 }}>
                         {log.user?.name || log.userEmail || "System"}
@@ -203,11 +205,17 @@ export default function AuditLogsView({
                 ) : (
                   paginatedLogins.map((log) => (
                     <tr key={log.id}>
-                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
-                        {new Date(log.loginTime).toLocaleString()}
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+                        <span className="show-seconds-desktop">{formatDate12h(log.loginTime, true)}</span>
+                        <span className="hide-seconds-mobile" style={{ display: "none" }}>{formatDate12h(log.loginTime, false)}</span>
                       </td>
-                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: log.logoutTime ? "var(--text-primary)" : "var(--color-success)" }}>
-                        {log.logoutTime ? new Date(log.logoutTime).toLocaleString() : "ACTIVE SESSION"}
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: log.logoutTime ? "var(--text-primary)" : "var(--color-success)", whiteSpace: "nowrap" }}>
+                        {log.logoutTime ? (
+                          <>
+                            <span className="show-seconds-desktop">{formatDate12h(log.logoutTime, true)}</span>
+                            <span className="hide-seconds-mobile" style={{ display: "none" }}>{formatDate12h(log.logoutTime, false)}</span>
+                          </>
+                        ) : "ACTIVE SESSION"}
                       </td>
                       <td style={{ fontWeight: 600 }}>
                         {log.user?.name}

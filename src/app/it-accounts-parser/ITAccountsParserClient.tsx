@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { saveParsedAccountsAction, getParsedAccountsLedgerAction } from "@/app/actions/it-parsed-accounts";
+import { formatDate12h } from "@/lib/date-formatter";
 
 interface ITAccountsParserClientProps {
   initialAccounts: any[];
@@ -368,8 +369,9 @@ export default function ITAccountsParserClient({
                     <td style={{ padding: "0.6rem 0.4rem", color: "var(--text-secondary)" }}>
                       {acc.name}
                     </td>
-                    <td style={{ padding: "0.6rem 0.4rem", color: "var(--text-muted)" }}>
-                      {new Date(acc.createdAt).toLocaleString()}
+                    <td style={{ padding: "0.6rem 0.4rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                      <span className="show-seconds-desktop">{formatDate12h(acc.createdAt, true)}</span>
+                      <span className="hide-seconds-mobile" style={{ display: "none" }}>{formatDate12h(acc.createdAt, false)}</span>
                     </td>
                   </tr>
                 ))

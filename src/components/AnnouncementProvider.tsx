@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { X, AlertTriangle } from "lucide-react";
 import { FullscreenModal } from "./PersonalNotesDashboard";
 import { getPersonalNoteByIdAction } from "@/app/actions/personalNotes";
+import { formatDate12h } from "@/lib/date-formatter";
 
 interface Toast {
   id: string;
@@ -449,7 +450,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                Broadcast date: {new Date(focusedAnnDetails.createdAt).toLocaleString()}
+                Broadcast date: {formatDate12h(focusedAnnDetails.createdAt, true)}
               </div>
 
               <button
