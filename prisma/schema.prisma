@@ -527,4 +527,14 @@ model tenanttrendsconfig {
   company         company  @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "TenantTrendsConfig_companyId_fkey")
 }
 
+model itparsedaccount {
+  id           String   @id
+  seriesNumber String
+  password     String
+  name         String
+  createdAt    DateTime @default(now())
+  agentId      String
+  companyId    String
+}
+
 

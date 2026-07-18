@@ -408,6 +408,20 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
     },
     { 
+      id: "it-accounts-parser", 
+      label: "IT Accounts Parser", 
+      path: "/it-accounts-parser", 
+      icon: ClipboardCheck,
+      roles: ["IT_DEPARTMENT"] 
+    },
+    { 
+      id: "it-operational-logs", 
+      label: "IT Operational Logs", 
+      path: "/it-operational-logs", 
+      icon: ClipboardCheck,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
+    },
+    { 
       id: "settings", 
       label: user.role === "SUPER_ADMIN" ? "Platform Shard" : (user.role === "IT_DEPARTMENT" ? "User Management" : "Rule Engine"), 
       path: "/settings", 
