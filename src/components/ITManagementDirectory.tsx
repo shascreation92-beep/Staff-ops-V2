@@ -6,6 +6,7 @@ import { Shield, Mail, Award, Plus, X, AlertCircle, Users, Search } from "lucide
 import { onboardTeamLeadAction, toggleUserStatusAction, adminResetUserPasswordAction } from "@/app/actions/users";
 import { toast } from "react-hot-toast";
 import NotificationBell from "./NotificationBell";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface ITMember {
   id: string;
@@ -55,6 +56,19 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
   const [resetPassNewPassword, setResetPassNewPassword] = useState("");
   const [resetPassError, setResetPassError] = useState<string | null>(null);
 
+  // Confirmation Modal State
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
   const handleOnboardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -88,19 +102,27 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
 
   const handleToggleStatus = (userId: string, currentStatus: string) => {
     const newStatus = currentStatus === "APPROVED" ? "BLOCKED" : "APPROVED";
-    if (confirm(`Are you sure you want to change user status to ${newStatus === "APPROVED" ? "ACTIVE" : "DISABLED"}?`)) {
-      startTransition(async () => {
-        try {
-          const res = await toggleUserStatusAction(userId, newStatus);
-          if (res.success) {
-            toast.success("User status updated successfully.");
-            router.refresh();
+    const agentName = itPersonnel.find(x => x.id === userId)?.name || "IT Agent";
+    
+    setConfirmConfig({
+      isOpen: true,
+      title: newStatus === "APPROVED" ? "Enable IT Agent Account" : "Disable IT Agent Account",
+      message: `Are you sure you want to change ${agentName}'s status to ${newStatus === "APPROVED" ? "ACTIVE" : "DISABLED"}?`,
+      onConfirm: () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        startTransition(async () => {
+          try {
+            const res = await toggleUserStatusAction(userId, newStatus);
+            if (res.success) {
+              toast.success(`${agentName} has been ${newStatus === "APPROVED" ? "enabled" : "disabled"} successfully.`);
+              router.refresh();
+            }
+          } catch (err: any) {
+            toast.error(err.message || "Failed to update user status.");
           }
-        } catch (err: any) {
-          toast.error(err.message || "Failed to update user status.");
-        }
-      });
-    }
+        });
+      }
+    });
   };
 
   const handleResetPassSubmit = (e: React.FormEvent) => {
@@ -359,7 +381,8 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
               return (
                 <div key={it.id} className="glass-panel" style={{
                   padding: "1.5rem",
-                  border: "1px solid var(--border-dim)",
+                  border: it.status === "BLOCKED" ? "1px solid rgba(239, 68, 68, 0.25)" : "1px solid var(--border-dim)",
+                  boxShadow: it.status === "BLOCKED" ? "0 4px 12px rgba(239, 68, 68, 0.03)" : "none",
                   position: "relative",
                   overflow: "hidden",
                   display: "flex",
@@ -373,7 +396,7 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                     left: 0,
                     right: 0,
                     height: "3px",
-                    background: "var(--gold-gradient)"
+                    background: it.status === "BLOCKED" ? "linear-gradient(90deg, #EF4444, #F87171)" : "var(--gold-gradient)"
                   }} />
 
                   {/* Header Details */}
@@ -382,12 +405,12 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                       width: "3rem",
                       height: "3rem",
                       borderRadius: "50%",
-                      backgroundColor: "rgba(167, 139, 250, 0.08)",
-                      border: "1px solid rgba(167, 139, 250, 0.25)",
+                      backgroundColor: it.status === "BLOCKED" ? "rgba(239, 68, 68, 0.08)" : "rgba(167, 139, 250, 0.08)",
+                      border: it.status === "BLOCKED" ? "1px solid rgba(239, 68, 68, 0.25)" : "1px solid rgba(167, 139, 250, 0.25)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#8B5CF6"
+                      color: it.status === "BLOCKED" ? "#EF4444" : "#8B5CF6"
                     }}>
                       <Shield size={22} />
                     </div>
@@ -401,8 +424,14 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                         <span className="badge active" style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", background: "rgba(167, 139, 250, 0.08)", color: "#8B5CF6", border: "1px solid rgba(167, 139, 250, 0.25)" }}>
                           ID: {it.employee?.employeeId || "N/A"}
                         </span>
-                        <span className={`badge ${it.status === 'APPROVED' ? 'active' : 'pending'}`} style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem" }}>
-                          {it.status === 'APPROVED' ? 'ACTIVE' : it.status}
+                        <span className={`badge ${it.status === 'APPROVED' ? 'active' : 'inactive'}`} style={{
+                          fontSize: "0.65rem",
+                          padding: "0.1rem 0.4rem",
+                          background: it.status === 'APPROVED' ? "rgba(34, 197, 94, 0.08)" : "rgba(239, 68, 68, 0.08)",
+                          color: it.status === 'APPROVED' ? "#22C55E" : "#EF4444",
+                          border: it.status === 'APPROVED' ? "1px solid rgba(34, 197, 94, 0.2)" : "1px solid rgba(239, 68, 68, 0.2)"
+                        }}>
+                          {it.status === 'APPROVED' ? 'ACTIVE' : 'DISABLED'}
                         </span>
                       </div>
                     </div>
@@ -418,11 +447,16 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                         padding: "0.35rem",
                         fontSize: "0.78rem",
                         height: "auto",
-                        color: it.status === "APPROVED" ? "var(--color-danger)" : "var(--color-success)"
+                        color: it.status === "APPROVED" ? "var(--color-danger)" : "var(--color-success)",
+                        borderColor: it.status === "APPROVED" ? "rgba(239, 68, 68, 0.2)" : "rgba(34, 197, 94, 0.2)"
                       }}
                       disabled={isPending}
                     >
-                      {it.status === "APPROVED" ? "Disable Account" : "Enable Account"}
+                      {isPending ? (
+                        it.status === "APPROVED" ? "Disabling..." : "Enabling..."
+                      ) : (
+                        it.status === "APPROVED" ? "Disable Account" : "Enable Account"
+                      )}
                     </button>
                     <button
                       onClick={() => {
@@ -796,6 +830,16 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        isPending={isPending}
+      />
     </div>
   );
 }

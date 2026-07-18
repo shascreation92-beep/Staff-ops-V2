@@ -890,17 +890,22 @@ export async function getCompanyTeamLeadsAction() {
 }
 
 export async function toggleUserStatusAction(userId: string, newStatus: "APPROVED" | "BLOCKED") {
+  console.log(`[toggleUserStatusAction] Start: userId=${userId}, newStatus=${newStatus}`);
   const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+  console.log(`[toggleUserStatusAction] Authenticated user: role=${currentUser.role}, companyId=${currentUser.companyId}`);
 
   const targetUser = await db.user.findUnique({
     where: { id: userId }
   });
 
   if (!targetUser) {
+    console.error(`[toggleUserStatusAction] Target user not found: userId=${userId}`);
     throw new Error("User not found.");
   }
+  console.log(`[toggleUserStatusAction] Target user found: role=${targetUser.role}, companyId=${targetUser.companyId}`);
 
   if (currentUser.role !== "SUPER_ADMIN" && targetUser.companyId !== currentUser.companyId) {
+    console.error(`[toggleUserStatusAction] Unauthorized company mismatch: targetUser companyId=${targetUser.companyId}, currentUser companyId=${currentUser.companyId}`);
     throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
   }
 
@@ -937,12 +942,16 @@ export async function toggleUserStatusAction(userId: string, newStatus: "APPROVE
       newValue: newStatus
     });
 
+    console.log(`[toggleUserStatusAction] Success. Revalidating paths...`);
     revalidatePath("/settings");
     revalidatePath("/team-leads");
     revalidatePath("/employees");
+    revalidatePath("/it-management");
+    revalidatePath("/it-operational-logs");
     revalidatePath("/");
     return { success: true };
   } catch (error: any) {
+    console.error(`[toggleUserStatusAction] Error toggling status:`, error);
     throw new Error(error.message || "Failed to toggle user status.");
   }
 }
