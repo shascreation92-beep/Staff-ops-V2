@@ -181,7 +181,7 @@ export default function ITAccountsParserClient({
       </div>
 
       {/* Grid paste & Preview splits */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem", alignItems: "start" }}>
         
         {/* Left Side: Paste Workspace */}
         <div className="glass-panel" style={{ padding: "1.25rem", borderRadius: "16px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "1rem" }}>
