@@ -828,7 +828,7 @@ export default function UKMarketTrendsList({
 
           {/* Drawer Panel Container */}
           <div 
-            className="bg-white z-50"
+            className="bg-white"
             style={{ 
               position: "fixed", 
               top: 0, 
@@ -841,6 +841,7 @@ export default function UKMarketTrendsList({
               display: "flex",
               flexDirection: "column",
               animation: "slideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+              zIndex: 1000
             }}
           >
             <style>{`
