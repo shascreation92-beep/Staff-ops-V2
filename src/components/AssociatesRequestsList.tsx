@@ -79,10 +79,10 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
       <div className="glass-panel" style={{ padding: "1.5rem", position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
         <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">
-            ASSOCIATES ACCOUNT REQUESTS
+            REPRESENTATIVES ACCOUNT REQUESTS
           </h2>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-            Review and approve or reject incoming account/ID requests forwarded by your Sales Associates.
+            Review and approve or reject incoming account/ID requests forwarded by your Sales Representatives.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center" }}>

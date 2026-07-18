@@ -263,7 +263,7 @@ export async function saveAssociateEmployeeITAction(
       create: {
         id: crypto.randomUUID(),
         employeeId,
-        fullName: targetUser.name || "Sales Associate",
+        fullName: targetUser.name || "Sales Representative",
         email: targetUser.email,
         userId: targetUser.id,
         companyId: targetUser.companyId!,

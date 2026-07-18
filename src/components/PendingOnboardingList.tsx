@@ -48,7 +48,7 @@ export default function PendingOnboardingList({ pendingUsers }: PendingOnboardin
         });
 
         if (res.success) {
-          toast.success("Sales Associate approved and activated successfully!");
+          toast.success("Sales Representative approved and activated successfully!");
           setActiveUserId(null);
           setPassword("");
           setEmployeeId("");
@@ -70,7 +70,7 @@ export default function PendingOnboardingList({ pendingUsers }: PendingOnboardin
         const res = await rejectSalesAssociateAction(userId);
 
         if (res.success) {
-          toast.success("Sales Associate onboarding request has been rejected.");
+          toast.success("Sales Representative onboarding request has been rejected.");
           router.refresh();
         }
       } catch (err: any) {
@@ -85,10 +85,10 @@ export default function PendingOnboardingList({ pendingUsers }: PendingOnboardin
     <div style={{ marginTop: "2.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div className="glass-panel" style={{ padding: "1.5rem" }}>
         <h2 style={{ fontSize: "1.1rem", fontWeight: 800 }} className="text-gold-gradient">
-          PENDING ASSOCIATE ONBOARDING REQUESTS
+          PENDING REPRESENTATIVE ONBOARDING REQUESTS
         </h2>
         <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-          The following Sales Associates have been added by Team Leads and require password assignment and approval.
+          The following Sales Representatives have been added by Team Leads and require password assignment and approval.
         </p>
       </div>
 

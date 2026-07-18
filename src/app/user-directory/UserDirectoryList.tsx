@@ -68,7 +68,7 @@ export default function UserDirectoryList({ initialUsers }: UserDirectoryListPro
 
   const getRoleLabel = (role: string) => {
     if (role === "TEAM_LEAD") return "Team Lead";
-    if (role === "SALES_ASSOCIATE") return "Sales Associate";
+    if (role === "SALES_ASSOCIATE") return "Sales Representative";
     return role;
   };
 
@@ -138,7 +138,7 @@ export default function UserDirectoryList({ initialUsers }: UserDirectoryListPro
         <div style={{ flex: 1, minWidth: "280px" }}>
           <h1 className="text-gold-gradient" style={{ fontSize: "1.5rem", fontWeight: 800 }}>👥 SYSTEM USER DIRECTORY</h1>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-            Search and view active Team Leads and Sales Associates registered inside this organization.
+            Search and view active Team Leads and Sales Representatives registered inside this organization.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginLeft: "auto", position: "relative", zIndex: 50 }}>

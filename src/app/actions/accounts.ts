@@ -148,7 +148,7 @@ export async function updateAccountStatusAction(
   if (user.role === "SALES_ASSOCIATE") {
     if (toStatus === "PENDING_TL") {
       if (fromStatus !== "DRAFT" && fromStatus !== "REJECTED") {
-        throw new Error("UNAUTHORIZED: Sales Associates can only submit Draft or Rejected accounts for TL approval.");
+        throw new Error("UNAUTHORIZED: Sales Representatives can only submit Draft or Rejected accounts for TL approval.");
       }
       // Automate fetch of Associate's Name and mapped TL_ID
       const associateUser = await db.user.findUnique({
@@ -161,10 +161,10 @@ export async function updateAccountStatusAction(
       finalAssociateId = associateUser.name || user.name || "N/A";
     } else {
       if (fromStatus !== "DRAFT" && fromStatus !== "REJECTED") {
-        throw new Error("UNAUTHORIZED: Sales Associates can only submit Draft or Rejected accounts.");
+        throw new Error("UNAUTHORIZED: Sales Representatives can only submit Draft or Rejected accounts.");
       }
       if (toStatus !== "SUBMITTED" && toStatus !== "DRAFT") {
-        throw new Error("Invalid transition: Sales Associates can only transition to Draft or Submitted.");
+        throw new Error("Invalid transition: Sales Representatives can only transition to Draft or Submitted.");
       }
     }
   }
@@ -280,7 +280,7 @@ export async function updateAccountStatusAction(
             id: crypto.randomUUID(),
             userId: targetTlId,
             title: "New Ad Request Pending Approval",
-            message: `Account serial ${account.serialCode} has been submitted by Sales Associate ${associateName} and is pending your approval.`,
+            message: `Account serial ${account.serialCode} has been submitted by Sales Representative ${associateName} and is pending your approval.`,
             type: "TL Approval Pending",
             isRead: false
           }
@@ -300,7 +300,7 @@ export async function updateAccountStatusAction(
               id: crypto.randomUUID(),
               userId: tlUser.id,
               title: "New Ad Request Pending Approval",
-              message: `Account serial ${account.serialCode} has been submitted by Sales Associate ${associateName} and is pending your approval.`,
+              message: `Account serial ${account.serialCode} has been submitted by Sales Representative ${associateName} and is pending your approval.`,
               type: "TL Approval Pending",
               isRead: false
             }

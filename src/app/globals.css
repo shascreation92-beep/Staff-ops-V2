@@ -266,28 +266,6 @@ body {
   margin-bottom: 0.5rem;
 }
 
-.profile-key-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 1.5rem;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-dim);
-  color: var(--text-secondary);
-  cursor: pointer;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.profile-key-btn:hover {
-  background: var(--border-dim);
-  color: var(--text-primary);
-}
-
 .profile-avatar-container {
   margin-bottom: 0.75rem;
   display: flex;
@@ -470,21 +448,7 @@ body {
   padding-left: 1.25rem;
 }
 
-/* Clean minimal footer credits */
-.sidebar-credit-footer {
-  padding: 0 1rem 1rem 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  background: #FFFFFF;
-  gap: 0.15rem;
-}
 
-.sidebar-credit-footer span {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-}
 
 /* Header Styling */
 .header-container {

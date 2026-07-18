@@ -54,6 +54,20 @@ export async function sendChatMessageAction(formData: z.infer<typeof SendMessage
       }
     });
 
+    // Create a database notification record for direct message delivery
+    await db.notification.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: receiverId,
+        title: `💬 Message from ${user.name || "Colleague"}`,
+        message: `[CHAT_ID:${user.id}] ${message.startsWith("📎 ATTACHMENT") ? "Sent you an attachment file" : message.length > 80 ? message.slice(0, 80) + "..." : message}`,
+        type: "CHAT_DIRECT",
+        isRead: false,
+        isArchived: false,
+        createdAt: new Date()
+      }
+    });
+
     revalidatePath("/chat-space");
     return { success: true, message: newMessage };
   } catch (error: any) {
@@ -371,6 +385,60 @@ export async function sendGroupMessageAction(
         replyToMessage
       }
     });
+
+    // Scan and notify mentioned group members via persistent database alerts
+    const group = await db.chatgroup.findUnique({
+      where: { id: groupId }
+    });
+
+    const members = await db.chatgroupmember.findMany({
+      where: { groupId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    const checkUserIsMentioned = (msgText: string, uName: string) => {
+      if (!msgText || !uName) return false;
+      if (msgText.toLowerCase().includes("@all") || msgText.toLowerCase().includes("@everyone")) {
+        return true;
+      }
+      const escapedFullName = uName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const fullNameRegex = new RegExp(`@${escapedFullName}\\b`, 'i');
+      if (fullNameRegex.test(msgText)) return true;
+
+      const nameParts = uName.trim().split(/\s+/);
+      if (nameParts.length > 1) {
+        const firstName = nameParts[0];
+        const escapedFirstName = firstName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const firstNameRegex = new RegExp(`@${escapedFirstName}\\b`, 'i');
+        if (firstNameRegex.test(msgText)) return true;
+      }
+      return false;
+    };
+
+    for (const member of members) {
+      if (member.userId === user.id) continue;
+      if (checkUserIsMentioned(message, member.user.name || "")) {
+        await db.notification.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: member.userId,
+            title: `💬 Mentioned in #${group?.name || "Group"}`,
+            message: `[CHAT_ID:${groupId}] ${user.name || "A colleague"} mentioned you: "${message.length > 60 ? message.slice(0, 60) + "..." : message}"`,
+            type: "CHAT_MENTION",
+            isRead: false,
+            isArchived: false,
+            createdAt: new Date()
+          }
+        });
+      }
+    }
 
     revalidatePath("/chat-space");
     return { success: true, message: newMessage };

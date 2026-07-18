@@ -68,7 +68,7 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
             MY TEAM DIRECTORY
           </h2>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-            Operational directory of Sales Associates currently mapped to your node operations.
+            Operational directory of Sales Representatives currently mapped to your node operations.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center" }}>

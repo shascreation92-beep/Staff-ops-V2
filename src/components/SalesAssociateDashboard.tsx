@@ -8,7 +8,8 @@ import {
   ShieldAlert, 
   AlertCircle, 
   HelpCircle, 
-  Target 
+  Target,
+  UserCheck
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -35,9 +36,10 @@ interface Stats {
 interface SalesAssociateDashboardProps {
   initialStats: Stats;
   userName: string;
+  teamLeadName?: string | null;
 }
 
-export default function SalesAssociateDashboard({ initialStats, userName }: SalesAssociateDashboardProps) {
+export default function SalesAssociateDashboard({ initialStats, userName, teamLeadName }: SalesAssociateDashboardProps) {
   const [stats, setStats] = useState<Stats>(initialStats);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -109,7 +111,29 @@ export default function SalesAssociateDashboard({ initialStats, userName }: Sale
           </span>
         </div>
         
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+          {/* Reporting To Pill Card */}
+          {teamLeadName && (
+            <div className="glass-panel" style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.4rem 0.85rem",
+              background: "rgba(173, 232, 244, 0.25)",
+              border: "1px solid rgba(0, 119, 182, 0.15)",
+              borderRadius: "8px",
+              height: "36px"
+            }}>
+              <UserCheck size={14} style={{ color: "var(--gold-primary)" }} />
+              <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>
+                Reporting To :{" "}
+                <span style={{ color: "var(--gold-premium)", fontWeight: 800 }}>
+                  {teamLeadName}
+                </span>
+              </span>
+            </div>
+          )}
+
           {/* Compact Total Account Card */}
           <div className="glass-panel" style={{
             display: "flex",

@@ -101,7 +101,7 @@ export default function NotificationBell() {
   };
 
   const cleanMessage = (msg: string) => {
-    return msg.replace(/^\[NOTE_ID:[^\]]+\]\s*/, "");
+    return msg.replace(/^\[(?:NOTE|CHAT)_ID:[^\]]+\]\s*/, "");
   };
 
   const handleNotificationClick = (n: Notification) => {
@@ -111,6 +111,7 @@ export default function NotificationBell() {
 
     const isTeamAnnouncement = n.type === "TEAM_ANNOUNCEMENT" || n.message.includes("[NOTE_ID:");
     const isItTicket = n.type === "IT Processing Ticket" || n.title.includes("IT Processing Ticket") || n.type === "IT_READ_ONLY";
+    const isChatNotification = n.type === "CHAT_MENTION" || n.type === "CHAT_DIRECT" || n.message.includes("[CHAT_ID:");
 
     if (isTeamAnnouncement) {
       const match = n.message.match(/\[NOTE_ID:([^\]]+)\]/);
@@ -124,6 +125,14 @@ export default function NotificationBell() {
       }
     } else if (isItTicket) {
       router.push("/accounts");
+    } else if (isChatNotification) {
+      const match = n.message.match(/\[CHAT_ID:([^\]]+)\]/);
+      const chatId = match ? match[1] : null;
+      if (chatId) {
+        router.push(`/chat-space?contactId=${chatId}`);
+      } else {
+        router.push("/chat-space");
+      }
     }
     setShowNotifications(false);
   };

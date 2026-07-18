@@ -41,11 +41,11 @@ export async function sendInvitationAction(formData: z.infer<typeof InviteSchema
       }
 
       if (existingUser.role !== "SALES_ASSOCIATE") {
-        throw new Error(`Only Sales Associates can be upgraded to Team Lead. User is currently "${existingUser.role}".`);
+        throw new Error(`Only Sales Representatives can be upgraded to Team Lead. User is currently "${existingUser.role}".`);
       }
 
       if (role !== "TEAM_LEAD") {
-        throw new Error("Only Team Lead invitations can be sent to existing Sales Associates.");
+        throw new Error("Only Team Lead invitations can be sent to existing Sales Representatives.");
       }
 
       // Create upgrade notification
@@ -304,7 +304,7 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
   }
 
   if (!companyId) {
-    throw new Error("No company context found to assign Sales Associate.");
+    throw new Error("No company context found to assign Sales Representative.");
   }
 
   // Check unique email in user table
@@ -352,7 +352,7 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
           id: crypto.randomUUID(),
           userId: itUser.id,
           title: "New Onboarding Request Submitted",
-          message: `New Onboarding Request Submitted: Sales Associate ${fullName} (${email}) has been submitted for onboarding by ${currentUser.name || currentUser.email}.`,
+          message: `New Onboarding Request Submitted: Sales Representative ${fullName} (${email}) has been submitted for onboarding by ${currentUser.name || currentUser.email}.`,
           type: "IT_READ_ONLY",
           isRead: false
         }
@@ -537,7 +537,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
   }
 
   if (pendingUser.status !== "PENDING" || pendingUser.role !== "SALES_ASSOCIATE") {
-    throw new Error("Target user is not a pending Sales Associate.");
+    throw new Error("Target user is not a pending Sales Representative.");
   }
 
   // Multi-tenant check
@@ -596,7 +596,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
       data: {
         id: newEmployeeId,
         employeeId: targetEmployeeId,
-        fullName: pendingUser.name || "Sales Associate",
+        fullName: pendingUser.name || "Sales Representative",
         email: pendingUser.email,
         status: "ACTIVE",
         companyId: pendingUser.companyId || currentUser.companyId || "",
@@ -620,7 +620,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
         data: {
           id: crypto.randomUUID(),
           userId: itUser.id,
-          title: "New Sales Associate Onboarded",
+          title: "New Sales Representative Onboarded",
           message: `${pendingUser.name} (${pendingUser.email}) has been successfully approved and onboarded by ${currentUser.name || currentUser.email}.`,
           type: "IT_READ_ONLY",
           isRead: false
@@ -826,7 +826,7 @@ export async function rejectSalesAssociateAction(userId: string) {
   }
 
   if (pendingUser.status !== "PENDING" || pendingUser.role !== "SALES_ASSOCIATE") {
-    throw new Error("Target user is not a pending Sales Associate.");
+    throw new Error("Target user is not a pending Sales Representative.");
   }
 
   // Multi-tenant check

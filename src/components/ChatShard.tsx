@@ -325,6 +325,111 @@ export default function ChatShard({
   // Set to track tagged message alerts (so we don't alert multiple times per tag)
   const notifiedMessageIds = useRef<Set<string>>(new Set());
 
+  // Smart mention checker
+  const checkIsMentioned = (messageText: string) => {
+    if (!messageText) return false;
+    
+    // 1. Check for @all or @everyone
+    if (messageText.toLowerCase().includes("@all") || messageText.toLowerCase().includes("@everyone")) {
+      return true;
+    }
+
+    // 2. Check for full name mention (case-insensitive)
+    const fullName = currentUser.name || "";
+    const escapedFullName = fullName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const fullNameRegex = new RegExp(`@${escapedFullName}\\b`, 'i');
+    if (fullNameRegex.test(messageText)) {
+      return true;
+    }
+
+    // 3. Check for first name mention (case-insensitive, only if name has multiple words)
+    const nameParts = fullName.trim().split(/\s+/);
+    if (nameParts.length > 1) {
+      const firstName = nameParts[0];
+      const escapedFirstName = firstName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const firstNameRegex = new RegExp(`@${escapedFirstName}\\b`, 'i');
+      if (firstNameRegex.test(messageText)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  // Play a pleasant, synthesized notification sound chime
+  const playNotificationChime = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      
+      const playNote = (time: number, freq: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, time);
+        
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.08, time + 0.05); // volume: 8%
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(time);
+        osc.stop(time + duration);
+      };
+      
+      const now = ctx.currentTime;
+      playNote(now, 523.25, 0.4); // C5
+      playNote(now + 0.12, 659.25, 0.5); // E5
+    } catch (e) {
+      console.warn("Audio Context playback blocked or not supported", e);
+    }
+  };
+
+  // Trigger interactive toast notifications
+  const triggerMentionNotification = (msg: any, channelName: string) => {
+    playNotificationChime();
+
+    toast((t) => (
+      <div 
+        onClick={() => {
+          // Switch active contact to the group containing the mention
+          if (msg.groupId) {
+            const targetGroup = joinedGroups.find((g: any) => g.id === msg.groupId);
+            if (targetGroup) {
+              setActiveContact({ ...targetGroup, isGroup: true });
+            }
+          } else {
+            const targetContact = { id: msg.senderId, name: msg.sender?.name, isGroup: false };
+            setActiveContact(targetContact as any);
+          }
+          toast.dismiss(t.id);
+        }}
+        style={{ cursor: "pointer", display: "flex", flexDirection: "column", gap: "0.2rem" }}
+      >
+        <span style={{ fontWeight: 800, fontSize: "0.82rem", color: "var(--gold-premium)" }}>
+          🔔 Mentioned in #{channelName}
+        </span>
+        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+          <strong>{msg.sender?.name || "Colleague"}:</strong> {msg.message.length > 60 ? msg.message.slice(0, 60) + "..." : msg.message}
+        </span>
+      </div>
+    ), {
+      duration: 5000,
+      position: "top-right",
+      style: {
+        borderLeft: "5px solid var(--gold-glow)",
+        background: "#FFFFFF",
+        padding: "0.75rem 1rem",
+        borderRadius: "12px",
+        boxShadow: "var(--shadow-premium)"
+      }
+    });
+  };
+
   // Broadcast Panel states
   const [selectedBroadcastRecipients, setSelectedBroadcastRecipients] = useState<string[]>([]);
   const [broadcastMessageText, setBroadcastMessageText] = useState("");
@@ -423,11 +528,10 @@ export default function ChatShard({
           if (isGroup) {
             data.forEach((m: any) => {
               if (m.senderId !== currentUser.id) {
-                const mentionTag = `@${currentUser.name}`;
-                if (m.message.includes(mentionTag) && !notifiedMessageIds.current.has(m.id)) {
+                if (checkIsMentioned(m.message) && !notifiedMessageIds.current.has(m.id)) {
                   notifiedMessageIds.current.add(m.id);
-                  if (!mutedGroups.includes(activeContact.id)) {
-                    alert(`🚨 HIGH-PRIORITY MENTION ALERT 🚨\n\n${m.sender?.name || "Colleague"} mentioned you in group:\n"${m.message}"`);
+                  if (!mutedGroups.includes(activeContact.id) && !isDnd) {
+                    triggerMentionNotification(m, activeContact.name || "Group");
                   }
                 }
               }
@@ -472,6 +576,46 @@ export default function ChatShard({
     const interval = setInterval(pollAllMessages, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Poll globally for all groups and pins every 5 seconds to keep sidebar and group mention alerts fresh
+  useEffect(() => {
+    const pollGroups = async () => {
+      try {
+        const res = await fetch("/api/chat/groups");
+        if (res.ok) {
+          const data = await res.json();
+          setJoinedGroups(data.joinedGroups || []);
+          setDiscoverableGroups(data.discoverableGroups || []);
+          setPins(data.pins || []);
+          setPendingRequests(data.pendingRequests || []);
+
+          // Scan all latest messages in all groups for mentions
+          data.joinedGroups.forEach((group: any) => {
+            // Only check if it's not the active contact (since active contact is polled separately)
+            if (activeContact && activeContact.isGroup && activeContact.id === group.id) {
+              return; 
+            }
+
+            const latestMsg = group.messages?.[0];
+            if (latestMsg && latestMsg.senderId !== currentUser.id) {
+              if (checkIsMentioned(latestMsg.message) && !notifiedMessageIds.current.has(latestMsg.id)) {
+                notifiedMessageIds.current.add(latestMsg.id);
+                if (!mutedGroups.includes(group.id) && !isDnd) {
+                  triggerMentionNotification(latestMsg, group.name || "Group");
+                }
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to poll groups globally:", err);
+      }
+    };
+
+    pollGroups();
+    const interval = setInterval(pollGroups, 5000);
+    return () => clearInterval(interval);
+  }, [activeContact, mutedGroups, isDnd, joinedGroups]);
 
   // Smart Scroll to bottom logic
   const lastMessageCount = useRef(messages.length);
@@ -2656,6 +2800,7 @@ export default function ChatShard({
 
                 const isOwn = m.senderId === currentUser.id;
                 const isAttachment = m.message.startsWith("📎 ATTACHMENT");
+                const isMentioned = !isOwn && checkIsMentioned(m.message);
                 
                 let fileName = "";
                 let fileType = "";
@@ -2717,12 +2862,13 @@ export default function ChatShard({
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        background: m.isDeleted ? "rgba(0, 0, 0, 0.05)" : isOwn ? "#0250A1" : "#EAEBEF",
+                        background: m.isDeleted ? "rgba(0, 0, 0, 0.05)" : isOwn ? "#0250A1" : (isMentioned ? "rgba(245, 158, 11, 0.08)" : "#EAEBEF"),
                         color: m.isDeleted ? "var(--text-muted)" : isOwn ? "#FFFFFF" : "var(--text-primary)",
                         padding: "0.65rem 0.9rem",
                         borderRadius: isOwn ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
+                        borderLeft: isMentioned ? "3.5px solid #F59E0B" : "none",
                         maxWidth: "60%",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                        boxShadow: isMentioned ? "0 0 10px rgba(245, 158, 11, 0.35)" : "0 1px 3px rgba(0,0,0,0.06)",
                         position: "relative",
                         transition: "all 0.3s ease"
                       }}
@@ -2734,8 +2880,22 @@ export default function ChatShard({
                       )}
 
                       {activeContact.isGroup && !isOwn && (
-                        <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-premium)", marginBottom: "0.25rem", display: "block" }}>
-                          {m.sender?.name || "Colleague"}
+                        <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-premium)", marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <span>{m.sender?.name || "Colleague"}</span>
+                          {isMentioned && (
+                            <span style={{
+                              fontSize: "0.58rem",
+                              background: "rgba(245, 158, 11, 0.15)",
+                              color: "#D97706",
+                              padding: "0.05rem 0.3rem",
+                              borderRadius: "4px",
+                              fontWeight: 850,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.02em"
+                            }}>
+                              @ Mentioned
+                            </span>
+                          )}
                         </span>
                       )}
 

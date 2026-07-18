@@ -484,7 +484,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       case "TEAM_LEAD":
         return "Team Lead";
       case "SALES_ASSOCIATE":
-        return "Sales Associate";
+        return "Sales Representative";
       case "IT_DEPARTMENT":
         return "IT Operations";
       default:
@@ -507,47 +507,43 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
       {/* User Profile Header (Top-ish, below Logo) */}
       <div className="sidebar-profile">
-        {/* Change Password Button */}
-        {["SUPER_ADMIN", "COMPANY_OWNER"].includes(user.role) && (
-          <button
-            onClick={() => {
-              setNewPassword("");
-              setChangePassError(null);
-              setChangePassSuccess(false);
-              setShowChangePassModal(true);
-            }}
-            className="profile-key-btn"
-            title="Change Password"
-          >
-            <Key size={13} />
-          </button>
-        )}
-
         <style dangerouslySetInnerHTML={{ __html: `
-          .avatar-hover-overlay-btn {
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
-            background: rgba(0, 0, 0, 0.4);
+          .profile-action-toolbar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+          }
+          .profile-action-btn {
+            background: rgba(173, 232, 244, 0.25);
+            border: 1px solid rgba(0, 119, 182, 0.20);
+            color: var(--text-primary);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
-            justifyContent: center;
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            color: #FFFFFF;
-            font-size: 0.9rem;
-            cursor: pointer;
+            justify-content: center;
             border-radius: 50%;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
           }
-          .profile-avatar-container:hover .avatar-hover-overlay-btn {
-            opacity: 1 !important;
+          .profile-action-btn:hover {
+            background: rgba(173, 232, 244, 0.55);
+            border-color: #0096C7;
+            color: #0077B6;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(72, 202, 228, 0.5);
+          }
+          .profile-action-btn:active {
+            transform: scale(0.95);
           }
         ` }} />
 
         <div 
           className="profile-avatar-container"
-          onClick={() => setShowUploadModal(true)}
-          style={{ cursor: "pointer", position: "relative" }}
-          title="Upload Display Picture"
+          style={{ position: "relative" }}
         >
           <div className="profile-avatar-circle" style={{ overflow: "hidden", position: "relative" }}>
             <img 
@@ -555,17 +551,72 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               alt={user.name || "Operator"} 
               style={{ width: "100%", height: "100%", objectFit: "cover" }} 
             />
-            <div className="avatar-hover-overlay-btn">
-              📷
-            </div>
           </div>
         </div>
 
-        <div className="profile-info">
-          <span className="profile-name" title={`${user.name || "Operator"} - ${getDesignation(user.role)}`}>
-            <strong>{user.name || "Operator"}</strong> - <span className="profile-designation">{getDesignation(user.role)}</span>
+        {/* Profile Action Toolbar */}
+        <div className="profile-action-toolbar">
+          {/* Edit DP Button */}
+          <button 
+            type="button"
+            onClick={() => setShowUploadModal(true)}
+            className="profile-action-btn"
+            title="Upload Display Picture"
+          >
+            <Pencil size={12} />
+          </button>
+
+          {/* Change Password Button */}
+          {["SUPER_ADMIN", "COMPANY_OWNER"].includes(user.role) && (
+            <button
+              type="button"
+              onClick={() => {
+                setNewPassword("");
+                setChangePassError(null);
+                setChangePassSuccess(false);
+                setShowChangePassModal(true);
+              }}
+              className="profile-action-btn"
+              title="Change Password"
+            >
+              <Key size={12} />
+            </button>
+          )}
+
+          {/* Edit Bio Button */}
+          <button 
+            type="button"
+            onClick={() => setShowBioModal(true)} 
+            className="profile-action-btn"
+            title="Edit Bio"
+          >
+            <FileText size={12} />
+          </button>
+        </div>
+
+        <div className="profile-info" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem" }}>
+          <span className="profile-name" title={user.name || "Operator"} style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", textAlign: "center" }}>
+            {user.name || "Operator"}
           </span>
-          <span className="profile-email" title={user.email || ""}>
+          <span 
+            className="profile-designation-badge" 
+            title={getDesignation(user.role)} 
+            style={{ 
+              fontSize: "0.68rem", 
+              fontWeight: 700, 
+              color: "var(--gold-premium)", 
+              background: "rgba(173, 232, 244, 0.4)", 
+              border: "1px solid rgba(0, 119, 182, 0.15)",
+              borderRadius: "12px",
+              padding: "0.15rem 0.6rem",
+              textAlign: "center",
+              display: "inline-block",
+              letterSpacing: "0.02em"
+            }}
+          >
+            {getDesignation(user.role)}
+          </span>
+          <span className="profile-email" title={user.email || ""} style={{ fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center", marginTop: "0.05rem" }}>
             {user.email || ""}
           </span>
           <div style={{ 
@@ -579,16 +630,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             gap: "0.2rem",
             position: "relative"
           }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
               <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.05em" }}>User Bio</span>
-              <button 
-                type="button" 
-                onClick={() => setShowBioModal(true)} 
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "var(--gold-premium)" }}
-                title="Edit Bio"
-              >
-                <Pencil size={9} />
-              </button>
             </div>
             <p style={{ 
               fontSize: "0.68rem", 
@@ -598,18 +641,12 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               wordBreak: "break-word",
               fontStyle: currentBio ? "normal" : "italic"
             }}>
-              {currentBio || "No bio added yet. Click edit icon to add bio."}
+              {currentBio || "No bio added yet. Click the edit bio icon above to add a bio."}
             </p>
           </div>
         </div>
       </div>
 
-      {user.role === "SALES_ASSOCIATE" && user.teamLeadName && (
-        <div className="sidebar-reporting-badge">
-          <span className="reporting-label">Reporting To</span>
-          <span className="reporting-name">{user.teamLeadName}</span>
-        </div>
-      )}
 
       <nav className="sidebar-menu">
         {filteredItems.map((item) => {
@@ -748,11 +785,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         </button>
       </div>
 
-      {/* Clean minimal footer credits */}
-      <div className="sidebar-credit-footer">
-        <span>StaffOps Console</span>
-        <span>© 2026 All Rights Reserved</span>
-      </div>
 
       {/* Change Password Modal */}
       {showChangePassModal && (

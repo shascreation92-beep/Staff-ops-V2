@@ -42,7 +42,7 @@ export default async function PersonalNotesPage() {
           ...note,
           sharesCount: clones.length,
           readCount: readClones.length,
-          readByNames: readClones.map(c => c.user.name || "Sales Associate")
+          readByNames: readClones.map(c => c.user.name || "Sales Representative")
         };
       }
       return {

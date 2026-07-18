@@ -365,7 +365,7 @@ export default function SignInPage() {
                 style={{ flex: 1 }}
                 disabled={isLoading}
               >
-                Sale As.
+                Sales Rep.
               </button>
             </div>
           </div>

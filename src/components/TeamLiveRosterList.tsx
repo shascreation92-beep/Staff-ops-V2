@@ -199,7 +199,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
           <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
             {user.role === "SUPER_ADMIN" && "Global system-wide roster monitor covering all registered accounts."}
             {user.role === "COMPANY_OWNER" && "Company-wide roster monitor covering all registered accounts."}
-            {user.role === "TEAM_LEAD" && "Real-time feed tracking all entries made by your assigned Sales Associates."}
+            {user.role === "TEAM_LEAD" && "Real-time feed tracking all entries made by your assigned Sales Representatives."}
           </span>
         </div>
 
@@ -290,7 +290,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
 
             {/* Associate Filter */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Sales Associate</label>
+              <label className="form-label">Sales Representative</label>
               <div style={{ position: "relative" }}>
                 <select
                   value={selectedAssociate}
@@ -298,7 +298,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
                   className="input-gold"
                   style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem", appearance: "none", width: "100%" }}
                 >
-                  <option value="ALL">All Associates</option>
+                  <option value="ALL">All Representatives</option>
                   {associateOptions.map(a => (
                     <option key={a} value={a}>{a}</option>
                   ))}

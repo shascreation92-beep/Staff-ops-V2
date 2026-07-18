@@ -108,9 +108,9 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
       {/* Header and Summary card */}
       <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem", position: "relative", zIndex: 50 }}>
         <div style={{ flex: 1, minWidth: "280px" }}>
-          <h1 className="text-gold-gradient" style={{ fontSize: "1.5rem", fontWeight: 800 }}>TEAM LEADS & ASSOCIATE ORGANIZATIONAL DIRECTORY</h1>
+          <h1 className="text-gold-gradient" style={{ fontSize: "1.5rem", fontWeight: 800 }}>TEAM LEADS & REPRESENTATIVE ORGANIZATIONAL DIRECTORY</h1>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-            Monitor Team Leaders, their assigned Sales Associates, and team sizes across the tenant shard.
+            Monitor Team Leaders, their assigned Sales Representatives, and team sizes across the tenant shard.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginLeft: "auto" }}>
@@ -467,7 +467,7 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
                       required
                     >
                       <option value="TEAM_LEAD">TEAM LEAD</option>
-                      <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
+                      <option value="SALES_ASSOCIATE">SALES REPRESENTATIVE</option>
                       <option value="IT_DEPARTMENT">IT DEPARTMENT</option>
                     </select>
                   </div>

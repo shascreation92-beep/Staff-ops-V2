@@ -109,7 +109,7 @@ export default function SettingsShard({
         setInviteEmail("");
         setInviteSuccessMsg(
           res.mode === "UPGRADE"
-            ? "Upgrade invitation successfully sent to active Sales Associate."
+            ? "Upgrade invitation successfully sent to active Sales Representative."
             : "Invitation successfully dispatched to new Gmail address."
         );
         setTimeout(() => setInviteSuccessMsg(null), 4000);
@@ -511,7 +511,7 @@ export default function SettingsShard({
               {totalRecords === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "3rem" }}>
-                    No matching Team Leads or Sales Associates found in the system.
+                    No matching Team Leads or Sales Representatives found in the system.
                   </td>
                 </tr>
               ) : (
@@ -1062,7 +1062,7 @@ export default function SettingsShard({
                   disabled={isPending}
                 >
                   <option value="TEAM_LEAD">TEAM LEAD</option>
-                  <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
+                  <option value="SALES_ASSOCIATE">SALES REPRESENTATIVE</option>
                   <option value="IT_DEPARTMENT">IT DEPARTMENT</option>
                 </select>
               </div>
@@ -1155,7 +1155,7 @@ export default function SettingsShard({
             gap: "1.25rem",
             boxShadow: "var(--shadow-premium)"
           }}>
-            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>REASSIGN SALES ASSOCIATE</h2>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>REASSIGN SALES REPRESENTATIVE</h2>
 
             {reassignError && (
               <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
@@ -1165,7 +1165,7 @@ export default function SettingsShard({
 
             <form onSubmit={handleReassignSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="form-group">
-                <label className="form-label">Associate Name</label>
+                <label className="form-label">Representative Name</label>
                 <input
                   type="text"
                   readOnly

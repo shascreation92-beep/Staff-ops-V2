@@ -598,6 +598,7 @@ export default async function DashboardPage() {
       {user.role === "SALES_ASSOCIATE" ? (
         <SalesAssociateDashboard 
           userName={user.name || "OPERATOR"}
+          teamLeadName={user.teamLeadName}
           initialStats={{
             saTotalAccounts,
             fbTotal,
