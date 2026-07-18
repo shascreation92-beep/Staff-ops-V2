@@ -54,6 +54,7 @@ export default function ITOperationalLogsClient({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>("ALL");
   const [showHistoryPasswords, setShowHistoryPasswords] = useState<{ [key: string]: boolean }>({});
+  const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
   
   const [isPending, startTransition] = useTransition();
 
@@ -252,19 +253,45 @@ export default function ITOperationalLogsClient({
                   )}
 
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                    <div style={{
-                      width: "36px",
-                      height: "36px",
-                      borderRadius: "50%",
-                      background: "rgba(15, 23, 42, 0.04)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
-                      color: "var(--gold-premium)"
-                    }}>
-                      {agent.name.slice(0, 2).toUpperCase()}
-                    </div>
+                    {agent.image && !imageErrors[agent.id] ? (
+                      <img 
+                        src={agent.image} 
+                        alt={agent.name} 
+                        onError={() => {
+                          setImageErrors(prev => ({
+                            ...prev,
+                            [agent.id]: true
+                          }));
+                        }}
+                        style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          border: isTop ? "2px solid var(--gold-premium)" : "1px solid var(--border-dim)",
+                          boxShadow: isTop ? "0 0 8px rgba(212, 175, 55, 0.4)" : "none",
+                          transition: "transform 0.2s ease",
+                          cursor: "pointer"
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1.0)"}
+                      />
+                    ) : (
+                      <div style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        background: "rgba(15, 23, 42, 0.04)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 800,
+                        color: "var(--gold-premium)",
+                        border: isTop ? "2px solid var(--gold-premium)" : "1px solid var(--border-dim)"
+                      }}>
+                        {agent.name.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <h3 style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)" }}>{agent.name}</h3>
                       <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>{agent.email}</span>
