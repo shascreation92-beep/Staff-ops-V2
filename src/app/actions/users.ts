@@ -731,6 +731,7 @@ export async function adminResetUserPasswordAction(formData: z.infer<typeof Admi
     });
 
     revalidatePath("/settings");
+    revalidatePath("/it-management");
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Failed to reset user password.");

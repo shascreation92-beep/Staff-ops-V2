@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Mail, Award, Plus, X, AlertCircle, Users, Search } from "lucide-react";
+import { Shield, Mail, Award, Plus, X, AlertCircle, Users, Search, Eye, EyeOff } from "lucide-react";
 import { onboardTeamLeadAction, toggleUserStatusAction, adminResetUserPasswordAction } from "@/app/actions/users";
 import { toast } from "react-hot-toast";
 import NotificationBell from "./NotificationBell";
@@ -13,6 +13,7 @@ interface ITMember {
   name: string | null;
   email: string;
   status: string;
+  password?: string | null;
   createdAt: Date | string;
   employee?: {
     employeeId: string;
@@ -68,6 +69,16 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
     message: "",
     onConfirm: () => {}
   });
+
+  // Show/Hide password toggles state
+  const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
+
+  const togglePasswordVisibility = (id: string) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   const handleOnboardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -433,6 +444,51 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                         }}>
                           {it.status === 'APPROVED' ? 'ACTIVE' : 'DISABLED'}
                         </span>
+                      </div>
+
+                      {/* Password Field Display */}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginTop: "0.55rem",
+                        padding: "0.4rem 0.6rem",
+                        background: "rgba(15, 23, 42, 0.025)",
+                        border: "1px dashed var(--border-dim)",
+                        borderRadius: "6px",
+                        fontSize: "0.72rem",
+                        width: "fit-content",
+                        minWidth: "155px"
+                      }}>
+                        <span style={{ color: "var(--text-muted)", fontWeight: 500, marginRight: "0.5rem" }}>
+                          Pass:
+                        </span>
+                        <code style={{
+                          fontFamily: "monospace",
+                          fontWeight: 700,
+                          color: "var(--text-primary)",
+                          letterSpacing: showPasswords[it.id] ? "normal" : "0.15em",
+                          fontSize: "0.75rem"
+                        }}>
+                          {showPasswords[it.id] ? (it.password || "N/A") : "••••••••"}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility(it.id)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            padding: "0 0.25rem",
+                            cursor: "pointer",
+                            color: "var(--text-muted)",
+                            marginLeft: "0.6rem",
+                            display: "flex",
+                            alignItems: "center"
+                          }}
+                          title={showPasswords[it.id] ? "Hide Password" : "Show Password"}
+                        >
+                          {showPasswords[it.id] ? <EyeOff size={13} /> : <Eye size={13} />}
+                        </button>
                       </div>
                     </div>
                   </div>
