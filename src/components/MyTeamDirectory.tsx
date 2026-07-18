@@ -2,11 +2,12 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle, Copy } from "lucide-react";
+import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle, Copy, Download } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import { toast } from "react-hot-toast";
 import { saveAssociateEmployeeITAction } from "@/app/actions/employees";
 import { formatDate12h } from "@/lib/date-formatter";
+import { downloadCSV } from "@/lib/csv-exporter";
 
 interface TeamMember {
   id: string;
@@ -43,6 +44,36 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
   const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalRecords);
   const paginatedMembers = members.slice(startIndex, endIndex);
 
+  const handleExportCSV = () => {
+    const headers = [
+      "Employee ID",
+      "Name",
+      "Email",
+      "Role",
+      "Status",
+      "Laptop Brand",
+      "Laptop Model",
+      "Laptop Serial Number",
+      "Windows Version",
+      "VPN Provider"
+    ];
+
+    const rows = members.map(m => [
+      m.employee?.employeeId || "N/A",
+      m.name || "N/A",
+      m.email,
+      m.role,
+      m.status,
+      m.employee?.laptopBrand || "",
+      m.employee?.laptopModel || "",
+      m.employee?.laptopSerialNumber || "",
+      m.employee?.windowsVersion || "",
+      m.employee?.vpnProvider || ""
+    ]);
+
+    downloadCSV(headers, rows, `team_directory_${new Date().toISOString().slice(0,10)}`);
+  };
+
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
@@ -71,7 +102,15 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
             Operational directory of Sales Representatives currently mapped to your node operations.
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <button 
+            className="btn-gold" 
+            onClick={handleExportCSV}
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+          >
+            <Download size={16} />
+            <span>EXPORT CSV</span>
+          </button>
           <NotificationBell />
         </div>
       </div>

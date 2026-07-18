@@ -61,9 +61,13 @@ export default function NotificationBell() {
   };
 
   useEffect(() => {
+    const handlePoll = () => {
+      if (document.hidden) return;
+      fetchNotifications();
+    };
     Promise.resolve().then(() => fetchNotifications());
-    // Poll notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
+    // Poll notifications every 15 seconds when active
+    const interval = setInterval(handlePoll, 15000);
     return () => clearInterval(interval);
   }, []);
 

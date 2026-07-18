@@ -553,8 +553,13 @@ export default function ChatShard({
       }
     };
 
+    const handlePoll = () => {
+      if (document.hidden) return;
+      fetchLatestMessages();
+    };
+
     fetchLatestMessages();
-    const interval = setInterval(fetchLatestMessages, 3000);
+    const interval = setInterval(handlePoll, 3000);
     return () => clearInterval(interval);
   }, [activeContact]);
 
@@ -572,8 +577,13 @@ export default function ChatShard({
       }
     };
 
+    const handlePoll = () => {
+      if (document.hidden) return;
+      pollAllMessages();
+    };
+
     pollAllMessages();
-    const interval = setInterval(pollAllMessages, 5000);
+    const interval = setInterval(handlePoll, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -612,8 +622,13 @@ export default function ChatShard({
       }
     };
 
+    const handlePoll = () => {
+      if (document.hidden) return;
+      pollGroups();
+    };
+
     pollGroups();
-    const interval = setInterval(pollGroups, 5000);
+    const interval = setInterval(handlePoll, 5000);
     return () => clearInterval(interval);
   }, [activeContact, mutedGroups, isDnd, joinedGroups]);
 

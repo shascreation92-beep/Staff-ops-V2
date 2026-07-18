@@ -27,12 +27,14 @@ import {
   XCircle,
   Eye,
   MessageSquare,
-  X
+  X,
+  Download
 } from "lucide-react";
 import { account_status, user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
 import { toast } from "react-hot-toast";
 import ConfirmationModal from "./ConfirmationModal";
+import { downloadCSV } from "@/lib/csv-exporter";
 
 interface AccountsListProps {
   currentUser: {
@@ -357,6 +359,42 @@ export default function AccountsList({
     const dateB = new Date(b.createdAt).getTime();
     return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
   });
+
+  const handleExportCSV = () => {
+    const headers = [
+      "Tenant Company",
+      "Platform",
+      "ID Serial",
+      "ID Name",
+      "Ads Published",
+      "Verified",
+      "Status",
+      "Created By",
+      "Submission Date",
+      "Approved Date",
+      "Issue / Defect",
+      "TL Comment",
+      "IT Notes"
+    ];
+
+    const rows = sortedAccounts.map(acc => [
+      acc.company?.name || "N/A",
+      acc.platform?.name || "N/A",
+      acc.serialCode || "",
+      acc.idName || "",
+      (acc.adsPublished || 0).toString(),
+      acc.verificationStatus || "",
+      acc.status || "",
+      acc.user?.name || acc.user?.email || "System",
+      acc.submissionDate ? new Date(acc.submissionDate).toLocaleDateString() : "",
+      acc.approvedDate ? new Date(acc.approvedDate).toLocaleDateString() : "",
+      acc.issue || "",
+      acc.comment || "",
+      acc.itNotes || ""
+    ]);
+
+    downloadCSV(headers, rows, `accounts_export_${new Date().toISOString().slice(0,10)}`);
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -766,6 +804,14 @@ export default function AccountsList({
 
           {/* Left Column: Provision and Add Account Buttons */}
           <div className="toolbar-left-group">
+            <button 
+              className="btn-gold" 
+              onClick={handleExportCSV}
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            >
+              <Download size={16} />
+              <span>EXPORT CSV</span>
+            </button>
             {(isSuperAdmin || isCompanyOwner) && (
               <button 
                 className="btn-gold" 

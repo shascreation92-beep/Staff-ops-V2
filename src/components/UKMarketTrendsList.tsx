@@ -18,9 +18,11 @@ import {
   Hash,
   Send,
   MessageCircle,
-  HelpCircle
+  HelpCircle,
+  Download
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { downloadCSV } from "@/lib/csv-exporter";
 import { 
   forceSyncTrendsAction, 
   updateTenantTrendsConfigAction,
@@ -326,6 +328,30 @@ export default function UKMarketTrendsList({
 
   const filteredTrends = getFilteredTrends();
 
+  const handleExportCSV = () => {
+    const headers = [
+      "Platform Source",
+      "Keyword / Term",
+      "Spike Status",
+      "Volume / Spike %",
+      "Associated Article",
+      "Source Link",
+      "Category"
+    ];
+
+    const rows = filteredTrends.map(t => [
+      t.source || activeTab,
+      t.keyword || "",
+      t.spikePercent > 0 ? "Spike Search" : "Steady Search",
+      t.spikePercent > 0 ? `+${t.spikePercent}%` : t.traffic || "N/A",
+      t.newsTitle || "N/A",
+      t.newsUrl || "N/A",
+      t.category || "General"
+    ]);
+
+    downloadCSV(headers, rows, `uk_market_trends_${activeTab.toLowerCase()}_${new Date().toISOString().slice(0,10)}`);
+  };
+
   // Enforce 50-item pagination ceiling
   const paginatedTrends = filteredTrends.slice(0, 50);
   const totalCount = filteredTrends.length;
@@ -599,7 +625,24 @@ export default function UKMarketTrendsList({
           </div>
         )}
 
-        <div style={{ display: "flex", alignItems: "center", fontSize: "0.68rem", color: "var(--text-muted)", marginLeft: "auto", background: "rgba(15, 23, 42, 0.03)", padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+        <button 
+          onClick={handleExportCSV}
+          className="btn-gold"
+          style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "0.35rem", 
+            fontSize: "0.8rem", 
+            padding: "0.45rem 0.75rem", 
+            borderRadius: "6px",
+            marginLeft: "auto"
+          }}
+        >
+          <Download size={14} />
+          <span>Export CSV</span>
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", fontSize: "0.68rem", color: "var(--text-muted)", background: "rgba(15, 23, 42, 0.03)", padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
           Refresh: Every Day
         </div>
       </div>

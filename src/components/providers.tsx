@@ -7,6 +7,7 @@ import { AnnouncementProvider } from "./AnnouncementProvider";
 import { ITConfigProvider } from "./ITConfigProvider";
 
 import { Toaster } from "react-hot-toast";
+import PushRegister from "./PushRegister";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <ITConfigProvider>
             {children}
             <Toaster position="top-right" reverseOrder={false} />
+            <PushRegister />
           </ITConfigProvider>
         </AnnouncementProvider>
       </QueryClientProvider>

@@ -269,6 +269,7 @@ model user {
   chatstar                                 chatstar[]
   chatjoinrequest                          chatjoinrequest[]
   specialrequest                           specialrequest[]
+  pushsubscription                         pushsubscription[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -535,6 +536,18 @@ model itparsedaccount {
   createdAt    DateTime @default(now())
   agentId      String
   companyId    String
+}
+
+model pushsubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 

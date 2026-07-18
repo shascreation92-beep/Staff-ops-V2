@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { 
   FileText, 
   Search, 
@@ -9,10 +10,15 @@ import {
   Globe, 
   User, 
   Monitor,
-  Eye
+  Eye,
+  Download,
+  Trash2
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import { formatDate12h } from "@/lib/date-formatter";
+import { downloadCSV } from "@/lib/csv-exporter";
+import { clearAuditLogsAction } from "@/app/actions/audit-logs";
+import { toast } from "react-hot-toast";
 
 interface AuditLogsViewProps {
   auditLogs: any[];
@@ -26,6 +32,56 @@ export default function AuditLogsView({
   const [activeTab, setActiveTab] = useState<"AUDIT" | "LOGIN">("AUDIT");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  const handleExportCSV = () => {
+    if (activeTab === "AUDIT") {
+      const headers = ["Timestamp", "Operator", "Role", "Action", "Entity", "Entity ID", "IP Address", "Country"];
+      const rows = filteredAudits.map(log => [
+        new Date(log.createdAt).toLocaleString(),
+        log.user?.name || log.userEmail || "System",
+        log.userRole || "SYSTEM",
+        log.action,
+        log.entity,
+        log.entityId || "",
+        log.ipAddress,
+        log.country || "US"
+      ]);
+      downloadCSV(headers, rows, `audit_system_operations_${new Date().toISOString().slice(0,10)}`);
+    } else {
+      const headers = ["Login Time", "Logout Time", "Operator Name", "Operator Email", "Device", "Browser", "IP Address", "Country", "Duration (Minutes)"];
+      const rows = filteredLogins.map(log => [
+        new Date(log.loginTime).toLocaleString(),
+        log.logoutTime ? new Date(log.logoutTime).toLocaleString() : "ACTIVE SESSION",
+        log.user?.name || "N/A",
+        log.user?.email || "N/A",
+        log.device || "Desktop",
+        log.browser || "Chrome",
+        log.ipAddress,
+        log.country || "US",
+        log.sessionLength ? Math.round(log.sessionLength / 60).toString() : "Ongoing"
+      ]);
+      downloadCSV(headers, rows, `audit_login_sessions_${new Date().toISOString().slice(0,10)}`);
+    }
+  };
+
+  const handleClearLogs = () => {
+    const doubleConfirm = window.confirm("WARNING: This will permanently delete ALL system audit logs and login logs from the database. Are you absolutely sure?");
+    if (!doubleConfirm) return;
+
+    startTransition(async () => {
+      try {
+        const res = await clearAuditLogsAction();
+        if (res.success) {
+          toast.success("Logs cleared successfully.");
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to clear logs.");
+      }
+    });
+  };
 
   const filteredAudits = auditLogs.filter(log => 
     log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -95,6 +151,35 @@ export default function AuditLogsView({
               className={`chart-tab ${activeTab === "LOGIN" ? "active" : ""}`}
             >
               Login Sessions
+            </button>
+          </div>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "1.5rem" }}>
+            <button 
+              className="btn-gold" 
+              onClick={handleExportCSV}
+              style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.78rem", padding: "0.45rem 0.75rem" }}
+            >
+              <Download size={14} />
+              <span>Export CSV</span>
+            </button>
+            <button 
+              className="btn-gold" 
+              onClick={handleClearLogs}
+              disabled={isPending}
+              style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: "0.35rem", 
+                fontSize: "0.78rem", 
+                padding: "0.45rem 0.75rem", 
+                background: "rgba(239, 68, 68, 0.08)", 
+                border: "1px solid rgba(239, 68, 68, 0.25)", 
+                color: "#f87171" 
+              }}
+            >
+              <Trash2 size={14} />
+              <span>{isPending ? "Clearing..." : "Clear Logs"}</span>
             </button>
           </div>
 

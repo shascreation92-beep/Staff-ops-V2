@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { enforceAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { sendPushNotification } from "@/lib/push-helper";
 
 const SendMessageSchema = z.object({
   receiverId: z.string().min(1, "Recipient is required"),
@@ -67,6 +68,15 @@ export async function sendChatMessageAction(formData: z.infer<typeof SendMessage
         createdAt: new Date()
       }
     });
+
+    // Send background PWA push notification
+    const pushMsg = message.startsWith("📎 ATTACHMENT") ? "Sent you an attachment file" : message.length > 80 ? message.slice(0, 80) + "..." : message;
+    await sendPushNotification(
+      receiverId, 
+      `💬 Message from ${user.name || "Colleague"}`, 
+      pushMsg, 
+      { chatId: user.id }
+    ).catch(err => console.error("Push notify error:", err));
 
     revalidatePath("/chat-space");
     return { success: true, message: newMessage };
@@ -437,6 +447,15 @@ export async function sendGroupMessageAction(
             createdAt: new Date()
           }
         });
+
+        // Trigger PWA background push notification
+        const pushMsg = `${user.name || "A colleague"} mentioned you: "${message.length > 60 ? message.slice(0, 60) + "..." : message}"`;
+        await sendPushNotification(
+          member.userId,
+          `💬 Mentioned in #${group?.name || "Group"}`,
+          pushMsg,
+          { chatId: groupId }
+        ).catch(err => console.error("Group push notify error:", err));
       }
     }
 
