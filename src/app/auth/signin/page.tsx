@@ -223,19 +223,14 @@ export default function SignInPage() {
       }}>
         {/* Logo and Header Block */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem" }}>
-          <div style={{
+          <img src="/logo.png" alt="Worknode Logo" style={{
             width: "4.5rem",
             height: "4.5rem",
-            borderRadius: "50%",
-            backgroundColor: "var(--gold-primary)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 0 20px rgba(0, 176, 116, 0.25)",
+            borderRadius: "16px",
+            objectFit: "cover",
+            boxShadow: "0 0 25px rgba(212, 175, 55, 0.25)",
             border: "2px solid var(--gold-glow)"
-          }}>
-            <Shield size={34} style={{ color: "#FFFFFF" }} />
-          </div>
+          }} />
           <h1 style={{
             fontSize: "1.9rem",
             fontWeight: 800,

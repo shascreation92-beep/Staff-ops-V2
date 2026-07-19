@@ -497,21 +497,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       {/* Omagie/Boltz Logo Container */}
       <div className="sidebar-logo-container">
         <div className="sidebar-logo-brand">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: "0.2rem" }}>
-            {/* Connection Lines */}
-            <line x1="16" y1="9" x2="10" y2="21" stroke="var(--gold-primary)" strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
-            <line x1="16" y1="9" x2="22" y2="21" stroke="var(--gold-primary)" strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
-            <line x1="10" y1="21" x2="22" y2="21" stroke="var(--gold-primary)" strokeWidth="2.5" strokeLinecap="round" opacity="0.5" />
-            {/* Top Node */}
-            <circle cx="16" cy="9" r="4" fill="var(--gold-primary)" />
-            <circle cx="16" cy="9" r="2.2" fill="#FFFFFF" />
-            {/* Bottom Left Node */}
-            <circle cx="10" cy="21" r="4" fill="var(--gold-primary)" />
-            <circle cx="10" cy="21" r="2.2" fill="#FFFFFF" />
-            {/* Bottom Right Node */}
-            <circle cx="22" cy="21" r="4" fill="var(--gold-primary)" />
-            <circle cx="22" cy="21" r="2.2" fill="#FFFFFF" />
-          </svg>
+          <img src="/logo.png" alt="Worknode Logo" style={{ width: "28px", height: "28px", borderRadius: "6px", objectFit: "cover", marginRight: "0.4rem" }} />
           <span className="sidebar-logo-text">Worknode</span>
         </div>
       </div>
