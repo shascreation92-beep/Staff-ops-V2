@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { Shield, Lock, ArrowRight, Terminal, Eye, EyeOff } from "lucide-react";
+import { Shield, Lock, ArrowRight, Terminal, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("admin@worknode.com");
@@ -290,6 +291,13 @@ export default function SignInPage() {
             padding: 2rem 1.5rem;
           }
         }
+
+        .back-btn-hover:hover {
+          color: #48CAE4 !important;
+          background: rgba(255, 255, 255, 0.08) !important;
+          border-color: rgba(72, 202, 228, 0.35) !important;
+          box-shadow: 0 4px 15px rgba(72, 202, 228, 0.1);
+        }
       `}} />
 
       {/* Animated canvas starfield */}
@@ -305,6 +313,34 @@ export default function SignInPage() {
           pointerEvents: "none"
         }}
       />
+
+      {/* Back Button */}
+      <Link href="/" style={{
+        position: "absolute",
+        top: "1.5rem",
+        left: "1.5rem",
+        display: "flex",
+        alignItems: "center",
+        gap: "0.5rem",
+        textDecoration: "none",
+        color: "rgba(255, 255, 255, 0.65)",
+        fontSize: "0.8rem",
+        fontWeight: 700,
+        zIndex: 10,
+        background: "rgba(255, 255, 255, 0.03)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        borderRadius: "20px",
+        padding: "0.4rem 0.85rem",
+        backdropFilter: "blur(8px)",
+        transition: "all 0.25s ease",
+        letterSpacing: "0.02em",
+        textTransform: "uppercase"
+      }}
+      className="back-btn-hover"
+      >
+        <ArrowLeft size={14} />
+        <span>Back to Home</span>
+      </Link>
 
       <div className="login-card-container">
         {/* Left Column: Premium Branding Panel */}

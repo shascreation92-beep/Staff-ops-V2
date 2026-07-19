@@ -1,12 +1,25 @@
 import React from "react";
-import { enforceAuth, getCompanyFilter } from "@/lib/auth-helpers";
+import type { Metadata } from "next";
+import { enforceAuth, getCompanyFilter, getServerAuthSession } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Worknode | Smarter Teams. Better Business.",
+  description: "Manage your team operations, live rosters, chats, and dual-lock audit trails efficiently with Worknode.",
+  keywords: ["Worknode", "Team Management", "Roster scheduling", "SaaS Dashboard", "Multi-tenant", "SOC2"],
+  openGraph: {
+    title: "Worknode | Smarter Teams. Better Business.",
+    description: "Manage your team operations, live rosters, chats, and dual-lock audit trails efficiently with Worknode.",
+    type: "website",
+  }
+};
 
 export const dynamic = "force-dynamic";
 import DashboardLayout from "@/components/DashboardLayout";
 import SalesAssociateDashboard from "@/components/SalesAssociateDashboard";
 import TeamLeadDashboard from "@/components/TeamLeadDashboard";
+import WelcomeLandingPage from "@/components/WelcomeLandingPage";
 import { 
   Database, 
   ShieldCheck, 
@@ -30,6 +43,12 @@ import TeamWiseBreakdown from "@/components/TeamWiseBreakdown";
 
 
 export default async function DashboardPage() {
+  const session = await getServerAuthSession();
+  
+  if (!session?.user) {
+    return <WelcomeLandingPage />;
+  }
+
   // Enforce server-side authentication and status checks
   const user = await enforceAuth();
   

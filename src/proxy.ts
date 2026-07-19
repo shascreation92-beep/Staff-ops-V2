@@ -43,7 +43,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/",
     "/accounts/:path*",
     "/announcements/:path*",
     "/chat/:path*",
