@@ -187,7 +187,7 @@ export async function archiveEmployeeAction(id: string) {
       data: {
         isArchived: true,
         archivedAt: new Date(),
-        archivedBy: user.email || "unknown@staffops.com",
+        archivedBy: user.email || "unknown@worknode.com",
         status: "ARCHIVED",
         updatedAt: new Date()
       }

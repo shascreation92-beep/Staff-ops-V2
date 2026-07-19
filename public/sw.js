@@ -14,7 +14,7 @@ self.addEventListener('push', function(event) {
     } catch (e) {
       const text = event.data.text();
       event.waitUntil(
-        self.registration.showNotification('StaffOps Alert', {
+        self.registration.showNotification('Worknode Alert', {
           body: text,
           icon: '/favicon.ico'
         })

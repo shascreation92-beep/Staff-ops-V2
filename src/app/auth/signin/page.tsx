@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { Shield, Lock, ArrowRight, Terminal } from "lucide-react";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("admin@staffops.com");
+  const [email, setEmail] = useState("admin@worknode.com");
   const [password, setPassword] = useState("••••••••");
   const [activeRole, setActiveRole] = useState("SUPER_ADMIN");
   const [isLoading, setIsLoading] = useState(false);
@@ -243,7 +243,7 @@ export default function SignInPage() {
             letterSpacing: "0.08em",
             marginTop: "0.6rem"
           }}>
-            STAFFOPS
+            WORKNODE
           </h1>
           <span style={{ 
             fontSize: "0.75rem", 
@@ -316,7 +316,7 @@ export default function SignInPage() {
             <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
               <button
                 type="button"
-                onClick={() => handleRoleSelection("SUPER_ADMIN", "admin@staffops.com")}
+                onClick={() => handleRoleSelection("SUPER_ADMIN", "admin@worknode.com")}
                 className={`glass-pill ${activeRole === "SUPER_ADMIN" ? "active" : ""}`}
                 style={{ width: "100%", maxWidth: "250px" }}
                 disabled={isLoading}
@@ -433,7 +433,7 @@ export default function SignInPage() {
           color: "#555555",
           marginTop: "0.25rem"
         }}>
-          StaffOps V2.0 © 2026. Data strictly isolated under SOC2 guidelines.
+          Worknode V2.0 © 2026. Data strictly isolated under SOC2 guidelines.
         </div>
       </div>
     </div>

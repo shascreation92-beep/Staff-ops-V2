@@ -28,7 +28,7 @@ export default function Header({ user, onToggleSidebar }: HeaderProps) {
     if (pathname.startsWith("/announcements")) return "Broadcast Announcements Composer";
     if (pathname.startsWith("/team-leads")) return "Team Leads";
     if (pathname.startsWith("/audit-logs")) return "SOC2 System Audit Logs";
-    return "StaffOps Console";
+    return "Worknode Console";
   };
 
   return (

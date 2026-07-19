@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "StaffOps SaaS | Premium Multi-Tenant Dashboard",
+  title: "Worknode SaaS | Premium Multi-Tenant Dashboard",
   description: "Futuristic multi-company operational dashboard, asset management, real-time communications, and secure audit logging system.",
 };
 
