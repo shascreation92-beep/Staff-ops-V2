@@ -448,7 +448,7 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
       {activeTab === "my-leaves" && (
         <div>
           {myLeaves.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "4rem 2rem", background: "var(--bg-card)", borderRadius: "16px", border: "1px solid var(--border-dim)" }}>
+            <div style={{ textAlign: "center", padding: "4rem 2rem", background: "#ffffff", borderRadius: "16px", border: "1px solid rgba(0, 119, 182, 0.15)", boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
               <Calendar size={48} style={{ color: "var(--text-muted)", marginBottom: "1rem" }} />
               <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 0.4rem 0" }}>No Leave Applications Submitted Yet</h3>
               <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "1.2rem" }}>
@@ -476,11 +476,11 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
                 <div
                   key={req.id}
                   style={{
-                    background: "var(--bg-card)",
+                    background: "#ffffff",
                     borderRadius: "14px",
-                    border: "1px solid var(--border-dim)",
+                    border: "1px solid rgba(0, 119, 182, 0.15)",
                     padding: "1.25rem",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+                    boxShadow: "0 4px 20px rgba(0, 119, 182, 0.05)",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -557,7 +557,7 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
       {activeTab === "approvals" && (
         <div>
           {pendingApprovals.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "4rem 2rem", background: "var(--bg-card)", borderRadius: "16px", border: "1px solid var(--border-dim)" }}>
+            <div style={{ textAlign: "center", padding: "4rem 2rem", background: "#ffffff", borderRadius: "16px", border: "1px solid rgba(0, 119, 182, 0.15)", boxShadow: "0 4px 20px rgba(0, 0, 0, 0.04)" }}>
               <CheckCircle2 size={48} style={{ color: "#22C55E", marginBottom: "1rem" }} />
               <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 0.4rem 0" }}>All Caught Up!</h3>
               <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: 0 }}>
@@ -570,10 +570,11 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
                 <div
                   key={req.id}
                   style={{
-                    background: "var(--bg-card)",
+                    background: "#ffffff",
                     borderRadius: "14px",
-                    border: "1px solid var(--border-dim)",
+                    border: "1px solid rgba(0, 119, 182, 0.15)",
                     padding: "1.25rem",
+                    boxShadow: "0 4px 20px rgba(0, 119, 182, 0.05)",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
@@ -661,7 +662,7 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
 
       {/* History Tab */}
       {activeTab === "history" && isOwnerOrAdmin && (
-        <div style={{ background: "var(--bg-card)", borderRadius: "14px", border: "1px solid var(--border-dim)", padding: "1.25rem", overflowX: "auto" }}>
+        <div style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid rgba(0, 119, 182, 0.15)", boxShadow: "0 4px 20px rgba(0, 119, 182, 0.05)", padding: "1.25rem", overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border-dim)", color: "var(--text-muted)" }}>
@@ -696,7 +697,7 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
       {/* Modal: Apply for Leave */}
       {showApplyModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: "1rem" }}>
-          <div style={{ background: "var(--bg-card)", borderRadius: "16px", border: "1px solid var(--border-dim)", width: "100%", maxWidth: "540px", padding: "1.75rem", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+          <div style={{ background: "#ffffff", borderRadius: "16px", border: "1px solid rgba(0, 119, 182, 0.15)", width: "100%", maxWidth: "540px", padding: "1.75rem", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
             <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.5rem 0" }}>Apply for Leave</h2>
             <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
               Fill out the form below. Your application will follow the company approval chain.
@@ -794,7 +795,7 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
       {/* Modal: Review Action (Approve / Reject) */}
       {selectedRequest && actionType && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: "1rem" }}>
-          <div style={{ background: "var(--bg-card)", borderRadius: "16px", border: "1px solid var(--border-dim)", width: "100%", maxWidth: "480px", padding: "1.5rem", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+          <div style={{ background: "#ffffff", borderRadius: "16px", border: "1px solid rgba(0, 119, 182, 0.15)", width: "100%", maxWidth: "480px", padding: "1.5rem", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
             <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: actionType === "APPROVE" ? "#16A34A" : "#E11D48", margin: "0 0 0.5rem 0" }}>
               {actionType === "APPROVE" ? "Approve Leave Request" : "Reject Leave Request"}
             </h2>
@@ -848,7 +849,7 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
       {/* Modal: Resubmit Request */}
       {resubmitTarget && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: "1rem" }}>
-          <div style={{ background: "var(--bg-card)", borderRadius: "16px", border: "1px solid var(--border-dim)", width: "100%", maxWidth: "540px", padding: "1.75rem" }}>
+          <div style={{ background: "#ffffff", borderRadius: "16px", border: "1px solid rgba(0, 119, 182, 0.15)", width: "100%", maxWidth: "540px", padding: "1.75rem" }}>
             <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.5rem 0" }}>Edit & Re-submit Leave Request</h2>
             <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
               Update your details and re-submit your request to restart the approval process.
