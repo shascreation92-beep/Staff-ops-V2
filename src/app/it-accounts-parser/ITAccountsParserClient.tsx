@@ -525,11 +525,11 @@ export default function ITAccountsParserClient({
                   />
                 </th>
                 <th style={{ padding: "0.6rem 0.4rem", width: "50px" }}>#</th>
-                <th style={{ padding: "0.6rem 0.4rem", width: "140px" }}>Series Code</th>
-                <th style={{ padding: "0.6rem 0.4rem", width: "140px" }}>Password</th>
-                <th style={{ padding: "0.6rem 0.4rem", width: "140px" }}>Owner Name</th>
-                <th style={{ padding: "0.6rem 0.4rem", width: "180px" }}>Created Date</th>
-                <th style={{ padding: "0.6rem 0.4rem", width: "100px" }}>Highlight</th>
+                <th style={{ padding: "0.6rem 0.4rem" }}>Series Code</th>
+                <th style={{ padding: "0.6rem 0.4rem" }}>Password</th>
+                <th style={{ padding: "0.6rem 0.4rem" }}>Owner Name</th>
+                <th style={{ padding: "0.6rem 0.4rem" }}>Created Date</th>
+                <th style={{ padding: "0.6rem 0.4rem" }}>Highlight</th>
                 <th style={{ padding: "0.6rem 0.4rem" }}>Remarks</th>
               </tr>
             </thead>
