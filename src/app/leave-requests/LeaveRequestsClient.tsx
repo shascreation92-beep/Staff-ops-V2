@@ -101,6 +101,9 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
   // Resubmit Modal State
   const [resubmitTarget, setResubmitTarget] = useState<LeaveRequestItem | null>(null);
 
+  // Refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   // Helper to reload data
   const refreshData = async () => {
     const res = await getLeaveRequestsAction();
@@ -109,6 +112,15 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
       setPendingApprovals((res.pendingApprovals as any) || []);
       setAllHistory((res.allHistory as any) || []);
     }
+  };
+
+  const handleRefreshClick = async () => {
+    setIsRefreshing(true);
+    await refreshData();
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast.success("Leave records updated!");
+    }, 400);
   };
 
   // Calculate duration days dynamically
@@ -310,8 +322,22 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
 
   return (
     <div style={{ padding: "1.5rem 2rem", maxWidth: "1400px", margin: "0 auto" }}>
-      {/* Header Container */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
+      {/* Header Card Container */}
+      <div 
+        style={{ 
+          background: "#ffffff",
+          borderRadius: "16px",
+          border: "1px solid rgba(0, 119, 182, 0.15)",
+          padding: "1.5rem",
+          boxShadow: "0 4px 20px rgba(0, 119, 182, 0.05)",
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginBottom: "1.5rem", 
+          flexWrap: "wrap", 
+          gap: "1rem" 
+        }}
+      >
         <div>
           <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.6rem", margin: 0 }}>
             <Calendar style={{ color: "#0077B6" }} /> Leave Management & Approvals
@@ -323,7 +349,8 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
 
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <button
-            onClick={() => refreshData()}
+            onClick={handleRefreshClick}
+            disabled={isRefreshing}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -335,10 +362,13 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
               color: "var(--text-primary)",
               fontWeight: 600,
               fontSize: "0.85rem",
-              cursor: "pointer",
+              cursor: isRefreshing ? "not-allowed" : "pointer",
+              opacity: isRefreshing ? 0.7 : 1,
+              transition: "all 0.2s ease"
             }}
           >
-            <RefreshCw size={14} /> Refresh
+            <RefreshCw size={14} style={{ animation: isRefreshing ? "spin 1s linear infinite" : "none" }} /> 
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
 
           <button
