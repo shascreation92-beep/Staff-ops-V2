@@ -20,6 +20,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import SalesAssociateDashboard from "@/components/SalesAssociateDashboard";
 import TeamLeadDashboard from "@/components/TeamLeadDashboard";
 import WelcomeLandingPage from "@/components/WelcomeLandingPage";
+import ITTelemetryWidget, { TelemetryData } from "@/components/ITTelemetryWidget";
 import { 
   Database, 
   ShieldCheck, 
@@ -533,6 +534,90 @@ export default async function DashboardPage() {
     gumtreeTotal = _gumtreeTotal; gumtreeVerified = _gumtreeVerified; gumtreeUnverified = _gumtreeUnverified; gumtreeSuspended = _gumtreeSuspended;
   }
 
+  // Fetch Operations & IT Telemetry Data
+  const companyEmployees = await db.employee.findMany({
+    where: {
+      ...companyFilter,
+      isArchived: false
+    },
+    select: {
+      id: true,
+      laptopBrand: true,
+      windowsVersion: true,
+      vpnProvider: true,
+      laptopPassword: true,
+      vpnCredentials: true,
+      user: {
+        select: {
+          id: true,
+          status: true,
+          lastActiveAt: true
+        }
+      }
+    }
+  });
+
+  const totalEmployeesCount = companyEmployees.length;
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+  let onlineCount = 0;
+  let offlineCount = 0;
+
+  const brandCounts = { HP: 0, Dell: 0, ThinkPad: 0, Other: 0 };
+  const osCounts = { Windows_11: 0, Windows_10: 0, Other: 0 };
+  const vpnCounts = {
+    Surfshark: 0,
+    ExpressVPN: 0,
+    NordVPN: 0,
+    ProtonVPN: 0,
+    PureVPN: 0,
+    HideMe: 0,
+    Unassigned: 0
+  };
+
+  let hasLaptopPasswordCount = 0;
+  let hasVpnCredentialsCount = 0;
+
+  for (const emp of companyEmployees) {
+    if (emp.user?.lastActiveAt && new Date(emp.user.lastActiveAt) > fiveMinAgo) {
+      onlineCount++;
+    } else {
+      offlineCount++;
+    }
+
+    if (emp.laptopBrand && emp.laptopBrand in brandCounts) {
+      brandCounts[emp.laptopBrand]++;
+    } else {
+      brandCounts.Other++;
+    }
+
+    if (emp.windowsVersion && emp.windowsVersion in osCounts) {
+      osCounts[emp.windowsVersion]++;
+    } else {
+      osCounts.Other++;
+    }
+
+    if (emp.vpnProvider && emp.vpnProvider in vpnCounts) {
+      vpnCounts[emp.vpnProvider as keyof typeof vpnCounts]++;
+    } else {
+      vpnCounts.Unassigned++;
+    }
+
+    if (emp.laptopPassword) hasLaptopPasswordCount++;
+    if (emp.vpnCredentials) hasVpnCredentialsCount++;
+  }
+
+  const telemetryData: TelemetryData = {
+    totalEmployeesCount,
+    onlineCount,
+    offlineCount,
+    brandCounts,
+    osCounts,
+    vpnCounts,
+    hasLaptopPasswordCount,
+    hasVpnCredentialsCount
+  };
+
   return (
     <DashboardLayout user={{ ...user, companyName }}>
       {/* Welcome Area */}
@@ -647,6 +732,9 @@ export default async function DashboardPage() {
         />
       ) : (
         <>
+          {/* Operations & IT Telemetry Analytics Widget */}
+          <ITTelemetryWidget data={telemetryData} />
+
           {/* New Top-Level Global KPI Row */}
           <div style={{
             display: "grid",

@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import { sanitizeInput } from "@/lib/security";
 
 export async function getPersonalNotesAction() {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   try {
     const notes = await db.personalnote.findMany({
@@ -28,14 +29,17 @@ export async function createPersonalNoteAction(data: {
   color?: string;
   category?: string;
 }) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   try {
+    const cleanTitle = sanitizeInput(data.title);
+    const cleanContent = sanitizeInput(data.content);
+
     const note = await db.personalnote.create({
       data: {
         userId: user.id,
-        title: data.title,
-        content: data.content,
+        title: cleanTitle,
+        content: cleanContent,
         isChecklist: data.isChecklist ?? false,
         color: data.color ?? "default",
         category: data.category ?? "Work"
@@ -63,7 +67,7 @@ export async function updatePersonalNoteAction(
     category?: string;
   }
 ) {
-  const user = await enforceAuth(["SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "SALES_ASSOCIATE", "TEAM_LEAD", "IT_DEPARTMENT"]);
 
   const note = await db.personalnote.findUnique({
     where: { id: noteId }

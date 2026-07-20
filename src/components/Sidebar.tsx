@@ -21,7 +21,8 @@ import {
   Pencil,
   HelpCircle,
   TrendingUp,
-  Calendar
+  Calendar,
+  Building2
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -29,6 +30,9 @@ import { updateUserPasswordAction } from "@/app/actions/users";
 import { getPendingTLRequestsCountAction } from "@/app/actions/accounts";
 import { getPendingLeaveApprovalsCountAction } from "@/app/actions/leave-requests";
 import { updateUserBioAction } from "@/app/actions/profile";
+import { createCompanyAction } from "@/app/actions/company";
+import { getChatBadgeStatusAction } from "@/app/actions/chat";
+import { getSpecialRequestsBadgeStatusAction } from "@/app/actions/special-requests";
 import { useITConfig } from "./ITConfigProvider";
 import { toast } from "react-hot-toast";
 import { useRef } from "react";
@@ -122,6 +126,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         setCurrentBio(res.bio || "");
         setShowBioModal(false);
         toast.success("Bio updated successfully!");
+      } else {
+        toast.error(res.error || "Failed to update bio.");
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to update bio.");
@@ -283,7 +289,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   useEffect(() => {
     const fetchChatStatus = async () => {
       try {
-        const { getChatBadgeStatusAction } = await import("@/app/actions/chat");
         const status = await getChatBadgeStatusAction();
         setChatStatus(status);
       } catch (err) {
@@ -299,7 +304,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   useEffect(() => {
     const fetchSpecialRequestStatus = async () => {
       try {
-        const { getSpecialRequestsBadgeStatusAction } = await import("@/app/actions/special-requests");
         const status = await getSpecialRequestsBadgeStatusAction();
         setSpecialRequestStatus(status);
       } catch (err) {
@@ -427,6 +431,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       icon: Shield,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
     },
+    {
+      id: "companies",
+      label: "Companies Directory",
+      path: "/companies",
+      icon: Building2,
+      roles: ["SUPER_ADMIN"]
+    },
     { 
       id: "it-accounts-parser", 
       label: "IT Accounts Parser", 
@@ -531,39 +542,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
       {/* User Profile Header (Top-ish, below Logo) */}
       <div className="sidebar-profile">
-        <style dangerouslySetInnerHTML={{ __html: `
-          .profile-action-toolbar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.6rem;
-            margin-bottom: 0.75rem;
-          }
-          .profile-action-btn {
-            background: rgba(173, 232, 244, 0.25);
-            border: 1px solid rgba(0, 119, 182, 0.20);
-            color: var(--text-primary);
-            cursor: pointer;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
-          }
-          .profile-action-btn:hover {
-            background: rgba(173, 232, 244, 0.55);
-            border-color: #0096C7;
-            color: #0077B6;
-            transform: scale(1.1);
-            box-shadow: 0 0 10px rgba(72, 202, 228, 0.5);
-          }
-          .profile-action-btn:active {
-            transform: scale(0.95);
-          }
-        ` }} />
 
         <div 
           className="profile-avatar-container"
@@ -676,7 +654,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
         {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path;
-          
+
           if (item.id === "it-config") {
             return (
               <button

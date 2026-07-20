@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import { sanitizeInput } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -12,25 +13,31 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { endpoint, keys } = body;
+    const rawEndpoint = body?.endpoint;
+    const rawP256dh = body?.keys?.p256dh;
+    const rawAuth = body?.keys?.auth;
 
-    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+    if (!rawEndpoint || !rawP256dh || !rawAuth) {
       return NextResponse.json({ error: "Invalid subscription details" }, { status: 400 });
     }
+
+    const endpoint = sanitizeInput(rawEndpoint);
+    const p256dh = sanitizeInput(rawP256dh);
+    const auth = sanitizeInput(rawAuth);
 
     // Upsert subscription
     await db.pushsubscription.upsert({
       where: { endpoint },
       update: {
         userId: session.user.id,
-        p256dh: keys.p256dh,
-        auth: keys.auth
+        p256dh,
+        auth
       },
       create: {
         userId: session.user.id,
         endpoint,
-        p256dh: keys.p256dh,
-        auth: keys.auth
+        p256dh,
+        auth
       }
     });
 
@@ -49,11 +56,13 @@ export async function DELETE(req: Request) {
 
   try {
     const body = await req.json();
-    const { endpoint } = body;
+    const rawEndpoint = body?.endpoint;
 
-    if (!endpoint) {
+    if (!rawEndpoint) {
       return NextResponse.json({ error: "Endpoint is required" }, { status: 400 });
     }
+
+    const endpoint = sanitizeInput(rawEndpoint);
 
     await db.pushsubscription.deleteMany({
       where: {

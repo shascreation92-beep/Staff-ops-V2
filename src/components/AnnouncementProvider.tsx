@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { X, AlertTriangle } from "lucide-react";
 import { FullscreenModal } from "./PersonalNotesDashboard";
@@ -32,8 +32,26 @@ export function useAnnouncements() {
   return context;
 }
 
-// Procedural audio ping synthesis using Web Audio API
-export function playChimeAlert() {
+// Play custom audio notification with fallback to Web Audio synthesis
+export function playChimeAlert(customSoundPath?: string) {
+  try {
+    const soundFile = customSoundPath || "/sounds/notification.mp3";
+    const audio = new Audio(soundFile);
+    audio.volume = 0.85;
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn("Custom audio playback notice (falling back to Web Audio synth):", err);
+        playFallbackSynthChime();
+      });
+    }
+  } catch (e) {
+    playFallbackSynthChime();
+  }
+}
+
+function playFallbackSynthChime() {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -66,7 +84,7 @@ export function playChimeAlert() {
     osc2.start(now + 0.1);
     osc2.stop(now + 0.45);
   } catch (e) {
-    console.warn("Audio chime playback blocked by browser autocomplete/interact constraints:", e);
+    console.warn("Audio chime playback blocked:", e);
   }
 }
 
@@ -79,6 +97,25 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
   const [acknowledgedAlerts, setAcknowledgedAlerts] = useState<string[]>([]);
   const [dismissedStripIds, setDismissedStripIds] = useState<string[]>([]);
   const [focusedAnnDetails, setFocusedAnnDetails] = useState<any | null>(null);
+
+  const openAnnouncementById = useCallback(async (noteId: string) => {
+    if (noteId.startsWith("global-")) {
+      const realAnnId = noteId.replace("global-", "");
+      const found = announcements.find(a => a.id === realAnnId);
+      if (found) {
+        setFocusedAnnDetails(found);
+      }
+      return;
+    }
+    try {
+      const res = await getPersonalNoteByIdAction(noteId);
+      if (res.success && res.note) {
+        setActiveModalNote(res.note);
+      }
+    } catch (e: any) {
+      alert(e.message || "Failed to load announcement details.");
+    }
+  }, [announcements]);
 
   // Request native OS notification permissions on mount
   useEffect(() => {
@@ -108,7 +145,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
 
     navigator.serviceWorker?.addEventListener('message', handleMessage);
     return () => navigator.serviceWorker?.removeEventListener('message', handleMessage);
-  }, []);
+  }, [openAnnouncementById]);
 
   // Check URL parameters on mount to open focused note if redirect occurred from background click
   useEffect(() => {
@@ -121,7 +158,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
         window.history.replaceState({}, '', newUrl);
       }
     }
-  }, [session?.user?.id]);
+  }, [session?.user?.id, openAnnouncementById]);
 
   // Load local storage states on mount
   useEffect(() => {
@@ -263,24 +300,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  async function openAnnouncementById(noteId: string) {
-    if (noteId.startsWith("global-")) {
-      const realAnnId = noteId.replace("global-", "");
-      const found = announcements.find(a => a.id === realAnnId);
-      if (found) {
-        setFocusedAnnDetails(found);
-      }
-      return;
-    }
-    try {
-      const res = await getPersonalNoteByIdAction(noteId);
-      if (res.success && res.note) {
-        setActiveModalNote(res.note);
-      }
-    } catch (e: any) {
-      alert(e.message || "Failed to load announcement details.");
-    }
-  }
+
 
   const handleAcknowledgeAlert = (annId: string) => {
     const updated = [...acknowledgedAlerts, annId];

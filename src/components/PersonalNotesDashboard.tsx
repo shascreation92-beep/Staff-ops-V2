@@ -965,7 +965,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [localTitle, localContent, localColor, localIsPinned]);
+  }, [localTitle, localContent, localColor, localIsPinned, note.id, note.title, note.content, note.color, note.isPinned]);
 
   const activeTheme = colorThemes[localColor] || colorThemes.default;
 

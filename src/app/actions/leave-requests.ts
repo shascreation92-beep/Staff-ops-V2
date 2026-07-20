@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { enforceAuth } from "@/lib/auth-helpers";
+import { sanitizeInput } from "@/lib/security";
 import { revalidatePath } from "next/cache";
 
 // Helper for notifying company owners & super admins
@@ -43,13 +44,25 @@ export async function createLeaveRequestAction(data: {
   emergencyContact?: string;
 }) {
   const user = await enforceAuth();
-  if (!user || !user.companyId) {
-    return { success: false, error: "Unauthorized or missing company context." };
+  if (!user) {
+    return { success: false, error: "Unauthorized user." };
+  }
+
+  let companyId = user.companyId;
+  if (!companyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({ where: { isArchived: false } });
+    companyId = defaultCompany?.id || null;
+  }
+
+  if (!companyId) {
+    return { success: false, error: "Missing company context." };
   }
 
   try {
-    const start = new Date(data.startDate);
-    const end = new Date(data.endDate);
+    const startDateStr = data.startDate.includes("T") ? data.startDate : `${data.startDate}T00:00:00.000Z`;
+    const endDateStr = data.endDate.includes("T") ? data.endDate : `${data.endDate}T00:00:00.000Z`;
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return { success: false, error: "Invalid start or end date." };
@@ -73,8 +86,8 @@ export async function createLeaveRequestAction(data: {
         startDate: start,
         endDate: end,
         totalDays: Math.max(1, data.totalDays),
-        reason: data.reason.trim(),
-        emergencyContact: data.emergencyContact?.trim() || null,
+        reason: sanitizeInput(data.reason),
+        emergencyContact: data.emergencyContact ? sanitizeInput(data.emergencyContact) : null,
         status: initialStatus,
       },
     });
@@ -110,8 +123,14 @@ export async function createLeaveRequestAction(data: {
 // 2. Fetch leave requests (User's own leaves + Approvals list based on role)
 export async function getLeaveRequestsAction() {
   const user = await enforceAuth();
-  if (!user || !user.companyId) {
+  if (!user) {
     return { success: false, error: "Unauthorized", myLeaves: [], pendingApprovals: [], allHistory: [] };
+  }
+
+  let companyId = user.companyId;
+  if (!companyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({ where: { isArchived: false } });
+    companyId = defaultCompany?.id || null;
   }
 
   try {
@@ -190,9 +209,11 @@ export async function updateLeaveRequestStatusAction(
   notes?: string
 ) {
   const user = await enforceAuth();
-  if (!user || !user.companyId) {
+  if (!user) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const cleanNotes = notes ? sanitizeInput(notes) : undefined;
 
   try {
     const leave = await db.leaverequest.findUnique({
@@ -244,6 +265,8 @@ export async function updateLeaveRequestStatusAction(
         });
 
         revalidatePath("/leave-requests");
+        revalidatePath("/employees");
+        revalidatePath("/");
         return { success: true, leave: updated };
       } else {
         const updated = await db.leaverequest.update({
@@ -268,6 +291,8 @@ export async function updateLeaveRequestStatusAction(
         });
 
         revalidatePath("/leave-requests");
+        revalidatePath("/employees");
+        revalidatePath("/");
         return { success: true, leave: updated };
       }
     }
@@ -315,6 +340,8 @@ export async function updateLeaveRequestStatusAction(
         }
 
         revalidatePath("/leave-requests");
+        revalidatePath("/employees");
+        revalidatePath("/");
         return { success: true, leave: updated };
       } else {
         const updated = await db.leaverequest.update({

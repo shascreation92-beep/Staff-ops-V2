@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, getCompanyFilter, logAction } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import { sanitizeInput } from "@/lib/security";
 import { 
   employee_laptopBrand, 
   employee_windowsVersion, 
@@ -34,7 +35,10 @@ export async function createEmployeeAction(formData: z.infer<typeof CreateEmploy
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { employeeId, fullName, email, status, targetCompanyId } = result.data;
+  const employeeId = sanitizeInput(result.data.employeeId);
+  const fullName = sanitizeInput(result.data.fullName);
+  const email = sanitizeInput(result.data.email).toLowerCase();
+  const { status, targetCompanyId } = result.data;
 
   // Determine Company ID
   let companyId = user.companyId;

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import { sanitizeInput } from "@/lib/security";
 import { z } from "zod";
 import { sendPushNotification } from "@/lib/push-helper";
 
@@ -40,18 +41,21 @@ export async function sendChatMessageAction(formData: z.infer<typeof SendMessage
   }
 
   try {
+    const cleanMessage = sanitizeInput(message);
+    const cleanReplyMessage = replyToMessage ? sanitizeInput(replyToMessage) : replyToMessage;
+
     const newMessage = await db.chatmessage.create({
       data: {
         id: crypto.randomUUID(),
         senderId: user.id,
         receiverId,
-        message,
+        message: cleanMessage,
         isRead: false,
         createdAt: new Date(),
         replyToId,
         replyToSenderId,
         replyToSenderName,
-        replyToMessage
+        replyToMessage: cleanReplyMessage
       }
     });
 
@@ -92,17 +96,20 @@ export async function createChatGroupAction(formData: { name: string; isPrivate:
     throw new Error("Group name is required.");
   }
   
-  const companyId = user.companyId;
-  if (!companyId) {
-    throw new Error("You must belong to a company to create groups.");
+  let companyId = user.companyId;
+  if (!companyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({ where: { isArchived: false } });
+    companyId = defaultCompany?.id || "";
   }
+
+  const cleanName = sanitizeInput(formData.name);
 
   const groupId = crypto.randomUUID();
 
   const newGroup = await db.chatgroup.create({
     data: {
       id: groupId,
-      name: formData.name,
+      name: cleanName,
       isPrivate: formData.isPrivate,
       companyId: companyId,
       createdById: user.id
@@ -184,10 +191,16 @@ export async function togglePinChatAction(targetId: string, isGroup: boolean) {
 export async function joinPublicGroupAction(groupId: string) {
   const user = await enforceAuth();
 
+  let targetCompanyId = user.companyId;
+  if (!targetCompanyId && user.role === "SUPER_ADMIN") {
+    const groupCandidate = await db.chatgroup.findUnique({ where: { id: groupId } });
+    targetCompanyId = groupCandidate?.companyId || "";
+  }
+
   const group = await db.chatgroup.findUnique({
     where: {
       id: groupId,
-      companyId: user.companyId || ""
+      ...(targetCompanyId ? { companyId: targetCompanyId } : {})
     }
   });
 
@@ -381,18 +394,21 @@ export async function sendGroupMessageAction(
     throw new Error("You are not a member of this group.");
   }
 
+  const cleanMessage = sanitizeInput(message);
+  const cleanReplyMessage = replyToMessage ? sanitizeInput(replyToMessage) : replyToMessage;
+
   try {
     const newMessage = await db.chatgroupmessage.create({
       data: {
         id: crypto.randomUUID(),
         groupId,
         senderId: user.id,
-        message,
+        message: cleanMessage,
         createdAt: new Date(),
         replyToId,
         replyToSenderId,
         replyToSenderName,
-        replyToMessage
+        replyToMessage: cleanReplyMessage
       }
     });
 

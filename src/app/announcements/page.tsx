@@ -7,18 +7,22 @@ import BroadcastComposer from "@/components/BroadcastComposer";
 export const dynamic = "force-dynamic";
 
 export default async function AnnouncementsPage() {
-  // Visible only to COMPANY_OWNER and IT_DEPARTMENT
-  const user = await enforceAuth(["COMPANY_OWNER", "IT_DEPARTMENT"]);
+  // Visible to SUPER_ADMIN, COMPANY_OWNER, and IT_DEPARTMENT
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
-  if (!user.companyId) {
-    throw new Error("Active company context missing.");
+  let companies: { id: string; name: string }[] = [];
+  if (user.role === "SUPER_ADMIN") {
+    companies = await db.company.findMany({
+      where: { isArchived: false },
+      select: { id: true, name: true }
+    });
   }
 
-  // Fetch announcements history strictly scoped under current company tenant
+  // Fetch announcements history
   const announcements = await db.announcement.findMany({
     where: {
       isArchived: false,
-      companyId: user.companyId
+      ...(user.role === "SUPER_ADMIN" ? {} : { companyId: user.companyId || "" })
     },
     include: {
       company: {
@@ -34,7 +38,7 @@ export default async function AnnouncementsPage() {
     <DashboardLayout user={user}>
       <BroadcastComposer 
         currentUser={user}
-        companies={[]}
+        companies={companies}
         initialAnnouncements={announcements}
       />
     </DashboardLayout>

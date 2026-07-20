@@ -17,7 +17,11 @@ import {
   MessageSquare,
   ShieldCheck,
   Search,
-  Filter
+  Filter,
+  Palmtree,
+  Stethoscope,
+  AlertTriangle,
+  Users
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { 
@@ -108,9 +112,9 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
   const refreshData = async () => {
     const res = await getLeaveRequestsAction();
     if (res.success) {
-      setMyLeaves((res.myLeaves as any) || []);
-      setPendingApprovals((res.pendingApprovals as any) || []);
-      setAllHistory((res.allHistory as any) || []);
+      setMyLeaves((res.myLeaves as LeaveRequestItem[]) || []);
+      setPendingApprovals((res.pendingApprovals as LeaveRequestItem[]) || []);
+      setAllHistory((res.allHistory as LeaveRequestItem[]) || []);
     }
   };
 
@@ -228,13 +232,13 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
   const getLeaveTypeBadge = (type: string) => {
     switch (type) {
       case "SICK":
-        return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(239, 68, 68, 0.1)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.2)" }}>🤒 Sick Leave</span>;
+        return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(239, 68, 68, 0.1)", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.2)", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}><Stethoscope size={14} /> Sick Leave</span>;
       case "CASUAL":
-        return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(14, 165, 233, 0.1)", color: "#0EA5E9", border: "1px solid rgba(14, 165, 233, 0.2)" }}>🌴 Casual Leave</span>;
+        return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(14, 165, 233, 0.1)", color: "#0EA5E9", border: "1px solid rgba(14, 165, 233, 0.2)", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}><Palmtree size={14} /> Casual Leave</span>;
       case "EMERGENCY":
-        return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(245, 158, 11, 0.1)", color: "#F59E0B", border: "1px solid rgba(245, 158, 11, 0.2)" }}>🚨 Emergency</span>;
+        return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(245, 158, 11, 0.1)", color: "#F59E0B", border: "1px solid rgba(245, 158, 11, 0.2)", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}><AlertTriangle size={14} /> Emergency</span>;
       case "FAMILY":
-        return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(168, 85, 247, 0.1)", color: "#A855F7", border: "1px solid rgba(168, 85, 247, 0.2)" }}>👨‍👩‍👧 Family Leave</span>;
+        return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(168, 85, 247, 0.1)", color: "#A855F7", border: "1px solid rgba(168, 85, 247, 0.2)", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}><Users size={14} /> Family Leave</span>;
       default:
         return <span style={{ padding: "0.2rem 0.6rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 700, background: "rgba(107, 114, 128, 0.1)", color: "#6B7280" }}>{type}</span>;
     }
@@ -339,8 +343,8 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
         }}
       >
         <div>
-          <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.6rem", margin: 0 }}>
-            <Calendar style={{ color: "#0077B6" }} /> Leave Management & Approvals
+          <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+            Leave Management & Approvals
           </h1>
           <p style={{ margin: "0.2rem 0 0 0", color: "var(--text-muted)", fontSize: "0.9rem" }}>
             Apply for leave, track multi-tiered approval workflows, and review team time-off applications.
@@ -479,7 +483,6 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
         <div>
           {myLeaves.length === 0 ? (
             <div style={{ textAlign: "center", padding: "4rem 2rem", background: "#ffffff", borderRadius: "16px", border: "1px solid rgba(0, 119, 182, 0.15)", boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
-              <Calendar size={48} style={{ color: "var(--text-muted)", marginBottom: "1rem" }} />
               <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 0.4rem 0" }}>No Leave Applications Submitted Yet</h3>
               <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "1.2rem" }}>
                 Need time off? Click the button below to submit a leave request to your manager.
@@ -635,8 +638,8 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
                     </p>
 
                     {req.emergencyContact && (
-                      <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
-                        📞 Emergency Contact: {req.emergencyContact}
+                      <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.2rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                        <Phone size={12} /> Emergency Contact: {req.emergencyContact}
                       </div>
                     )}
                   </div>
@@ -741,10 +744,10 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
                   onChange={(e) => setLeaveType(e.target.value)}
                   style={{ width: "100%", padding: "0.65rem", borderRadius: "8px", border: "1px solid var(--border-dim)", background: "var(--bg-input, #fff)", color: "var(--text-primary)", fontSize: "0.88rem" }}
                 >
-                  <option value="CASUAL">🌴 Casual / Annual Leave</option>
-                  <option value="SICK">🤒 Sick / Medical Leave</option>
-                  <option value="EMERGENCY">🚨 Emergency Leave</option>
-                  <option value="FAMILY">👨‍👩‍👧 Family / Special Leave</option>
+                  <option value="CASUAL">Casual / Annual Leave</option>
+                  <option value="SICK">Sick / Medical Leave</option>
+                  <option value="EMERGENCY">Emergency Leave</option>
+                  <option value="FAMILY">Family / Special Leave</option>
                 </select>
               </div>
 
@@ -773,8 +776,8 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
               </div>
 
               {calculatedDays > 0 && (
-                <div style={{ background: "rgba(0, 119, 182, 0.08)", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid rgba(0, 119, 182, 0.2)", color: "#0077B6", fontSize: "0.85rem", fontWeight: 700, marginBottom: "1rem" }}>
-                  ⏱ Duration: {calculatedDays} Day(s) Requested
+                <div style={{ background: "rgba(0, 119, 182, 0.08)", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid rgba(0, 119, 182, 0.2)", color: "#0077B6", fontSize: "0.85rem", fontWeight: 700, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                  <Clock size={14} /> Duration: {calculatedDays} Day(s) Requested
                 </div>
               )}
 
@@ -893,10 +896,10 @@ export default function LeaveRequestsClient({ user, initialData }: LeaveRequests
                   onChange={(e) => setLeaveType(e.target.value)}
                   style={{ width: "100%", padding: "0.65rem", borderRadius: "8px", border: "1px solid var(--border-dim)", background: "var(--bg-input, #fff)", color: "var(--text-primary)", fontSize: "0.88rem" }}
                 >
-                  <option value="CASUAL">🌴 Casual / Annual Leave</option>
-                  <option value="SICK">🤒 Sick / Medical Leave</option>
-                  <option value="EMERGENCY">🚨 Emergency Leave</option>
-                  <option value="FAMILY">👨‍👩‍👧 Family / Special Leave</option>
+                  <option value="CASUAL">Casual / Annual Leave</option>
+                  <option value="SICK">Sick / Medical Leave</option>
+                  <option value="EMERGENCY">Emergency Leave</option>
+                  <option value="FAMILY">Family / Special Leave</option>
                 </select>
               </div>
 

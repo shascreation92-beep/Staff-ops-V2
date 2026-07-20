@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, logAction } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import { sanitizeInput } from "@/lib/security";
 import { z } from "zod";
 
 // Create Platform Zod Schema
@@ -18,7 +19,7 @@ export async function addPlatformAction(formData: z.infer<typeof PlatformSchema>
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { name } = result.data;
+  const name = sanitizeInput(result.data.name);
 
   // Check duplicate platform
   const existing = await db.platform.findFirst({
@@ -101,25 +102,32 @@ export async function createAnnouncementAction(formData: z.infer<typeof Announce
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { title, content } = result.data;
-  const targetCompanyId = user.companyId;
+  const cleanTitle = sanitizeInput(result.data.title);
+  const cleanContent = sanitizeInput(result.data.content);
+
+  let targetCompanyId = user.companyId;
+  if (!targetCompanyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({ where: { isArchived: false } });
+    targetCompanyId = defaultCompany?.id || "";
+  }
+
   if (!targetCompanyId) {
     throw new Error("Active company context missing.");
   }
 
-  const sender = user.role === "COMPANY_OWNER" ? "COMPANY_HQ" : "IT_DEPARTMENT";
+  const sender = user.role === "COMPANY_OWNER" ? "COMPANY_HQ" : (user.role === "SUPER_ADMIN" ? "SUPER_ADMIN_HQ" : "IT_DEPARTMENT");
   const type = "COMPANY_UPDATE";
   const annId = crypto.randomUUID();
 
   // Serialize metadata into the title field
-  const serializedTitle = JSON.stringify({ sender, type, text: title });
+  const serializedTitle = JSON.stringify({ sender, type, text: cleanTitle });
 
   try {
     const newAnn = await db.announcement.create({
       data: {
         id: annId,
         title: serializedTitle,
-        content,
+        content: cleanContent,
         createdById: user.id,
         companyId: targetCompanyId
       }
@@ -153,7 +161,7 @@ export async function createAnnouncementAction(formData: z.infer<typeof Announce
           id: crypto.randomUUID(),
           userId: targetUser.id,
           title: `📢 New Announcement from [${senderDisplay}]`,
-          message: `${title}: ${content.slice(0, 100)}`,
+          message: `${cleanTitle}: ${cleanContent.slice(0, 100)}`,
           type: "Announcement",
           isRead: false
         }
@@ -182,7 +190,8 @@ export async function updateCompanyRuleAction(formData: z.infer<typeof RuleSchem
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { key, value, targetCompanyId } = result.data;
+  const { key, targetCompanyId } = result.data;
+  const value = sanitizeInput(result.data.value);
 
   // Determine target company context
   let companyId = user.companyId;

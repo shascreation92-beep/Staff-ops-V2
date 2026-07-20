@@ -10,7 +10,7 @@ export default async function MasterAccountsPoolPage() {
   const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   let companyFilter = {};
-  let companyName = "Active Tenant";
+  let companyName = user.role === "SUPER_ADMIN" ? "Global System Pool" : "Active Tenant";
 
   if (user.companyId) {
     companyFilter = { companyId: user.companyId };

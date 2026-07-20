@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, logAction, getServerAuthSession } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import { hashPassword, sanitizeInput } from "@/lib/security";
 import { user_role, user_status } from "@prisma/client";
 import { z } from "zod";
 
@@ -438,15 +439,17 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
     const newUserId = crypto.randomUUID();
     const newEmployeeId = crypto.randomUUID();
 
+    const hashedPassword = password ? await hashPassword(password) : null;
+
     // Create User (Approved/Active)
     const newUser = await db.user.create({
       data: {
         id: newUserId,
-        email,
-        name: fullName,
+        email: sanitizeInput(email),
+        name: sanitizeInput(fullName),
         role: targetRole,
         status: "APPROVED", // Directly active
-        password,
+        password: hashedPassword,
         companyId: companyIdValue,
         teamLeadId: null,
         updatedAt: new Date(),
@@ -581,12 +584,14 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
   try {
     const newEmployeeId = crypto.randomUUID();
 
+    const hashedPassword = await hashPassword(password);
+
     // 1. Update User to APPROVED and set Password
     const updatedUser = await db.user.update({
       where: { id: userId },
       data: {
         status: "APPROVED",
-        password,
+        password: hashedPassword,
         updatedAt: new Date()
       }
     });
@@ -711,10 +716,12 @@ export async function adminResetUserPasswordAction(formData: z.infer<typeof Admi
   }
 
   try {
+    const hashedPassword = await hashPassword(newPassword);
+
     await db.user.update({
       where: { id: userId },
       data: {
-        password: newPassword,
+        password: hashedPassword,
         updatedAt: new Date()
       }
     });
@@ -981,12 +988,13 @@ export async function editUserAccountAction(formData: {
 
   try {
     const oldName = targetUser.name || "";
+    const hashedPassword = formData.password ? await hashPassword(formData.password) : undefined;
 
     await db.user.update({
       where: { id: formData.userId },
       data: {
-        name: formData.name,
-        password: formData.password || null,
+        name: sanitizeInput(formData.name),
+        ...(hashedPassword !== undefined ? { password: hashedPassword } : {}),
         status: formData.status,
         role: formData.role,
         teamLeadId: formData.role === "SALES_ASSOCIATE" ? formData.teamLeadId : null,

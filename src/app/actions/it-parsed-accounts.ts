@@ -53,8 +53,11 @@ export async function saveParsedAccountsAction(
 // Company Owner: Fetch dynamic list of IT Agents and load counts
 export async function getITAgentsWithCountsAction() {
   const user = await checkRole(["COMPANY_OWNER", "SUPER_ADMIN"]);
-  if (!user.companyId) {
-    return { success: false, error: "Tenant context missing." };
+  
+  let targetCompanyId = user.companyId;
+  if (!targetCompanyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({ where: { isArchived: false } });
+    targetCompanyId = defaultCompany?.id || null;
   }
 
   try {
@@ -62,7 +65,7 @@ export async function getITAgentsWithCountsAction() {
     const agents = await db.user.findMany({
       where: {
         role: "IT_DEPARTMENT",
-        companyId: user.companyId,
+        ...(targetCompanyId ? { companyId: targetCompanyId } : {}),
         isArchived: false,
       },
       select: {
@@ -83,12 +86,12 @@ export async function getITAgentsWithCountsAction() {
       agents.map(async (agent) => {
         const [totalAllTime, totalToday] = await Promise.all([
           db.itparsedaccount.count({
-            where: { agentId: agent.id, companyId: user.companyId! },
+            where: { agentId: agent.id, ...(targetCompanyId ? { companyId: targetCompanyId } : {}) },
           }),
           db.itparsedaccount.count({
             where: {
               agentId: agent.id,
-              companyId: user.companyId!,
+              ...(targetCompanyId ? { companyId: targetCompanyId } : {}),
               createdAt: { gte: startOfToday },
             },
           }),
@@ -116,8 +119,11 @@ export async function getITAgentsWithCountsAction() {
 // Dynamic ledger query (paginated to 50 ceiling)
 export async function getParsedAccountsLedgerAction(page: number = 1, filterAgentId?: string) {
   const user = await enforceAuth();
-  if (!user.companyId) {
-    return { success: false, error: "Tenant context missing.", total: 0, accounts: [] };
+  
+  let targetCompanyId = user.companyId;
+  if (!targetCompanyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({ where: { isArchived: false } });
+    targetCompanyId = defaultCompany?.id || null;
   }
 
   const limit = 50;
@@ -125,7 +131,7 @@ export async function getParsedAccountsLedgerAction(page: number = 1, filterAgen
 
   try {
     const whereClause: any = {
-      companyId: user.companyId,
+      ...(targetCompanyId ? { companyId: targetCompanyId } : {})
     };
 
     // If IT_DEPARTMENT, only allow seeing their own uploaded accounts

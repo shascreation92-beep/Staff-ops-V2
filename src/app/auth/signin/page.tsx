@@ -6,8 +6,8 @@ import { Shield, Lock, ArrowRight, Terminal, Eye, EyeOff, ArrowLeft } from "luci
 import Link from "next/link";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("admin@worknode.com");
-  const [password, setPassword] = useState("pass123");
+  const [email, setEmail] = useState("faizancheena9@gmail.com");
+  const [password, setPassword] = useState("Cupoftea@90");
   const [activeRole, setActiveRole] = useState("SUPER_ADMIN");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,12 +193,11 @@ export default function SignInPage() {
     };
   }, []);
 
-  const handleDevLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeLogin = async (loginEmail: string, loginPassword: string) => {
     setIsLoading(true);
     setError(null);
 
-    if (!email.trim()) {
+    if (!loginEmail.trim()) {
       setError("Please specify a login email address.");
       setIsLoading(false);
       return;
@@ -206,25 +205,37 @@ export default function SignInPage() {
 
     try {
       const res = await signIn("developer-login", {
-        email: email,
-        password: password,
+        email: loginEmail,
+        password: loginPassword,
         callbackUrl: "/",
-        redirect: true,
+        redirect: false,
       });
+
       if (res?.error) {
-        setError(res.error);
+        setError(res.error === "CredentialsSignin" ? "Invalid email or password" : res.error);
+        setIsLoading(false);
+      } else if (res?.ok) {
+        window.location.href = res.url || "/";
+      } else {
+        setError("Invalid email or password");
         setIsLoading(false);
       }
     } catch (err: any) {
-      setError(err?.message || "Developer bypass failed.");
+      setError(err?.message || "Authentication failed.");
       setIsLoading(false);
     }
   };
 
-  const handleRoleSelection = (role: string, targetEmail: string) => {
+  const handleDevLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeLogin(email, password);
+  };
+
+  const handleRoleSelection = (role: string, targetEmail: string, targetPassword = "pass123") => {
     setActiveRole(role);
     setEmail(targetEmail);
-    setPassword("pass123");
+    setPassword(targetPassword);
+    setError(null);
   };
 
   return (
@@ -457,7 +468,7 @@ export default function SignInPage() {
               <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
                 <button
                   type="button"
-                  onClick={() => handleRoleSelection("SUPER_ADMIN", "admin@worknode.com")}
+                  onClick={() => handleRoleSelection("SUPER_ADMIN", "faizancheena9@gmail.com", "Cupoftea@90")}
                   className={`glass-pill ${activeRole === "SUPER_ADMIN" ? "active" : ""}`}
                   style={{ width: "100%", maxWidth: "250px" }}
                   disabled={isLoading}
@@ -470,7 +481,7 @@ export default function SignInPage() {
               <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", width: "100%" }}>
                 <button
                   type="button"
-                  onClick={() => handleRoleSelection("COMPANY_OWNER", "owner@acme.com")}
+                  onClick={() => handleRoleSelection("COMPANY_OWNER", "owner@acme.com", "pass123")}
                   className={`glass-pill ${activeRole === "COMPANY_OWNER" ? "active" : ""}`}
                   style={{ flex: 1 }}
                   disabled={isLoading}
@@ -479,7 +490,7 @@ export default function SignInPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRoleSelection("IT_DEPARTMENT", "it@acme.com")}
+                  onClick={() => handleRoleSelection("IT_DEPARTMENT", "it@acme.com", "pass123")}
                   className={`glass-pill ${activeRole === "IT_DEPARTMENT" ? "active" : ""}`}
                   style={{ flex: 1 }}
                   disabled={isLoading}
@@ -492,7 +503,7 @@ export default function SignInPage() {
               <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", width: "100%" }}>
                 <button
                   type="button"
-                  onClick={() => handleRoleSelection("TEAM_LEAD", "lead@acme.com")}
+                  onClick={() => handleRoleSelection("TEAM_LEAD", "lead@acme.com", "pass123")}
                   className={`glass-pill ${activeRole === "TEAM_LEAD" ? "active" : ""}`}
                   style={{ flex: 1 }}
                   disabled={isLoading}
@@ -501,7 +512,7 @@ export default function SignInPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRoleSelection("SALES_ASSOCIATE", "sales@acme.com")}
+                  onClick={() => handleRoleSelection("SALES_ASSOCIATE", "sales@acme.com", "pass123")}
                   className={`glass-pill ${activeRole === "SALES_ASSOCIATE" ? "active" : ""}`}
                   style={{ flex: 1 }}
                   disabled={isLoading}

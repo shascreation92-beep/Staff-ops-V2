@@ -49,6 +49,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"].includes(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden: Access restricted to Owners, IT Department, and Super Admins" }, { status: 403 });
+  }
+
   const companyId = session.user.companyId || "";
   if (!companyId) {
     return NextResponse.json({ error: "No company context found" }, { status: 400 });

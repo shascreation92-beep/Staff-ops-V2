@@ -20,6 +20,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
     }
 
+    // Validate file extension allowlist
+    const ext = path.extname(file.name).toLowerCase();
+    const ALLOWED_EXTENSIONS = [
+      ".png", ".jpg", ".jpeg", ".gif", ".webp",
+      ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv",
+      ".mp4", ".webm", ".mp3", ".wav",
+      ".zip", ".rar", ".7z"
+    ];
+
+    if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
+      return NextResponse.json({ 
+        error: `File type "${ext || "unknown"}" is not permitted. Allowed types: images, documents, audio, video, archives.` 
+      }, { status: 400 });
+    }
+
     // Limit to 50MB
     const maxBytes = 50 * 1024 * 1024;
     if (file.size > maxBytes) {

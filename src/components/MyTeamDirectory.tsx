@@ -35,7 +35,7 @@ interface MyTeamDirectoryProps {
 }
 
 export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
-  const [currentPage, setCurrentPage] = React.useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const ITEMS_PER_PAGE = 50;
   const totalRecords = members.length;
@@ -268,7 +268,8 @@ function MemberCard({ member }: { member: TeamMember }) {
     ? (Date.now() - new Date(member.lastActiveAt).getTime() < 5 * 60 * 1000)
     : false;
 
-  const ipAddress = `10.8.0.${(member.id.charCodeAt(0) % 254) + 1}`;
+  const charCode = member.id ? member.id.charCodeAt(0) : 65;
+  const ipAddress = `10.8.0.${(charCode % 254) + 1}`;
 
   let statusBadgeClass = "pending";
   if (member.status === "APPROVED") statusBadgeClass = "verified";

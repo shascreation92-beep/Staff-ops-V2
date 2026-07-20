@@ -34,6 +34,19 @@ export async function GET(req: Request) {
 
   try {
     if (isGroup) {
+      // Group membership guard
+      if (session.user.role !== "SUPER_ADMIN") {
+        const membership = await db.chatgroupmember.findFirst({
+          where: {
+            groupId: contactId,
+            userId: session.user.id
+          }
+        });
+        if (!membership) {
+          return NextResponse.json({ error: "Forbidden: Not a member of this chat group" }, { status: 403 });
+        }
+      }
+
       const messages = await db.chatgroupmessage.findMany({
         where: { groupId: contactId },
         include: {

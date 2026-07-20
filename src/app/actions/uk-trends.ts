@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { enforceAuth, getCompanyFilter } from "@/lib/auth-helpers";
+import { sanitizeInput } from "@/lib/security";
 import { revalidatePath } from "next/cache";
 
 const UK_POSTCODES = [
@@ -507,20 +508,26 @@ export async function getTenantTrendsConfigAction() {
   const user = await enforceAuth();
   const filter = getCompanyFilter(user);
   
-  if (!filter.companyId) {
+  let targetCompanyId = filter.companyId;
+  if (!targetCompanyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({ where: { isArchived: false } });
+    targetCompanyId = defaultCompany?.id || "";
+  }
+  
+  if (!targetCompanyId) {
     return { success: false, error: "Tenant identification missing." };
   }
   
   try {
     let config = await db.tenanttrendsconfig.findUnique({
-      where: { companyId: filter.companyId }
+      where: { companyId: targetCompanyId }
     });
     
     if (!config) {
       config = await db.tenanttrendsconfig.create({
         data: {
           id: crypto.randomUUID(),
-          companyId: filter.companyId,
+          companyId: targetCompanyId,
           defaultCategory: "ALL"
         }
       });
@@ -537,19 +544,28 @@ export async function updateTenantTrendsConfigAction(defaultCategory: string, no
   const user = await enforceAuth();
   const filter = getCompanyFilter(user);
   
-  if (!filter.companyId) {
+  let targetCompanyId = filter.companyId;
+  if (!targetCompanyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({ where: { isArchived: false } });
+    targetCompanyId = defaultCompany?.id || "";
+  }
+  
+  if (!targetCompanyId) {
     return { success: false, error: "Tenant identification missing." };
   }
+
+  const cleanCategory = sanitizeInput(defaultCategory);
+  const cleanNotes = notes ? sanitizeInput(notes) : undefined;
   
   try {
     const config = await db.tenanttrendsconfig.upsert({
-      where: { companyId: filter.companyId },
-      update: { defaultCategory, notes },
+      where: { companyId: targetCompanyId },
+      update: { defaultCategory: cleanCategory, notes: cleanNotes },
       create: {
         id: crypto.randomUUID(),
-        companyId: filter.companyId,
-        defaultCategory,
-        notes
+        companyId: targetCompanyId,
+        defaultCategory: cleanCategory,
+        notes: cleanNotes
       }
     });
     

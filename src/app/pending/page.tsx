@@ -20,7 +20,7 @@ export default function PendingPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStatus = async (isFirst = false) => {
+  const fetchStatus = React.useCallback(async (isFirst = false) => {
     try {
       const res = await getPendingUserStatusAction();
       if (!res.authenticated) {
@@ -46,7 +46,7 @@ export default function PendingPage() {
         setLoading(false);
       }
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     Promise.resolve().then(() => fetchStatus(true));
@@ -57,7 +57,7 @@ export default function PendingPage() {
     }, 15000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchStatus]);
 
   const handleSignOut = () => {
     signOut({ callbackUrl: "/auth/signin" });

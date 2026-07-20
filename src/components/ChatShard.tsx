@@ -359,33 +359,16 @@ export default function ChatShard({
   // Play a pleasant, synthesized notification sound chime
   const playNotificationChime = () => {
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      
-      const playNote = (time: number, freq: number, duration: number) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, time);
-        
-        gain.gain.setValueAtTime(0, time);
-        gain.gain.linearRampToValueAtTime(0.08, time + 0.05); // volume: 8%
-        gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.start(time);
-        osc.stop(time + duration);
-      };
-      
-      const now = ctx.currentTime;
-      playNote(now, 523.25, 0.4); // C5
-      playNote(now + 0.12, 659.25, 0.5); // E5
+      const audio = new Audio("/sounds/notification.mp3");
+      audio.volume = 0.85;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((e) => {
+          console.warn("Audio playback fallback to synth", e);
+        });
+      }
     } catch (e) {
-      console.warn("Audio Context playback blocked or not supported", e);
+      console.warn("Audio playback not supported", e);
     }
   };
 
@@ -4848,7 +4831,7 @@ export default function ChatShard({
                         flexShrink: 0
                       }}>
                         {item.isGroup ? (item.isPrivate ? "🔒" : "#") : (
-                          <img src={item.image || "/uploads/avatars/default-avatar.png"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={item.image || "/uploads/avatars/default-avatar.png"} alt={item.name || "Avatar"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         )}
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>

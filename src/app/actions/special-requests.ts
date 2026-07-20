@@ -23,7 +23,14 @@ export async function createSpecialRequestAction(formData: z.infer<typeof Create
   }
 
   const { category, priority, title, description, ccUserIds } = result.data;
-  const companyId = user.companyId;
+  let companyId = user.companyId;
+
+  if (!companyId && user.role === "SUPER_ADMIN") {
+    const defaultCompany = await db.company.findFirst({
+      where: { isArchived: false }
+    });
+    companyId = defaultCompany?.id || "";
+  }
 
   if (!companyId) {
     throw new Error("No company context found.");

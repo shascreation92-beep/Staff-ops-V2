@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, getCompanyFilter, logAction } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import { sanitizeInput } from "@/lib/security";
 import { account_status, user_role } from "@prisma/client";
 import { z } from "zod";
 
@@ -27,7 +28,11 @@ export async function createAccountAction(formData: z.infer<typeof CreateAccount
     throw new Error(result.error.issues.map(e => e.message).join(", "));
   }
 
-  const { platformId, serialCode, idName, adsPublished, verificationStatus, targetCompanyId, submissionDate, comment } = result.data;
+  const platformId = sanitizeInput(result.data.platformId);
+  const serialCode = sanitizeInput(result.data.serialCode);
+  const idName = sanitizeInput(result.data.idName);
+  const comment = result.data.comment ? sanitizeInput(result.data.comment) : undefined;
+  const { adsPublished, verificationStatus, targetCompanyId, submissionDate } = result.data;
 
   // Determine Company ID based on role
   let companyId = user.companyId;

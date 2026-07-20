@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { sanitizeInput } from "@/lib/security";
 import { z } from "zod";
 
 const contactSchema = z.object({
@@ -10,9 +11,13 @@ const contactSchema = z.object({
 });
 
 export async function submitContactForm(prevState: any, formData: FormData) {
-  const name = formData.get("name") as string;
-  const email = formData.get("email") as string;
-  const message = formData.get("message") as string;
+  const rawName = formData.get("name") as string;
+  const rawEmail = formData.get("email") as string;
+  const rawMessage = formData.get("message") as string;
+
+  const name = sanitizeInput(rawName || "");
+  const email = sanitizeInput(rawEmail || "").toLowerCase();
+  const message = sanitizeInput(rawMessage || "");
 
   // Validate fields
   const validation = contactSchema.safeParse({ name, email, message });

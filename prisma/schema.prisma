@@ -38,6 +38,8 @@ model account {
   @@index([createdById], map: "Account_createdById_fkey")
   @@index([platformId], map: "Account_platformId_fkey")
   @@index([updatedById], map: "Account_updatedById_fkey")
+  @@index([companyId, status, isArchived])
+  @@index([companyId, teamLeadId, status])
 }
 
 model accounthistory {
@@ -114,6 +116,8 @@ model chatmessage {
 
   @@index([receiverId], map: "ChatMessage_receiverId_fkey")
   @@index([senderId], map: "ChatMessage_senderId_fkey")
+  @@index([senderId, receiverId])
+  @@index([receiverId, isRead])
 }
 
 model company {
@@ -587,4 +591,6 @@ model leaverequest {
   @@index([userId])
   @@index([companyId])
   @@index([teamLeadId])
+  @@index([companyId, status])
+  @@index([teamLeadId, status])
 }

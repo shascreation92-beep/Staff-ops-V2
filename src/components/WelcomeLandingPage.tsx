@@ -202,38 +202,7 @@ export default function WelcomeLandingPage() {
       position: "relative",
       overflowX: "hidden",
       background: "linear-gradient(135deg, #03045E 0%, #000814 100%)",
-      fontFamily: "var(--font-sans, sans-serif)",
-      color: "#FFFFFF"
     }}>
-      <style dangerouslySetInnerHTML={{ __html: `
-        .glass-card:hover {
-          transform: translateY(-2px);
-          background: rgba(255, 255, 255, 0.04) !important;
-          border-color: rgba(72, 202, 228, 0.2) !important;
-          box-shadow: 0 10px 25px rgba(0, 119, 182, 0.15);
-        }
-
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(46, 196, 182, 0.7); }
-          70% { box-shadow: 0 0 0 6px rgba(46, 196, 182, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(46, 196, 182, 0); }
-        }
-        .pulse-dot {
-          animation: pulse 2s infinite;
-        }
-
-        @media (max-width: 768px) {
-          .live-status {
-            display: none !important;
-          }
-        }
-
-        @media (max-width: 640px) {
-          .nav-links {
-            display: none !important;
-          }
-        }
-      `}} />
       {/* Decorative ambient glows */}
       <div style={{
         position: "absolute",

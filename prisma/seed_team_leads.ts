@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -23,6 +24,7 @@ async function main() {
   console.log(`Using Company: ${company.name} (${companyId})`);
 
   const teamLeadsData = [
+    { email: "lead@acme.com", name: "Team Lead" },
     { email: "tl1@acme.com", name: "John Lead" },
     { email: "tl2@acme.com", name: "Emma Lead" },
     { email: "tl3@acme.com", name: "David Lead" },
@@ -39,6 +41,7 @@ async function main() {
       continue;
     }
 
+    const hashedPassword = await bcrypt.hash("pass123", 12);
     const newUserId = `tl-${tl.email.split("@")[0]}`;
     const newUser = await prisma.user.create({
       data: {
@@ -47,7 +50,7 @@ async function main() {
         name: tl.name,
         role: "TEAM_LEAD",
         status: "APPROVED",
-        password: "pass123",
+        password: hashedPassword,
         companyId,
         updatedAt: new Date()
       }

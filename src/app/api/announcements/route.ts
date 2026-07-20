@@ -12,14 +12,21 @@ export async function GET() {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
 
-    if (!session.user.companyId) {
+    const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+
+    if (!session.user.companyId && !isSuperAdmin) {
       return NextResponse.json([]);
     }
 
     const announcements = await db.announcement.findMany({
       where: {
         isArchived: false,
-        companyId: session.user.companyId
+        OR: isSuperAdmin
+          ? undefined
+          : [
+              { companyId: session.user.companyId },
+              { companyId: null }
+            ]
       },
       orderBy: {
         createdAt: "desc"
