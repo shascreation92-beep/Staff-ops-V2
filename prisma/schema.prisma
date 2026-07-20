@@ -141,6 +141,7 @@ model company {
   chatgroup     chatgroup[]
   specialrequest specialrequest[]
   tenanttrendsconfig tenanttrendsconfig?
+  leaverequest   leaverequest[]
 }
 
 model employee {
@@ -270,6 +271,7 @@ model user {
   chatjoinrequest                          chatjoinrequest[]
   specialrequest                           specialrequest[]
   pushsubscription                         pushsubscription[]
+  leaverequest                             leaverequest[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -558,4 +560,31 @@ model contactsubmission {
   email     String
   message   String   @db.Text
   createdAt DateTime @default(now())
+}
+
+model leaverequest {
+  id               String    @id @default(uuid())
+  userId           String
+  companyId        String
+  teamLeadId       String?
+  leaveType        String    // "SICK", "CASUAL", "EMERGENCY", "FAMILY"
+  startDate        DateTime
+  endDate          DateTime
+  totalDays        Int
+  reason           String    @db.Text
+  emergencyContact String?
+  status           String    @default("PENDING_TL") // "PENDING_TL", "PENDING_COMPANY", "APPROVED", "REJECTED"
+  tlNotes          String?   @db.Text
+  tlActionAt       DateTime?
+  companyNotes     String?   @db.Text
+  companyActionAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company          company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([teamLeadId])
 }

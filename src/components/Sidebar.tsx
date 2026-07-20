@@ -20,12 +20,14 @@ import {
   Wallet,
   Pencil,
   HelpCircle,
-  TrendingUp
+  TrendingUp,
+  Calendar
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
 import { updateUserPasswordAction } from "@/app/actions/users";
 import { getPendingTLRequestsCountAction } from "@/app/actions/accounts";
+import { getPendingLeaveApprovalsCountAction } from "@/app/actions/leave-requests";
 import { updateUserBioAction } from "@/app/actions/profile";
 import { useITConfig } from "./ITConfigProvider";
 import { toast } from "react-hot-toast";
@@ -310,6 +312,24 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // Dynamic leave approvals count badge
+  const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchLeavesCount = async () => {
+      try {
+        const res = await getPendingLeaveApprovalsCountAction();
+        setPendingLeavesCount(res.count || 0);
+      } catch (err) {
+        console.error("Failed to fetch pending leaves count", err);
+      }
+    };
+
+    fetchLeavesCount();
+    const interval = setInterval(fetchLeavesCount, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleChangePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setChangePassError(null);
@@ -443,11 +463,18 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     {
+      id: "leave-requests", 
+      label: ["COMPANY_OWNER", "SUPER_ADMIN"].includes(user.role) ? "Leave Approvals" : "My Leaves", 
+      path: "/leave-requests", 
+      icon: Calendar,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE"] 
+    },
+    {
       id: "uk-market-trends",
       label: "UK Market Trends",
       path: "/uk-market-trends",
       icon: TrendingUp,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE"]
     },
     { 
       id: "announcements", 
@@ -764,6 +791,26 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                     title={`${specialRequestStatus.dotColor === "red" ? "Urgent" : specialRequestStatus.dotColor === "orange" ? "Pending" : "Normal"} Support Request`}
                   />
                 </div>
+              )}
+              {item.id === "leave-requests" && pendingLeavesCount > 0 && (
+                <span 
+                  style={{
+                    marginLeft: "auto",
+                    background: "linear-gradient(135deg, #0284C7, #0077B6)",
+                    color: "white",
+                    borderRadius: "9999px",
+                    padding: "0.15rem 0.5rem",
+                    fontSize: "0.7rem",
+                    fontWeight: "bold",
+                    lineHeight: 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 0 8px rgba(2, 132, 199, 0.4)"
+                  }}
+                >
+                  {pendingLeavesCount}
+                </span>
               )}
             </Link>
           );
