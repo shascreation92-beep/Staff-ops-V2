@@ -536,6 +536,8 @@ model itparsedaccount {
   createdAt    DateTime @default(now())
   agentId      String
   companyId    String
+  color        String?
+  remarks      String?  @db.Text
 }
 
 model pushsubscription {

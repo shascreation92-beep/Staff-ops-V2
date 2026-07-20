@@ -155,6 +155,8 @@ export async function getParsedAccountsLedgerAction(page: number = 1, filterAgen
       createdAt: acc.createdAt.toISOString(),
       agentId: acc.agentId,
       companyId: acc.companyId,
+      color: acc.color,
+      remarks: acc.remarks,
     }));
 
     return {
@@ -182,14 +184,14 @@ export async function exportAgentAccountsCSVAction(agentId: string) {
     });
 
     // Compile CSV headers and rows
-    const headers = "Series Number,Password,Name,Auto-Generated Date\n";
+    const headers = "Series Number,Password,Name,Auto-Generated Date,Remarks\n";
     const rows = accounts
       .map(
         (acc) =>
           `"${acc.seriesNumber.replace(/"/g, '""')}","${acc.password.replace(
             /"/g,
             '""'
-          )}","${acc.name.replace(/"/g, '""')}","${acc.createdAt.toISOString()}"`
+          )}","${acc.name.replace(/"/g, '""')}","${acc.createdAt.toISOString()}","${(acc.remarks || "").replace(/"/g, '""')}"`
       )
       .join("\n");
 
@@ -197,5 +199,56 @@ export async function exportAgentAccountsCSVAction(agentId: string) {
   } catch (err: any) {
     console.error("Failed to export agent accounts to CSV:", err);
     return { success: false, error: err.message || "Failed to generate CSV data." };
+  }
+}
+
+// Update parsed account color (highlight)
+export async function updateParsedAccountColorAction(id: string, color: string | null) {
+  const user = await checkRole(["IT_DEPARTMENT"]);
+  try {
+    await db.itparsedaccount.update({
+      where: { id, agentId: user.id },
+      data: { color },
+    });
+    revalidatePath("/it-accounts-parser");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to update account color:", err);
+    return { success: false, error: err.message || "Failed to update color." };
+  }
+}
+
+// Update parsed account remarks
+export async function updateParsedAccountRemarksAction(id: string, remarks: string | null) {
+  const user = await checkRole(["IT_DEPARTMENT"]);
+  try {
+    await db.itparsedaccount.update({
+      where: { id, agentId: user.id },
+      data: { remarks },
+    });
+    revalidatePath("/it-accounts-parser");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to update account remarks:", err);
+    return { success: false, error: err.message || "Failed to update remarks." };
+  }
+}
+
+// Bulk update parsed accounts color
+export async function bulkUpdateParsedAccountsColorAction(ids: string[], color: string | null) {
+  const user = await checkRole(["IT_DEPARTMENT"]);
+  try {
+    await db.itparsedaccount.updateMany({
+      where: { 
+        id: { in: ids },
+        agentId: user.id 
+      },
+      data: { color },
+    });
+    revalidatePath("/it-accounts-parser");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed bulk updating account colors:", err);
+    return { success: false, error: err.message || "Failed bulk updating colors." };
   }
 }
