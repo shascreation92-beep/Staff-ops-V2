@@ -99,10 +99,17 @@ export function ITConfigProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+const defaultITConfigContext: ITConfigContextType = {
+  verificationCost: 300,
+  facebookCost: 300,
+  vintedCost: 300,
+  updateVerificationCost: async () => false,
+  updateFacebookCost: async () => false,
+  updateVintedCost: async () => false,
+  loading: false,
+};
+
 export function useITConfig() {
   const context = useContext(ITConfigContext);
-  if (!context) {
-    throw new Error("useITConfig must be used within an ITConfigProvider");
-  }
-  return context;
+  return context || defaultITConfigContext;
 }

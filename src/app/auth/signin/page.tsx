@@ -1,17 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
-import { Shield, Lock, ArrowRight, Terminal, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Shield, Lock, Mail, ArrowRight, Terminal, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("faizancheena9@gmail.com");
-  const [password, setPassword] = useState("Cupoftea@90");
-  const [activeRole, setActiveRole] = useState("SUPER_ADMIN");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeRole, setActiveRole] = useState("SUPER_ADMIN");
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus email field on mount
+  useEffect(() => {
+    emailInputRef.current?.focus();
+  }, []);
 
   // Parse error parameters if any
   useEffect(() => {
@@ -460,114 +467,109 @@ export default function SignInPage() {
             </div>
           )}
 
-          {/* Developer Console bypass pills */}
+          {/* Clean Authentication Form */}
           <form onSubmit={handleDevLogin} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               
-              {/* Super Admin Pill Row */}
-              <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSelection("SUPER_ADMIN", "faizancheena9@gmail.com", "Cupoftea@90")}
-                  className={`glass-pill ${activeRole === "SUPER_ADMIN" ? "active" : ""}`}
-                  style={{ width: "100%", maxWidth: "250px" }}
-                  disabled={isLoading}
-                >
-                  Super Admin
-                </button>
-              </div>
-
-              {/* Company / IT Dept Row */}
-              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", width: "100%" }}>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSelection("COMPANY_OWNER", "owner@acme.com", "pass123")}
-                  className={`glass-pill ${activeRole === "COMPANY_OWNER" ? "active" : ""}`}
-                  style={{ flex: 1 }}
-                  disabled={isLoading}
-                >
-                  Company
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSelection("IT_DEPARTMENT", "it@acme.com", "pass123")}
-                  className={`glass-pill ${activeRole === "IT_DEPARTMENT" ? "active" : ""}`}
-                  style={{ flex: 1 }}
-                  disabled={isLoading}
-                >
-                  IT Dept.
-                </button>
-              </div>
-
-              {/* Team Lead / Sales Associate Row */}
-              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", width: "100%" }}>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSelection("TEAM_LEAD", "lead@acme.com", "pass123")}
-                  className={`glass-pill ${activeRole === "TEAM_LEAD" ? "active" : ""}`}
-                  style={{ flex: 1 }}
-                  disabled={isLoading}
-                >
-                  Team Lead
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSelection("SALES_ASSOCIATE", "sales@acme.com", "pass123")}
-                  className={`glass-pill ${activeRole === "SALES_ASSOCIATE" ? "active" : ""}`}
-                  style={{ flex: 1 }}
-                  disabled={isLoading}
-                >
-                  Sales Rep.
-                </button>
-              </div>
-            </div>
-
-            {/* Form Inputs (Custom Style) */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "0.25rem" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
-                <input
-                  type="text"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setActiveRole(""); // remove active pill highlight when customized
-                  }}
-                  disabled={isLoading}
-                  className="glass-input"
-                />
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", position: "relative" }}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="glass-input"
-                  style={{ paddingRight: "2.5rem" }}
-                />
-                <span
-                  onClick={() => !isLoading && setShowPassword(!showPassword)}
-                  style={{
+              {/* Form Input 1: Email Address */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", letterSpacing: "0.02em" }}>
+                  Work Email Address
+                </label>
+                <div style={{ position: "relative", width: "100%" }}>
+                  <span style={{
                     position: "absolute",
-                    right: "0.75rem",
+                    left: "0.85rem",
                     top: "50%",
                     transform: "translateY(-50%)",
-                    cursor: isLoading ? "not-allowed" : "pointer",
-                    color: "#999999",
+                    color: "var(--text-muted)",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    padding: "4px",
-                    userSelect: "none",
-                    zIndex: 20,
-                    pointerEvents: "auto"
-                  }}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </span>
+                    pointerEvents: "none"
+                  }}>
+                    <Mail size={18} />
+                  </span>
+                  <input
+                    ref={emailInputRef}
+                    type="email"
+                    placeholder="name@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                    className="glass-input"
+                    style={{ paddingLeft: "2.75rem", height: "46px" }}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Form Input 2: Password */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", letterSpacing: "0.02em" }}>
+                  Password
+                </label>
+                <div style={{ position: "relative", width: "100%" }}>
+                  <span style={{
+                    position: "absolute",
+                    left: "0.85rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "var(--text-muted)",
+                    display: "flex",
+                    alignItems: "center",
+                    pointerEvents: "none"
+                  }}>
+                    <Lock size={18} />
+                  </span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="glass-input"
+                    style={{ paddingLeft: "2.75rem", paddingRight: "2.75rem", height: "46px" }}
+                  />
+                  <span
+                    onClick={() => !isLoading && setShowPassword(!showPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "0.85rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      cursor: isLoading ? "not-allowed" : "pointer",
+                      color: "var(--text-muted)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      userSelect: "none",
+                      zIndex: 20
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </span>
+                </div>
+              </div>
+
+              {/* Remember Me Checkbox */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.2rem" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.55rem", cursor: "pointer", userSelect: "none" }}>
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      accentColor: "#0077B6",
+                      cursor: "pointer",
+                      borderRadius: "4px"
+                    }}
+                  />
+                  <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)", fontWeight: 600 }}>
+                    Remember me on this browser
+                  </span>
+                </label>
               </div>
             </div>
 
@@ -576,26 +578,26 @@ export default function SignInPage() {
               disabled={isLoading}
               style={{
                 width: "100%",
-                height: "44px",
-                fontSize: "0.9rem",
-                fontWeight: 700,
+                height: "48px",
+                fontSize: "0.95rem",
+                fontWeight: 800,
                 color: "#FFFFFF",
-                backgroundColor: "var(--gold-primary)",
+                background: "linear-gradient(135deg, #0077B6 0%, #0250A1 100%)",
                 border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                boxShadow: "0 4px 15px rgba(0, 119, 182, 0.2)",
+                borderRadius: "8px",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                boxShadow: "0 4px 15px rgba(0, 119, 182, 0.25)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "0.5rem",
                 marginTop: "0.25rem",
-                transition: "all 0.2s ease"
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
               }}
               className="btn-signin-enter"
             >
-              <span>SIGN IN & ENTER</span>
-              <ArrowRight size={16} />
+              <span>{isLoading ? "AUTHENTICATING..." : "SIGN IN & ENTER"}</span>
+              <ArrowRight size={18} />
             </button>
           </form>
 

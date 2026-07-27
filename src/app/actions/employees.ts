@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, getCompanyFilter, logAction } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
-import { sanitizeInput } from "@/lib/security";
+import { sanitizeInput, encryptCredential, decryptCredential } from "@/lib/security";
 import { 
   employee_laptopBrand, 
   employee_windowsVersion, 
@@ -82,8 +82,8 @@ export async function createEmployeeAction(formData: z.infer<typeof CreateEmploy
         laptopSerialNumber: result.data.laptopSerialNumber || null,
         windowsVersion: result.data.windowsVersion || null,
         vpnProvider: result.data.vpnProvider || null,
-        laptopPassword: result.data.laptopPassword || null,
-        vpnCredentials: result.data.vpnCredentials || null,
+        laptopPassword: encryptCredential(result.data.laptopPassword) || null,
+        vpnCredentials: encryptCredential(result.data.vpnCredentials) || null,
         updatedAt: new Date()
       }
     });
@@ -147,6 +147,8 @@ export async function updateEmployeeITAction(
       where: { id },
       data: {
         ...result.data,
+        laptopPassword: encryptCredential(result.data.laptopPassword) || null,
+        vpnCredentials: encryptCredential(result.data.vpnCredentials) || null,
         updatedAt: new Date()
       }
     });
@@ -260,8 +262,8 @@ export async function saveAssociateEmployeeITAction(
         laptopSerialNumber: formData.laptopSerialNumber || null,
         windowsVersion: formData.windowsVersion || null,
         vpnProvider: formData.vpnProvider || null,
-        laptopPassword: formData.laptopPassword || null,
-        vpnCredentials: formData.vpnCredentials || null,
+        laptopPassword: encryptCredential(formData.laptopPassword) || null,
+        vpnCredentials: encryptCredential(formData.vpnCredentials) || null,
         updatedAt: new Date()
       },
       create: {
@@ -276,8 +278,8 @@ export async function saveAssociateEmployeeITAction(
         laptopSerialNumber: formData.laptopSerialNumber || null,
         windowsVersion: formData.windowsVersion || null,
         vpnProvider: formData.vpnProvider || null,
-        laptopPassword: formData.laptopPassword || null,
-        vpnCredentials: formData.vpnCredentials || null,
+        laptopPassword: encryptCredential(formData.laptopPassword) || null,
+        vpnCredentials: encryptCredential(formData.vpnCredentials) || null,
         updatedAt: new Date()
       }
     });

@@ -1,4 +1,61 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "worknode_staffops_secret_key_32b!"; // 32 characters
+const ALGORITHM = "aes-256-gcm";
+
+/**
+ * Encrypt sensitive credentials (AES-256-GCM)
+ */
+export function encryptCredential(text: string | null | undefined): string | null {
+  if (!text) return null;
+  // If already encrypted (starts with enc:) return as is
+  if (text.startsWith("enc:")) return text;
+
+  try {
+    const iv = crypto.randomBytes(12);
+    const key = crypto.scryptSync(ENCRYPTION_KEY, "salt", 32);
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const authTag = cipher.getAuthTag().toString("hex");
+
+    return `enc:${iv.toString("hex")}:${authTag}:${encrypted}`;
+  } catch (err) {
+    console.error("Encryption error:", err);
+    return text;
+  }
+}
+
+/**
+ * Decrypt sensitive credentials (AES-256-GCM) with transparent plaintext fallback
+ */
+export function decryptCredential(encryptedText: string | null | undefined): string | null {
+  if (!encryptedText) return null;
+  if (!encryptedText.startsWith("enc:")) return encryptedText; // Legacy plaintext fallback
+
+  try {
+    const parts = encryptedText.split(":");
+    if (parts.length !== 4) return encryptedText;
+
+    const iv = Buffer.from(parts[1], "hex");
+    const authTag = Buffer.from(parts[2], "hex");
+    const encrypted = parts[3];
+
+    const key = crypto.scryptSync(ENCRYPTION_KEY, "salt", 32);
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+
+    let decrypted = decipher.update(encrypted, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+
+    return decrypted;
+  } catch (err) {
+    console.error("Decryption error:", err);
+    return encryptedText;
+  }
+}
 
 /**
  * 1. Secure Password Hashing (bcryptjs with salt rounds = 12)
@@ -7,6 +64,7 @@ export async function hashPassword(password: string): Promise<string> {
   if (!password) return "";
   return await bcrypt.hash(password, 12);
 }
+
 
 /**
  * 2. Password Verification with legacy plaintext fallback & auto-upgrade flag

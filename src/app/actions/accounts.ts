@@ -794,3 +794,52 @@ export async function updateAccount2FACodeAction(accountId: string, twoFactorCod
     throw new Error(error.message || "Failed to update 2FA code.");
   }
 }
+
+/**
+ * Account Health & Fatigue Score Calculator (0-100%)
+ */
+export async function calculateAccountHealthScore(account: {
+  status: string;
+  verificationStatus: string;
+  adsPublished: number;
+  issueType?: string | null;
+}) {
+  let score = 80;
+
+  if (account.status === "ACTIVE") score += 15;
+  if (account.status === "REJECTED") score -= 35;
+  if (account.verificationStatus === "Yes") score += 10;
+  if (account.verificationStatus === "No") score -= 15;
+  if (account.adsPublished === 0) score -= 10;
+  if (account.issueType && account.issueType !== "Active") score -= 20;
+
+  const finalScore = Math.max(0, Math.min(100, score));
+
+  let grade: "EXCELLENT" | "STABLE" | "WARNING" | "CRITICAL" = "STABLE";
+  if (finalScore >= 85) grade = "EXCELLENT";
+  else if (finalScore >= 60) grade = "STABLE";
+  else if (finalScore >= 40) grade = "WARNING";
+  else grade = "CRITICAL";
+
+  return { score: finalScore, grade };
+}
+
+/**
+ * Fetch timeline audit history for a specific account
+ */
+export async function getAccountHistoryAction(accountId: string) {
+  const user = await enforceAuth();
+
+  const history = await db.accounthistory.findMany({
+    where: { accountId },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true, role: true }
+      }
+    },
+    orderBy: { createdAt: "asc" }
+  });
+
+  return { success: true, history };
+}
+

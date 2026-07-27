@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { enforceAuth } from "@/lib/auth-helpers";
 import { revalidatePath } from "next/cache";
+import { encryptCredential, decryptCredential } from "@/lib/security";
 
 // Secure role checker helper
 async function checkRole(allowedRoles: string[]) {
@@ -30,7 +31,7 @@ export async function saveParsedAccountsAction(
     const dataToInsert = accounts.map((acc) => ({
       id: crypto.randomUUID(),
       seriesNumber: acc.seriesNumber.trim(),
-      password: acc.password.trim(),
+      password: encryptCredential(acc.password.trim()) || acc.password.trim(),
       name: acc.name.trim(),
       agentId: user.id,
       companyId: user.companyId!,
@@ -152,11 +153,11 @@ export async function getParsedAccountsLedgerAction(page: number = 1, filterAgen
       }),
     ]);
 
-    // Format createdAt as string safely
+    // Format createdAt as string safely and decrypt credentials
     const formattedAccounts = accounts.map((acc) => ({
       id: acc.id,
       seriesNumber: acc.seriesNumber,
-      password: acc.password,
+      password: decryptCredential(acc.password) || acc.password,
       name: acc.name,
       createdAt: acc.createdAt.toISOString(),
       agentId: acc.agentId,

@@ -22,14 +22,19 @@ interface AnnouncementContextType {
   openGlobalAnnDetails: (ann: any) => void;
 }
 
-const AnnouncementContext = createContext<AnnouncementContextType | undefined>(undefined);
+const defaultContextValue: AnnouncementContextType = {
+  triggerToast: () => {},
+  openAnnouncementById: async () => {},
+  activeStripAnn: null,
+  dismissStrip: () => {},
+  openGlobalAnnDetails: () => {},
+};
+
+const AnnouncementContext = createContext<AnnouncementContextType>(defaultContextValue);
 
 export function useAnnouncements() {
   const context = useContext(AnnouncementContext);
-  if (!context) {
-    throw new Error("useAnnouncements must be used within an AnnouncementProvider");
-  }
-  return context;
+  return context || defaultContextValue;
 }
 
 // Play custom audio notification with fallback to Web Audio synthesis
@@ -190,10 +195,10 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
 
     const checkNewAnnouncements = async () => {
       try {
-        // 1. Fetch team announcements
-        const res = await fetch("/api/notifications");
-        if (res.ok) {
-          const data = await res.json();
+        // 1. Fetch team announcements safely
+        const res = await fetch("/api/notifications").catch(() => null);
+        if (res && res.ok) {
+          const data = await res.json().catch(() => []);
           if (Array.isArray(data)) {
             const seenStr = localStorage.getItem("seen_announcement_toasts");
             const seenIds: string[] = seenStr ? JSON.parse(seenStr) : [];
@@ -219,7 +224,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
                         tag: notif.id,
                         requireInteraction: true
                       });
-                    });
+                    }).catch(() => null);
                   }
                   playSound = true;
                 }
@@ -233,10 +238,10 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
           }
         }
 
-        // 2. Fetch system-wide global announcements
-        const sysRes = await fetch("/api/announcements");
-        if (sysRes.ok) {
-          const sysData = await sysRes.json();
+        // 2. Fetch system-wide global announcements safely
+        const sysRes = await fetch("/api/announcements").catch(() => null);
+        if (sysRes && sysRes.ok) {
+          const sysData = await sysRes.json().catch(() => []);
           if (Array.isArray(sysData)) {
             setAnnouncements(sysData);
 
@@ -263,7 +268,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
                       tag: ann.id,
                       requireInteraction: true
                     });
-                  });
+                  }).catch(() => null);
                 }
               }
             }
@@ -275,7 +280,7 @@ export function AnnouncementProvider({ children }: { children: React.ReactNode }
           }
         }
       } catch (err) {
-        console.error("Failed to check new announcements:", err);
+        // Silently handle transient network disconnects during background polling
       }
     };
 

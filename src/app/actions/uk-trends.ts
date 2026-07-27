@@ -575,3 +575,45 @@ export async function updateTenantTrendsConfigAction(defaultCategory: string, no
     return { success: false, error: err.message || "Failed to update tenant configuration." };
   }
 }
+
+/**
+ * AI Trend Insights Engine: Aggregates UK demand spikes & marketing copy angles
+ */
+export async function getAITrendsInsightsAction() {
+  const user = await enforceAuth();
+
+  try {
+    const topTrends = await db.uktrend.findMany({
+      orderBy: { spikePercent: "desc" },
+      take: 20,
+    });
+
+    const categoryCounts: Record<string, number> = { BEDS: 0, SOFAS: 0, WARDROBES: 0, GENERAL: 0 };
+    topTrends.forEach((t) => {
+      if (categoryCounts[t.category] !== undefined) {
+        categoryCounts[t.category] += 1;
+      }
+    });
+
+    const topCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0][0];
+
+    return {
+      success: true,
+      insights: {
+        totalTrendsAnalyzed: topTrends.length,
+        topDemandCategory: topCategory,
+        categoryCounts,
+        recommendedAdAngles: [
+          `Focus ads on high-spike ${topCategory} catalog with location targeting around London & Manchester postcodes.`,
+          `Highlight Next-Day UK Delivery on high-demand search keywords like '${topTrends[0]?.keyword || "luxury beds"}'.`,
+          `Leverage promotional bundle deals during current peak search velocity.`
+        ],
+        topSpikeKeyword: topTrends[0]?.keyword || "Luxury Velvet Beds",
+        topSpikePercent: topTrends[0]?.spikePercent || 250,
+      }
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to generate AI trends insights." };
+  }
+}
+
