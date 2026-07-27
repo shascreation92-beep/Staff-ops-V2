@@ -111,6 +111,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   // User Bio States
   const [showBioModal, setShowBioModal] = useState(false);
@@ -547,12 +548,27 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           className="profile-avatar-container"
           style={{ position: "relative" }}
         >
-          <div className="profile-avatar-circle" style={{ overflow: "hidden", position: "relative" }}>
-            <img 
-              src={user.image || "/uploads/avatars/default-avatar.png"} 
-              alt={user.name || "Operator"} 
-              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-            />
+          <div className="profile-avatar-circle" style={{
+            overflow: "hidden", 
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "linear-gradient(135deg, #0077B6 0%, #00B4D8 100%)",
+            color: "#FFFFFF",
+            fontWeight: 800,
+            fontSize: "1.1rem"
+          }}>
+            {user.image && !imgError ? (
+              <img 
+                src={user.image} 
+                alt={user.name || "Operator"} 
+                onError={() => setImgError(true)}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+              />
+            ) : (
+              <span>{userInitials}</span>
+            )}
           </div>
         </div>
 

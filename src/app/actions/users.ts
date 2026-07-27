@@ -1064,54 +1064,33 @@ export async function uploadUserAvatarAction(base64Image: string) {
   const user = await enforceAuth();
   
   try {
-    const fs = await import("fs");
-    const path = await import("path");
-
-    // Extract base64 payload
-    const matches = base64Image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      throw new Error("Invalid base64 image payload.");
-    }
-    
-    const imageBuffer = Buffer.from(matches[2], "base64");
-    const mimeType = matches[1];
-    let extension = "png";
-    if (mimeType.includes("jpeg")) extension = "jpg";
-    else if (mimeType.includes("gif")) extension = "gif";
-    else if (mimeType.includes("webp")) extension = "webp";
-    
-    const cleanFileName = `avatar_${user.id}_${Date.now()}.${extension}`;
-    
-    // Check if public/uploads/avatars/ exists, if not create it
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "avatars");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    // Clean old avatars for this user to avoid disk bloat
-    const files = fs.readdirSync(uploadDir);
-    files.forEach(file => {
-      if (file.startsWith(`avatar_${user.id}_`)) {
-        try {
-          fs.unlinkSync(path.join(uploadDir, file));
-        } catch (e) {
-          console.error("Failed to delete old avatar file:", e);
-        }
-      }
-    });
-
-    const filePath = path.join(uploadDir, cleanFileName);
-    fs.writeFileSync(filePath, imageBuffer);
-    
-    // Save image path in database
-    const dbPath = `/uploads/avatars/${cleanFileName}`;
+    // Save base64 Data URL directly in database for 100% reliable rendering
     await db.user.update({
       where: { id: user.id },
-      data: { image: dbPath }
+      data: { image: base64Image }
     });
+
+    // Also attempt writing file as local fallback if public/uploads exists
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const matches = base64Image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const imageBuffer = Buffer.from(matches[2], "base64");
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "avatars");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const cleanFileName = `avatar_${user.id}_${Date.now()}.png`;
+        fs.writeFileSync(path.join(uploadDir, cleanFileName), imageBuffer);
+      }
+    } catch (fsErr) {
+      console.warn("Local disk avatar save skipped (using database base64):", fsErr);
+    }
     
     revalidatePath("/");
-    return { success: true, imagePath: dbPath };
+    revalidatePath("/auth/signin");
+    return { success: true, imagePath: base64Image };
   } catch (err: any) {
     console.error("Avatar upload failed:", err);
     return { success: false, error: err.message || "Failed to save avatar image." };
