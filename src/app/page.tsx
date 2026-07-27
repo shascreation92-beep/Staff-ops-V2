@@ -44,17 +44,18 @@ import TeamWiseBreakdown from "@/components/TeamWiseBreakdown";
 
 
 export default async function DashboardPage() {
-  const session = await getServerAuthSession();
-  
-  if (!session?.user) {
-    return <WelcomeLandingPage />;
-  }
+  try {
+    const session = await getServerAuthSession();
+    
+    if (!session?.user) {
+      return <WelcomeLandingPage />;
+    }
 
-  // Enforce server-side authentication and status checks
-  const user = await enforceAuth();
-  
-  // Get scoped company filter
-  const companyFilter = getCompanyFilter(user);
+    // Enforce server-side authentication and status checks
+    const user = await enforceAuth();
+    
+    // Get scoped company filter
+    const companyFilter = getCompanyFilter(user);
 
   // Fetch company details if not Super Admin
   let companyName = null;
@@ -1093,4 +1094,58 @@ export default async function DashboardPage() {
       )}
     </DashboardLayout>
   );
+  } catch (error: any) {
+    if (error?.message === "NEXT_REDIRECT" || error?.digest?.includes("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("Dashboard Page Render Error:", error);
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        padding: "2rem",
+        background: "linear-gradient(135deg, #03045E 0%, #000814 100%)",
+        color: "#FFFFFF",
+        textAlign: "center"
+      }}>
+        <div style={{
+          maxWidth: "600px",
+          width: "100%",
+          background: "rgba(255, 255, 255, 0.04)",
+          border: "1px solid rgba(255, 255, 255, 0.12)",
+          borderRadius: "16px",
+          padding: "2rem",
+          backdropFilter: "blur(12px)"
+        }}>
+          <h2 style={{ color: "#EF4444", marginBottom: "1rem" }}>Dashboard Diagnostic Report</h2>
+          <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.7)" }}>An error occurred while loading dashboard metrics:</p>
+          <pre style={{
+            background: "rgba(0,0,0,0.5)",
+            padding: "1rem",
+            borderRadius: "8px",
+            color: "#FCA5A5",
+            textAlign: "left",
+            fontSize: "0.8rem",
+            overflowX: "auto",
+            whiteSpace: "pre-wrap"
+          }}>
+            {error?.stack || error?.message || String(error)}
+          </pre>
+          <a href="/auth/signin" style={{
+            display: "inline-block",
+            marginTop: "1.5rem",
+            padding: "0.6rem 1.25rem",
+            background: "#0077B6",
+            color: "white",
+            borderRadius: "8px",
+            textDecoration: "none",
+            fontWeight: 700
+          }}>Re-authenticate</a>
+        </div>
+      </div>
+    );
+  }
 }
