@@ -239,7 +239,7 @@ model user {
   name                                     String?
   email                                    String           @unique(map: "User_email_key")
   emailVerified                            DateTime?
-  image                                    String?
+  image                                    String?          @db.MediumText
   role                                     user_role        @default(SALES_ASSOCIATE)
   status                                   user_status      @default(PENDING)
   companyId                                String?

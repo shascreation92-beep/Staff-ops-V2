@@ -184,38 +184,38 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      canvas.width = 250;
-      canvas.height = 250;
+      canvas.width = 160;
+      canvas.height = 160;
 
-      ctx.clearRect(0, 0, 250, 250);
+      ctx.clearRect(0, 0, 160, 160);
 
       // Circle clip path
       ctx.beginPath();
-      ctx.arc(125, 125, 125, 0, Math.PI * 2);
+      ctx.arc(80, 80, 80, 0, Math.PI * 2);
       ctx.clip();
 
-      ctx.translate(125, 125);
+      ctx.translate(80, 80);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.scale(zoom, zoom);
-      ctx.translate(-125, -125);
+      ctx.translate(-80, -80);
 
       const imgAspect = img.width / img.height;
-      let drawW = 250;
-      let drawH = 250;
+      let drawW = 160;
+      let drawH = 160;
       let drawX = 0;
       let drawY = 0;
 
       if (imgAspect > 1) {
-        drawW = 250 * imgAspect;
-        drawX = (250 - drawW) / 2;
+        drawW = 160 * imgAspect;
+        drawX = (160 - drawW) / 2;
       } else {
-        drawH = 250 / imgAspect;
-        drawY = (250 - drawH) / 2;
+        drawH = 160 / imgAspect;
+        drawY = (160 - drawH) / 2;
       }
 
-      ctx.drawImage(img, drawX + offsetX, drawY + offsetY, drawW, drawH);
+      ctx.drawImage(img, drawX + (offsetX * (160 / 200)), drawY + (offsetY * (160 / 200)), drawW, drawH);
 
-      const croppedBase64 = canvas.toDataURL("image/png");
+      const croppedBase64 = canvas.toDataURL("image/jpeg", 0.85);
 
       try {
         const { uploadUserAvatarAction } = await import("@/app/actions/users");
