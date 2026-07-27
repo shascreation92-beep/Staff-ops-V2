@@ -1063,38 +1063,52 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(3, 4, 94, 0.45)",
+          backdropFilter: "blur(8px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "1.5rem"
+          padding: "1rem"
         }}>
           <div className="glass-panel" style={{
-            maxWidth: "460px",
+            maxWidth: "480px",
             width: "100%",
             padding: "2rem",
             background: "#FFFFFF",
             border: "1px solid var(--border-dim)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 20px 40px rgba(0, 119, 182, 0.15)",
+            boxSizing: "border-box"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0 }}>
-                UPLOAD DISPLAY PICTURE
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0, letterSpacing: "0.02em" }}>
+                Upload Display Picture
               </h2>
               <button 
                 onClick={() => { setShowUploadModal(false); setImageSrc(null); setSelectedFile(null); }}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.2rem" }}
+                style={{ 
+                  background: "none", 
+                  border: "none", 
+                  cursor: "pointer", 
+                  color: "var(--text-muted)", 
+                  fontSize: "1.2rem",
+                  width: "32px",
+                  height: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%"
+                }}
               >
                 ✕
               </button>
             </div>
 
-            <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
+            <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
               Select an image file, adjust zoom, rotate, and drag the picture inside the circle frame below.
             </p>
 
@@ -1103,10 +1117,10 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               <div 
                 style={{
                   border: "2px dashed var(--border-gold)",
-                  borderRadius: "8px",
-                  padding: "2rem 1rem",
+                  borderRadius: "12px",
+                  padding: "2.5rem 1.5rem",
                   textAlign: "center",
-                  background: "#F9FAFB",
+                  background: "rgba(0, 119, 182, 0.02)",
                   cursor: "pointer",
                   transition: "all 0.2s"
                 }}
@@ -1122,28 +1136,30 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                   style={{ display: "none" }} 
                   onChange={handleFileChange}
                 />
-                <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.5rem" }}>🖼️</span>
-                <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                <span style={{ fontSize: "2.2rem", display: "block", marginBottom: "0.5rem" }}>🖼️</span>
+                <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)" }}>
                   Click to choose image
                 </span>
-                <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", display: "block", marginTop: "0.25rem" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block", marginTop: "0.35rem" }}>
                   Supports PNG, JPG, WEBP (Max 5MB)
                 </span>
               </div>
             ) : (
               /* Cropper / Preview Controls */
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem", width: "100%", boxSizing: "border-box" }}>
                 {/* Circular Crop Frame with dragging */}
                 <div 
                   style={{
-                    width: "180px",
-                    height: "180px",
+                    width: "200px",
+                    height: "200px",
                     borderRadius: "50%",
-                    border: "3px solid var(--gold-glow)",
+                    border: "4px solid #0077B6",
+                    boxShadow: "0 8px 24px rgba(0, 119, 182, 0.2)",
                     overflow: "hidden",
                     position: "relative",
                     background: "#000",
-                    cursor: "grab"
+                    cursor: "grab",
+                    flexShrink: 0
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -1167,9 +1183,9 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 </div>
 
                 {/* Crop Zoom & Rotation Sliders */}
-                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", minWidth: "50px" }}>Zoom</span>
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.85rem", boxSizing: "border-box", padding: "0 0.5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", width: "100%" }}>
+                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", minWidth: "55px" }}>Zoom</span>
                     <input 
                       type="range" 
                       min="1" 
@@ -1177,15 +1193,15 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                       step="0.05"
                       value={zoom} 
                       onChange={(e) => setZoom(parseFloat(e.target.value))}
-                      style={{ flex: 1, accentColor: "var(--gold-primary)" }}
+                      style={{ flex: 1, accentColor: "#0077B6", minWidth: 0 }}
                     />
-                    <span style={{ fontSize: "0.7rem", fontFamily: "var(--font-mono)", width: "30px", textAlign: "right" }}>
+                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#0077B6", minWidth: "42px", textAlign: "right" }}>
                       {Math.round(zoom * 100)}%
                     </span>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)", minWidth: "50px" }}>Rotate</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", width: "100%" }}>
+                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", minWidth: "55px" }}>Rotate</span>
                     <input 
                       type="range" 
                       min="0" 
@@ -1193,21 +1209,30 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                       step="1"
                       value={rotation} 
                       onChange={(e) => setRotation(parseInt(e.target.value))}
-                      style={{ flex: 1, accentColor: "var(--gold-primary)" }}
+                      style={{ flex: 1, accentColor: "#0077B6", minWidth: 0 }}
                     />
-                    <span style={{ fontSize: "0.7rem", fontFamily: "var(--font-mono)", width: "30px", textAlign: "right" }}>
+                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#0077B6", minWidth: "42px", textAlign: "right" }}>
                       {rotation}°
                     </span>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div style={{ display: "flex", gap: "1rem", width: "100%" }}>
+                <div style={{ display: "flex", gap: "0.85rem", width: "100%", marginTop: "0.25rem" }}>
                   <button
                     type="button"
                     onClick={() => { setImageSrc(null); setSelectedFile(null); }}
-                    className="btn-glass"
-                    style={{ flex: 1 }}
+                    style={{
+                      flex: 1,
+                      height: "44px",
+                      background: "rgba(0, 0, 0, 0.04)",
+                      border: "1px solid var(--border-dim)",
+                      borderRadius: "8px",
+                      color: "var(--text-primary)",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                      cursor: "pointer"
+                    }}
                     disabled={isUploading}
                   >
                     Change Image
@@ -1215,11 +1240,21 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                   <button
                     type="button"
                     onClick={handleSaveAvatar}
-                    className="btn-gold"
-                    style={{ flex: 1 }}
+                    style={{
+                      flex: 1,
+                      height: "44px",
+                      background: "linear-gradient(135deg, #0077B6 0%, #0250A1 100%)",
+                      border: "none",
+                      borderRadius: "8px",
+                      color: "#FFFFFF",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(0, 119, 182, 0.25)"
+                    }}
                     disabled={isUploading}
                   >
-                    {isUploading ? "Saving Avatar..." : "Save Photo"}
+                    {isUploading ? "Saving..." : "Save Photo"}
                   </button>
                 </div>
               </div>
