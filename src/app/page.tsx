@@ -204,8 +204,8 @@ export default async function DashboardPage() {
   const fbPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("facebook"));
   const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
 
-  const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook", mode: "insensitive" as any } } };
-  const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted", mode: "insensitive" as any } } };
+  const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook" } } };
+  const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted" } } };
 
   // Fetch team-wise metrics
   const teamLeadsStats = await Promise.all(
@@ -383,9 +383,9 @@ export default async function DashboardPage() {
     const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
     const gumtreePlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("gumtree"));
 
-    const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook", mode: "insensitive" as any } } };
-    const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted", mode: "insensitive" as any } } };
-    const gumtreeWhere = gumtreePlatform ? { platformId: gumtreePlatform.id } : { platform: { name: { contains: "gumtree", mode: "insensitive" as any } } };
+    const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook" } } };
+    const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted" } } };
+    const gumtreeWhere = gumtreePlatform ? { platformId: gumtreePlatform.id } : { platform: { name: { contains: "gumtree" } } };
 
     const [
       _totalCombinedAccounts,
@@ -499,9 +499,9 @@ export default async function DashboardPage() {
     const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
     const gumtreePlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("gumtree"));
 
-    const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook", mode: "insensitive" as any } } };
-    const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted", mode: "insensitive" as any } } };
-    const gumtreeWhere = gumtreePlatform ? { platformId: gumtreePlatform.id } : { platform: { name: { contains: "gumtree", mode: "insensitive" as any } } };
+    const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook" } } };
+    const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted" } } };
+    const gumtreeWhere = gumtreePlatform ? { platformId: gumtreePlatform.id } : { platform: { name: { contains: "gumtree" } } };
 
     const [
       _saTotalAccounts,

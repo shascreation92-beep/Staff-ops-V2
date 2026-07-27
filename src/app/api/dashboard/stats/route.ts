@@ -26,9 +26,9 @@ export async function GET() {
     const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
     const gumtreePlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("gumtree"));
 
-    const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook", mode: "insensitive" as any } } };
-    const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted", mode: "insensitive" as any } } };
-    const gumtreeWhere = gumtreePlatform ? { platformId: gumtreePlatform.id } : { platform: { name: { contains: "gumtree", mode: "insensitive" as any } } };
+    const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook" } } };
+    const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted" } } };
+    const gumtreeWhere = gumtreePlatform ? { platformId: gumtreePlatform.id } : { platform: { name: { contains: "gumtree" } } };
 
     const [
       saTotalAccounts,
