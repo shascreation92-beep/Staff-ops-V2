@@ -790,6 +790,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               key={item.id}
               href={item.path}
               scroll={false}
+              prefetch={true}
               className={`sidebar-item ${isActive ? 'active' : ''}`}
               onClick={() => setIsOpen(false)}
             >

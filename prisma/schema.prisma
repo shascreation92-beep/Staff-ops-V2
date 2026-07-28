@@ -283,6 +283,8 @@ model user {
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
+  @@index([companyId, isArchived, status])
+  @@index([teamLeadId, isArchived])
 }
 
 enum accounthistory_fromStatus {
@@ -617,6 +619,8 @@ model shiftduty {
   @@index([userId])
   @@index([companyId])
   @@index([status])
+  @@index([companyId, status, clockInTime])
+  @@index([userId, status])
 }
 
 model screensnapshot {
@@ -635,6 +639,8 @@ model screensnapshot {
   @@index([userId])
   @@index([companyId])
   @@index([capturedAt])
+  @@index([companyId, capturedAt])
+  @@index([userId, capturedAt])
 }
 
 model tamperlog {
@@ -652,5 +658,6 @@ model tamperlog {
   @@index([userId])
   @@index([companyId])
   @@index([createdAt])
+  @@index([companyId, isResolved, createdAt])
 }
 
