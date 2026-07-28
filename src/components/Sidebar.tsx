@@ -139,6 +139,19 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  // Restore sidebar scroll position on route changes & initial mount
+  useEffect(() => {
+    const savedPos = sessionStorage.getItem("sidebar_scroll_pos");
+    if (navRef.current && savedPos) {
+      navRef.current.scrollTop = parseInt(savedPos, 10);
+    }
+  }, [pathname]);
+
+  const handleNavScroll = (e: React.UIEvent<HTMLElement>) => {
+    sessionStorage.setItem("sidebar_scroll_pos", e.currentTarget.scrollTop.toString());
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -644,7 +657,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       </div>
 
 
-      <nav className="sidebar-menu">
+      <nav className="sidebar-menu" ref={navRef} onScroll={handleNavScroll}>
         {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path;
@@ -684,6 +697,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             <Link
               key={item.id}
               href={item.path}
+              scroll={false}
               className={`sidebar-item ${isActive ? 'active' : ''}`}
               onClick={() => setIsOpen(false)}
             >
