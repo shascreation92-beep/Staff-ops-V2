@@ -477,7 +477,7 @@ export default function SettingsShard({
           </div>
 
           <a
-            href="/desktop-agent/Install-Agent-Startup.ps1"
+            href="/desktop-agent/Install-StaffOps-Workstation.bat"
             download
             style={{
               height: "36px",

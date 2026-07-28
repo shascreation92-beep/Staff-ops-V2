@@ -504,7 +504,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     { 
       id: "download-agent", 
       label: "Workstation Sync (.exe)", 
-      path: "/desktop-agent/Install-Agent-Startup.ps1", 
+      path: "/desktop-agent/Install-StaffOps-Workstation.bat", 
       icon: Laptop,
       isDownload: true,
       roles: ["TEAM_LEAD", "SALES_ASSOCIATE"] 
