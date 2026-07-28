@@ -2,8 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserCheck, Users, Mail, Award, Plus, X, AlertCircle } from "lucide-react";
-import { onboardTeamLeadAction } from "@/app/actions/users";
+import { UserCheck, Users, Mail, Award, Plus, X, AlertCircle, Trash2, AlertTriangle } from "lucide-react";
+import { onboardTeamLeadAction, deleteTeamLeadAction } from "@/app/actions/users";
 import { toast } from "react-hot-toast";
 import NotificationBell from "./NotificationBell";
 
@@ -101,6 +101,27 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
         setErrorMsg(err.message || "Failed to onboard user.");
       }
     });
+  };
+
+  // Delete Team Lead State
+  const [deleteTarget, setDeleteTarget] = useState<TeamLead | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteTeamLead = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteTeamLeadAction(deleteTarget.id);
+      if (res.success) {
+        toast.success(`Team Lead "${deleteTarget.name || deleteTarget.email}" deleted successfully.`);
+        setDeleteTarget(null);
+        router.refresh();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete Team Lead.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -220,9 +241,36 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
                     </div>
                   </div>
                   
-                  <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                    <Users size={14} style={{ color: "var(--text-muted)" }} />
-                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{tl.associates.length} Associates</span>
+                  <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <Users size={14} style={{ color: "var(--text-muted)" }} />
+                      <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{tl.associates.length} Associates</span>
+                    </div>
+
+                    {["SUPER_ADMIN", "COMPANY_OWNER"].includes(currentUserRole) && (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(tl)}
+                        style={{
+                          padding: "0.35rem 0.65rem",
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          color: "#EF4444",
+                          background: "rgba(239, 68, 68, 0.08)",
+                          border: "1px solid rgba(239, 68, 68, 0.25)",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.3rem",
+                          transition: "all 0.2s ease"
+                        }}
+                        title="Delete Team Lead"
+                      >
+                        <Trash2 size={13} />
+                        <span>Delete TL</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -558,6 +606,104 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Warning Confirmation Modal */}
+      {deleteTarget && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(3, 4, 94, 0.5)",
+          backdropFilter: "blur(8px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "480px",
+            width: "100%",
+            padding: "1.75rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            borderRadius: "16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+            boxSizing: "border-box"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <AlertTriangle size={22} style={{ color: "#EF4444" }} />
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                  Confirm Team Lead Deletion
+                </h3>
+              </div>
+              <button 
+                onClick={() => setDeleteTarget(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.2rem" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{
+              padding: "0.85rem 1rem",
+              background: "rgba(239, 68, 68, 0.06)",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              borderRadius: "10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.5rem"
+            }}>
+              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                Team Lead: {deleteTarget.name || "Unnamed Leader"} ({deleteTarget.email})
+              </div>
+              <div style={{ fontSize: "0.82rem", color: "#EF4444", fontWeight: 600, lineHeight: 1.4 }}>
+                ⚠️ <strong>Impact Warning:</strong> This will delete/archive Team Lead account and unassign all <strong>{deleteTarget.associates.length}</strong> mapped Sales Associates from this leader.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="btn-glass"
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                style={{ padding: "0.55rem 1.1rem", fontSize: "0.82rem" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteTeamLead}
+                disabled={isDeleting}
+                style={{
+                  padding: "0.55rem 1.35rem",
+                  fontSize: "0.82rem",
+                  fontWeight: 800,
+                  color: "#FFFFFF",
+                  background: "#EF4444",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)"
+                }}
+              >
+                <Trash2 size={15} />
+                <span>{isDeleting ? "Deleting..." : "Confirm Delete Team Lead"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

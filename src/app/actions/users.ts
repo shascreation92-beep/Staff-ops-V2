@@ -1097,4 +1097,56 @@ export async function uploadUserAvatarAction(base64Image: string) {
   }
 }
 
+export async function deleteTeamLeadAction(teamLeadId: string) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+
+  const targetUser = await db.user.findUnique({
+    where: { id: teamLeadId }
+  });
+
+  if (!targetUser) {
+    throw new Error("Team Lead user not found.");
+  }
+
+  if (targetUser.role !== "TEAM_LEAD") {
+    throw new Error("Target user is not a Team Lead.");
+  }
+
+  if (currentUser.role !== "SUPER_ADMIN" && targetUser.companyId !== currentUser.companyId) {
+    throw new Error("UNAUTHORIZED: Tenant isolation breach.");
+  }
+
+  // Unassign all mapped Sales Associates
+  await db.user.updateMany({
+    where: { teamLeadId: teamLeadId },
+    data: { teamLeadId: null }
+  });
+
+  // Archive and block target Team Lead
+  await db.user.update({
+    where: { id: teamLeadId },
+    data: {
+      isArchived: true,
+      status: "BLOCKED",
+      updatedAt: new Date()
+    }
+  });
+
+  await logAction({
+    userId: currentUser.id,
+    userEmail: currentUser.email || "",
+    userRole: currentUser.role,
+    action: "DELETE_TEAM_LEAD",
+    entity: "user",
+    entityId: teamLeadId,
+    newValue: `Deleted Team Lead: ${targetUser.name || targetUser.email}`
+  });
+
+  revalidatePath("/");
+  revalidatePath("/team-leads");
+  revalidatePath("/my-team");
+
+  return { success: true };
+}
+
 
