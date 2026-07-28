@@ -502,6 +502,14 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["TEAM_LEAD"] 
     },
     { 
+      id: "download-agent", 
+      label: "Workstation Sync (.exe)", 
+      path: "/desktop-agent/Install-Agent-Startup.ps1", 
+      icon: Laptop,
+      isDownload: true,
+      roles: ["TEAM_LEAD", "SALES_ASSOCIATE"] 
+    },
+    { 
       id: "team-leads", 
       label: "Team Leads", 
       path: "/team-leads", 
@@ -782,6 +790,21 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 <Icon className="sidebar-icon" size={20} />
                 <span>{item.label}</span>
               </button>
+            );
+          }
+
+          if ((item as any).isDownload) {
+            return (
+              <a
+                key={item.id}
+                href={item.path}
+                download
+                className="sidebar-item"
+                onClick={() => setIsOpen(false)}
+              >
+                <Icon className="sidebar-icon" size={20} />
+                <span>{item.label}</span>
+              </a>
             );
           }
 
