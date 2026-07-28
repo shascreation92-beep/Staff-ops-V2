@@ -413,15 +413,102 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
 
     const companyIdValue = targetCompanyId;
 
+    const hashedPassword = password && password.trim() ? await hashPassword(password.trim()) : null;
+
     // Check unique email in user table
     const existingUser = await db.user.findUnique({
       where: { email },
     });
+
     if (existingUser) {
-      return { success: false, error: `A user with email "${email}" already exists.` };
+      // Check tenant isolation
+      if (currentUser.role !== "SUPER_ADMIN" && existingUser.companyId && existingUser.companyId !== companyIdValue) {
+        return { success: false, error: `A user with email "${email}" exists in a different company.` };
+      }
+
+      // Check if employeeId belongs to a DIFFERENT employee
+      if (employeeId && employeeId.trim()) {
+        const existingEmpWithId = await db.employee.findUnique({
+          where: { employeeId: employeeId.trim() }
+        });
+        if (existingEmpWithId && existingEmpWithId.email !== email && existingEmpWithId.userId !== existingUser.id) {
+          return { success: false, error: `Employee ID "${employeeId}" is already assigned to another employee (${existingEmpWithId.fullName}).` };
+        }
+      }
+
+      // Update existing user with new role/designation and credentials
+      const updateData: any = {
+        name: sanitizeInput(fullName),
+        role: targetRole,
+        status: "APPROVED",
+        isArchived: false,
+        companyId: companyIdValue,
+        updatedAt: new Date()
+      };
+      if (hashedPassword) {
+        updateData.password = hashedPassword;
+      }
+
+      const updatedUser = await db.user.update({
+        where: { id: existingUser.id },
+        data: updateData
+      });
+
+      // Update or Create Employee record
+      const existingEmp = await db.employee.findFirst({
+        where: { OR: [{ userId: existingUser.id }, { email }] }
+      });
+
+      let empResult;
+      if (existingEmp) {
+        empResult = await db.employee.update({
+          where: { id: existingEmp.id },
+          data: {
+            employeeId: employeeId?.trim() || existingEmp.employeeId,
+            fullName: sanitizeInput(fullName),
+            email: sanitizeInput(email),
+            status: "ACTIVE",
+            companyId: companyIdValue,
+            userId: existingUser.id,
+            updatedAt: new Date()
+          }
+        });
+      } else {
+        empResult = await db.employee.create({
+          data: {
+            id: crypto.randomUUID(),
+            employeeId: employeeId?.trim() || `EMP-${Date.now().toString().slice(-4)}`,
+            fullName: sanitizeInput(fullName),
+            email: sanitizeInput(email),
+            status: "ACTIVE",
+            companyId: companyIdValue,
+            userId: existingUser.id,
+            updatedAt: new Date()
+          }
+        });
+      }
+
+      // Write audit log
+      await logAction({
+        userId: currentUser.id,
+        userEmail: currentUser.email || "",
+        userRole: currentUser.role,
+        action: "REASSIGN_USER_ROLE",
+        entity: "user",
+        entityId: existingUser.id,
+        newValue: JSON.stringify({ user: updatedUser, employee: empResult, newRole: targetRole })
+      });
+
+      revalidatePath("/employees");
+      revalidatePath("/settings");
+      revalidatePath("/team-leads");
+      revalidatePath("/it-management");
+      revalidatePath("/user-directory");
+      revalidatePath("/");
+      return { success: true };
     }
 
-    // Check unique email and employeeId in employee table
+    // Check unique email and employeeId in employee table for new employees
     const existingEmail = await db.employee.findUnique({
       where: { email },
     });
@@ -438,8 +525,6 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
 
     const newUserId = crypto.randomUUID();
     const newEmployeeId = crypto.randomUUID();
-
-    const hashedPassword = password ? await hashPassword(password) : null;
 
     // Create User (Approved/Active)
     const newUser = await db.user.create({
@@ -485,8 +570,8 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
         data: {
           id: crypto.randomUUID(),
           userId: itUser.id,
-          title: "New Team Lead Onboarded",
-          message: `Team Lead ${fullName} (${email}) has been successfully onboarded by ${currentUser.name || currentUser.email}.`,
+          title: `New ${targetRole.replace("_", " ")} Onboarded`,
+          message: `${targetRole.replace("_", " ")} ${fullName} (${email}) has been successfully onboarded by ${currentUser.name || currentUser.email}.`,
           type: "IT_READ_ONLY",
           isRead: false
         }
@@ -498,7 +583,7 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
       userId: currentUser.id,
       userEmail: currentUser.email || "",
       userRole: currentUser.role,
-      action: "ONBOARD_TEAM_LEAD",
+      action: "ONBOARD_USER",
       entity: "user",
       entityId: newUserId,
       newValue: JSON.stringify({ user: newUser, employee: newEmp })
@@ -507,11 +592,13 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
     revalidatePath("/employees");
     revalidatePath("/settings");
     revalidatePath("/team-leads");
+    revalidatePath("/it-management");
+    revalidatePath("/user-directory");
     revalidatePath("/");
     return { success: true };
   } catch (error: any) {
-    console.error("Failed to onboard Team Lead:", error);
-    return { success: false, error: error.message || "Failed to onboard Team Lead." };
+    console.error("Failed to onboard user:", error);
+    return { success: false, error: error.message || "Failed to onboard user." };
   }
 }
 
