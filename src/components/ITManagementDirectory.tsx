@@ -468,11 +468,15 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                         <code style={{
                           fontFamily: "monospace",
                           fontWeight: 700,
-                          color: "var(--text-primary)",
+                          color: (showPasswords[it.id] && it.password && (it.password.startsWith("$2b$") || it.password.startsWith("$2a$") || it.password.startsWith("$2y$"))) ? "#8B5CF6" : "var(--text-primary)",
                           letterSpacing: showPasswords[it.id] ? "normal" : "0.15em",
                           fontSize: "0.75rem"
                         }}>
-                          {showPasswords[it.id] ? (it.password || "N/A") : "••••••••"}
+                          {showPasswords[it.id] ? (
+                            (it.password && (it.password.startsWith("$2b$") || it.password.startsWith("$2a$") || it.password.startsWith("$2y$")))
+                              ? "🔒 [Encrypted Hash]"
+                              : (it.password || "N/A")
+                          ) : "••••••••"}
                         </code>
                         <button
                           type="button"
@@ -487,11 +491,16 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                             display: "flex",
                             alignItems: "center"
                           }}
-                          title={showPasswords[it.id] ? "Hide Password" : "Show Password"}
+                          title={showPasswords[it.id] ? "Hide Password" : "Show Password (Encrypted Security Hash)"}
                         >
                           {showPasswords[it.id] ? <EyeOff size={13} /> : <Eye size={13} />}
                         </button>
                       </div>
+                      {showPasswords[it.id] && it.password && (it.password.startsWith("$2b$") || it.password.startsWith("$2a$") || it.password.startsWith("$2y$")) && (
+                        <div style={{ fontSize: "0.65rem", color: "#8B5CF6", marginTop: "0.2rem", fontWeight: 500 }}>
+                          💡 Encrypted for security. Click <strong>Reset Password</strong> below to assign a new plain password anytime.
+                        </div>
+                      )}
                     </div>
                   </div>
 
