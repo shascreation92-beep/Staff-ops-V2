@@ -16,7 +16,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { toggleShiftDutyAction, getUserCurrentDutyAction, getCompanyDutyAttendanceAction } from "@/app/actions/shift";
-import { getTamperLogsAction } from "@/app/actions/telemetry";
+import { getTamperLogsAction, getUsersMonitoringStatusAction } from "@/app/actions/telemetry";
+import MonitoringStatusDot from "./MonitoringStatusDot";
 import { toast } from "react-hot-toast";
 
 interface AttendanceDashboardProps {
@@ -60,6 +61,7 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
   });
 
   const [tamperLogs, setTamperLogs] = useState<any[]>([]);
+  const [monitoringMap, setMonitoringMap] = useState<Record<string, any>>({});
 
   // Fetch Current Duty & Company Attendance Telemetry
   const loadData = async () => {
@@ -80,6 +82,11 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
         const tamperRes = await getTamperLogsAction();
         if (tamperRes.success && tamperRes.logs) {
           setTamperLogs(tamperRes.logs as any);
+        }
+
+        const monRes = await getUsersMonitoringStatusAction();
+        if (monRes.success && monRes.userStatusMap) {
+          setMonitoringMap(monRes.userStatusMap);
         }
       }
     } catch (err: any) {
@@ -603,8 +610,9 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                             {m.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                              {m.name}
+                            <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                              <MonitoringStatusDot status={monitoringMap[m.id]?.status || "ACTIVE"} />
+                              <span>{m.name}</span>
                             </div>
                             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                               {m.email} • <span style={{ fontWeight: 700, color: "var(--gold-premium)" }}>{m.role.replace("_", " ")}</span>

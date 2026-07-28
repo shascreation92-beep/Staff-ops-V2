@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useTransition } from "react";
 import { Monitor, ShieldAlert, Calendar, User, Download, RefreshCw, Trash2, Eye, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 import { getCompanyScreenshotsAction, getTamperLogsAction, manualCleanOldScreenshotsAction } from "@/app/actions/telemetry";
+import MonitoringStatusDot from "./MonitoringStatusDot";
 import { toast } from "react-hot-toast";
 
 interface UserInfo {
@@ -437,8 +438,9 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
               {/* Card Meta Footer */}
               <div style={{ padding: "0.85rem 1rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                    {snap.user.name || snap.user.email}
+                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <MonitoringStatusDot status={snap.isIdle ? "IDLE" : "ACTIVE"} />
+                    <span>{snap.user.name || snap.user.email}</span>
                   </span>
                   <span className="badge active" style={{ fontSize: "0.62rem", padding: "0.1rem 0.35rem" }}>
                     ID: {snap.user.employee?.employeeId || "N/A"}

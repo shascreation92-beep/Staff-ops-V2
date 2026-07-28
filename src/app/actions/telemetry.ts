@@ -321,3 +321,84 @@ export async function manualCleanOldScreenshotsAction() {
   revalidatePath("/screen-telemetry");
   return { success: true };
 }
+
+/**
+ * Get live monitoring status (ACTIVE, IDLE, INTERRUPTED, OFF_DUTY) for company users
+ */
+export async function getUsersMonitoringStatusAction() {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT", "SALES_ASSOCIATE"]);
+
+  let companyFilter: any = {};
+  if (currentUser.role !== "SUPER_ADMIN") {
+    companyFilter = { companyId: currentUser.companyId };
+  }
+
+  const ninetySecondsAgo = new Date(Date.now() - 90 * 1000);
+
+  // Fetch all active users in company
+  const users = await db.user.findMany({
+    where: {
+      ...companyFilter,
+      isArchived: false,
+      status: "APPROVED"
+    },
+    select: {
+      id: true,
+      dutyStatus: true,
+      name: true,
+      email: true
+    }
+  });
+
+  // Fetch latest snapshots
+  const latestSnapshots = await db.screensnapshot.findMany({
+    where: {
+      ...companyFilter,
+      capturedAt: {
+        gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+      }
+    },
+    orderBy: {
+      capturedAt: "desc"
+    },
+    take: 500
+  });
+
+  const userStatusMap: Record<string, {
+    status: "ACTIVE" | "IDLE" | "INTERRUPTED" | "OFF_DUTY";
+    lastCapturedAt: string | null;
+  }> = {};
+
+  for (const u of users) {
+    const snap = latestSnapshots.find(s => s.userId === u.id);
+    if (!snap) {
+      userStatusMap[u.id] = {
+        status: u.dutyStatus === "ON_DUTY" ? "INTERRUPTED" : "OFF_DUTY",
+        lastCapturedAt: null
+      };
+      continue;
+    }
+
+    const capturedDate = new Date(snap.capturedAt);
+    const isRecent = capturedDate >= ninetySecondsAgo;
+
+    if (isRecent) {
+      userStatusMap[u.id] = {
+        status: snap.isIdle ? "IDLE" : "ACTIVE",
+        lastCapturedAt: capturedDate.toISOString()
+      };
+    } else if (u.dutyStatus === "ON_DUTY") {
+      userStatusMap[u.id] = {
+        status: "INTERRUPTED",
+        lastCapturedAt: capturedDate.toISOString()
+      };
+    } else {
+      userStatusMap[u.id] = {
+        status: "OFF_DUTY",
+        lastCapturedAt: capturedDate.toISOString()
+      };
+    }
+  }
+
+  return { success: true, userStatusMap };
+}
