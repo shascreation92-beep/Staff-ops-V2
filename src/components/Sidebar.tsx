@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   Megaphone,
   Wallet,
+  Monitor,
   Pencil,
   HelpCircle,
   TrendingUp,
@@ -478,6 +479,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       path: "/team-live-roster",
       icon: Users,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]
+    },
+    { 
+      id: "screen-telemetry", 
+      label: "Screen Audit", 
+      path: "/screen-telemetry", 
+      icon: Monitor,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"] 
     },
     { 
       id: "associates-requests", 

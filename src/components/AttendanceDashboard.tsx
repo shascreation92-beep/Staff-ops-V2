@@ -16,6 +16,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { toggleShiftDutyAction, getUserCurrentDutyAction, getCompanyDutyAttendanceAction } from "@/app/actions/shift";
+import { getTamperLogsAction } from "@/app/actions/telemetry";
 import { toast } from "react-hot-toast";
 
 interface AttendanceDashboardProps {
@@ -58,6 +59,8 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
     notSignedInMembers: []
   });
 
+  const [tamperLogs, setTamperLogs] = useState<any[]>([]);
+
   // Fetch Current Duty & Company Attendance Telemetry
   const loadData = async () => {
     setIsRefreshing(true);
@@ -68,10 +71,15 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
         setClockInTime(dutyRes.clockInTime || null);
       }
 
-      if (["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"].includes(user.role)) {
+      if (["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"].includes(user.role)) {
         const attRes = await getCompanyDutyAttendanceAction();
         if (attRes.success && attRes.totalCount !== undefined) {
           setAttendanceData(attRes as any);
+        }
+
+        const tamperRes = await getTamperLogsAction();
+        if (tamperRes.success && tamperRes.logs) {
+          setTamperLogs(tamperRes.logs as any);
         }
       }
     } catch (err: any) {
@@ -297,6 +305,32 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
             gap: "1.25rem",
             gridColumn: "span 2"
           }}>
+            {/* Tamper Violation Alerts Banner (Company Owner & IT) */}
+            {tamperLogs.length > 0 && (
+              <div style={{
+                padding: "0.85rem 1.1rem",
+                background: "rgba(239, 68, 68, 0.08)",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
+                borderRadius: "10px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#EF4444", fontWeight: 800, fontSize: "0.85rem" }}>
+                  <ShieldAlert size={16} />
+                  <span>🚨 SCREEN MONITORING TAMPER VIOLATIONS ({tamperLogs.filter(t => !t.isResolved).length} UNRESOLVED)</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  {tamperLogs.slice(0, 3).map(log => (
+                    <div key={log.id} style={{ fontSize: "0.78rem", color: "var(--text-primary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span><strong>{log.user?.name || log.user?.email}</strong>: {log.reason}</span>
+                      <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>{new Date(log.createdAt).toLocaleTimeString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Telemetry Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>

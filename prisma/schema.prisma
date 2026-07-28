@@ -278,6 +278,8 @@ model user {
   specialrequest                           specialrequest[]
   pushsubscription                         pushsubscription[]
   leaverequest                             leaverequest[]
+  screensnapshot                           screensnapshot[]
+  tamperlog                                tamperlog[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -616,3 +618,39 @@ model shiftduty {
   @@index([companyId])
   @@index([status])
 }
+
+model screensnapshot {
+  id          String   @id @default(uuid())
+  userId      String
+  companyId   String?
+  imageUrl    String   @db.Text
+  capturedAt  DateTime @default(now())
+  dutyStatus  String   @default("ON_DUTY")
+  isIdle      Boolean  @default(false)
+  source      String   @default("DESKTOP_AGENT") // "DESKTOP_AGENT", "WEB_APP"
+  createdAt   DateTime @default(now())
+
+  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([capturedAt])
+}
+
+model tamperlog {
+  id         String   @id @default(uuid())
+  userId     String
+  companyId  String?
+  reason     String
+  details    String?  @db.Text
+  severity   String   @default("HIGH") // "WARNING", "HIGH", "CRITICAL"
+  isResolved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user       user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([createdAt])
+}
+
