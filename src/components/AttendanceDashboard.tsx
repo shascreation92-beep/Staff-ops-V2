@@ -190,9 +190,13 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
               borderRadius: "20px",
               color: dutyStatus === "ON_DUTY" ? "#10B981" : dutyStatus === "ON_BREAK" ? "#F59E0B" : "#EF4444",
               background: dutyStatus === "ON_DUTY" ? "rgba(16, 185, 129, 0.12)" : dutyStatus === "ON_BREAK" ? "rgba(245, 158, 11, 0.12)" : "rgba(239, 68, 68, 0.12)",
-              border: `1px solid ${dutyStatus === "ON_DUTY" ? "rgba(16, 185, 129, 0.3)" : dutyStatus === "ON_BREAK" ? "rgba(245, 158, 11, 0.3)" : "rgba(239, 68, 68, 0.25)"}`
+              border: `1px solid ${dutyStatus === "ON_DUTY" ? "rgba(16, 185, 129, 0.3)" : dutyStatus === "ON_BREAK" ? "rgba(245, 158, 11, 0.3)" : "rgba(239, 68, 68, 0.25)"}`,
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem"
             }}>
-              ● {dutyStatus === "ON_DUTY" ? "ON DUTY" : dutyStatus === "ON_BREAK" ? "ON BREAK" : "OFF DUTY"}
+              <span className={`status-dot-pulse ${dutyStatus === "ON_DUTY" ? "green" : dutyStatus === "ON_BREAK" ? "amber" : "red"}`} />
+              <span>{dutyStatus === "ON_DUTY" ? "ON DUTY" : dutyStatus === "ON_BREAK" ? "ON BREAK" : "OFF DUTY"}</span>
             </span>
           </div>
 
@@ -347,7 +351,8 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                   gap: "0.5rem"
                 }}
               >
-                <span>🔴 NOT SIGNED IN TODAY</span>
+                <span className="status-dot-pulse red" />
+                <span>NOT SIGNED IN TODAY</span>
                 <span style={{ background: "#EF4444", color: "#FFF", borderRadius: "12px", padding: "0.1rem 0.5rem", fontSize: "0.7rem", fontWeight: 800 }}>
                   {attendanceData.notSignedInCount}
                 </span>
@@ -370,7 +375,8 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                   gap: "0.5rem"
                 }}
               >
-                <span>🟢 ON DUTY</span>
+                <span className="status-dot-pulse green" />
+                <span>ON DUTY</span>
                 <span style={{ background: "#10B981", color: "#FFF", borderRadius: "12px", padding: "0.1rem 0.5rem", fontSize: "0.7rem", fontWeight: 800 }}>
                   {attendanceData.onDutyCount}
                 </span>
@@ -393,7 +399,8 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                   gap: "0.5rem"
                 }}
               >
-                <span>🟡 ON BREAK</span>
+                <span className="status-dot-pulse amber" />
+                <span>ON BREAK</span>
                 <span style={{ background: "#F59E0B", color: "#FFF", borderRadius: "12px", padding: "0.1rem 0.5rem", fontSize: "0.7rem", fontWeight: 800 }}>
                   {attendanceData.onBreakCount}
                 </span>
@@ -461,9 +468,13 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                             background: "rgba(239, 68, 68, 0.12)",
                             padding: "0.35rem 0.75rem",
                             borderRadius: "20px",
-                            border: "1px solid rgba(239, 68, 68, 0.2)"
+                            border: "1px solid rgba(239, 68, 68, 0.2)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.4rem"
                           }}>
-                            🔴 NOT SIGNED IN TODAY
+                            <span className="status-dot-pulse red" />
+                            <span>NOT SIGNED IN TODAY</span>
                           </span>
 
                           <button
@@ -574,9 +585,13 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                           background: "rgba(16, 185, 129, 0.12)",
                           padding: "0.35rem 0.75rem",
                           borderRadius: "20px",
-                          border: "1px solid rgba(16, 185, 129, 0.2)"
+                          border: "1px solid rgba(16, 185, 129, 0.2)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.4rem"
                         }}>
-                          🟢 ON DUTY NOW
+                          <span className="status-dot-pulse green" />
+                          <span>ON DUTY NOW</span>
                         </span>
                       </div>
 
@@ -670,9 +685,13 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                           background: "rgba(245, 158, 11, 0.12)",
                           padding: "0.35rem 0.75rem",
                           borderRadius: "20px",
-                          border: "1px solid rgba(245, 158, 11, 0.2)"
+                          border: "1px solid rgba(245, 158, 11, 0.2)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.4rem"
                         }}>
-                          🟡 ON BREAK NOW
+                          <span className="status-dot-pulse amber" />
+                          <span>ON BREAK NOW</span>
                         </span>
                       </div>
 
