@@ -96,6 +96,8 @@ export default function TeamLeadsDirectory({ teamLeads, companies, currentUserRo
           setOnboardPassword("");
           setOnboardRole("TEAM_LEAD");
           router.refresh();
+        } else {
+          setErrorMsg(res.error || "Failed to onboard user.");
         }
       } catch (err: any) {
         setErrorMsg(err.message || "Failed to onboard user.");

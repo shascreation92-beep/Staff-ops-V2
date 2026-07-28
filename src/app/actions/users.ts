@@ -390,52 +390,52 @@ const OnboardTeamLeadSchema = z.object({
 });
 
 export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeamLeadSchema>) {
-  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
-
-  const result = OnboardTeamLeadSchema.safeParse(formData);
-  if (!result.success) {
-    throw new Error(result.error.issues.map(e => e.message).join(", "));
-  }
-
-  const { fullName, email, employeeId, password, companyId, role } = result.data;
-  const targetRole = role || "TEAM_LEAD";
-
-  // Determine Company ID
-  let targetCompanyId = currentUser.companyId;
-  if (currentUser.role === "SUPER_ADMIN" || (currentUser.role === "COMPANY_OWNER" && companyId)) {
-    targetCompanyId = companyId || currentUser.companyId;
-  }
-
-  if (!targetCompanyId) {
-    throw new Error(`No company context found to assign ${targetRole.replace("_", " ")}.`);
-  }
-
-  const companyIdValue = targetCompanyId; // Assign to a stable variable for database queries
-
-  // Check unique email in user table
-  const existingUser = await db.user.findUnique({
-    where: { email },
-  });
-  if (existingUser) {
-    throw new Error("A user with this email already exists.");
-  }
-
-  // Check unique email and employeeId in employee table
-  const existingEmail = await db.employee.findUnique({
-    where: { email },
-  });
-  if (existingEmail) {
-    throw new Error("An employee with this email already exists.");
-  }
-
-  const existingId = await db.employee.findUnique({
-    where: { employeeId },
-  });
-  if (existingId) {
-    throw new Error(`Employee ID "${employeeId}" is already in use.`);
-  }
-
   try {
+    const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+
+    const result = OnboardTeamLeadSchema.safeParse(formData);
+    if (!result.success) {
+      return { success: false, error: result.error.issues.map(e => e.message).join(", ") };
+    }
+
+    const { fullName, email, employeeId, password, companyId, role } = result.data;
+    const targetRole = role || "TEAM_LEAD";
+
+    // Determine Company ID
+    let targetCompanyId = currentUser.companyId;
+    if (currentUser.role === "SUPER_ADMIN" || (currentUser.role === "COMPANY_OWNER" && companyId)) {
+      targetCompanyId = companyId || currentUser.companyId;
+    }
+
+    if (!targetCompanyId) {
+      return { success: false, error: `No company context found to assign ${targetRole.replace("_", " ")}.` };
+    }
+
+    const companyIdValue = targetCompanyId;
+
+    // Check unique email in user table
+    const existingUser = await db.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      return { success: false, error: `A user with email "${email}" already exists.` };
+    }
+
+    // Check unique email and employeeId in employee table
+    const existingEmail = await db.employee.findUnique({
+      where: { email },
+    });
+    if (existingEmail) {
+      return { success: false, error: `An employee with email "${email}" already exists.` };
+    }
+
+    const existingId = await db.employee.findUnique({
+      where: { employeeId },
+    });
+    if (existingId) {
+      return { success: false, error: `Employee ID "${employeeId}" is already in use.` };
+    }
+
     const newUserId = crypto.randomUUID();
     const newEmployeeId = crypto.randomUUID();
 
@@ -510,7 +510,8 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
     revalidatePath("/");
     return { success: true };
   } catch (error: any) {
-    throw new Error(error.message || "Failed to onboard Team Lead.");
+    console.error("Failed to onboard Team Lead:", error);
+    return { success: false, error: error.message || "Failed to onboard Team Lead." };
   }
 }
 
