@@ -212,21 +212,11 @@ export async function getCompanyScreenshotsAction(params?: {
   targetUserId?: string;
   dateStr?: string; // YYYY-MM-DD
 }) {
-  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"]);
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   let companyFilter: any = {};
   if (currentUser.role !== "SUPER_ADMIN") {
     companyFilter = { companyId: currentUser.companyId };
-  }
-
-  if (currentUser.role === "TEAM_LEAD") {
-    // Restrict to Team Lead's associates
-    const associates = await db.user.findMany({
-      where: { teamLeadId: currentUser.id },
-      select: { id: true }
-    });
-    const allowedIds = [currentUser.id, ...associates.map(a => a.id)];
-    companyFilter.userId = { in: allowedIds };
   }
 
   if (params?.targetUserId) {

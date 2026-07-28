@@ -485,7 +485,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       label: "Screen Audit", 
       path: "/screen-telemetry", 
       icon: Monitor,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
     { 
       id: "associates-requests", 

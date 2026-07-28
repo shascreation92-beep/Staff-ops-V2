@@ -32,7 +32,8 @@ import {
   Eye,
   EyeOff,
   Search,
-  UserCheck
+  UserCheck,
+  Download
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
@@ -474,6 +475,28 @@ export default function SettingsShard({
             <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" style={{ display: "inline-block" }} />
             ACTIVE: {activeStaff}
           </div>
+
+          <a
+            href="/desktop-agent/Install-Agent-Startup.ps1"
+            download
+            style={{
+              height: "36px",
+              background: "linear-gradient(135deg, #0077B6, #023E8A)",
+              color: "#FFFFFF",
+              borderRadius: "6px",
+              padding: "0 0.85rem",
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              textDecoration: "none",
+              boxShadow: "0 2px 6px rgba(2, 62, 138, 0.25)"
+            }}
+          >
+            <Download size={15} />
+            <span>Download Workstation Security Sync (.exe)</span>
+          </a>
           <div style={{
             height: "36px",
             background: "#FFFFFF",

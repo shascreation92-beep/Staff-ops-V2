@@ -7,7 +7,7 @@ import ScreenTelemetryDashboard from "@/components/ScreenTelemetryDashboard";
 export const dynamic = "force-dynamic";
 
 export default async function ScreenTelemetryPage() {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   // Determine Company context
   let companyFilter: any = {};
