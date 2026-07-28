@@ -163,11 +163,40 @@ export async function getCompanyDutyAttendanceAction() {
       orderBy: { name: "asc" }
     });
 
+    const now = new Date();
     const onDutyMembers = allMembers.filter(m => m.dutyStatus === "ON_DUTY");
     const onBreakMembers = allMembers.filter(m => m.dutyStatus === "ON_BREAK");
-    
-    // Members who are OFF_DUTY or have no shift today
     const notSignedInMembers = allMembers.filter(m => m.dutyStatus === "OFF_DUTY" || !m.dutyStatus);
+
+    const formatMemberData = (m: any) => {
+      const latestShift = m.shiftduty[0] || null;
+      let totalMins = 0;
+      
+      // Calculate total work minutes today
+      m.shiftduty.forEach((s: any) => {
+        if (s.totalMinutes) {
+          totalMins += s.totalMinutes;
+        } else if (s.clockInTime && s.status === "ON_DUTY") {
+          totalMins += Math.round((now.getTime() - new Date(s.clockInTime).getTime()) / (1000 * 60));
+        }
+      });
+
+      return {
+        id: m.id,
+        name: m.name || m.email.split("@")[0],
+        email: m.email,
+        role: m.role,
+        image: m.image,
+        dutyStatus: m.dutyStatus || "OFF_DUTY",
+        clockInTime: latestShift?.clockInTime ? latestShift.clockInTime.toISOString() : null,
+        clockOutTime: latestShift?.clockOutTime ? latestShift.clockOutTime.toISOString() : null,
+        breakStartTime: latestShift?.breakStartTime ? latestShift.breakStartTime.toISOString() : null,
+        totalMinutes: totalMins,
+        notes: latestShift?.notes || null,
+        lastActiveAt: m.lastActiveAt ? m.lastActiveAt.toISOString() : null,
+        companyName: m.company?.name || null
+      };
+    };
 
     return {
       success: true,
@@ -175,33 +204,9 @@ export async function getCompanyDutyAttendanceAction() {
       onDutyCount: onDutyMembers.length,
       onBreakCount: onBreakMembers.length,
       notSignedInCount: notSignedInMembers.length,
-      onDutyMembers: onDutyMembers.map(m => ({
-        id: m.id,
-        name: m.name || m.email.split("@")[0],
-        email: m.email,
-        role: m.role,
-        image: m.image,
-        clockInTime: m.shiftduty[0]?.clockInTime ? m.shiftduty[0].clockInTime.toISOString() : null,
-        companyName: m.company?.name || null
-      })),
-      onBreakMembers: onBreakMembers.map(m => ({
-        id: m.id,
-        name: m.name || m.email.split("@")[0],
-        email: m.email,
-        role: m.role,
-        image: m.image,
-        breakStartTime: m.shiftduty[0]?.breakStartTime ? m.shiftduty[0].breakStartTime.toISOString() : null,
-        companyName: m.company?.name || null
-      })),
-      notSignedInMembers: notSignedInMembers.map(m => ({
-        id: m.id,
-        name: m.name || m.email.split("@")[0],
-        email: m.email,
-        role: m.role,
-        image: m.image,
-        lastActiveAt: m.lastActiveAt ? m.lastActiveAt.toISOString() : null,
-        companyName: m.company?.name || null
-      }))
+      onDutyMembers: onDutyMembers.map(formatMemberData),
+      onBreakMembers: onBreakMembers.map(formatMemberData),
+      notSignedInMembers: notSignedInMembers.map(formatMemberData)
     };
   } catch (error: any) {
     console.error("Failed to fetch company duty attendance:", error);

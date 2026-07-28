@@ -413,75 +413,105 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                   filteredNotSignedIn.map((m: any) => (
                     <div key={m.id} style={{
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "0.85rem 1.25rem",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                      padding: "1rem 1.25rem",
                       background: "rgba(239, 68, 68, 0.04)",
                       border: "1px solid rgba(239, 68, 68, 0.2)",
-                      borderRadius: "12px",
-                      flexWrap: "wrap",
-                      gap: "0.75rem"
+                      borderRadius: "14px"
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                        <div style={{
-                          width: "42px",
-                          height: "42px",
-                          borderRadius: "50%",
-                          background: "linear-gradient(135deg, #EF4444, #B91C1C)",
-                          color: "#FFF",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 800,
-                          fontSize: "0.95rem",
-                          boxShadow: "0 4px 10px rgba(239, 68, 68, 0.25)"
-                        }}>
-                          {m.name.slice(0, 2).toUpperCase()}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: "0.75rem"
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+                          <div style={{
+                            width: "42px",
+                            height: "42px",
+                            borderRadius: "50%",
+                            background: "linear-gradient(135deg, #EF4444, #B91C1C)",
+                            color: "#FFF",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 800,
+                            fontSize: "0.95rem",
+                            boxShadow: "0 4px 10px rgba(239, 68, 68, 0.25)"
+                          }}>
+                            {m.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                              {m.name}
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                              {m.email} • <span style={{ fontWeight: 700, color: "var(--gold-premium)" }}>{m.role.replace("_", " ")}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                            {m.name}
-                          </div>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                            {m.email} • <span style={{ fontWeight: 700, color: "var(--gold-premium)" }}>{m.role.replace("_", " ")}</span>
-                          </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <span style={{
+                            fontSize: "0.72rem",
+                            fontWeight: 800,
+                            color: "#EF4444",
+                            background: "rgba(239, 68, 68, 0.12)",
+                            padding: "0.35rem 0.75rem",
+                            borderRadius: "20px",
+                            border: "1px solid rgba(239, 68, 68, 0.2)"
+                          }}>
+                            🔴 NOT SIGNED IN TODAY
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleSendReminder(m.name, m.email)}
+                            style={{
+                              padding: "0.45rem 0.85rem",
+                              fontSize: "0.75rem",
+                              fontWeight: 700,
+                              color: "#FFFFFF",
+                              background: "#0077B6",
+                              border: "none",
+                              borderRadius: "8px",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.35rem",
+                              boxShadow: "0 2px 8px rgba(0, 119, 182, 0.2)"
+                            }}
+                          >
+                            <Bell size={13} />
+                            <span>Send Reminder</span>
+                          </button>
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                        <span style={{
-                          fontSize: "0.72rem",
-                          fontWeight: 800,
-                          color: "#EF4444",
-                          background: "rgba(239, 68, 68, 0.12)",
-                          padding: "0.35rem 0.75rem",
-                          borderRadius: "20px",
-                          border: "1px solid rgba(239, 68, 68, 0.2)"
-                        }}>
-                          🔴 NOT SIGNED IN TODAY
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSendReminder(m.name, m.email)}
-                          style={{
-                            padding: "0.45rem 0.85rem",
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            color: "#FFFFFF",
-                            background: "#0077B6",
-                            border: "none",
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.35rem",
-                            boxShadow: "0 2px 8px rgba(0, 119, 182, 0.2)"
-                          }}
-                        >
-                          <Bell size={13} />
-                          <span>Send Reminder</span>
-                        </button>
+                      {/* Work Telemetry Stats Row */}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1.5rem",
+                        padding: "0.6rem 0.85rem",
+                        background: "#FFFFFF",
+                        borderRadius: "10px",
+                        border: "1px solid rgba(239, 68, 68, 0.15)",
+                        fontSize: "0.78rem",
+                        color: "var(--text-secondary)",
+                        flexWrap: "wrap"
+                      }}>
+                        <div>
+                          <strong>Sign In Time:</strong> <span style={{ color: "#EF4444", fontWeight: 700 }}>Not Signed In</span>
+                        </div>
+                        <div>
+                          <strong>Sign Out Time:</strong> <span style={{ color: "var(--text-muted)" }}>--</span>
+                        </div>
+                        <div>
+                          <strong>Total Work Today:</strong> <span style={{ color: "#EF4444", fontWeight: 700 }}>0 mins</span>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -498,51 +528,87 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                   filteredOnDuty.map((m: any) => (
                     <div key={m.id} style={{
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "0.85rem 1.25rem",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                      padding: "1rem 1.25rem",
                       background: "rgba(16, 185, 129, 0.04)",
                       border: "1px solid rgba(16, 185, 129, 0.2)",
-                      borderRadius: "12px",
-                      flexWrap: "wrap",
-                      gap: "0.75rem"
+                      borderRadius: "14px"
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                        <div style={{
-                          width: "42px",
-                          height: "42px",
-                          borderRadius: "50%",
-                          background: "linear-gradient(135deg, #10B981, #047857)",
-                          color: "#FFF",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: "0.75rem"
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+                          <div style={{
+                            width: "42px",
+                            height: "42px",
+                            borderRadius: "50%",
+                            background: "linear-gradient(135deg, #10B981, #047857)",
+                            color: "#FFF",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 800,
+                            fontSize: "0.95rem"
+                          }}>
+                            {m.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                              {m.name}
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                              {m.email} • <span style={{ fontWeight: 700, color: "var(--gold-premium)" }}>{m.role.replace("_", " ")}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <span style={{
+                          fontSize: "0.72rem",
                           fontWeight: 800,
-                          fontSize: "0.95rem"
+                          color: "#10B981",
+                          background: "rgba(16, 185, 129, 0.12)",
+                          padding: "0.35rem 0.75rem",
+                          borderRadius: "20px",
+                          border: "1px solid rgba(16, 185, 129, 0.2)"
                         }}>
-                          {m.name.slice(0, 2).toUpperCase()}
+                          🟢 ON DUTY NOW
+                        </span>
+                      </div>
+
+                      {/* Work Telemetry Stats Row */}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1.5rem",
+                        padding: "0.6rem 0.85rem",
+                        background: "#FFFFFF",
+                        borderRadius: "10px",
+                        border: "1px solid rgba(16, 185, 129, 0.15)",
+                        fontSize: "0.78rem",
+                        color: "var(--text-secondary)",
+                        flexWrap: "wrap"
+                      }}>
+                        <div>
+                          <strong>Sign In Time:</strong> <span style={{ color: "#10B981", fontWeight: 700 }}>{m.clockInTime ? new Date(m.clockInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : "--"}</span>
                         </div>
                         <div>
-                          <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                            {m.name}
-                          </div>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                            {m.email} • <span style={{ fontWeight: 700, color: "var(--gold-premium)" }}>{m.role.replace("_", " ")}</span>
-                          </div>
+                          <strong>Sign Out Time:</strong> <span style={{ color: "#10B981", fontWeight: 700 }}>Active Shift (Working)</span>
+                        </div>
+                        <div>
+                          <strong>Total Work Today:</strong> <span style={{ color: "#10B981", fontWeight: 800 }}>{Math.floor((m.totalMinutes || 0) / 60)}h {(m.totalMinutes || 0) % 60}m</span>
                         </div>
                       </div>
 
-                      <span style={{
-                        fontSize: "0.72rem",
-                        fontWeight: 800,
-                        color: "#10B981",
-                        background: "rgba(16, 185, 129, 0.12)",
-                        padding: "0.35rem 0.75rem",
-                        borderRadius: "20px",
-                        border: "1px solid rgba(16, 185, 129, 0.2)"
-                      }}>
-                        🟢 ON DUTY NOW
-                      </span>
+                      {m.notes && (
+                        <div style={{ fontSize: "0.75rem", fontStyle: "italic", color: "var(--text-secondary)", background: "#F9FAFB", padding: "0.4rem 0.75rem", borderRadius: "6px", borderLeft: "3px solid #10B981" }}>
+                          &quot;{m.notes}&quot;
+                        </div>
+                      )}
                     </div>
                   ))
                 )
@@ -558,51 +624,87 @@ export default function AttendanceDashboard({ user }: AttendanceDashboardProps) 
                   filteredOnBreak.map((m: any) => (
                     <div key={m.id} style={{
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "0.85rem 1.25rem",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                      padding: "1rem 1.25rem",
                       background: "rgba(245, 158, 11, 0.04)",
                       border: "1px solid rgba(245, 158, 11, 0.2)",
-                      borderRadius: "12px",
-                      flexWrap: "wrap",
-                      gap: "0.75rem"
+                      borderRadius: "14px"
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                        <div style={{
-                          width: "42px",
-                          height: "42px",
-                          borderRadius: "50%",
-                          background: "linear-gradient(135deg, #F59E0B, #B45309)",
-                          color: "#FFF",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: "0.75rem"
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+                          <div style={{
+                            width: "42px",
+                            height: "42px",
+                            borderRadius: "50%",
+                            background: "linear-gradient(135deg, #F59E0B, #B45309)",
+                            color: "#FFF",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 800,
+                            fontSize: "0.95rem"
+                          }}>
+                            {m.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                              {m.name}
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                              {m.email} • <span style={{ fontWeight: 700, color: "var(--gold-premium)" }}>{m.role.replace("_", " ")}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <span style={{
+                          fontSize: "0.72rem",
                           fontWeight: 800,
-                          fontSize: "0.95rem"
+                          color: "#F59E0B",
+                          background: "rgba(245, 158, 11, 0.12)",
+                          padding: "0.35rem 0.75rem",
+                          borderRadius: "20px",
+                          border: "1px solid rgba(245, 158, 11, 0.2)"
                         }}>
-                          {m.name.slice(0, 2).toUpperCase()}
+                          🟡 ON BREAK NOW
+                        </span>
+                      </div>
+
+                      {/* Work Telemetry Stats Row */}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1.5rem",
+                        padding: "0.6rem 0.85rem",
+                        background: "#FFFFFF",
+                        borderRadius: "10px",
+                        border: "1px solid rgba(245, 158, 11, 0.15)",
+                        fontSize: "0.78rem",
+                        color: "var(--text-secondary)",
+                        flexWrap: "wrap"
+                      }}>
+                        <div>
+                          <strong>Sign In Time:</strong> <span style={{ color: "#F59E0B", fontWeight: 700 }}>{m.clockInTime ? new Date(m.clockInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : "--"}</span>
                         </div>
                         <div>
-                          <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                            {m.name}
-                          </div>
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                            {m.email} • <span style={{ fontWeight: 700, color: "var(--gold-premium)" }}>{m.role.replace("_", " ")}</span>
-                          </div>
+                          <strong>Break Started:</strong> <span style={{ color: "#F59E0B", fontWeight: 700 }}>{m.breakStartTime ? new Date(m.breakStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : "On Break"}</span>
+                        </div>
+                        <div>
+                          <strong>Total Work Today:</strong> <span style={{ color: "#F59E0B", fontWeight: 800 }}>{Math.floor((m.totalMinutes || 0) / 60)}h {(m.totalMinutes || 0) % 60}m</span>
                         </div>
                       </div>
 
-                      <span style={{
-                        fontSize: "0.72rem",
-                        fontWeight: 800,
-                        color: "#F59E0B",
-                        background: "rgba(245, 158, 11, 0.12)",
-                        padding: "0.35rem 0.75rem",
-                        borderRadius: "20px",
-                        border: "1px solid rgba(245, 158, 11, 0.2)"
-                      }}>
-                        🟡 ON BREAK
-                      </span>
+                      {m.notes && (
+                        <div style={{ fontSize: "0.75rem", fontStyle: "italic", color: "var(--text-secondary)", background: "#F9FAFB", padding: "0.4rem 0.75rem", borderRadius: "6px", borderLeft: "3px solid #F59E0B" }}>
+                          &quot;{m.notes}&quot;
+                        </div>
+                      )}
                     </div>
                   ))
                 )
