@@ -22,7 +22,14 @@ import {
   HelpCircle,
   TrendingUp,
   Calendar,
-  Building2
+  Building2,
+  Clock,
+  Power,
+  Coffee,
+  UserX,
+  CheckCircle2,
+  AlertCircle,
+  Bell
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -33,6 +40,7 @@ import { updateUserBioAction } from "@/app/actions/profile";
 import { createCompanyAction } from "@/app/actions/company";
 import { getChatBadgeStatusAction } from "@/app/actions/chat";
 import { getSpecialRequestsBadgeStatusAction } from "@/app/actions/special-requests";
+import { toggleShiftDutyAction, getUserCurrentDutyAction, getCompanyDutyAttendanceAction } from "@/app/actions/shift";
 import { useITConfig } from "./ITConfigProvider";
 import { toast } from "react-hot-toast";
 import { useRef } from "react";
@@ -112,6 +120,75 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const [offsetY, setOffsetY] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [imgError, setImgError] = useState(false);
+
+  // Shift Duty States
+  const [dutyStatus, setDutyStatus] = useState<string>("OFF_DUTY");
+  const [clockInTime, setClockInTime] = useState<string | null>(null);
+  const [isTogglingDuty, setIsTogglingDuty] = useState(false);
+  const [showClockOutModal, setShowClockOutModal] = useState(false);
+  const [shiftNotesInput, setShiftNotesInput] = useState("");
+
+  // Attendance Telemetry for Company Owner & TL
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [attendanceTab, setAttendanceTab] = useState<"NOT_SIGNED_IN" | "ON_DUTY" | "ON_BREAK">("NOT_SIGNED_IN");
+  const [attendanceData, setAttendanceData] = useState<{
+    totalCount: number;
+    onDutyCount: number;
+    onBreakCount: number;
+    notSignedInCount: number;
+    onDutyMembers: any[];
+    onBreakMembers: any[];
+    notSignedInMembers: any[];
+  }>({
+    totalCount: 0,
+    onDutyCount: 0,
+    onBreakCount: 0,
+    notSignedInCount: 0,
+    onDutyMembers: [],
+    onBreakMembers: [],
+    notSignedInMembers: []
+  });
+
+  // Fetch Duty Status and Attendance Telemetry
+  useEffect(() => {
+    getUserCurrentDutyAction().then(res => {
+      if (res.success) {
+        setDutyStatus(res.dutyStatus || "OFF_DUTY");
+        setClockInTime(res.clockInTime || null);
+      }
+    });
+
+    if (["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"].includes(user.role)) {
+      getCompanyDutyAttendanceAction().then(res => {
+        if (res.success && res.totalCount !== undefined) {
+          setAttendanceData(res as any);
+        }
+      });
+    }
+  }, [user.role]);
+
+  const handleToggleDuty = async (newStatus: "ON_DUTY" | "ON_BREAK" | "OFF_DUTY", notes?: string) => {
+    setIsTogglingDuty(true);
+    try {
+      const res = await toggleShiftDutyAction(newStatus, notes);
+      if (res.success) {
+        setDutyStatus(res.dutyStatus || "OFF_DUTY");
+        toast.success(`Shift duty set to ${newStatus.replace("_", " ")}`);
+        setShowClockOutModal(false);
+        setShiftNotesInput("");
+        if (["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"].includes(user.role)) {
+          const attRes = await getCompanyDutyAttendanceAction();
+          if (attRes.success && attRes.totalCount !== undefined) setAttendanceData(attRes as any);
+        }
+      } else {
+        toast.error(res.error || "Failed to update shift duty.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update shift duty.");
+    } finally {
+      setIsTogglingDuty(false);
+    }
+  };
 
   // User Bio States
   const [showBioModal, setShowBioModal] = useState(false);
@@ -653,6 +730,172 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               {currentBio || "No bio added yet. Click the edit bio icon above to add a bio."}
             </p>
           </div>
+
+          {/* Shift Duty Status Card */}
+          <div style={{
+            marginTop: "0.6rem",
+            width: "100%",
+            padding: "0.6rem 0.75rem",
+            background: dutyStatus === "ON_DUTY" 
+              ? "rgba(16, 185, 129, 0.06)" 
+              : dutyStatus === "ON_BREAK" 
+                ? "rgba(245, 158, 11, 0.06)" 
+                : "rgba(239, 68, 68, 0.05)",
+            border: `1px solid ${
+              dutyStatus === "ON_DUTY" 
+                ? "rgba(16, 185, 129, 0.2)" 
+                : dutyStatus === "ON_BREAK" 
+                  ? "rgba(245, 158, 11, 0.2)" 
+                  : "rgba(239, 68, 68, 0.15)"
+            }`,
+            borderRadius: "10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.45rem",
+            boxSizing: "border-box"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+              <span style={{ fontSize: "0.65rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-secondary)", letterSpacing: "0.05em" }}>
+                Duty Shift
+              </span>
+              <span style={{
+                fontSize: "0.65rem",
+                fontWeight: 700,
+                color: dutyStatus === "ON_DUTY" ? "#10B981" : dutyStatus === "ON_BREAK" ? "#F59E0B" : "#EF4444",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.25rem"
+              }}>
+                <span style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: dutyStatus === "ON_DUTY" ? "#10B981" : dutyStatus === "ON_BREAK" ? "#F59E0B" : "#EF4444"
+                }} />
+                {dutyStatus === "ON_DUTY" ? "On Duty" : dutyStatus === "ON_BREAK" ? "On Break" : "Off Duty"}
+              </span>
+            </div>
+
+            {/* Shift Duty Action Buttons */}
+            <div style={{ display: "flex", gap: "0.35rem", width: "100%" }}>
+              <button
+                type="button"
+                onClick={() => handleToggleDuty("ON_DUTY")}
+                disabled={isTogglingDuty}
+                title="Clock In to Shift"
+                style={{
+                  flex: 1,
+                  padding: "0.35rem 0.2rem",
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  borderRadius: "6px",
+                  border: dutyStatus === "ON_DUTY" ? "1px solid #10B981" : "1px solid var(--border-dim)",
+                  background: dutyStatus === "ON_DUTY" ? "#10B981" : "#FFFFFF",
+                  color: dutyStatus === "ON_DUTY" ? "#FFFFFF" : "var(--text-primary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.2rem",
+                  boxShadow: dutyStatus === "ON_DUTY" ? "0 2px 8px rgba(16, 185, 129, 0.3)" : "none"
+                }}
+              >
+                <Power size={11} />
+                <span>On Duty</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleToggleDuty("ON_BREAK")}
+                disabled={isTogglingDuty || dutyStatus === "OFF_DUTY"}
+                title="Take a Break"
+                style={{
+                  flex: 1,
+                  padding: "0.35rem 0.2rem",
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  borderRadius: "6px",
+                  border: dutyStatus === "ON_BREAK" ? "1px solid #F59E0B" : "1px solid var(--border-dim)",
+                  background: dutyStatus === "ON_BREAK" ? "#F59E0B" : "#FFFFFF",
+                  color: dutyStatus === "ON_BREAK" ? "#FFFFFF" : "var(--text-primary)",
+                  cursor: dutyStatus === "OFF_DUTY" ? "not-allowed" : "pointer",
+                  opacity: dutyStatus === "OFF_DUTY" ? 0.5 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.2rem"
+                }}
+              >
+                <Coffee size={11} />
+                <span>Break</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowClockOutModal(true)}
+                disabled={isTogglingDuty || dutyStatus === "OFF_DUTY"}
+                title="Sign Out of Shift"
+                style={{
+                  flex: 1,
+                  padding: "0.35rem 0.2rem",
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  borderRadius: "6px",
+                  border: "1px solid var(--border-dim)",
+                  background: "#FFFFFF",
+                  color: "#EF4444",
+                  cursor: dutyStatus === "OFF_DUTY" ? "not-allowed" : "pointer",
+                  opacity: dutyStatus === "OFF_DUTY" ? 0.5 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.2rem"
+                }}
+              >
+                <UserX size={11} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Company Attendance Badge (Company Owner & TLs) */}
+          {["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"].includes(user.role) && (
+            <button
+              type="button"
+              onClick={() => setShowAttendanceModal(true)}
+              style={{
+                width: "100%",
+                marginTop: "0.5rem",
+                padding: "0.5rem 0.65rem",
+                background: "linear-gradient(135deg, rgba(2, 80, 161, 0.05), rgba(0, 119, 182, 0.1))",
+                border: "1px solid rgba(0, 119, 182, 0.2)",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                textAlign: "left",
+                boxSizing: "border-box"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <Users size={13} style={{ color: "#0077B6" }} />
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                  Attendance
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#10B981", background: "rgba(16, 185, 129, 0.15)", padding: "0.15rem 0.4rem", borderRadius: "10px" }}>
+                  🟢 {attendanceData.onDutyCount}
+                </span>
+                {attendanceData.notSignedInCount > 0 && (
+                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#EF4444", background: "rgba(239, 68, 68, 0.15)", padding: "0.15rem 0.4rem", borderRadius: "10px" }}>
+                    🔴 {attendanceData.notSignedInCount}
+                  </span>
+                )}
+              </div>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1343,6 +1586,359 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               >
                 {isUpdatingBio ? "Saving..." : "Save Bio"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shift Sign Out (Clock Out) Work Summary Modal */}
+      {showClockOutModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(3, 4, 94, 0.45)",
+          backdropFilter: "blur(8px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "440px",
+            width: "100%",
+            padding: "1.75rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            borderRadius: "16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+            boxShadow: "0 20px 40px rgba(0, 119, 182, 0.15)",
+            boxSizing: "border-box"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <UserX size={18} style={{ color: "#EF4444" }} />
+                <span>Sign Out of Shift</span>
+              </h3>
+              <button 
+                onClick={() => setShowClockOutModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.1rem" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
+              You are about to sign out of your active shift. Optionally add a short summary of work completed today for your Team Lead / Owner.
+            </p>
+
+            <textarea
+              rows={3}
+              value={shiftNotesInput}
+              onChange={(e) => setShiftNotesInput(e.target.value)}
+              placeholder="e.g. Completed 12 account verifications, 4 ads published..."
+              style={{
+                width: "100%",
+                padding: "0.6rem 0.75rem",
+                borderRadius: "8px",
+                border: "1px solid var(--border-dim)",
+                fontSize: "0.82rem",
+                outline: "none",
+                resize: "none",
+                fontFamily: "inherit",
+                background: "#F9FAFB",
+                boxSizing: "border-box"
+              }}
+            />
+
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="btn-glass"
+                onClick={() => setShowClockOutModal(false)}
+                style={{ padding: "0.5rem 1rem", fontSize: "0.8rem" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleDuty("OFF_DUTY", shiftNotesInput)}
+                disabled={isTogglingDuty}
+                style={{
+                  padding: "0.55rem 1.25rem",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  background: "#EF4444",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)"
+                }}
+              >
+                {isTogglingDuty ? "Signing Out..." : "Confirm Sign Out"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Company Owner Attendance Telemetry & Not Signed In Tracker Modal */}
+      {showAttendanceModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(3, 4, 94, 0.45)",
+          backdropFilter: "blur(8px)",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "600px",
+            width: "100%",
+            maxHeight: "85vh",
+            padding: "1.75rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            borderRadius: "16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+            boxShadow: "0 25px 50px rgba(0, 119, 182, 0.2)",
+            boxSizing: "border-box",
+            overflow: "hidden"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Users size={20} style={{ color: "#0077B6" }} />
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                  Shift Attendance & Not Signed In Tracker
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowAttendanceModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.2rem" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.5rem" }}>
+              <button
+                type="button"
+                onClick={() => setAttendanceTab("NOT_SIGNED_IN")}
+                style={{
+                  padding: "0.4rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  borderRadius: "8px",
+                  border: "none",
+                  background: attendanceTab === "NOT_SIGNED_IN" ? "rgba(239, 68, 68, 0.12)" : "transparent",
+                  color: attendanceTab === "NOT_SIGNED_IN" ? "#EF4444" : "var(--text-secondary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+              >
+                <span>🔴 Not Signed In Today</span>
+                <span style={{ background: "#EF4444", color: "#FFF", borderRadius: "10px", padding: "0.05rem 0.4rem", fontSize: "0.65rem" }}>
+                  {attendanceData.notSignedInCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAttendanceTab("ON_DUTY")}
+                style={{
+                  padding: "0.4rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  borderRadius: "8px",
+                  border: "none",
+                  background: attendanceTab === "ON_DUTY" ? "rgba(16, 185, 129, 0.12)" : "transparent",
+                  color: attendanceTab === "ON_DUTY" ? "#10B981" : "var(--text-secondary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+              >
+                <span>🟢 On Duty</span>
+                <span style={{ background: "#10B981", color: "#FFF", borderRadius: "10px", padding: "0.05rem 0.4rem", fontSize: "0.65rem" }}>
+                  {attendanceData.onDutyCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAttendanceTab("ON_BREAK")}
+                style={{
+                  padding: "0.4rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  borderRadius: "8px",
+                  border: "none",
+                  background: attendanceTab === "ON_BREAK" ? "rgba(245, 158, 11, 0.12)" : "transparent",
+                  color: attendanceTab === "ON_BREAK" ? "#F59E0B" : "var(--text-secondary)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+              >
+                <span>🟡 On Break</span>
+                <span style={{ background: "#F59E0B", color: "#FFF", borderRadius: "10px", padding: "0.05rem 0.4rem", fontSize: "0.65rem" }}>
+                  {attendanceData.onBreakCount}
+                </span>
+              </button>
+            </div>
+
+            {/* Member List Rendering */}
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.6rem", paddingRight: "0.25rem" }}>
+              {attendanceTab === "NOT_SIGNED_IN" && (
+                attendanceData.notSignedInMembers.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "2rem", color: "#10B981", fontWeight: 700, fontSize: "0.88rem" }}>
+                    🎉 All team members have signed in today!
+                  </div>
+                ) : (
+                  attendanceData.notSignedInMembers.map((m: any) => (
+                    <div key={m.id} style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "0.65rem 0.85rem",
+                      background: "rgba(239, 68, 68, 0.04)",
+                      border: "1px solid rgba(239, 68, 68, 0.15)",
+                      borderRadius: "10px"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                        <div style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          background: "#EF4444",
+                          color: "#FFF",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 800,
+                          fontSize: "0.85rem"
+                        }}>
+                          {m.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{m.name}</div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{m.email} • {m.role.replace("_", " ")}</div>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#EF4444", background: "rgba(239, 68, 68, 0.12)", padding: "0.2rem 0.55rem", borderRadius: "12px" }}>
+                        Not Signed In
+                      </span>
+                    </div>
+                  ))
+                )
+              )}
+
+              {attendanceTab === "ON_DUTY" && (
+                attendanceData.onDutyMembers.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)", fontSize: "0.88rem" }}>
+                    No members currently on duty.
+                  </div>
+                ) : (
+                  attendanceData.onDutyMembers.map((m: any) => (
+                    <div key={m.id} style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "0.65rem 0.85rem",
+                      background: "rgba(16, 185, 129, 0.04)",
+                      border: "1px solid rgba(16, 185, 129, 0.15)",
+                      borderRadius: "10px"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                        <div style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          background: "#10B981",
+                          color: "#FFF",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 800,
+                          fontSize: "0.85rem"
+                        }}>
+                          {m.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{m.name}</div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{m.email} • {m.role.replace("_", " ")}</div>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#10B981", background: "rgba(16, 185, 129, 0.12)", padding: "0.2rem 0.55rem", borderRadius: "12px" }}>
+                        🟢 On Duty
+                      </span>
+                    </div>
+                  ))
+                )
+              )}
+
+              {attendanceTab === "ON_BREAK" && (
+                attendanceData.onBreakMembers.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)", fontSize: "0.88rem" }}>
+                    No members currently on break.
+                  </div>
+                ) : (
+                  attendanceData.onBreakMembers.map((m: any) => (
+                    <div key={m.id} style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "0.65rem 0.85rem",
+                      background: "rgba(245, 158, 11, 0.04)",
+                      border: "1px solid rgba(245, 158, 11, 0.15)",
+                      borderRadius: "10px"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                        <div style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          background: "#F59E0B",
+                          color: "#FFF",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 800,
+                          fontSize: "0.85rem"
+                        }}>
+                          {m.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{m.name}</div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{m.email} • {m.role.replace("_", " ")}</div>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#F59E0B", background: "rgba(245, 158, 11, 0.12)", padding: "0.2rem 0.55rem", borderRadius: "12px" }}>
+                        🟡 On Break
+                      </span>
+                    </div>
+                  ))
+                )
+              )}
             </div>
           </div>
         </div>

@@ -253,6 +253,8 @@ model user {
   password                                 String?
   isDnd                                    Boolean          @default(false)
   bio                                      String?          @db.Text
+  dutyStatus                               String           @default("OFF_DUTY")
+  shiftduty                                shiftduty[]
   account_account_createdByIdTouser        account[]        @relation("account_createdByIdTouser")
   account_account_updatedByIdTouser        account[]        @relation("account_updatedByIdTouser")
   accounthistory                           accounthistory[]
@@ -593,4 +595,24 @@ model leaverequest {
   @@index([teamLeadId])
   @@index([companyId, status])
   @@index([teamLeadId, status])
+}
+
+model shiftduty {
+  id             String    @id @default(uuid())
+  userId         String
+  companyId      String?
+  status         String    @default("ON_DUTY") // "ON_DUTY", "ON_BREAK", "OFF_DUTY"
+  clockInTime    DateTime  @default(now())
+  breakStartTime DateTime?
+  clockOutTime   DateTime?
+  notes          String?   @db.Text
+  totalMinutes   Int?      @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
 }
