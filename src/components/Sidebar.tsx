@@ -445,6 +445,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     { 
+      id: "attendance", 
+      label: "Shift Attendance", 
+      path: "/attendance", 
+      icon: Clock,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]
+    },
+    { 
       id: "accounts", 
       label: user.role === "TEAM_LEAD" ? "My Data / Add Account" : "User Data", 
       path: "/accounts", 
@@ -857,45 +864,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               </button>
             </div>
           </div>
-
-          {/* Company Attendance Badge (Company Owner & TLs) */}
-          {["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"].includes(user.role) && (
-            <button
-              type="button"
-              onClick={() => setShowAttendanceModal(true)}
-              style={{
-                width: "100%",
-                marginTop: "0.5rem",
-                padding: "0.5rem 0.65rem",
-                background: "linear-gradient(135deg, rgba(2, 80, 161, 0.05), rgba(0, 119, 182, 0.1))",
-                border: "1px solid rgba(0, 119, 182, 0.2)",
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: "pointer",
-                textAlign: "left",
-                boxSizing: "border-box"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <Users size={13} style={{ color: "#0077B6" }} />
-                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                  Attendance
-                </span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#10B981", background: "rgba(16, 185, 129, 0.15)", padding: "0.15rem 0.4rem", borderRadius: "10px" }}>
-                  🟢 {attendanceData.onDutyCount}
-                </span>
-                {attendanceData.notSignedInCount > 0 && (
-                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#EF4444", background: "rgba(239, 68, 68, 0.15)", padding: "0.15rem 0.4rem", borderRadius: "10px" }}>
-                    🔴 {attendanceData.notSignedInCount}
-                  </span>
-                )}
-              </div>
-            </button>
-          )}
         </div>
       </div>
 
@@ -966,6 +934,18 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 >
                   🔴 {pendingRequestsCount}
                 </span>
+              )}
+              {item.id === "attendance" && ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"].includes(user.role) && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#10B981", background: "rgba(16, 185, 129, 0.15)", padding: "0.1rem 0.4rem", borderRadius: "10px" }}>
+                    🟢 {attendanceData.onDutyCount}
+                  </span>
+                  {attendanceData.notSignedInCount > 0 && (
+                    <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#EF4444", background: "rgba(239, 68, 68, 0.15)", padding: "0.1rem 0.4rem", borderRadius: "10px" }}>
+                      🔴 {attendanceData.notSignedInCount}
+                    </span>
+                  )}
+                </div>
               )}
               {item.id === "chat-space" && (chatStatus.hasUnread || chatStatus.hasJoinRequests) && (
                 <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
