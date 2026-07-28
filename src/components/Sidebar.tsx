@@ -258,82 +258,60 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     setTempVintedCost(vintedCost.toString());
   }, [vintedCost]);
 
-  // Dynamic notification count for TL requests
+  // Dynamic notification & badge status combined polling
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
-
-  useEffect(() => {
-    if (user.role !== "TEAM_LEAD") return;
-
-    const fetchCount = () => {
-      getPendingTLRequestsCountAction()
-        .then(count => setPendingRequestsCount(count))
-        .catch(err => console.error("Failed to fetch pending requests count", err));
-    };
-
-    fetchCount();
-    const interval = setInterval(fetchCount, 15000); // refresh every 15 seconds
-    return () => clearInterval(interval);
-  }, [user.role]);
-
-  // Dynamic chat notification states (unread messages, group join requests)
+  const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0);
   const [chatStatus, setChatStatus] = useState<{ hasUnread: boolean; hasJoinRequests: boolean }>({
     hasUnread: false,
     hasJoinRequests: false
   });
-
-  // Dynamic special requests status dot
   const [specialRequestStatus, setSpecialRequestStatus] = useState<{ hasUnread: boolean; dotColor: "red" | "orange" | "green" | null }>({
     hasUnread: false,
     dotColor: null
   });
 
   useEffect(() => {
-    const fetchChatStatus = async () => {
+    let isMounted = true;
+
+    const fetchAllBadges = async () => {
+      if (document.hidden) return;
+
       try {
-        const status = await getChatBadgeStatusAction();
-        setChatStatus(status);
+        const promises: Promise<any>[] = [
+          getChatBadgeStatusAction().catch(() => ({ hasUnread: false, hasJoinRequests: false })),
+          getSpecialRequestsBadgeStatusAction().catch(() => ({ hasUnread: false, dotColor: null })),
+          getPendingLeaveApprovalsCountAction().catch(() => ({ count: 0 }))
+        ];
+
+        if (user.role === "TEAM_LEAD") {
+          promises.push(getPendingTLRequestsCountAction().catch(() => 0));
+        }
+
+        const [chatRes, specialRes, leavesRes, tlRes] = await Promise.all(promises);
+
+        if (!isMounted) return;
+
+        if (chatRes) setChatStatus(chatRes);
+        if (specialRes) setSpecialRequestStatus(specialRes);
+        if (leavesRes) setPendingLeavesCount(leavesRes?.count || 0);
+        if (tlRes !== undefined) setPendingRequestsCount(tlRes);
       } catch (err) {
-        console.error("Failed to fetch chat status badge", err);
+        console.error("Badge polling error:", err);
       }
     };
 
-    fetchChatStatus();
-    const interval = setInterval(fetchChatStatus, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
-  }, []);
+    fetchAllBadges();
+    const interval = setInterval(fetchAllBadges, 25000); // Efficient 25s loop
 
-  useEffect(() => {
-    const fetchSpecialRequestStatus = async () => {
-      try {
-        const status = await getSpecialRequestsBadgeStatusAction();
-        setSpecialRequestStatus(status);
-      } catch (err) {
-        console.error("Failed to fetch special requests badge status", err);
-      }
+    const onFocus = () => fetchAllBadges();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
     };
-
-    fetchSpecialRequestStatus();
-    const interval = setInterval(fetchSpecialRequestStatus, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  // Dynamic leave approvals count badge
-  const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0);
-
-  useEffect(() => {
-    const fetchLeavesCount = async () => {
-      try {
-        const res = await getPendingLeaveApprovalsCountAction();
-        setPendingLeavesCount(res.count || 0);
-      } catch (err) {
-        console.error("Failed to fetch pending leaves count", err);
-      }
-    };
-
-    fetchLeavesCount();
-    const interval = setInterval(fetchLeavesCount, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [user.role]);
 
   const handleChangePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();

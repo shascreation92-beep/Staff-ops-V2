@@ -566,11 +566,11 @@ export default function ChatShard({
     };
 
     pollAllMessages();
-    const interval = setInterval(handlePoll, 5000);
+    const interval = setInterval(handlePoll, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  // Poll globally for all groups and pins every 5 seconds to keep sidebar and group mention alerts fresh
+  // Poll globally for all groups and pins every 15 seconds to keep sidebar and group mention alerts fresh
   useEffect(() => {
     const pollGroups = async () => {
       try {
@@ -611,7 +611,7 @@ export default function ChatShard({
     };
 
     pollGroups();
-    const interval = setInterval(handlePoll, 5000);
+    const interval = setInterval(handlePoll, 15000);
     return () => clearInterval(interval);
   }, [activeContact, mutedGroups, isDnd, joinedGroups]);
 
