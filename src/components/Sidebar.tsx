@@ -446,7 +446,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     },
     { 
       id: "attendance", 
-      label: "Shift Attendance", 
+      label: "On/Off", 
       path: "/attendance", 
       icon: Clock,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]
@@ -807,18 +807,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 >
                   🔴 {pendingRequestsCount}
                 </span>
-              )}
-              {item.id === "attendance" && ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"].includes(user.role) && (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto" }}>
-                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#10B981", background: "rgba(16, 185, 129, 0.15)", padding: "0.1rem 0.4rem", borderRadius: "10px" }}>
-                    🟢 {attendanceData.onDutyCount}
-                  </span>
-                  {attendanceData.notSignedInCount > 0 && (
-                    <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#EF4444", background: "rgba(239, 68, 68, 0.15)", padding: "0.1rem 0.4rem", borderRadius: "10px" }}>
-                      🔴 {attendanceData.notSignedInCount}
-                    </span>
-                  )}
-                </div>
               )}
               {item.id === "chat-space" && (chatStatus.hasUnread || chatStatus.hasJoinRequests) && (
                 <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
