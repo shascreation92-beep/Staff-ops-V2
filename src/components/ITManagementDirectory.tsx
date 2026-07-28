@@ -100,10 +100,12 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
           setShowAddModal(false);
           setOnboardFullName("");
           setOnboardEmail("");
-          setOnboardEmployeeId("");
+          setOnboardEmployeeId("IT-");
           setOnboardPassword("");
           setOnboardRole("IT_DEPARTMENT");
           router.refresh();
+        } else {
+          setErrorMsg(res.error || "Failed to onboard user.");
         }
       } catch (err: any) {
         setErrorMsg(err.message || "Failed to onboard user.");
