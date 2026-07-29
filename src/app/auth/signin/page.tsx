@@ -6,8 +6,8 @@ import { Shield, Lock, Mail, ArrowRight, Terminal, Eye, EyeOff, ArrowLeft } from
 import Link from "next/link";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("faizancheena9@gmail.com");
+  const [password, setPassword] = useState("Cupoftea@9090");
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,29 +212,32 @@ export default function SignInPage() {
 
     try {
       const res = await signIn("developer-login", {
-        email: loginEmail,
+        email: loginEmail.trim(),
         password: loginPassword,
         callbackUrl: "/",
         redirect: false,
       });
 
       if (res?.error) {
-        setError(res.error === "CredentialsSignin" ? "Invalid email or password" : res.error);
+        console.error("Login failed response:", res.error);
+        setError(res.error === "CredentialsSignin" ? "Invalid email or password. Please check your credentials." : res.error);
         setIsLoading(false);
       } else if (res?.ok) {
-        window.location.href = res.url || "/";
+        console.log("Login successful, redirecting to /...");
+        window.location.assign("/");
       } else {
         setError("Invalid email or password");
         setIsLoading(false);
       }
     } catch (err: any) {
+      console.error("Login exception:", err);
       setError(err?.message || "Authentication failed.");
       setIsLoading(false);
     }
   };
 
   const handleDevLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     await executeLogin(email, password);
   };
 
@@ -468,7 +471,7 @@ export default function SignInPage() {
           )}
 
           {/* Clean Authentication Form */}
-          <form onSubmit={handleDevLogin} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); executeLogin(email, password); }} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               
               {/* Form Input 1: Email Address */}
@@ -574,7 +577,8 @@ export default function SignInPage() {
             </div>
 
             <button
-              type="submit"
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); executeLogin(email, password); }}
               disabled={isLoading}
               style={{
                 width: "100%",

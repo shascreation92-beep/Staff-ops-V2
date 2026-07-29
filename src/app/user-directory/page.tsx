@@ -7,25 +7,35 @@ import UserDirectoryList from "./UserDirectoryList";
 export const dynamic = "force-dynamic";
 
 export default async function UserDirectoryPage() {
-  const user = await enforceAuth(["IT_DEPARTMENT"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT", "TEAM_LEAD"]);
 
   // Determine Company context
   let companyName = "Active Tenant";
   let users: any[] = [];
 
-  if (user.companyId) {
+  if (user.role === "SUPER_ADMIN") {
+    companyName = "Global Platform (Super Admin)";
+    users = await db.user.findMany({
+      where: { isArchived: false },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        image: true
+      },
+      orderBy: { name: "asc" }
+    });
+  } else if (user.companyId) {
     const comp = await db.company.findUnique({
       where: { id: user.companyId }
     });
     if (comp) companyName = comp.name;
 
-    // Fetch all registered users in this active company who are Team Leads or Sales Associates
     users = await db.user.findMany({
       where: {
         companyId: user.companyId,
-        role: {
-          in: ["TEAM_LEAD", "SALES_ASSOCIATE"]
-        },
         isArchived: false
       },
       select: {
@@ -36,9 +46,7 @@ export default async function UserDirectoryPage() {
         status: true,
         image: true
       },
-      orderBy: {
-        name: "asc"
-      }
+      orderBy: { name: "asc" }
     });
   }
 

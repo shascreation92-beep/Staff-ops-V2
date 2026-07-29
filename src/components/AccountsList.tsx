@@ -742,13 +742,58 @@ export default function AccountsList({
       {/* Toolbar Controls */}
       <div className="glass-panel table-panel" style={{ padding: "0.6rem 1.25rem", marginBottom: 0, position: "relative", zIndex: 50 }}>
         <div className="table-toolbar table-toolbar-responsive">
-          {/* Center Column: Search icon, Search input, and Select filters */}
+          {/* Left Column: Action Buttons */}
+          <div className="toolbar-left-group">
+            <button 
+              className="btn-gold" 
+              onClick={handleExportCSV}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", whiteSpace: "nowrap" }}
+            >
+              <Download size={15} />
+              <span>EXPORT CSV</span>
+            </button>
+            {(isSuperAdmin || isCompanyOwner) && (
+              <button 
+                className="btn-gold" 
+                onClick={() => setShowModal(true)}
+                disabled={isPending}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", whiteSpace: "nowrap" }}
+              >
+                <Plus size={15} />
+                <span>PROVISION ACCOUNT</span>
+              </button>
+            )}
+            {(isSalesAssociate || isTeamLead || isSuperAdmin || isCompanyOwner) && (
+              <button 
+                className="btn-gold" 
+                onClick={() => {
+                  setWizardStep(1);
+                  setWizardPlatformId(platforms[0]?.id || "");
+                  setWizardSerialCode("");
+                  setWizardFirstName("");
+                  setWizardSecondName("");
+                  setWizardAdsPublished(0);
+                  setWizardVerificationStatus("No");
+                  setWizardSubmissionDate(new Date().toISOString().split("T")[0]);
+                  setWizardErrorMsg(null);
+                  setShowAddWizard(true);
+                }}
+                disabled={isPending}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", whiteSpace: "nowrap" }}
+              >
+                <Plus size={15} />
+                <span>ADD ACCOUNT</span>
+              </button>
+            )}
+          </div>
+
+          {/* Center Column: Search & Filters */}
           <div className="toolbar-center-group">
-            <div className="table-search-wrapper" style={{ width: "100%", maxWidth: "360px" }}>
+            <div className="table-search-wrapper" style={{ minWidth: "180px", maxWidth: "260px", flex: "1 1 auto" }}>
               <Search className="header-search-icon" />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="header-search-input"
@@ -791,7 +836,7 @@ export default function AccountsList({
                   value={teamLeadFilter}
                   onChange={(e) => setTeamLeadFilter(e.target.value)}
                   className="table-select-filter"
-                  style={{ minWidth: "160px" }}
+                  style={{ minWidth: "140px" }}
                 >
                   <option value="ALL">ALL TEAM LEADS</option>
                   {teamLeads.map(tl => (
@@ -802,50 +847,7 @@ export default function AccountsList({
             </div>
           </div>
 
-          {/* Left Column: Provision and Add Account Buttons */}
-          <div className="toolbar-left-group">
-            <button 
-              className="btn-gold" 
-              onClick={handleExportCSV}
-              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-            >
-              <Download size={16} />
-              <span>EXPORT CSV</span>
-            </button>
-            {(isSuperAdmin || isCompanyOwner) && (
-              <button 
-                className="btn-gold" 
-                onClick={() => setShowModal(true)}
-                disabled={isPending}
-              >
-                <Plus size={16} />
-                <span>PROVISION ACCOUNT</span>
-              </button>
-            )}
-            {(isSalesAssociate || isTeamLead || isSuperAdmin || isCompanyOwner) && (
-              <button 
-                className="btn-gold" 
-                onClick={() => {
-                  setWizardStep(1);
-                  setWizardPlatformId(platforms[0]?.id || "");
-                  setWizardSerialCode("");
-                  setWizardFirstName("");
-                  setWizardSecondName("");
-                  setWizardAdsPublished(0);
-                  setWizardVerificationStatus("No");
-                  setWizardSubmissionDate(new Date().toISOString().split("T")[0]);
-                  setWizardErrorMsg(null);
-                  setShowAddWizard(true);
-                }}
-                disabled={isPending}
-              >
-                <Plus size={16} />
-                <span>ADD ACCOUNT</span>
-              </button>
-            )}
-          </div>
-
-          {/* Right Column: Notification Icon only */}
+          {/* Right Column: Notification Bell */}
           <div className="toolbar-right-group">
             <NotificationBell />
           </div>

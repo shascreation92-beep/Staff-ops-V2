@@ -37,8 +37,8 @@ export async function enforceAuth(allowedRoles?: user_role[]) {
     redirect(`/auth/signin?error=Callback`);
   }
 
-  // Enforce role-based access control (RBAC)
-  if (allowedRoles && !allowedRoles.includes(session.user.role)) {
+  // Enforce role-based access control (RBAC) - Super Admin bypasses role restrictions
+  if (allowedRoles && session.user.role !== "SUPER_ADMIN" && !allowedRoles.includes(session.user.role)) {
     throw new Error("UNAUTHORIZED: Insufficient permissions for this operation.");
   }
 
@@ -88,7 +88,7 @@ export function getCompanyFilter(user: { role: user_role; companyId?: string | n
   }
   
   if (!user.companyId) {
-    throw new Error("UNAUTHORIZED: User is not associated with any company.");
+    return { companyId: "unassigned" };
   }
 
   return { companyId: user.companyId };
