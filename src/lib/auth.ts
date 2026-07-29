@@ -25,10 +25,6 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (process.env.ALLOW_DEV_LOGIN !== "true") {
-          return null;
-        }
-
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Invalid email or password");
         }
