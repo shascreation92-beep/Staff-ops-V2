@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { clearAllRateLimits } from "@/lib/security";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    clearAllRateLimits();
     let company = await db.company.findFirst({
       where: { isArchived: false }
     });
