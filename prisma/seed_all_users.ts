@@ -29,7 +29,7 @@ async function main() {
       email: "faizancheena9@gmail.com",
       name: "Super Admin",
       role: "SUPER_ADMIN",
-      passwordRaw: "Cupoftea@90",
+      passwordRaw: "Cupoftea@9090",
       companyId: companyId
     },
     {
