@@ -546,17 +546,19 @@ export default function SettingsShard({
                       <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                           <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--gold-premium)", fontWeight: 600 }}>
-                            {!u.password ? (
+                            {!u.password && !u.employee?.laptopPassword ? (
                               <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>No Password</span>
                             ) : visiblePasswords[u.id] ? (
-                              (u.password.startsWith("$2b$") || u.password.startsWith("$2a$") || u.password.startsWith("$2y$")) ? (
+                              u.employee?.laptopPassword ? (
+                                <span style={{ color: "#0077B6", fontWeight: 700 }}>{u.employee.laptopPassword}</span>
+                              ) : (u.password && (u.password.startsWith("$2b$") || u.password.startsWith("$2a$") || u.password.startsWith("$2y$"))) ? (
                                 <span style={{ color: "#8B5CF6", fontWeight: 700, fontSize: "0.75rem", background: "rgba(139, 92, 246, 0.08)", padding: "0.15rem 0.5rem", borderRadius: "4px", border: "1px solid rgba(139, 92, 246, 0.2)" }}>
                                   🔒 Protected Hash
                                 </span>
-                              ) : u.password
+                              ) : (u.password || "••••••••")
                             ) : "••••••••"}
                           </span>
-                          {u.password && (
+                          {(u.password || u.employee?.laptopPassword) && (
                             <button
                               type="button"
                               onClick={() => togglePasswordVisibility(u.id)}
@@ -576,9 +578,9 @@ export default function SettingsShard({
                             </button>
                           )}
                         </div>
-                        {visiblePasswords[u.id] && u.password && (u.password.startsWith("$2b$") || u.password.startsWith("$2a$") || u.password.startsWith("$2y$")) && (
+                        {visiblePasswords[u.id] && !u.employee?.laptopPassword && u.password && (u.password.startsWith("$2b$") || u.password.startsWith("$2a$") || u.password.startsWith("$2y$")) && (
                           <span style={{ fontSize: "0.68rem", color: "#64748B", fontStyle: "italic" }}>
-                            (Encrypted for security. Click Edit to reset password)
+                            (Hashed legacy password. Click Edit Account to set new readable password)
                           </span>
                         )}
                       </div>

@@ -685,6 +685,33 @@ export async function approveAndAssignPasswordITAction({
     }
   });
 
+  const existingEmployee = await db.employee.findUnique({
+    where: { userId }
+  });
+
+  if (existingEmployee) {
+    await db.employee.update({
+      where: { userId },
+      data: {
+        laptopPassword: password.trim(),
+        updatedAt: new Date()
+      }
+    });
+  } else {
+    await db.employee.create({
+      data: {
+        id: crypto.randomUUID(),
+        employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+        fullName: targetUser.name || targetUser.email,
+        email: targetUser.email,
+        companyId: targetUser.companyId || itUser.companyId || "",
+        userId: targetUser.id,
+        laptopPassword: password.trim(),
+        updatedAt: new Date()
+      }
+    });
+  }
+
   if (targetUser.teamLeadId) {
     await db.notification.create({
       data: {

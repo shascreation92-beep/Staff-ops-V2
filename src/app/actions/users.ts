@@ -814,6 +814,27 @@ export async function adminResetUserPasswordAction(formData: z.infer<typeof Admi
       }
     });
 
+    const existingEmp = await db.employee.findUnique({ where: { userId } });
+    if (existingEmp) {
+      await db.employee.update({
+        where: { userId },
+        data: { laptopPassword: newPassword.trim(), updatedAt: new Date() }
+      });
+    } else {
+      await db.employee.create({
+        data: {
+          id: crypto.randomUUID(),
+          employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+          fullName: targetUser.name || targetUser.email,
+          email: targetUser.email,
+          companyId: targetUser.companyId || currentUser.companyId || "",
+          userId: targetUser.id,
+          laptopPassword: newPassword.trim(),
+          updatedAt: new Date()
+        }
+      });
+    }
+
     // Write audit log
     await logAction({
       userId: currentUser.id,
