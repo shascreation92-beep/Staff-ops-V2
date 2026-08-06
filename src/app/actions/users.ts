@@ -1121,6 +1121,21 @@ export async function editUserAccountAction(formData: {
         data: {
           fullName: formData.name,
           status: formData.status === "APPROVED" ? "ACTIVE" : "INACTIVE",
+          ...(formData.password ? { laptopPassword: formData.password } : {}),
+          updatedAt: new Date()
+        }
+      });
+    } else {
+      await db.employee.create({
+        data: {
+          id: crypto.randomUUID(),
+          employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+          fullName: formData.name,
+          email: targetUser.email,
+          status: formData.status === "APPROVED" ? "ACTIVE" : "INACTIVE",
+          companyId: targetUser.companyId || currentUser.companyId || "",
+          userId: formData.userId,
+          ...(formData.password ? { laptopPassword: formData.password } : {}),
           updatedAt: new Date()
         }
       });
