@@ -6,8 +6,8 @@ import { Shield, Lock, Mail, ArrowRight, Terminal, Eye, EyeOff, ArrowLeft } from
 import Link from "next/link";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("faizancheena9@gmail.com");
-  const [password, setPassword] = useState("Cupoftea@9090");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
