@@ -596,42 +596,122 @@ export async function addSalesAssociateAction({
       throw new Error(`User with email "${cleanEmail}" already exists as a ${existingUser.role}.`);
     }
 
-    // Map existing Sales Associate to this Team Lead
+    // Map existing Sales Associate to this Team Lead and request IT approval if pending
     await db.user.update({
       where: { id: existingUser.id },
       data: {
         teamLeadId: user.id,
         companyId: user.companyId || existingUser.companyId,
-        status: "APPROVED",
+        status: "PENDING",
         isArchived: false,
         updatedAt: new Date()
       }
     });
 
     revalidatePath("/my-team");
-    return { success: true, mode: "MAPPED" };
+    return { success: true, mode: "PENDING_IT" };
   }
 
-  // Create new Sales Associate user
-  const passToHash = password && password.trim() ? password.trim() : "Welcome123!";
-  const hashedPassword = await hashPassword(passToHash);
-
+  // Create new Sales Associate user with PENDING status awaiting IT password assignment
   const newAssociate = await db.user.create({
     data: {
       id: crypto.randomUUID(),
       name: cleanName,
       email: cleanEmail,
-      password: hashedPassword,
       role: "SALES_ASSOCIATE",
-      status: "APPROVED",
+      status: "PENDING",
       companyId: user.companyId || null,
       teamLeadId: user.id,
       updatedAt: new Date()
     }
   });
 
+  // Send approval notification to IT Department & Super Admin
+  const itUsers = await db.user.findMany({
+    where: {
+      role: { in: ["IT_DEPARTMENT", "SUPER_ADMIN"] },
+      isArchived: false
+    },
+    select: { id: true }
+  });
+
+  for (const it of itUsers) {
+    await db.notification.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: it.id,
+        title: "Sales Representative Approval Required",
+        message: `Team Lead ${user.name || "TL"} added Sales Representative ${cleanName} (${cleanEmail}). IT approval & password assignment required.`,
+        type: "ITApprovalRequest",
+        isRead: false
+      }
+    });
+  }
+
   revalidatePath("/my-team");
-  return { success: true, mode: "CREATED", userId: newAssociate.id };
+  revalidatePath("/user-directory");
+  return { success: true, mode: "PENDING_IT", userId: newAssociate.id };
+}
+
+export async function approveAndAssignPasswordITAction({
+  userId,
+  password
+}: {
+  userId: string;
+  password: string;
+}) {
+  const itUser = await enforceAuth(["IT_DEPARTMENT", "SUPER_ADMIN"]);
+
+  if (!password || password.trim().length < 6) {
+    throw new Error("Password must be at least 6 characters.");
+  }
+
+  const targetUser = await db.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found.");
+  }
+
+  const hashedPassword = await hashPassword(password.trim());
+
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      status: "APPROVED",
+      password: hashedPassword,
+      updatedAt: new Date()
+    }
+  });
+
+  if (targetUser.teamLeadId) {
+    await db.notification.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: targetUser.teamLeadId,
+        title: "Sales Representative Account Approved by IT",
+        message: `IT Department approved account for ${targetUser.name || targetUser.email} and assigned login password.`,
+        type: "ITApprovedNotice",
+        isRead: false
+      }
+    });
+  }
+
+  await logAction({
+    userId: itUser.id,
+    userEmail: itUser.email || "",
+    userRole: itUser.role,
+    action: "IT_APPROVE_USER_SET_PASSWORD",
+    entity: "user",
+    entityId: userId,
+    newValue: `Approved user and assigned password`
+  });
+
+  revalidatePath("/my-team");
+  revalidatePath("/user-directory");
+  revalidatePath("/it-management");
+  return { success: true };
 }
 
 export async function getPendingTLRequestsAction() {

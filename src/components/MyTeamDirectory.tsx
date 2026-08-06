@@ -109,20 +109,16 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
       try {
         const res = await addSalesAssociateAction({
           name: addName,
-          email: addEmail,
-          password: addPassword
+          email: addEmail
         });
 
         if (res.success) {
           toast.success(
-            res.mode === "MAPPED"
-              ? "Existing Sales Representative assigned to your team!"
-              : "New Sales Representative created and added to your team!"
+            "Sales Representative request sent to IT Department! IT will approve and set account password."
           );
           setIsAddModalOpen(false);
           setAddName("");
           setAddEmail("");
-          setAddPassword("");
           router.refresh();
         }
       } catch (err: any) {
@@ -288,26 +284,18 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
                 />
               </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
-                  Temporary Password (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Default: Welcome123!"
-                  value={addPassword}
-                  onChange={(e) => setAddPassword(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "0.65rem 0.85rem",
-                    borderRadius: "8px",
-                    border: "1px solid #CBD5E1",
-                    fontSize: "0.85rem",
-                    outline: "none"
-                  }}
-                />
-                <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block", marginTop: "0.25rem" }}>
-                  If left empty, default password will be set to <code>Welcome123!</code>
+              <div style={{
+                background: "rgba(0, 119, 182, 0.06)",
+                border: "1px solid rgba(0, 119, 182, 0.2)",
+                borderRadius: "8px",
+                padding: "0.85rem",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "0.6rem"
+              }}>
+                <Shield size={18} style={{ color: "#0077B6", marginTop: "2px", flexShrink: 0 }} />
+                <span style={{ fontSize: "0.78rem", color: "#334155", lineHeight: 1.45 }}>
+                  <strong>IT Approval Workflow:</strong> Upon submission, this request will be sent to the <strong>IT Department</strong>. An IT representative will review, approve, and assign the official password for this Sales Representative.
                 </span>
               </div>
 

@@ -53,7 +53,7 @@ export default async function UserDirectoryPage() {
   return (
     <DashboardLayout user={{ ...user, companyName }}>
       <div className="dashboard-container" style={{ padding: "2rem" }}>
-        <UserDirectoryList initialUsers={users} />
+        <UserDirectoryList initialUsers={users} currentUserRole={user.role} />
       </div>
     </DashboardLayout>
   );

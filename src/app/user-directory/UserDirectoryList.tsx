@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, Mail, Shield, User, CircleDot } from "lucide-react";
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Search, Mail, Shield, User, CircleDot, Key, Lock, CheckCircle2, X } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import { toast } from "react-hot-toast";
+import { approveAndAssignPasswordITAction } from "@/app/actions/accounts";
 
 interface UserData {
   id: string;
@@ -15,11 +18,16 @@ interface UserData {
 
 interface UserDirectoryListProps {
   initialUsers: UserData[];
+  currentUserRole?: string;
 }
 
-export default function UserDirectoryList({ initialUsers }: UserDirectoryListProps) {
+export default function UserDirectoryList({ initialUsers, currentUserRole }: UserDirectoryListProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const filteredUsers = initialUsers.filter((u) => {
     const term = searchTerm.toLowerCase();
@@ -55,6 +63,35 @@ export default function UserDirectoryList({ initialUsers }: UserDirectoryListPro
     }
     return pages;
   };
+
+  const handleITApprove = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    if (!passwordInput || passwordInput.trim().length < 6) {
+      toast.error("Please enter a password with at least 6 characters.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await approveAndAssignPasswordITAction({
+          userId: selectedUser.id,
+          password: passwordInput
+        });
+
+        if (res.success) {
+          toast.success(`Account for ${selectedUser.name || selectedUser.email} approved & password assigned!`);
+          setSelectedUser(null);
+          setPasswordInput("");
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to approve user and set password.");
+      }
+    });
+  };
+
+  const isITUser = currentUserRole === "IT_DEPARTMENT" || currentUserRole === "SUPER_ADMIN";
 
   const getInitials = (name: string | null) => {
     if (!name) return "OP";
@@ -241,16 +278,188 @@ export default function UserDirectoryList({ initialUsers }: UserDirectoryListPro
                   </div>
 
                   {/* Footer status row */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.25rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.25rem", flexWrap: "wrap", gap: "0.5rem" }}>
                     <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
                       Status:
                     </span>
-                    {getStatusBadge(u.status)}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      {getStatusBadge(u.status)}
+                    </div>
                   </div>
+
+                  {/* IT Action: Approve & Assign Password */}
+                  {isITUser && u.status.toUpperCase() === "PENDING" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedUser(u);
+                        setPasswordInput("");
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "0.55rem",
+                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, #0077B6 0%, #0096C7 100%)",
+                        color: "#FFFFFF",
+                        border: "none",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.4rem",
+                        marginTop: "0.25rem",
+                        boxShadow: "0 2px 8px rgba(0, 119, 182, 0.2)"
+                      }}
+                    >
+                      <Key size={14} />
+                      <span>Approve & Set Password</span>
+                    </button>
+                  )}
                 </div>
               );
             })}
           </div>
+
+          {/* IT Approval & Password Assignment Modal */}
+          {selectedUser && (
+            <div style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 8, 20, 0.75)",
+              backdropFilter: "blur(6px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              padding: "1rem"
+            }}>
+              <div className="glass-panel" style={{
+                width: "100%",
+                maxWidth: "460px",
+                background: "#FFFFFF",
+                borderRadius: "16px",
+                padding: "2rem",
+                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.3)",
+                position: "relative"
+              }}>
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  style={{
+                    position: "absolute",
+                    top: "1.25rem",
+                    right: "1.25rem",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#64748B"
+                  }}
+                >
+                  <X size={20} />
+                </button>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+                  <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "rgba(0, 119, 182, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0077B6" }}>
+                    <Key size={22} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: 800, margin: 0, color: "#0F172A" }}>
+                      IT Approval & Password Assignment
+                    </h3>
+                    <p style={{ fontSize: "0.8rem", color: "#64748B", margin: 0 }}>
+                      Set official credentials to activate account.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  padding: "0.85rem",
+                  marginBottom: "1.25rem"
+                }}>
+                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0F172A" }}>
+                    {selectedUser.name || "Sales Representative"}
+                  </div>
+                  <div style={{ fontSize: "0.78rem", color: "#64748B", marginTop: "0.15rem" }}>
+                    {selectedUser.email}
+                  </div>
+                </div>
+
+                <form onSubmit={handleITApprove} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
+                      Assign Account Password <span style={{ color: "#EF4444" }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Pass123!Secure"
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "0.65rem 0.85rem",
+                        borderRadius: "8px",
+                        border: "1px solid #CBD5E1",
+                        fontSize: "0.85rem",
+                        outline: "none"
+                      }}
+                    />
+                    <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block", marginTop: "0.35rem" }}>
+                      Only this password assigned by IT will grant login access to the representative.
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUser(null)}
+                      style={{
+                        flex: 1,
+                        padding: "0.65rem",
+                        borderRadius: "8px",
+                        border: "1px solid #CBD5E1",
+                        background: "#F8FAFC",
+                        color: "#475569",
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isPending}
+                      style={{
+                        flex: 1.5,
+                        padding: "0.65rem",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: "#0077B6",
+                        color: "#FFFFFF",
+                        fontWeight: 700,
+                        fontSize: "0.85rem",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem"
+                      }}
+                    >
+                      {isPending ? "Approving..." : "Approve & Activate Account"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Premium Minimalist Pagination Control Bar */}
           {totalRecords > 0 && (
