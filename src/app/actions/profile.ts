@@ -33,7 +33,8 @@ export async function updateUserBioAction(bio: string) {
           email: user.email || `user_${Date.now()}@worknode.com`,
           name: user.name || "User",
           role: user.role || "SUPER_ADMIN",
-          bio: bioResult
+          bio: bioResult,
+          updatedAt: new Date()
         }
       });
       bioResult = created.bio || bioResult;

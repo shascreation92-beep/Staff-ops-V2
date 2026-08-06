@@ -1174,7 +1174,8 @@ export async function uploadUserAvatarAction(base64Image: string) {
           email: user.email || `user_${Date.now()}@worknode.com`,
           name: user.name || "User",
           role: user.role || "SUPER_ADMIN",
-          image: base64Image
+          image: base64Image,
+          updatedAt: new Date()
         }
       });
     }
