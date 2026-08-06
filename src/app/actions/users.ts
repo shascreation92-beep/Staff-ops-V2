@@ -1153,10 +1153,31 @@ export async function uploadUserAvatarAction(base64Image: string) {
   
   try {
     // Save base64 Data URL directly in database for 100% reliable rendering
-    await db.user.update({
-      where: { id: user.id },
-      data: { image: base64Image }
+    const existingUser = await db.user.findFirst({
+      where: {
+        OR: [
+          { id: user.id },
+          ...(user.email ? [{ email: user.email }] : [])
+        ]
+      }
     });
+
+    if (existingUser) {
+      await db.user.update({
+        where: { id: existingUser.id },
+        data: { image: base64Image }
+      });
+    } else {
+      await db.user.create({
+        data: {
+          id: user.id || crypto.randomUUID(),
+          email: user.email || `user_${Date.now()}@worknode.com`,
+          name: user.name || "User",
+          role: user.role || "SUPER_ADMIN",
+          image: base64Image
+        }
+      });
+    }
 
     // Also attempt writing file as local fallback if public/uploads exists
     try {
