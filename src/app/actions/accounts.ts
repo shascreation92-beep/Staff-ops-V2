@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, getCompanyFilter, logAction } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
-import { sanitizeInput } from "@/lib/security";
+import { sanitizeInput, hashPassword } from "@/lib/security";
 import { account_status, user_role } from "@prisma/client";
 import { z } from "zod";
 
@@ -566,6 +566,72 @@ export async function getTLTeamMembersAction() {
     }
   });
   return members;
+}
+
+export async function addSalesAssociateAction({
+  name,
+  email,
+  password
+}: {
+  name: string;
+  email: string;
+  password?: string;
+}) {
+  const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN"]);
+
+  if (!email || !email.includes("@")) {
+    throw new Error("Invalid email address.");
+  }
+
+  const cleanName = sanitizeInput(name || email.split("@")[0]);
+  const cleanEmail = sanitizeInput(email).toLowerCase().trim();
+
+  // Check if user exists
+  const existingUser = await db.user.findUnique({
+    where: { email: cleanEmail }
+  });
+
+  if (existingUser) {
+    if (existingUser.role !== "SALES_ASSOCIATE") {
+      throw new Error(`User with email "${cleanEmail}" already exists as a ${existingUser.role}.`);
+    }
+
+    // Map existing Sales Associate to this Team Lead
+    await db.user.update({
+      where: { id: existingUser.id },
+      data: {
+        teamLeadId: user.id,
+        companyId: user.companyId || existingUser.companyId,
+        status: "APPROVED",
+        isArchived: false,
+        updatedAt: new Date()
+      }
+    });
+
+    revalidatePath("/my-team");
+    return { success: true, mode: "MAPPED" };
+  }
+
+  // Create new Sales Associate user
+  const passToHash = password && password.trim() ? password.trim() : "Welcome123!";
+  const hashedPassword = await hashPassword(passToHash);
+
+  const newAssociate = await db.user.create({
+    data: {
+      id: crypto.randomUUID(),
+      name: cleanName,
+      email: cleanEmail,
+      password: hashedPassword,
+      role: "SALES_ASSOCIATE",
+      status: "APPROVED",
+      companyId: user.companyId || null,
+      teamLeadId: user.id,
+      updatedAt: new Date()
+    }
+  });
+
+  revalidatePath("/my-team");
+  return { success: true, mode: "CREATED", userId: newAssociate.id };
 }
 
 export async function getPendingTLRequestsAction() {

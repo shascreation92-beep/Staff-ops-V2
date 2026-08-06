@@ -2,10 +2,11 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle, Copy, Download } from "lucide-react";
+import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle, Copy, Download, UserPlus } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import { toast } from "react-hot-toast";
 import { saveAssociateEmployeeITAction } from "@/app/actions/employees";
+import { addSalesAssociateAction } from "@/app/actions/accounts";
 import { formatDate12h } from "@/lib/date-formatter";
 import { downloadCSV } from "@/lib/csv-exporter";
 
@@ -35,7 +36,13 @@ interface MyTeamDirectoryProps {
 }
 
 export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addName, setAddName] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addPassword, setAddPassword] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const ITEMS_PER_PAGE = 50;
   const totalRecords = members.length;
@@ -91,6 +98,39 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
     return pages;
   };
 
+  const handleAddAssociate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addEmail || !addEmail.includes("@")) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await addSalesAssociateAction({
+          name: addName,
+          email: addEmail,
+          password: addPassword
+        });
+
+        if (res.success) {
+          toast.success(
+            res.mode === "MAPPED"
+              ? "Existing Sales Representative assigned to your team!"
+              : "New Sales Representative created and added to your team!"
+          );
+          setIsAddModalOpen(false);
+          setAddName("");
+          setAddEmail("");
+          setAddPassword("");
+          router.refresh();
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to add Sales Representative.");
+      }
+    });
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <div className="glass-panel" style={{ padding: "1.5rem", position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
@@ -105,6 +145,14 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <button 
             className="btn-gold" 
+            onClick={() => setIsAddModalOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "linear-gradient(135deg, #0077B6 0%, #0096C7 100%)", color: "#FFFFFF", border: "none" }}
+          >
+            <UserPlus size={16} />
+            <span>+ ADD REPRESENTATIVE</span>
+          </button>
+          <button 
+            className="btn-gold" 
             onClick={handleExportCSV}
             style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
           >
@@ -117,13 +165,23 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.5rem" }}>
         {members.length === 0 ? (
-          <div className="glass-panel" style={{ gridColumn: "1 / -1", padding: "3rem", textAlign: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-              <Users size={36} style={{ color: "var(--text-muted)", opacity: 0.5 }} />
-              <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>No associates assigned to your team.</span>
-              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                Contact system administration to map associates to your Team Lead ID.
+          <div className="glass-panel" style={{ gridColumn: "1 / -1", padding: "3.5rem 2rem", textAlign: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", maxWidth: "450px", margin: "0 auto" }}>
+              <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(0, 119, 182, 0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Users size={32} style={{ color: "#0077B6" }} />
+              </div>
+              <span style={{ fontSize: "1.1rem", fontWeight: 700 }}>No associates assigned to your team.</span>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                You can add a new Sales Representative directly to your team or map an existing associate to your Team Lead ID.
               </span>
+              <button
+                className="btn-gold"
+                onClick={() => setIsAddModalOpen(true)}
+                style={{ marginTop: "1rem", display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.4rem", background: "#0077B6", color: "#FFFFFF" }}
+              >
+                <UserPlus size={18} />
+                <span>+ Add Sales Representative</span>
+              </button>
             </div>
           </div>
         ) : (
@@ -132,6 +190,171 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
           ))
         )}
       </div>
+
+      {/* Add Sales Representative Modal */}
+      {isAddModalOpen && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 8, 20, 0.75)",
+          backdropFilter: "blur(6px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          padding: "1rem"
+        }}>
+          <div className="glass-panel" style={{
+            width: "100%",
+            maxWidth: "480px",
+            background: "#FFFFFF",
+            borderRadius: "16px",
+            padding: "2rem",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.3)",
+            position: "relative"
+          }}>
+            <button
+              onClick={() => setIsAddModalOpen(false)}
+              style={{
+                position: "absolute",
+                top: "1.25rem",
+                right: "1.25rem",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#64748B"
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "rgba(0, 119, 182, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0077B6" }}>
+                <UserPlus size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0, color: "#0F172A" }}>
+                  Add Sales Representative
+                </h3>
+                <p style={{ fontSize: "0.8rem", color: "#64748B", margin: 0 }}>
+                  Assign a new or existing associate to your team directory.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddAssociate} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
+                  Full Name <span style={{ color: "#EF4444" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. John Smith"
+                  value={addName}
+                  onChange={(e) => setAddName(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.65rem 0.85rem",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    fontSize: "0.85rem",
+                    outline: "none"
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
+                  Work Email Address <span style={{ color: "#EF4444" }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. john@worknode.com"
+                  value={addEmail}
+                  onChange={(e) => setAddEmail(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.65rem 0.85rem",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    fontSize: "0.85rem",
+                    outline: "none"
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
+                  Temporary Password (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Default: Welcome123!"
+                  value={addPassword}
+                  onChange={(e) => setAddPassword(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.65rem 0.85rem",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    fontSize: "0.85rem",
+                    outline: "none"
+                  }}
+                />
+                <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block", marginTop: "0.25rem" }}>
+                  If left empty, default password will be set to <code>Welcome123!</code>
+                </span>
+              </div>
+
+              <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: "0.65rem",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    background: "#F8FAFC",
+                    color: "#475569",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  style={{
+                    flex: 1.5,
+                    padding: "0.65rem",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#0077B6",
+                    color: "#FFFFFF",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem"
+                  }}
+                >
+                  {isPending ? "Adding..." : "Add Representative"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Premium Minimalist Pagination Control Bar */}
       {totalRecords > 0 && (
