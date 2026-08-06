@@ -108,35 +108,6 @@ export const authOptions: NextAuthOptions = {
     error: "/auth/signin",
   },
   secret: process.env.NEXTAUTH_SECRET || "staffops-v2-local-dev-secret-key-9090",
-  useSecureCookies: false,
-  cookies: {
-    sessionToken: {
-      name: "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: false,
-      },
-    },
-    callbackUrl: {
-      name: "next-auth.callback-url",
-      options: {
-        sameSite: "lax",
-        path: "/",
-        secure: false,
-      },
-    },
-    csrfToken: {
-      name: "next-auth.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: false,
-      },
-    },
-  },
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
