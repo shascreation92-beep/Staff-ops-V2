@@ -116,6 +116,9 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
           toast.success(
             "Sales Representative request sent to IT Department! IT will approve and set account password."
           );
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("notification-updated"));
+          }
           setIsAddModalOpen(false);
           setAddName("");
           setAddEmail("");

@@ -65,10 +65,18 @@ export default function NotificationBell() {
       if (document.hidden) return;
       fetchNotifications();
     };
-    Promise.resolve().then(() => fetchNotifications());
-    // Poll notifications every 15 seconds when active
-    const interval = setInterval(handlePoll, 15000);
-    return () => clearInterval(interval);
+    handlePoll();
+
+    // Fast live polling every 3 seconds when tab is active
+    const interval = setInterval(handlePoll, 3000);
+
+    // Listen for instant notification update events across the app
+    window.addEventListener("notification-updated", handlePoll);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("notification-updated", handlePoll);
+    };
   }, []);
 
   // Close on Escape key

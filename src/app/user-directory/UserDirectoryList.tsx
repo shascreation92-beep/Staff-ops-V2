@@ -81,6 +81,9 @@ export default function UserDirectoryList({ initialUsers, currentUserRole }: Use
 
         if (res.success) {
           toast.success(`Account for ${selectedUser.name || selectedUser.email} approved & password assigned!`);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("notification-updated"));
+          }
           setSelectedUser(null);
           setPasswordInput("");
           router.refresh();
