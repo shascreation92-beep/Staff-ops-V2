@@ -981,47 +981,48 @@ pause
               </button>
 
               <div style={{ display: "flex", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "8px" }}>
-              <button
-                onClick={() => setFolderViewMode("GRID")}
-                style={{
-                  padding: "0.35rem 0.85rem",
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  borderRadius: "6px",
-                  border: "none",
-                  cursor: "pointer",
-                  background: folderViewMode === "GRID" ? "#FFFFFF" : "transparent",
-                  color: folderViewMode === "GRID" ? "#8B5CF6" : "#64748B",
-                  boxShadow: folderViewMode === "GRID" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.3rem"
-                }}
-              >
-                <Grid size={14} />
-                <span>Image Gallery Grid ({filteredSnapshots.length})</span>
-              </button>
+                <button
+                  onClick={() => setFolderViewMode("GRID")}
+                  style={{
+                    padding: "0.35rem 0.85rem",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    borderRadius: "6px",
+                    border: "none",
+                    cursor: "pointer",
+                    background: folderViewMode === "GRID" ? "#FFFFFF" : "transparent",
+                    color: folderViewMode === "GRID" ? "#8B5CF6" : "#64748B",
+                    boxShadow: folderViewMode === "GRID" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}
+                >
+                  <Grid size={14} />
+                  <span>Image Gallery Grid ({filteredSnapshots.length})</span>
+                </button>
 
-              <button
-                onClick={() => setFolderViewMode("FILMSTRIP")}
-                style={{
-                  padding: "0.35rem 0.85rem",
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  borderRadius: "6px",
-                  border: "none",
-                  cursor: "pointer",
-                  background: folderViewMode === "FILMSTRIP" ? "#FFFFFF" : "transparent",
-                  color: folderViewMode === "FILMSTRIP" ? "#8B5CF6" : "#64748B",
-                  boxShadow: folderViewMode === "FILMSTRIP" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.3rem"
-                }}
-              >
-                <Film size={14} />
-                <span>Timeline Slideshow</span>
-              </button>
+                <button
+                  onClick={() => setFolderViewMode("FILMSTRIP")}
+                  style={{
+                    padding: "0.35rem 0.85rem",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    borderRadius: "6px",
+                    border: "none",
+                    cursor: "pointer",
+                    background: folderViewMode === "FILMSTRIP" ? "#FFFFFF" : "transparent",
+                    color: folderViewMode === "FILMSTRIP" ? "#8B5CF6" : "#64748B",
+                    boxShadow: folderViewMode === "FILMSTRIP" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}
+                >
+                  <Film size={14} />
+                  <span>Timeline Slideshow</span>
+                </button>
+              </div>
             </div>
           </div>
 
