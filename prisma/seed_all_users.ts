@@ -33,6 +33,13 @@ async function main() {
       companyId: companyId
     },
     {
+      email: "faizancheen9@gmail.com",
+      name: "Super Admin",
+      role: "SUPER_ADMIN",
+      passwordRaw: "Cupoftea@9090",
+      companyId: companyId
+    },
+    {
       email: "owner@acme.com",
       name: "Acme Owner",
       role: "COMPANY_OWNER",
