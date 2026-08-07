@@ -559,13 +559,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     {
-      id: "leave-requests", 
-      label: ["COMPANY_OWNER", "SUPER_ADMIN"].includes(user.role) ? "Leave Approvals" : "My Leaves", 
-      path: "/leave-requests", 
-      icon: Calendar,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE"] 
-    },
-    {
       id: "uk-market-trends",
       label: "UK Market Trends",
       path: "/uk-market-trends",
