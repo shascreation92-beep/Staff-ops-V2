@@ -415,10 +415,14 @@ pause
   const handleDownloadUserFolderZip = async (userToZip: UserInfo) => {
     toast.success(`Preparing screenshot ZIP archive for ${userToZip.name || userToZip.email}...`);
     try {
-      const res = await fetch(`/api/telemetry/download-zip?userId=${userToZip.id}&dateStr=${selectedDate}`);
+      let res = await fetch(`/api/telemetry/download-zip?userId=${userToZip.id}&dateStr=${selectedDate}`);
+      if (!res.ok) {
+        // Automatic fallback to all 7 days if selected date has no screenshots
+        res = await fetch(`/api/telemetry/download-zip?userId=${userToZip.id}&all7days=true`);
+      }
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        toast.error(errJson.error || "No screenshots found for this date.");
+        toast.error(errJson.error || "No screenshots found for this user.");
         return;
       }
       const blob = await res.blob();
@@ -426,12 +430,12 @@ pause
       const a = document.createElement("a");
       a.href = url;
       const cleanName = (userToZip.name || userToZip.email.split("@")[0]).replace(/[^a-zA-Z0-9_-]/g, "_");
-      a.download = `Screenshots_${cleanName}_${selectedDate}.zip`;
+      a.download = `Screenshots_${cleanName}_Backup.zip`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast.success("Screenshot ZIP archive downloaded!");
+      toast.success("Screenshot ZIP archive downloaded successfully!");
     } catch (err: any) {
       toast.error(err.message || "Failed to download ZIP archive.");
     }
