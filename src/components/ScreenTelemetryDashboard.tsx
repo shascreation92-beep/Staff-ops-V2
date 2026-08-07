@@ -75,7 +75,7 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
 
   // View state: 'FOLDERS' | 'USER_FOLDER'
   const [activeFolderUser, setActiveFolderUser] = useState<UserInfo | null>(null);
-  const [folderViewMode, setFolderViewMode] = useState<"FILMSTRIP" | "GRID">("FILMSTRIP");
+  const [folderViewMode, setFolderViewMode] = useState<"FILMSTRIP" | "GRID">("GRID");
 
   // Filmstrip Timeline Player state
   const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(0);
@@ -631,27 +631,6 @@ pause
             {/* Switcher Mode Tabs */}
             <div style={{ display: "flex", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "8px" }}>
               <button
-                onClick={() => setFolderViewMode("FILMSTRIP")}
-                style={{
-                  padding: "0.35rem 0.85rem",
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  borderRadius: "6px",
-                  border: "none",
-                  cursor: "pointer",
-                  background: folderViewMode === "FILMSTRIP" ? "#FFFFFF" : "transparent",
-                  color: folderViewMode === "FILMSTRIP" ? "#8B5CF6" : "#64748B",
-                  boxShadow: folderViewMode === "FILMSTRIP" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.3rem"
-                }}
-              >
-                <Film size={14} />
-                <span>Filmstrip Timeline Playback</span>
-              </button>
-
-              <button
                 onClick={() => setFolderViewMode("GRID")}
                 style={{
                   padding: "0.35rem 0.85rem",
@@ -669,7 +648,28 @@ pause
                 }}
               >
                 <Grid size={14} />
-                <span>Thumbnail Gallery ({filteredSnapshots.length})</span>
+                <span>Image Gallery Grid ({filteredSnapshots.length})</span>
+              </button>
+
+              <button
+                onClick={() => setFolderViewMode("FILMSTRIP")}
+                style={{
+                  padding: "0.35rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: folderViewMode === "FILMSTRIP" ? "#FFFFFF" : "transparent",
+                  color: folderViewMode === "FILMSTRIP" ? "#8B5CF6" : "#64748B",
+                  boxShadow: folderViewMode === "FILMSTRIP" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+              >
+                <Film size={14} />
+                <span>Timeline Slideshow</span>
               </button>
             </div>
           </div>
