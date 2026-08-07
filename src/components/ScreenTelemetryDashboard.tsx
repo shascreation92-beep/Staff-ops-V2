@@ -728,64 +728,60 @@ pause
         </div>
       </div>
 
-      {/* Breadcrumb Navigation Bar */}
-      <div style={{
-        padding: "0.85rem 1.25rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
-        borderRadius: "12px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "1rem"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.9rem", fontWeight: 700 }}>
-          <button
-            onClick={() => handleSelectUserFolder(null)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: activeFolderUser ? "var(--text-muted)" : "var(--primary-color)",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.4rem",
-              fontWeight: 800
-            }}
-          >
-            <Folder size={18} />
-            <span>All Staff User Folders</span>
-          </button>
+      {/* Breadcrumb Navigation Bar (Only displayed when inside a user folder) */}
+      {activeFolderUser && (
+        <div style={{
+          padding: "0.85rem 1.25rem",
+          background: "#FFFFFF",
+          border: "1px solid var(--border-dim)",
+          borderRadius: "12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "1rem"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.9rem", fontWeight: 700 }}>
+            <button
+              onClick={() => handleSelectUserFolder(null)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-muted)",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                fontWeight: 800
+              }}
+            >
+              <Folder size={18} />
+              <span>All Staff User Folders</span>
+            </button>
 
-          {activeFolderUser && (
-            <>
-              <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
-              <span style={{ color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <FolderOpen size={18} style={{ color: "#8B5CF6" }} />
-                <span>{activeFolderUser.name || activeFolderUser.email}</span>
-                <span className="badge active" style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", marginLeft: "0.2rem" }}>
-                  {activeFolderUser.employee?.employeeId || "N/A"}
-                </span>
+            <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
+            <span style={{ color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <FolderOpen size={18} style={{ color: "#8B5CF6" }} />
+              <span>{activeFolderUser.name || activeFolderUser.email}</span>
+              <span className="badge active" style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", marginLeft: "0.2rem" }}>
+                {activeFolderUser.employee?.employeeId || "N/A"}
               </span>
-            </>
-          )}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-          {/* Date Selector */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <Calendar size={15} style={{ color: "var(--text-muted)" }} />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={e => setSelectedDate(e.target.value)}
-              className="input-gold"
-              style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}
-            />
+            </span>
           </div>
 
-          {activeFolderUser && (
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+            {/* Date Selector */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Calendar size={15} style={{ color: "var(--text-muted)" }} />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="input-gold"
+                style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}
+              />
+            </div>
+
             <button
               onClick={() => handleDownloadUserFolderZip(activeFolderUser)}
               style={{
@@ -805,9 +801,9 @@ pause
               <FileArchive size={15} style={{ color: "#8B5CF6" }} />
               <span>Download User ZIP</span>
             </button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* VIEW MODE 1: ALL USER FOLDERS GRID */}
       {!activeFolderUser ? (
@@ -825,7 +821,7 @@ pause
             gap: "1rem"
           }}>
             {/* Search Input */}
-            <div style={{ position: "relative", minWidth: "260px", flex: 1 }}>
+            <div style={{ position: "relative", minWidth: "240px", flex: 1 }}>
               <Search size={16} style={{ position: "absolute", left: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
               <input
                 type="text"
@@ -842,6 +838,18 @@ pause
                   style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", cursor: "pointer" }}
                 />
               )}
+            </div>
+
+            {/* Date Calendar Picker */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Calendar size={15} style={{ color: "var(--text-muted)" }} />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="input-gold"
+                style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem", height: "38px" }}
+              />
             </div>
 
             {/* Quick Filter Pills */}
