@@ -45,8 +45,13 @@ function Capture-DesktopBase64 {
         $graphics = [System.Drawing.Graphics]::FromImage($bmp)
         $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
 
+        $encoder = [System.Drawing.Imaging.Encoder]::Quality
+        $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
+        $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter($encoder, [long]75)
+        $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
+
         $ms = New-Object System.IO.MemoryStream
-        $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
+        $bmp.Save($ms, $jpegCodec, $encoderParams)
         $bytes = $ms.ToArray()
         
         $graphics.Dispose()
@@ -54,7 +59,7 @@ function Capture-DesktopBase64 {
         $ms.Dispose()
 
         $base64 = [Convert]::ToBase64String($bytes)
-        return "data:image/png;base64,$base64"
+        return "data:image/jpeg;base64,$base64"
     } catch {
         return $null
     }

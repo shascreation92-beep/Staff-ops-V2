@@ -107,13 +107,7 @@ export async function uploadScreenshotAction(data: {
       return { success: false, error: "Malformed base64 image data." };
     }
 
-    const mimeType = matches[1].toLowerCase();
-    let ext = "png";
-    if (mimeType.includes("jpeg") || mimeType.includes("jpg")) ext = "jpg";
-    else if (mimeType.includes("webp")) ext = "webp";
-    else if (mimeType.includes("png")) ext = "png";
-
-    const imageBuffer = Buffer.from(matches[2], "base64");
+    const rawBuffer = Buffer.from(matches[2], "base64");
     const dateFolder = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const uploadDir = path.join(process.cwd(), "public", "uploads", "telemetry", userId, dateFolder);
 
@@ -121,9 +115,23 @@ export async function uploadScreenshotAction(data: {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
+    let finalBuffer = rawBuffer;
+    let ext = "webp";
+
+    try {
+      const sharp = (await import("sharp")).default;
+      finalBuffer = await sharp(rawBuffer)
+        .webp({ quality: 80, effort: 4 })
+        .toBuffer();
+      ext = "webp";
+    } catch (e) {
+      ext = mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : (mimeType.includes("png") ? "png" : "webp");
+      console.warn("Sharp WebP compression fallback:", e);
+    }
+
     const fileName = `snap_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
     const fullPath = path.join(uploadDir, fileName);
-    fs.writeFileSync(fullPath, imageBuffer);
+    fs.writeFileSync(fullPath, finalBuffer);
 
     const relativeUrl = `/uploads/telemetry/${userId}/${dateFolder}/${fileName}`;
 
@@ -278,7 +286,30 @@ export async function getCompanyScreenshotsAction(params?: {
     take: 300
   });
 
-  return { success: true, snapshots };
+  const snapshotsWithMeta = snapshots.map(s => {
+    let formattedSize = "120 KB";
+    try {
+      if (s.imageUrl && s.imageUrl.startsWith("/uploads/")) {
+        const fullPath = path.join(process.cwd(), "public", s.imageUrl.replace(/^\//, "").replace(/\//g, path.sep));
+        if (fs.existsSync(fullPath)) {
+          const stats = fs.statSync(fullPath);
+          const bytes = stats.size;
+          if (bytes >= 1024 * 1024) {
+            formattedSize = `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+          } else {
+            formattedSize = `${Math.round(bytes / 1024)} KB`;
+          }
+        }
+      }
+    } catch (e) {}
+
+    return {
+      ...s,
+      fileSizeFormatted: formattedSize
+    };
+  });
+
+  return { success: true, snapshots: snapshotsWithMeta };
 }
 
 /**

@@ -64,6 +64,7 @@ interface ScreenshotItem {
   dutyStatus: string;
   isIdle: boolean;
   source: string;
+  fileSizeFormatted?: string;
   user: UserInfo;
 }
 
@@ -1405,8 +1406,12 @@ pause
                 <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, letterSpacing: "-0.01em" }}>
                   {currentModalSnap.user.name || currentModalSnap.user.email} — 40s Desktop Screenshot
                 </h3>
-                <div style={{ fontSize: "0.78rem", color: "#94A3B8", marginTop: "0.2rem", display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                  <span>Captured: <strong>{new Date(currentModalSnap.capturedAt).toLocaleString()}</strong></span>
+                <div style={{ fontSize: "0.78rem", color: "#94A3B8", marginTop: "0.2rem", display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+                  <span>Captured: <strong>{new Date(currentModalSnap.capturedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, {new Date(currentModalSnap.capturedAt).toLocaleTimeString("en-GB", { hour12: false })}</strong></span>
+                  <span>•</span>
+                  <span style={{ background: "rgba(16, 185, 129, 0.15)", color: "#10B981", padding: "0.15rem 0.55rem", borderRadius: "4px", fontWeight: 800, border: "1px solid rgba(16, 185, 129, 0.3)", fontSize: "0.72rem" }}>
+                    💾 File Size: {currentModalSnap.fileSizeFormatted || "120 KB"}
+                  </span>
                   <span>•</span>
                   <span style={{ color: "#A78BFA", fontWeight: 700 }}>{currentModalSnap.source}</span>
                 </div>
