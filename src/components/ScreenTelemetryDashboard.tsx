@@ -1326,9 +1326,11 @@ pause
                     </div>
 
                     <div style={{ padding: "0.85rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                        <Clock size={13} style={{ color: "var(--text-muted)" }} />
-                        <span>{new Date(snap.capturedAt).toLocaleTimeString()}</span>
+                      <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.38rem" }}>
+                        <Clock size={13} style={{ color: "#8B5CF6" }} />
+                        <span>
+                          {new Date(snap.capturedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}, {new Date(snap.capturedAt).toLocaleTimeString("en-GB", { hour12: false })}
+                        </span>
                       </div>
 
                       <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -1635,7 +1637,7 @@ pause
 
               {/* Time Stamp */}
               <div style={{ fontSize: "0.75rem", color: "#CBD5E1", fontWeight: 700 }}>
-                {new Date(currentModalSnap.capturedAt).toLocaleTimeString()}
+                {new Date(currentModalSnap.capturedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}, {new Date(currentModalSnap.capturedAt).toLocaleTimeString("en-GB", { hour12: false })}
               </div>
             </div>
           </div>
