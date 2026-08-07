@@ -412,16 +412,54 @@ pause
     toast.success("Workstation Agent 1-Click Installer downloaded!");
   };
 
-  const handleDownloadUserFolderZip = (userToZip: UserInfo) => {
-    const zipUrl = `/api/telemetry/download-zip?userId=${userToZip.id}&dateStr=${selectedDate}`;
+  const handleDownloadUserFolderZip = async (userToZip: UserInfo) => {
     toast.success(`Preparing screenshot ZIP archive for ${userToZip.name || userToZip.email}...`);
-    window.open(zipUrl, "_blank");
+    try {
+      const res = await fetch(`/api/telemetry/download-zip?userId=${userToZip.id}&dateStr=${selectedDate}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        toast.error(errJson.error || "No screenshots found for this date.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cleanName = (userToZip.name || userToZip.email.split("@")[0]).replace(/[^a-zA-Z0-9_-]/g, "_");
+      a.download = `Screenshots_${cleanName}_${selectedDate}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Screenshot ZIP archive downloaded!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to download ZIP archive.");
+    }
   };
 
-  const handleDownloadFull7DayZip = (userToZip: UserInfo) => {
-    const zipUrl = `/api/telemetry/download-zip?userId=${userToZip.id}&all7days=true`;
-    toast.success(`Preparing full 7-day screenshot backup ZIP archive for ${userToZip.name || userToZip.email}...`);
-    window.open(zipUrl, "_blank");
+  const handleDownloadFull7DayZip = async (userToZip: UserInfo) => {
+    toast.success(`Preparing full 7-day screenshot backup ZIP for ${userToZip.name || userToZip.email}...`);
+    try {
+      const res = await fetch(`/api/telemetry/download-zip?userId=${userToZip.id}&all7days=true`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        toast.error(errJson.error || "No screenshots found for this user in the past 7 days.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cleanName = (userToZip.name || userToZip.email.split("@")[0]).replace(/[^a-zA-Z0-9_-]/g, "_");
+      a.download = `Screenshots_${cleanName}_FULL_7DAY_BACKUP.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("7-Day Backup ZIP downloaded successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to download 7-Day Backup ZIP.");
+    }
   };
 
   const handleDownloadSingleImage = (imgUrl: string, fileNameStr: string) => {
