@@ -1167,8 +1167,9 @@ pause
             );
           })}
         </div>
-        </div>
-      ) : (
+      )}
+    </div>
+  ) : (
         /* VIEW MODE 2: USER FOLDER DETAIL (IMAGE GALLERY GRID / SLIDESHOW) */
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           {/* Orange 7-Day Backup Warning Banner inside User Folder */}
