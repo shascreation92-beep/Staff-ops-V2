@@ -33,14 +33,17 @@ import {
   AlertTriangle,
   ArrowUpDown,
   ArrowDown,
-  ArrowUp
+  ArrowUp,
+  Play,
+  Pause
 } from "lucide-react";
 import { 
   getCompanyScreenshotsAction, 
   getTamperLogsAction, 
   manualCleanOldScreenshotsAction, 
   getUsersMonitoringStatusAction,
-  deleteScreenshotsAction
+  deleteScreenshotsAction,
+  toggleUserTelemetryPauseAction
 } from "@/app/actions/telemetry";
 import MonitoringStatusDot from "./MonitoringStatusDot";
 import { toast } from "react-hot-toast";
@@ -94,6 +97,7 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   const [snapshots, setSnapshots] = useState<ScreenshotItem[]>([]);
   const [tamperLogs, setTamperLogs] = useState<TamperLogItem[]>([]);
   const [statusMap, setStatusMap] = useState<Record<string, UserStatusInfo>>({});
+  const [pausedUserIds, setPausedUserIds] = useState<string[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("ALL");
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [previewImage, setPreviewImage] = useState<ScreenshotItem | null>(null);
@@ -201,10 +205,38 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
       const statusRes = await getUsersMonitoringStatusAction().catch(() => null);
       if (statusRes?.success && statusRes?.userStatusMap) {
         setStatusMap(statusRes.userStatusMap as any);
+        if ((statusRes as any).pausedUserIds) {
+          setPausedUserIds((statusRes as any).pausedUserIds);
+        }
       }
     } catch (err: any) {
       console.warn("Silent background refresh error:", err);
     }
+  };
+
+  const handleTogglePause = async (userToToggle: UserInfo) => {
+    const isCurrentlyPaused = pausedUserIds.includes(userToToggle.id);
+    const newPauseState = !isCurrentlyPaused;
+    
+    startTransition(async () => {
+      try {
+        const res = await toggleUserTelemetryPauseAction(userToToggle.id, newPauseState);
+        if (res.success) {
+          if (newPauseState) {
+            setPausedUserIds(prev => [...prev, userToToggle.id]);
+            toast.success(`⏸️ Screen telemetry PAUSED for ${userToToggle.name || userToToggle.email}. Desktop agent will suspend captures.`);
+          } else {
+            setPausedUserIds(prev => prev.filter(id => id !== userToToggle.id));
+            toast.success(`▶️ Screen telemetry RESUMED for ${userToToggle.name || userToToggle.email}. Desktop agent will resume captures.`);
+          }
+          fetchTelemetryData();
+        } else {
+          toast.error(res.error || "Failed to toggle telemetry pause state.");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to update telemetry status.");
+      }
+    });
   };
 
   // Initial fetch
@@ -930,20 +962,21 @@ pause
             const userIdleCount = userSnaps.filter(s => s.isIdle).length;
             const uStatus = statusMap[u.id];
 
-            const isAgentActive = uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE";
+            const isPaused = pausedUserIds.includes(u.id);
+            const isAgentActive = !isPaused && (uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE");
 
             return (
               <div
                 key={u.id}
                 style={{
                   background: "linear-gradient(145deg, #0F172A 0%, #1E1B4B 100%)",
-                  border: "1.5px solid #10B981",
+                  border: isPaused ? "1.5px solid #F59E0B" : "1.5px solid #10B981",
                   borderRadius: "16px",
                   padding: "1.25rem",
                   display: "flex",
                   flexDirection: "column",
                   gap: "1rem",
-                  boxShadow: "0 0 20px rgba(16, 185, 129, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)",
+                  boxShadow: isPaused ? "0 0 20px rgba(245, 158, 11, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)" : "0 0 20px rgba(16, 185, 129, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)",
                   color: "#FFFFFF",
                   transition: "transform 0.2s ease, box-shadow 0.2s ease",
                   position: "relative"
@@ -956,7 +989,7 @@ pause
                       width: "44px",
                       height: "44px",
                       borderRadius: "12px",
-                      background: isAgentActive ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" : "linear-gradient(135deg, #334155 0%, #1E293B 100%)",
+                      background: isPaused ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" : (isAgentActive ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" : "linear-gradient(135deg, #334155 0%, #1E293B 100%)"),
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -994,17 +1027,17 @@ pause
                 <div style={{
                   padding: "0.45rem 0.85rem",
                   borderRadius: "8px",
-                  background: isAgentActive ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                  border: isAgentActive ? "1px solid rgba(16, 185, 129, 0.35)" : "1px solid rgba(239, 68, 68, 0.35)",
+                  background: isPaused ? "rgba(245, 158, 11, 0.15)" : (isAgentActive ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)"),
+                  border: isPaused ? "1px solid rgba(245, 158, 11, 0.35)" : (isAgentActive ? "1px solid rgba(16, 185, 129, 0.35)" : "1px solid rgba(239, 68, 68, 0.35)"),
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   fontSize: "0.75rem",
                   fontWeight: 700
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: isAgentActive ? "#34D399" : "#F87171" }}>
-                    {isAgentActive ? <Wifi size={14} className="animate-pulse" /> : <WifiOff size={14} />}
-                    <span>{isAgentActive ? "Live Agent Running (60s)" : "Agent Offline on PC"}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: isPaused ? "#FBBF24" : (isAgentActive ? "#34D399" : "#F87171") }}>
+                    {isPaused ? <Pause size={14} /> : (isAgentActive ? <Wifi size={14} className="animate-pulse" /> : <WifiOff size={14} />)}
+                    <span>{isPaused ? "Telemetry Suspended by Admin" : (isAgentActive ? "Live Agent Running (60s)" : "Agent Offline on PC")}</span>
                   </div>
 
                   {isAgentActive && (
@@ -1046,12 +1079,11 @@ pause
                       fontSize: "0.78rem"
                     }}>
                       <Monitor size={32} style={{ opacity: 0.4, marginBottom: "0.4rem" }} />
-                      <span style={{ fontWeight: 700, color: "#94A3B8" }}>
-                        {isAgentActive ? "No Captures Today" : "Agent Offline"}
+                      <span style={{ fontWeight: 700, color: isPaused ? "#FBBF24" : "#94A3B8" }}>
+                        {isPaused ? "Telemetry Paused" : (isAgentActive ? "No Captures Today" : "Agent Offline")}
                       </span>
                     </div>
                   )}
-
                 </div>
 
                 {/* Folder Stats & Retention Quick Bar */}
@@ -1094,6 +1126,29 @@ pause
                   >
                     <FolderOpen size={15} />
                     <span>View</span>
+                  </button>
+
+                  {/* Start / Stop Telemetry Toggle Button */}
+                  <button
+                    onClick={() => handleTogglePause(u)}
+                    style={{
+                      padding: "0.6rem 0.75rem",
+                      fontSize: "0.8rem",
+                      fontWeight: 800,
+                      color: "#FFFFFF",
+                      background: isPaused ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)",
+                      border: "none",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                      boxShadow: isPaused ? "0 4px 12px rgba(16, 185, 129, 0.3)" : "0 4px 12px rgba(239, 68, 68, 0.3)"
+                    }}
+                    title={isPaused ? "Resume screen capture for this staff member" : "Pause screen capture for this staff member"}
+                  >
+                    {isPaused ? <Play size={14} /> : <Pause size={14} />}
+                    <span>{isPaused ? "Start" : "Stop"}</span>
                   </button>
 
                   <button

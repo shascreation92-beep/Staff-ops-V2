@@ -56,6 +56,45 @@ async function autoCleanOldScreenshotsInternal() {
   }
 }
 
+const PAUSE_CONFIG_FILE = path.join(process.cwd(), "public", "uploads", "telemetry_paused_users.json");
+
+export function getPausedUserIds(): Set<string> {
+  try {
+    if (fs.existsSync(PAUSE_CONFIG_FILE)) {
+      const data = JSON.parse(fs.readFileSync(PAUSE_CONFIG_FILE, "utf-8"));
+      return new Set(data || []);
+    }
+  } catch (e) {
+    console.error("Error reading telemetry pause config file:", e);
+  }
+  return new Set();
+}
+
+export function savePausedUserIds(set: Set<string>) {
+  try {
+    const dir = path.dirname(PAUSE_CONFIG_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(PAUSE_CONFIG_FILE, JSON.stringify(Array.from(set)), "utf-8");
+  } catch (e) {
+    console.error("Error saving telemetry pause config file:", e);
+  }
+}
+
+export async function toggleUserTelemetryPauseAction(targetUserId: string, isPaused: boolean) {
+  await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+  if (!targetUserId) return { success: false, error: "Target user ID is required." };
+
+  const set = getPausedUserIds();
+  if (isPaused) {
+    set.add(targetUserId);
+  } else {
+    set.delete(targetUserId);
+  }
+  savePausedUserIds(set);
+  revalidatePath("/screen-telemetry");
+  return { success: true, isPaused, targetUserId };
+}
+
 /**
  * Server action to upload a 40-second desktop screenshot
  */
@@ -95,6 +134,10 @@ export async function uploadScreenshotAction(data: {
 
   try {
     const userId = user.id;
+    if (getPausedUserIds().has(userId)) {
+      return { success: false, isPaused: true, error: "Screen telemetry has been PAUSED by Admin for this user." };
+    }
+
     const companyId = user.companyId || null;
     const base64Data = data.base64Image;
 
@@ -438,7 +481,8 @@ export async function getUsersMonitoringStatusAction() {
     }
   }
 
-  return { success: true, userStatusMap };
+  const pausedSet = getPausedUserIds();
+  return { success: true, userStatusMap, pausedUserIds: Array.from(pausedSet) };
 }
 
 /**
