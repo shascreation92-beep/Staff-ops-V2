@@ -21,9 +21,13 @@ import {
   Grid, 
   FileArchive, 
   ArrowLeft,
-  ChevronRight
+  ChevronRight,
+  Wifi,
+  WifiOff,
+  Activity,
+  Zap
 } from "lucide-react";
-import { getCompanyScreenshotsAction, getTamperLogsAction, manualCleanOldScreenshotsAction } from "@/app/actions/telemetry";
+import { getCompanyScreenshotsAction, getTamperLogsAction, manualCleanOldScreenshotsAction, getUsersMonitoringStatusAction } from "@/app/actions/telemetry";
 import MonitoringStatusDot from "./MonitoringStatusDot";
 import { toast } from "react-hot-toast";
 
@@ -60,6 +64,11 @@ interface TamperLogItem {
   user: UserInfo;
 }
 
+interface UserStatusInfo {
+  status: "ACTIVE" | "IDLE" | "INTERRUPTED" | "OFF_DUTY";
+  lastCapturedAt: string | null;
+}
+
 interface Props {
   currentUserRole: string;
   staffList: UserInfo[];
@@ -69,9 +78,13 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   const [isPending, startTransition] = useTransition();
   const [snapshots, setSnapshots] = useState<ScreenshotItem[]>([]);
   const [tamperLogs, setTamperLogs] = useState<TamperLogItem[]>([]);
+  const [statusMap, setStatusMap] = useState<Record<string, UserStatusInfo>>({});
   const [selectedUserId, setSelectedUserId] = useState<string>("ALL");
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [previewImage, setPreviewImage] = useState<ScreenshotItem | null>(null);
+
+  // Live 40s Ticker seconds remaining state
+  const [countdownSec, setCountdownSec] = useState<number>(40);
 
   // View state: 'FOLDERS' | 'USER_FOLDER'
   const [activeFolderUser, setActiveFolderUser] = useState<UserInfo | null>(null);
@@ -82,6 +95,8 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1000); // ms per frame
 
+  const previousSnapshotsCountRef = useRef<number>(0);
+
   const fetchTelemetryData = () => {
     startTransition(async () => {
       try {
@@ -90,12 +105,23 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
           dateStr: selectedDate
         });
         if (snapRes.success && snapRes.snapshots) {
-          setSnapshots(snapRes.snapshots as any);
+          const newSnaps = snapRes.snapshots as any[];
+          if (previousSnapshotsCountRef.current > 0 && newSnaps.length > previousSnapshotsCountRef.current) {
+            const newest = newSnaps[0];
+            toast.success(`📸 New 40s screenshot captured for ${newest.user?.name || newest.user?.email || "staff member"}!`);
+          }
+          previousSnapshotsCountRef.current = newSnaps.length;
+          setSnapshots(newSnaps);
         }
 
         const tamperRes = await getTamperLogsAction();
         if (tamperRes.success && tamperRes.logs) {
           setTamperLogs(tamperRes.logs as any);
+        }
+
+        const statusRes = await getUsersMonitoringStatusAction();
+        if (statusRes.success && statusRes.userStatusMap) {
+          setStatusMap(statusRes.userStatusMap as any);
         }
       } catch (err: any) {
         console.error("Failed to load screen telemetry:", err);
@@ -103,11 +129,25 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     });
   };
 
+  // Initial fetch
   useEffect(() => {
     fetchTelemetryData();
-    const interval = setInterval(fetchTelemetryData, 30000); // Auto-refresh every 30s
-    return () => clearInterval(interval);
   }, [selectedUserId, selectedDate]);
+
+  // Live 1-second countdown ticker timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdownSec(prev => {
+        if (prev <= 1) {
+          fetchTelemetryData(); // Auto fetch when countdown hits 0
+          return 40;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Filmstrip Player interval logic
   const filteredSnapshots = activeFolderUser
@@ -236,12 +276,29 @@ pause
               40-Second Desktop Screen Audit & User Folders
             </h1>
             <p style={{ fontSize: "0.82rem", color: "#94A3B8", margin: "0.2rem 0 0 0" }}>
-              Organized user screenshot folders, 40s filmstrip playback & 7-day auto-purge retention
+              Silent 40s desktop telemetry, live agent running status & auto 7-day retention
             </p>
           </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+          {/* Live Countdown Ticker Pill */}
+          <div style={{
+            padding: "0.45rem 0.85rem",
+            borderRadius: "8px",
+            background: "rgba(139, 92, 246, 0.15)",
+            border: "1px solid rgba(139, 92, 246, 0.35)",
+            color: "#C4B5FD",
+            fontSize: "0.78rem",
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.45rem"
+          }}>
+            <Zap size={14} className="animate-pulse" style={{ color: "#F59E0B" }} />
+            <span>Next Capture: <strong>{countdownSec}s</strong></span>
+          </div>
+
           <button
             onClick={handleDownloadAgent}
             style={{
@@ -338,10 +395,11 @@ pause
 
         <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "#FFFFFF", borderRadius: "12px", border: "1px solid var(--border-dim)" }}>
           <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
-            Retention Policy
+            Live Sync Status
           </div>
-          <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#8B5CF6", marginTop: "0.35rem" }}>
-            Auto 7-Day Purge
+          <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#10B981", marginTop: "0.35rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <Activity size={16} className="animate-pulse" />
+            <span>Ticking Every 40s</span>
           </div>
         </div>
       </div>
@@ -431,13 +489,16 @@ pause
       {!activeFolderUser ? (
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
           gap: "1.25rem"
         }}>
           {staffList.map(u => {
             const userSnaps = snapshots.filter(s => s.userId === u.id);
             const latestSnap = userSnaps[0];
             const userIdleCount = userSnaps.filter(s => s.isIdle).length;
+            const uStatus = statusMap[u.id];
+
+            const isAgentActive = uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE";
 
             return (
               <div
@@ -445,28 +506,30 @@ pause
                 className="glass-panel"
                 style={{
                   background: "#FFFFFF",
-                  border: "1px solid var(--border-dim)",
+                  border: isAgentActive ? "1.5px solid rgba(16, 185, 129, 0.4)" : "1px solid var(--border-dim)",
                   borderRadius: "14px",
                   padding: "1.25rem",
                   display: "flex",
                   flexDirection: "column",
                   gap: "1rem",
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)",
-                  transition: "transform 0.2s ease, box-shadow 0.2s ease"
+                  boxShadow: isAgentActive ? "0 4px 16px rgba(16, 185, 129, 0.12)" : "0 4px 12px rgba(0, 0, 0, 0.04)",
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  position: "relative"
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                {/* Live Agent Running Status Indicator Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                     <div style={{
                       width: "44px",
                       height: "44px",
                       borderRadius: "12px",
-                      background: "rgba(139, 92, 246, 0.12)",
-                      border: "1px solid rgba(139, 92, 246, 0.25)",
+                      background: isAgentActive ? "rgba(16, 185, 129, 0.12)" : "rgba(100, 116, 139, 0.12)",
+                      border: isAgentActive ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(100, 116, 139, 0.25)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#8B5CF6"
+                      color: isAgentActive ? "#10B981" : "#64748B"
                     }}>
                       <Folder size={24} />
                     </div>
@@ -485,6 +548,30 @@ pause
                   </span>
                 </div>
 
+                {/* Live Workstation Agent Running Status Pill */}
+                <div style={{
+                  padding: "0.4rem 0.75rem",
+                  borderRadius: "8px",
+                  background: isAgentActive ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
+                  border: isAgentActive ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid rgba(239, 68, 68, 0.25)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  fontSize: "0.74rem",
+                  fontWeight: 700
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: isAgentActive ? "#059669" : "#DC2626" }}>
+                    {isAgentActive ? <Wifi size={14} className="animate-pulse" /> : <WifiOff size={14} />}
+                    <span>{isAgentActive ? "Workstation Sync Running" : "Installer Not Running on PC"}</span>
+                  </div>
+
+                  {isAgentActive && (
+                    <span style={{ fontSize: "0.68rem", color: "#059669", fontWeight: 800 }}>
+                      Next SS in {countdownSec}s
+                    </span>
+                  )}
+                </div>
+
                 {/* Folder Thumbnail / Status Preview */}
                 <div 
                   onClick={() => {
@@ -494,7 +581,7 @@ pause
                   style={{
                     position: "relative",
                     width: "100%",
-                    height: "130px",
+                    height: "140px",
                     background: "#0F172A",
                     borderRadius: "8px",
                     overflow: "hidden",
@@ -526,11 +613,11 @@ pause
                     position: "absolute",
                     bottom: "0.5rem",
                     right: "0.5rem",
-                    background: "rgba(15, 23, 42, 0.8)",
+                    background: "rgba(15, 23, 42, 0.85)",
                     color: "#FFFFFF",
                     fontSize: "0.68rem",
                     fontWeight: 700,
-                    padding: "0.2rem 0.5rem",
+                    padding: "0.2rem 0.55rem",
                     borderRadius: "4px"
                   }}>
                     📁 Open Folder ({userSnaps.length})
@@ -596,7 +683,7 @@ pause
           })}
         </div>
       ) : (
-        /* VIEW MODE 2: USER FOLDER DETAIL (FILMSTRIP PLAYER / GRID) */
+        /* VIEW MODE 2: USER FOLDER DETAIL (IMAGE GALLERY GRID / SLIDESHOW) */
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           {/* Sub-toolbar */}
           <div style={{
