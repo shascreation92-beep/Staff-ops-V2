@@ -70,6 +70,11 @@ export async function uploadScreenshotAction(data: {
   let user: any = null;
 
   if (data.userId && data.secretToken) {
+    const expectedToken = process.env.STAFFOPS_SECRET_TOKEN || "staffops_agent_token";
+    if (data.secretToken !== expectedToken) {
+      return { success: false, error: "Invalid Desktop Agent Secret Token." };
+    }
+
     // Desktop Agent authentication
     const dbUser = await db.user.findUnique({
       where: { id: data.userId }

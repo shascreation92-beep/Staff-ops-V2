@@ -446,13 +446,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     { 
-      id: "attendance", 
-      label: "On/Off", 
-      path: "/attendance", 
-      icon: Clock,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]
-    },
-    { 
       id: "accounts", 
       label: user.role === "TEAM_LEAD" ? "My Data / Add Account" : "User Data", 
       path: "/accounts", 

@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
+import { getUsersMonitoringStatusAction } from "@/app/actions/telemetry";
 
 interface SettingsShardProps {
   currentUser: {
@@ -247,6 +248,109 @@ export default function SettingsShard({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [userStatusMap, setUserStatusMap] = useState<Record<string, { status: "ACTIVE" | "IDLE" | "INTERRUPTED" | "OFF_DUTY"; lastCapturedAt: string | null }>>({});
+
+  useEffect(() => {
+    const fetchStatus = () => {
+      getUsersMonitoringStatusAction().then(res => {
+        if (res?.success && res.userStatusMap) {
+          setUserStatusMap(res.userStatusMap as any);
+        }
+      }).catch(() => {});
+    };
+    fetchStatus();
+    const timer = setInterval(fetchStatus, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getTimeAgo = (dateIso: string | null) => {
+    if (!dateIso) return "No sync data";
+    const diffSec = Math.floor((Date.now() - new Date(dateIso).getTime()) / 1000);
+    if (diffSec < 10) return "Synced just now";
+    if (diffSec < 60) return `Synced ${diffSec}s ago`;
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `Synced ${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    return `Synced ${diffHr}h ago`;
+  };
+
+  const renderAgentStatusBadge = (userId: string) => {
+    const monitoring = userStatusMap[userId];
+    const status = monitoring?.status || "OFF_DUTY";
+    const lastSyncStr = getTimeAgo(monitoring?.lastCapturedAt || null);
+
+    let bg = "rgba(100, 116, 139, 0.08)";
+    let color = "#64748B";
+    let border = "rgba(100, 116, 139, 0.2)";
+    let label = "OFFLINE";
+    let dotColor = "#94A3B8";
+    let pulse = false;
+
+    if (status === "ACTIVE") {
+      bg = "rgba(16, 185, 129, 0.08)";
+      color = "#10B981";
+      border = "rgba(16, 185, 129, 0.2)";
+      label = "AGENT ACTIVE";
+      dotColor = "#10B981";
+      pulse = true;
+    } else if (status === "IDLE") {
+      bg = "rgba(245, 158, 11, 0.08)";
+      color = "#D97706";
+      border = "rgba(245, 158, 11, 0.2)";
+      label = "AGENT IDLE";
+      dotColor = "#F59E0B";
+    } else if (status === "INTERRUPTED") {
+      bg = "rgba(239, 68, 68, 0.08)";
+      color = "#EF4444";
+      border = "rgba(239, 68, 68, 0.25)";
+      label = "INTERRUPTED";
+      dotColor = "#EF4444";
+      pulse = true;
+    }
+
+    return (
+      <a
+        href={`/screen-telemetry?targetUserId=${userId}`}
+        title={`Click to view live screen telemetry audit for this user (${lastSyncStr})`}
+        style={{
+          display: "inline-flex",
+          flexDirection: "column",
+          gap: "0.15rem",
+          textDecoration: "none"
+        }}
+      >
+        <span style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "0.35rem",
+          fontSize: "0.72rem",
+          fontWeight: 700,
+          background: bg,
+          color: color,
+          padding: "0.25rem 0.65rem",
+          borderRadius: "9999px",
+          border: `1px solid ${border}`,
+          transition: "all 0.2s ease"
+        }}>
+          <span 
+            className={pulse ? "animate-pulse" : ""} 
+            style={{ 
+              width: "6px", 
+              height: "6px", 
+              borderRadius: "50%", 
+              background: dotColor,
+              display: "inline-block" 
+            }} 
+          />
+          {label}
+        </span>
+        <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", marginLeft: "0.2rem" }}>
+          {lastSyncStr}
+        </span>
+      </a>
+    );
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -497,6 +601,30 @@ export default function SettingsShard({
             <Download size={15} />
             <span>Download Workstation Security Sync (.exe)</span>
           </a>
+
+          <a
+            href="/desktop-agent/Uninstall-StaffOps-Workstation.bat"
+            download
+            title="Download 1-Click Uninstaller script"
+            style={{
+              height: "36px",
+              background: "#FFFFFF",
+              border: "1px solid #CBD5E1",
+              color: "#64748B",
+              borderRadius: "6px",
+              padding: "0 0.85rem",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              textDecoration: "none",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+            }}
+          >
+            <Trash2 size={15} />
+            <span>Uninstaller (.bat)</span>
+          </a>
           <div style={{
             height: "36px",
             background: "#FFFFFF",
@@ -602,39 +730,7 @@ export default function SettingsShard({
                       </span>
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(u.id, u.status)}
-                          disabled={isPending}
-                          style={{
-                            position: "relative",
-                            width: "44px",
-                            height: "24px",
-                            borderRadius: "12px",
-                            background: u.status === "APPROVED" ? "#10B981" : "#D1D5DB",
-                            border: "none",
-                            cursor: isPending ? "not-allowed" : "pointer",
-                            transition: "background-color 0.2s ease",
-                            outline: "none",
-                            padding: 0,
-                            display: "inline-flex",
-                            alignItems: "center"
-                          }}
-                          title={u.status === "APPROVED" ? "Toggle to Disable" : "Toggle to Activate"}
-                        >
-                          <span style={{
-                            position: "absolute",
-                            left: u.status === "APPROVED" ? "22px" : "2px",
-                            width: "20px",
-                            height: "20px",
-                            borderRadius: "50%",
-                            background: "#FFFFFF",
-                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.15)",
-                            transition: "left 0.2s ease"
-                          }} />
-                        </button>
-                      </div>
+                      {renderAgentStatusBadge(u.id)}
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
                       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.75rem" }}>
