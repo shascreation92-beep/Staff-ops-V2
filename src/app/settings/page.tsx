@@ -97,6 +97,12 @@ export default async function SettingsPage() {
     include: {
       user: { // self relation for teamLeadId mapping to team lead
         select: { name: true }
+      },
+      employee: {
+        select: {
+          laptopPassword: true,
+          employeeId: true
+        }
       }
     },
     orderBy: {

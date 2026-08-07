@@ -33,7 +33,8 @@ export default async function ITManagementPage() {
     include: {
       employee: {
         select: {
-          employeeId: true
+          employeeId: true,
+          laptopPassword: true
         }
       }
     },
