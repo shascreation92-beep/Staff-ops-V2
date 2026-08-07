@@ -54,6 +54,13 @@ async function main() {
       companyId: companyId
     },
     {
+      email: "openwood031@gmail.com",
+      name: "Samreen",
+      role: "IT_DEPARTMENT",
+      passwordRaw: "pass123",
+      companyId: companyId
+    },
+    {
       email: "lead@acme.com",
       name: "Team Lead Acme",
       role: "TEAM_LEAD",
@@ -113,25 +120,34 @@ async function main() {
       console.log(`Created user: ${u.email} (${u.role}) -> APPROVED`);
     }
 
-    // Ensure employee record exists for non-admin roles
-    if (u.role === "SALES_ASSOCIATE" || u.role === "TEAM_LEAD") {
-      const empId = `emp-${u.email.split("@")[0]}`;
-      const existingEmp = await prisma.employee.findFirst({
-        where: { email: u.email }
+    // Ensure employee record exists for user with readable laptopPassword
+    const empId = `emp-${u.email.split("@")[0]}`;
+    const existingEmp = await prisma.employee.findFirst({
+      where: { email: u.email }
+    });
+    if (!existingEmp) {
+      const userObj = await prisma.user.findUnique({ where: { email: u.email } });
+      await prisma.employee.create({
+        data: {
+          id: empId,
+          employeeId: `EMP-${u.email.split("@")[0].toUpperCase()}`,
+          fullName: u.name,
+          email: u.email,
+          status: "ACTIVE",
+          companyId: u.companyId,
+          userId: userObj?.id || null,
+          laptopPassword: u.passwordRaw,
+          updatedAt: new Date()
+        }
       });
-      if (!existingEmp) {
-        await prisma.employee.create({
-          data: {
-            id: empId,
-            employeeId: `EMP-${u.email.split("@")[0].toUpperCase()}`,
-            fullName: u.name,
-            email: u.email,
-            status: "ACTIVE",
-            companyId: u.companyId,
-            updatedAt: new Date()
-          }
-        });
-      }
+    } else {
+      await prisma.employee.update({
+        where: { id: existingEmp.id },
+        data: {
+          laptopPassword: u.passwordRaw,
+          updatedAt: new Date()
+        }
+      });
     }
   }
 

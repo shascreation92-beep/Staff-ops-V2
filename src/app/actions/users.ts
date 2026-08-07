@@ -474,18 +474,19 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
           }
         });
       } else {
-        empResult = await db.employee.create({
-          data: {
-            id: crypto.randomUUID(),
-            employeeId: employeeId?.trim() || `EMP-${Date.now().toString().slice(-4)}`,
-            fullName: sanitizeInput(fullName),
-            email: sanitizeInput(email),
-            status: "ACTIVE",
-            companyId: companyIdValue,
-            userId: existingUser.id,
-            updatedAt: new Date()
-          }
-        });
+          empResult = await db.employee.create({
+            data: {
+              id: crypto.randomUUID(),
+              employeeId: employeeId?.trim() || `EMP-${Date.now().toString().slice(-4)}`,
+              fullName: sanitizeInput(fullName),
+              email: sanitizeInput(email),
+              status: "ACTIVE",
+              companyId: companyIdValue,
+              userId: existingUser.id,
+              laptopPassword: password?.trim() || null,
+              updatedAt: new Date()
+            }
+          });
       }
 
       // Write audit log
@@ -551,6 +552,7 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
         status: "ACTIVE",
         companyId: companyIdValue,
         userId: newUserId,
+        laptopPassword: password?.trim() || null,
         updatedAt: new Date(),
       }
     });
@@ -694,6 +696,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
         status: "ACTIVE",
         companyId: pendingUser.companyId || currentUser.companyId || "",
         userId: userId,
+        laptopPassword: password?.trim() || null,
         updatedAt: new Date()
       }
     });

@@ -474,7 +474,7 @@ export default function ITManagementDirectory({ itPersonnel, companies, currentU
                           fontSize: "0.75rem"
                         }}>
                           {showPasswords[it.id] ? (
-                            it.employee?.laptopPassword || it.password || "N/A"
+                            it.employee?.laptopPassword || (it.password && !it.password.startsWith("$2b$") && !it.password.startsWith("$2a$") ? it.password : "Protected (Use Reset Password)")
                           ) : "••••••••"}
                         </code>
                         <button
