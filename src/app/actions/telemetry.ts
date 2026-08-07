@@ -58,7 +58,7 @@ async function autoCleanOldScreenshotsInternal() {
 
 const PAUSE_CONFIG_FILE = path.join(process.cwd(), "public", "uploads", "telemetry_paused_users.json");
 
-export function getPausedUserIds(): Set<string> {
+export async function getPausedUserIds(): Promise<Set<string>> {
   try {
     if (fs.existsSync(PAUSE_CONFIG_FILE)) {
       const data = JSON.parse(fs.readFileSync(PAUSE_CONFIG_FILE, "utf-8"));
@@ -70,7 +70,7 @@ export function getPausedUserIds(): Set<string> {
   return new Set();
 }
 
-export function savePausedUserIds(set: Set<string>) {
+export async function savePausedUserIds(set: Set<string>) {
   try {
     const dir = path.dirname(PAUSE_CONFIG_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -84,13 +84,13 @@ export async function toggleUserTelemetryPauseAction(targetUserId: string, isPau
   await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
   if (!targetUserId) return { success: false, error: "Target user ID is required." };
 
-  const set = getPausedUserIds();
+  const set = await getPausedUserIds();
   if (isPaused) {
     set.add(targetUserId);
   } else {
     set.delete(targetUserId);
   }
-  savePausedUserIds(set);
+  await savePausedUserIds(set);
   revalidatePath("/screen-telemetry");
   return { success: true, isPaused, targetUserId };
 }
@@ -134,7 +134,7 @@ export async function uploadScreenshotAction(data: {
 
   try {
     const userId = user.id;
-    if (getPausedUserIds().has(userId)) {
+    if ((await getPausedUserIds()).has(userId)) {
       return { success: false, isPaused: true, error: "Screen telemetry has been PAUSED by Admin for this user." };
     }
 
@@ -481,7 +481,7 @@ export async function getUsersMonitoringStatusAction() {
     }
   }
 
-  const pausedSet = getPausedUserIds();
+  const pausedSet = await getPausedUserIds();
   return { success: true, userStatusMap, pausedUserIds: Array.from(pausedSet) };
 }
 
