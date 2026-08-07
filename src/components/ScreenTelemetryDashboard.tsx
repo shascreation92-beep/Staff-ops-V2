@@ -935,88 +935,98 @@ pause
             return (
               <div
                 key={u.id}
-                className="glass-panel"
                 style={{
-                  background: "#FFFFFF",
-                  border: isAgentActive ? "1.5px solid rgba(16, 185, 129, 0.4)" : "1px solid var(--border-dim)",
-                  borderRadius: "14px",
+                  background: "linear-gradient(145deg, #0F172A 0%, #1E1B4B 100%)",
+                  border: isAgentActive ? "1.5px solid rgba(16, 185, 129, 0.4)" : "1px solid rgba(255, 255, 255, 0.12)",
+                  borderRadius: "16px",
                   padding: "1.25rem",
                   display: "flex",
                   flexDirection: "column",
                   gap: "1rem",
-                  boxShadow: isAgentActive ? "0 4px 16px rgba(16, 185, 129, 0.12)" : "0 4px 12px rgba(0, 0, 0, 0.04)",
+                  boxShadow: isAgentActive ? "0 8px 24px rgba(16, 185, 129, 0.15)" : "0 8px 20px rgba(0, 0, 0, 0.3)",
+                  color: "#FFFFFF",
                   transition: "transform 0.2s ease, box-shadow 0.2s ease",
                   position: "relative"
                 }}
               >
-                {/* Live Agent Running Status Indicator Header */}
+                {/* Header: User Avatar + Name & Employee ID */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                     <div style={{
                       width: "44px",
                       height: "44px",
                       borderRadius: "12px",
-                      background: isAgentActive ? "rgba(16, 185, 129, 0.12)" : "rgba(100, 116, 139, 0.12)",
-                      border: isAgentActive ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(100, 116, 139, 0.25)",
+                      background: isAgentActive ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" : "linear-gradient(135deg, #334155 0%, #1E293B 100%)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: isAgentActive ? "#10B981" : "#64748B"
+                      color: "#FFFFFF",
+                      fontSize: "0.9rem",
+                      fontWeight: 900,
+                      boxShadow: isAgentActive ? "0 4px 12px rgba(16, 185, 129, 0.3)" : "none"
                     }}>
-                      <Folder size={24} />
+                      {(u.name || u.email).slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                      <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "#FFFFFF" }}>
                         {u.name || u.email.split("@")[0]}
                       </h3>
-                      <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+                      <div style={{ fontSize: "0.72rem", color: "#94A3B8", marginTop: "0.1rem" }}>
                         {u.email}
                       </div>
                     </div>
                   </div>
 
-                  <span className="badge active" style={{ fontSize: "0.62rem" }}>
-                    {u.employee?.employeeId || "N/A"}
+                  <span style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    color: "#A78BFA",
+                    fontSize: "0.65rem",
+                    fontWeight: 800,
+                    padding: "0.2rem 0.55rem",
+                    borderRadius: "6px",
+                    border: "1px solid rgba(167, 139, 250, 0.2)"
+                  }}>
+                    {u.employee?.employeeId || "STAFF"}
                   </span>
                 </div>
 
-                {/* Live Workstation Agent Running Status Pill */}
+                {/* Live Running Status Pill */}
                 <div style={{
-                  padding: "0.4rem 0.75rem",
+                  padding: "0.45rem 0.85rem",
                   borderRadius: "8px",
-                  background: isAgentActive ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
-                  border: isAgentActive ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid rgba(239, 68, 68, 0.25)",
+                  background: isAgentActive ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                  border: isAgentActive ? "1px solid rgba(16, 185, 129, 0.35)" : "1px solid rgba(239, 68, 68, 0.35)",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  fontSize: "0.74rem",
+                  fontSize: "0.75rem",
                   fontWeight: 700
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: isAgentActive ? "#059669" : "#DC2626" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: isAgentActive ? "#34D399" : "#F87171" }}>
                     {isAgentActive ? <Wifi size={14} className="animate-pulse" /> : <WifiOff size={14} />}
-                    <span>{isAgentActive ? "Workstation Sync Running" : "Installer Not Running on PC"}</span>
+                    <span>{isAgentActive ? "Live Agent Running (60s)" : "Agent Offline on PC"}</span>
                   </div>
 
                   {isAgentActive && (
-                    <span style={{ fontSize: "0.68rem", color: "#059669", fontWeight: 800 }}>
-                      Next SS in {countdownSec}s
+                    <span style={{ fontSize: "0.7rem", color: "#34D399", fontWeight: 800 }}>
+                      Next SS: {countdownSec}s
                     </span>
                   )}
                 </div>
 
-                {/* Folder Thumbnail / Status Preview */}
+                {/* Screen Preview Monitor Display */}
                 <div 
-                  onClick={() => {
-                    handleSelectUserFolder(u);
-                  }}
+                  onClick={() => handleSelectUserFolder(u)}
                   style={{
                     position: "relative",
                     width: "100%",
-                    height: "140px",
-                    background: "#0F172A",
-                    borderRadius: "8px",
+                    height: "155px",
+                    background: "#020617",
+                    borderRadius: "10px",
                     overflow: "hidden",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    boxShadow: "inset 0 2px 6px rgba(0,0,0,0.5)"
                   }}
                 >
                   {latestSnap && isAgentActive ? (
@@ -1032,120 +1042,108 @@ pause
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#94A3B8",
+                      color: "#64748B",
                       fontSize: "0.78rem"
                     }}>
-                      <Monitor size={28} style={{ opacity: 0.5, marginBottom: "0.4rem" }} />
-                      <span style={{ fontWeight: 700 }}>
-                        {isAgentActive ? "No Captures Today" : "Installer Not Running on PC"}
+                      <Monitor size={32} style={{ opacity: 0.4, marginBottom: "0.4rem" }} />
+                      <span style={{ fontWeight: 700, color: "#94A3B8" }}>
+                        {isAgentActive ? "No Captures Today" : "Agent Offline"}
                       </span>
                     </div>
                   )}
 
                   <div style={{
                     position: "absolute",
-                    bottom: "0.5rem",
-                    right: "0.5rem",
-                    background: "rgba(15, 23, 42, 0.85)",
+                    bottom: "0.6rem",
+                    right: "0.6rem",
+                    background: "rgba(15, 23, 42, 0.9)",
+                    backdropFilter: "blur(6px)",
                     color: "#FFFFFF",
-                    fontSize: "0.68rem",
-                    fontWeight: 700,
-                    padding: "0.2rem 0.55rem",
-                    borderRadius: "4px"
+                    fontSize: "0.7rem",
+                    fontWeight: 800,
+                    padding: "0.25rem 0.65rem",
+                    borderRadius: "6px",
+                    border: "1px solid rgba(255,255,255,0.15)"
                   }}>
                     📁 Open Folder ({userSnaps.length})
                   </div>
                 </div>
 
-                {/* Folder Meta Stats */}
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                  <div>
-                    Shots Today: <strong style={{ color: "var(--text-primary)" }}>{userSnaps.length}</strong>
-                  </div>
-                  <div>
-                    Idle Shots: <strong style={{ color: userIdleCount > 0 ? "#F59E0B" : "var(--text-primary)" }}>{userIdleCount}</strong>
-                  </div>
-                </div>
-
-                {/* 7-Day Storage Backup Notice */}
+                {/* Folder Stats & Retention Quick Bar */}
                 <div style={{
-                  background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
-                  border: "1px solid #FCD34D",
-                  borderRadius: "8px",
-                  padding: "0.45rem 0.65rem",
                   display: "flex",
-                  alignItems: "center",
                   justifyContent: "space-between",
-                  gap: "0.4rem"
+                  alignItems: "center",
+                  fontSize: "0.76rem",
+                  color: "#94A3B8",
+                  padding: "0 0.2rem"
                 }}>
-                  <div style={{ fontSize: "0.71rem", color: "#92400E", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                    <AlertTriangle size={13} style={{ color: "#D97706", flexShrink: 0 }} />
-                    <span>Auto-clean &gt;7 days</span>
+                  <div>
+                    Shots Today: <strong style={{ color: "#FFFFFF" }}>{userSnaps.length}</strong>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownloadFull7DayZip(u);
-                    }}
-                    style={{
-                      background: "#D97706",
-                      color: "#FFFFFF",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "0.22rem 0.55rem",
-                      fontSize: "0.68rem",
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.25rem",
-                      boxShadow: "0 2px 4px rgba(217, 119, 6, 0.25)",
-                      whiteSpace: "nowrap"
-                    }}
-                    title="Download full 7-Day screenshot backup ZIP archive to your personal laptop"
-                  >
-                    <Download size={11} />
-                    <span>Save 7-Day Backup</span>
-                  </button>
+                  <div>
+                    Idle: <strong style={{ color: userIdleCount > 0 ? "#F59E0B" : "#FFFFFF" }}>{userIdleCount}</strong>
+                  </div>
                 </div>
 
-                {/* Action Toolbar */}
+                {/* Actions Row */}
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
-                    onClick={() => {
-                      handleSelectUserFolder(u);
-                    }}
+                    onClick={() => handleSelectUserFolder(u)}
                     style={{
                       flex: 1,
-                      padding: "0.5rem",
-                      fontSize: "0.78rem",
-                      fontWeight: 700,
+                      padding: "0.6rem",
+                      fontSize: "0.8rem",
+                      fontWeight: 800,
                       color: "#FFFFFF",
-                      background: "linear-gradient(135deg, #0077B6 0%, #00B4D8 100%)",
+                      background: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
                       border: "none",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0.3rem"
+                      gap: "0.4rem",
+                      boxShadow: "0 4px 14px rgba(139, 92, 246, 0.3)"
                     }}
                   >
-                    <FolderOpen size={14} />
+                    <FolderOpen size={15} />
                     <span>View User Folder</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadFull7DayZip(u)}
+                    style={{
+                      padding: "0.6rem 0.75rem",
+                      fontSize: "0.8rem",
+                      fontWeight: 800,
+                      color: "#FFFFFF",
+                      background: "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
+                      border: "none",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                      boxShadow: "0 4px 12px rgba(217, 119, 6, 0.3)"
+                    }}
+                    title="Download 7-Day Screenshot Backup ZIP Archive"
+                  >
+                    <Download size={14} />
+                    <span>7-Day ZIP</span>
                   </button>
 
                   {userSnaps.length > 0 && (
                     <button
                       onClick={() => handleBulkDelete(userSnaps.map(s => s.id))}
                       style={{
-                        padding: "0.55rem 0.7rem",
-                        fontSize: "0.78rem",
-                        fontWeight: 700,
-                        color: "#DC2626",
-                        background: "#FEF2F2",
-                        border: "1px solid #FECACA",
-                        borderRadius: "8px",
+                        padding: "0.6rem 0.75rem",
+                        fontSize: "0.8rem",
+                        fontWeight: 800,
+                        color: "#F87171",
+                        background: "rgba(239, 68, 68, 0.15)",
+                        border: "1px solid rgba(239, 68, 68, 0.3)",
+                        borderRadius: "10px",
                         cursor: "pointer"
                       }}
                       title="Delete all screenshots in this folder to free VPS space"
@@ -1153,23 +1151,6 @@ pause
                       <Trash2 size={15} />
                     </button>
                   )}
-
-                  <button
-                    onClick={() => handleDownloadUserFolderZip(u)}
-                    style={{
-                      padding: "0.55rem 0.7rem",
-                      fontSize: "0.78rem",
-                      fontWeight: 700,
-                      color: "#334155",
-                      background: "#F1F5F9",
-                      border: "1px solid #CBD5E1",
-                      borderRadius: "8px",
-                      cursor: "pointer"
-                    }}
-                    title="Download 1-Minute Screenshots ZIP Archive"
-                  >
-                    <FileArchive size={15} style={{ color: "#8B5CF6" }} />
-                  </button>
                 </div>
               </div>
             );
