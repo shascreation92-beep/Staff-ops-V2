@@ -14,6 +14,71 @@ export async function GET(req: NextRequest) {
     const currentUser = session.user;
     const { searchParams } = new URL(req.url);
 
+    const isAllStaff7Days = searchParams.get("allStaff7Days") === "true";
+
+    if (isAllStaff7Days) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      let companyUserFilter: any = {};
+      if (currentUser.role !== "SUPER_ADMIN" && currentUser.companyId) {
+        companyUserFilter = { user: { companyId: currentUser.companyId } };
+      }
+
+      const snapshots = await db.screensnapshot.findMany({
+        where: {
+          capturedAt: { gte: sevenDaysAgo },
+          ...companyUserFilter
+        },
+        include: {
+          user: {
+            select: { name: true, email: true }
+          }
+        },
+        orderBy: { capturedAt: "asc" }
+      });
+
+      if (snapshots.length === 0) {
+        return NextResponse.json({ error: "No staff screenshots found in the past 7 days." }, { status: 404 });
+      }
+
+      const zip = new JSZip();
+      let addedCount = 0;
+
+      for (const snap of snapshots) {
+        if (snap.imageUrl) {
+          const relativeUrl = snap.imageUrl.startsWith("/") ? snap.imageUrl.slice(1) : snap.imageUrl;
+          const filePath = path.join(process.cwd(), "public", relativeUrl);
+
+          if (fs.existsSync(filePath)) {
+            const fileData = fs.readFileSync(filePath);
+            const userFolderName = (snap.user?.name || snap.user?.email.split("@")[0] || "User").replace(/[^a-zA-Z0-9_-]/g, "_");
+            const dateFolderStr = new Date(snap.capturedAt).toISOString().split("T")[0];
+            const timeStr = new Date(snap.capturedAt).toISOString().split("T")[1].replace(/:/g, "-").split(".")[0];
+            const fileName = `${userFolderName}/${dateFolderStr}/snap_${timeStr}_${snap.isIdle ? "IDLE" : "ACTIVE"}.webp`;
+            zip.file(fileName, fileData);
+            addedCount++;
+          }
+        }
+      }
+
+      if (addedCount === 0) {
+        return NextResponse.json({ error: "No screenshot files found on server disk." }, { status: 404 });
+      }
+
+      const zipBuffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+      const dateStr = new Date().toISOString().split("T")[0];
+
+      return new NextResponse(zipBuffer as any, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/zip",
+          "Content-Disposition": `attachment; filename="ALL_STAFF_7DAY_FULL_BACKUP_${dateStr}.zip"`,
+          "Content-Length": zipBuffer.length.toString()
+        }
+      });
+    }
+
     const userId = searchParams.get("userId");
     const dateStr = searchParams.get("dateStr") || new Date().toISOString().split("T")[0];
 
@@ -56,7 +121,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (snapshots.length === 0) {
-      return NextResponse.json({ error: "No screenshots found for this user on selected date." }, { status: 404 });
+      return NextResponse.json({ error: "No screenshots found for this user." }, { status: 404 });
     }
 
     const zip = new JSZip();

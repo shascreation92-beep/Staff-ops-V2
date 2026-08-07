@@ -15,6 +15,8 @@ import {
   Clock, 
   Grid, 
   FileArchive, 
+  Search,
+  Package,
   ArrowLeft,
   ChevronRight,
   ChevronLeft,
@@ -137,6 +139,32 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     window.addEventListener("popstate", syncUserFromUrl);
     return () => window.removeEventListener("popstate", syncUserFromUrl);
   }, [staffList]);
+
+  // Search & Status Filter state for user folders grid
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ONLINE" | "OFFLINE">("ALL");
+
+  const onlineCount = useMemo(() => {
+    return staffList.filter(u => {
+      const uStatus = statusMap[u.id];
+      return uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE";
+    }).length;
+  }, [staffList, statusMap]);
+
+  const filteredStaffList = useMemo(() => {
+    return staffList.filter(u => {
+      const matchesSearch = !searchTerm || 
+        (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const uStatus = statusMap[u.id];
+      const isOnline = uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE";
+
+      if (statusFilter === "ONLINE") return matchesSearch && isOnline;
+      if (statusFilter === "OFFLINE") return matchesSearch && !isOnline;
+      return matchesSearch;
+    });
+  }, [staffList, searchTerm, statusFilter, statusMap]);
 
   // Lightbox Modal state: Index, Zoom & Pan
   const [modalImageIndex, setModalImageIndex] = useState<number>(0);
@@ -478,6 +506,31 @@ pause
     }
   };
 
+  const handleDownloadAllStaffZip = async () => {
+    toast.success("Preparing consolidated 7-day ZIP backup for ALL staff members...");
+    try {
+      const res = await fetch("/api/telemetry/download-zip?allStaff7Days=true");
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        toast.error(errJson.error || "No staff screenshots found in the past 7 days.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const dateStr = new Date().toISOString().split("T")[0];
+      a.download = `ALL_STAFF_7DAY_FULL_BACKUP_${dateStr}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("All-Staff 7-Day Backup ZIP downloaded successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to download All-Staff ZIP archive.");
+    }
+  };
+
   const handleDownloadSingleImage = (imgUrl: string, fileNameStr: string) => {
     const a = document.createElement("a");
     a.href = imgUrl;
@@ -589,6 +642,28 @@ pause
           >
             <Trash2 size={15} />
             <span>7-Day Storage Clean</span>
+          </button>
+
+          <button
+            onClick={handleDownloadAllStaffZip}
+            style={{
+              padding: "0.55rem 1rem",
+              fontSize: "0.8rem",
+              fontWeight: 800,
+              color: "#FFFFFF",
+              background: "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              boxShadow: "0 4px 12px rgba(217, 119, 6, 0.3)"
+            }}
+            title="Download consolidated 7-Day backup ZIP for ALL staff members in 1 click"
+          >
+            <Package size={15} />
+            <span>Download All-Staff 7-Day ZIP</span>
           </button>
 
           <button
@@ -736,12 +811,112 @@ pause
 
       {/* VIEW MODE 1: ALL USER FOLDERS GRID */}
       {!activeFolderUser ? (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-          gap: "1.25rem"
-        }}>
-          {staffList.map(u => {
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* Instant Search Bar & Live Status Filter Pills */}
+          <div style={{
+            padding: "0.85rem 1.25rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            borderRadius: "12px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "1rem"
+          }}>
+            {/* Search Input */}
+            <div style={{ position: "relative", minWidth: "260px", flex: 1 }}>
+              <Search size={16} style={{ position: "absolute", left: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+              <input
+                type="text"
+                placeholder="Search staff member by name or email..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="input-gold"
+                style={{ width: "100%", paddingLeft: "2.4rem", fontSize: "0.85rem", height: "38px" }}
+              />
+              {searchTerm && (
+                <X
+                  size={15}
+                  onClick={() => setSearchTerm("")}
+                  style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", cursor: "pointer" }}
+                />
+              )}
+            </div>
+
+            {/* Quick Filter Pills */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "10px" }}>
+              <button
+                onClick={() => setStatusFilter("ALL")}
+                style={{
+                  padding: "0.4rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  borderRadius: "8px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: statusFilter === "ALL" ? "#FFFFFF" : "transparent",
+                  color: statusFilter === "ALL" ? "#1E293B" : "#64748B",
+                  boxShadow: statusFilter === "ALL" ? "0 2px 6px rgba(0,0,0,0.06)" : "none"
+                }}
+              >
+                All Staff ({staffList.length})
+              </button>
+
+              <button
+                onClick={() => setStatusFilter("ONLINE")}
+                style={{
+                  padding: "0.4rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  borderRadius: "8px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: statusFilter === "ONLINE" ? "#10B981" : "transparent",
+                  color: statusFilter === "ONLINE" ? "#FFFFFF" : "#059669",
+                  boxShadow: statusFilter === "ONLINE" ? "0 2px 6px rgba(16,185,129,0.3)" : "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.35rem"
+                }}
+              >
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: statusFilter === "ONLINE" ? "#FFFFFF" : "#10B981" }} />
+                <span>Working Now ({onlineCount})</span>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter("OFFLINE")}
+                style={{
+                  padding: "0.4rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  borderRadius: "8px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: statusFilter === "OFFLINE" ? "#64748B" : "transparent",
+                  color: statusFilter === "OFFLINE" ? "#FFFFFF" : "#64748B",
+                  boxShadow: statusFilter === "OFFLINE" ? "0 2px 6px rgba(100,116,139,0.3)" : "none"
+                }}
+              >
+                Offline ({staffList.length - onlineCount})
+              </button>
+            </div>
+          </div>
+
+          {filteredStaffList.length === 0 ? (
+            <div style={{ padding: "3rem", textAlign: "center", background: "#FFFFFF", borderRadius: "12px", border: "1px dashed var(--border-dim)" }}>
+              <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>No staff members match your filter</h3>
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                Try clearing your search keyword or switching status filter to "All Staff".
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              gap: "1.25rem"
+            }}>
+              {filteredStaffList.map(u => {
             const userSnaps = snapshots.filter(s => s.userId === u.id);
             const latestSnap = userSnaps[0];
             const userIdleCount = userSnaps.filter(s => s.isIdle).length;
@@ -991,6 +1166,7 @@ pause
               </div>
             );
           })}
+        </div>
         </div>
       ) : (
         /* VIEW MODE 2: USER FOLDER DETAIL (IMAGE GALLERY GRID / SLIDESHOW) */
