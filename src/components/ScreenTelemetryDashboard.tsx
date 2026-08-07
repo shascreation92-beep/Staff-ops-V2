@@ -83,7 +83,7 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [previewImage, setPreviewImage] = useState<ScreenshotItem | null>(null);
 
-  // Live 40s Ticker seconds remaining state
+  // Live 40s Ticker seconds remaining state (Clock-synced)
   const [countdownSec, setCountdownSec] = useState<number>(40);
 
   // View state: 'FOLDERS' | 'USER_FOLDER'
@@ -97,36 +97,36 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
 
   const previousSnapshotsCountRef = useRef<number>(0);
 
-  const fetchTelemetryData = () => {
-    startTransition(async () => {
-      try {
-        const snapRes = await getCompanyScreenshotsAction({
-          targetUserId: selectedUserId === "ALL" ? undefined : selectedUserId,
-          dateStr: selectedDate
-        });
-        if (snapRes.success && snapRes.snapshots) {
-          const newSnaps = snapRes.snapshots as any[];
-          if (previousSnapshotsCountRef.current > 0 && newSnaps.length > previousSnapshotsCountRef.current) {
-            const newest = newSnaps[0];
-            toast.success(`📸 New 40s screenshot captured for ${newest.user?.name || newest.user?.email || "staff member"}!`);
-          }
-          previousSnapshotsCountRef.current = newSnaps.length;
-          setSnapshots(newSnaps);
-        }
+  // Safe background fetch protected from Next.js error boundary crashes
+  const fetchTelemetryData = async () => {
+    try {
+      const snapRes = await getCompanyScreenshotsAction({
+        targetUserId: selectedUserId === "ALL" ? undefined : selectedUserId,
+        dateStr: selectedDate
+      }).catch(() => null);
 
-        const tamperRes = await getTamperLogsAction();
-        if (tamperRes.success && tamperRes.logs) {
-          setTamperLogs(tamperRes.logs as any);
+      if (snapRes?.success && snapRes?.snapshots) {
+        const newSnaps = snapRes.snapshots as any[];
+        if (previousSnapshotsCountRef.current > 0 && newSnaps.length > previousSnapshotsCountRef.current) {
+          const newest = newSnaps[0];
+          toast.success(`📸 New 40s screenshot captured for ${newest.user?.name || newest.user?.email || "staff member"}!`);
         }
-
-        const statusRes = await getUsersMonitoringStatusAction();
-        if (statusRes.success && statusRes.userStatusMap) {
-          setStatusMap(statusRes.userStatusMap as any);
-        }
-      } catch (err: any) {
-        console.error("Failed to load screen telemetry:", err);
+        previousSnapshotsCountRef.current = newSnaps.length;
+        setSnapshots(newSnaps);
       }
-    });
+
+      const tamperRes = await getTamperLogsAction().catch(() => null);
+      if (tamperRes?.success && tamperRes?.logs) {
+        setTamperLogs(tamperRes.logs as any);
+      }
+
+      const statusRes = await getUsersMonitoringStatusAction().catch(() => null);
+      if (statusRes?.success && statusRes?.userStatusMap) {
+        setStatusMap(statusRes.userStatusMap as any);
+      }
+    } catch (err: any) {
+      console.warn("Silent background refresh error:", err);
+    }
   };
 
   // Initial fetch
@@ -134,18 +134,21 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     fetchTelemetryData();
   }, [selectedUserId, selectedDate]);
 
-  // Live 1-second countdown ticker timer
+  // Live 1-second countdown ticker timer (synced directly with system clock)
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdownSec(prev => {
-        if (prev <= 1) {
-          fetchTelemetryData(); // Auto fetch when countdown hits 0
-          return 40;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const calculateSecs = () => {
+      const currentSec = Math.floor(Date.now() / 1000);
+      const secsRemaining = 40 - (currentSec % 40);
+      setCountdownSec(secsRemaining === 0 ? 40 : secsRemaining);
 
+      // Trigger safe telemetry update on boundary
+      if (secsRemaining === 40 || secsRemaining === 1) {
+        fetchTelemetryData();
+      }
+    };
+
+    calculateSecs();
+    const timer = setInterval(calculateSecs, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -588,7 +591,7 @@ pause
                     cursor: "pointer"
                   }}
                 >
-                  {latestSnap ? (
+                  {latestSnap && isAgentActive ? (
                     <img
                       src={latestSnap.imageUrl}
                       alt="Latest capture"
@@ -601,11 +604,13 @@ pause
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#64748B",
+                      color: "#94A3B8",
                       fontSize: "0.78rem"
                     }}>
-                      <Monitor size={28} style={{ opacity: 0.4, marginBottom: "0.4rem" }} />
-                      <span>No Captures Today</span>
+                      <Monitor size={28} style={{ opacity: 0.5, marginBottom: "0.4rem" }} />
+                      <span style={{ fontWeight: 700 }}>
+                        {isAgentActive ? "No Captures Today" : "Installer Not Running on PC"}
+                      </span>
                     </div>
                   )}
 
@@ -664,7 +669,7 @@ pause
                   <button
                     onClick={() => handleDownloadUserFolderZip(u)}
                     style={{
-                      padding: "0.5rem 0.7rem",
+                      padding: "0.55rem 0.7rem",
                       fontSize: "0.78rem",
                       fontWeight: 700,
                       color: "#334155",
