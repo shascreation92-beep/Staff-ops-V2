@@ -1052,21 +1052,6 @@ pause
                     </div>
                   )}
 
-                  <div style={{
-                    position: "absolute",
-                    bottom: "0.6rem",
-                    right: "0.6rem",
-                    background: "rgba(15, 23, 42, 0.9)",
-                    backdropFilter: "blur(6px)",
-                    color: "#FFFFFF",
-                    fontSize: "0.7rem",
-                    fontWeight: 800,
-                    padding: "0.25rem 0.65rem",
-                    borderRadius: "6px",
-                    border: "1px solid rgba(255,255,255,0.15)"
-                  }}>
-                    📁 Open Folder ({userSnaps.length})
-                  </div>
                 </div>
 
                 {/* Folder Stats & Retention Quick Bar */}
@@ -1108,7 +1093,7 @@ pause
                     }}
                   >
                     <FolderOpen size={15} />
-                    <span>View User Folder</span>
+                    <span>View</span>
                   </button>
 
                   <button
