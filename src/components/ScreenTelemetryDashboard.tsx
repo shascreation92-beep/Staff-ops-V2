@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useRef } from "react";
+import React, { useState, useEffect, useTransition, useRef, useMemo } from "react";
 import { 
   Folder, 
   FolderOpen, 
@@ -190,6 +190,24 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     const timeB = new Date(b.capturedAt).getTime();
     return sortOrder === "NEWEST" ? timeB - timeA : timeA - timeB;
   });
+
+  // Group snapshots by Date string for sleek Day Divider Banners
+  const groupedSnapshotsByDate = useMemo(() => {
+    const groups: { dateLabel: string; items: ScreenshotItem[] }[] = [];
+    const map = new Map<string, ScreenshotItem[]>();
+
+    filteredSnapshots.forEach(snap => {
+      const d = new Date(snap.capturedAt);
+      const dateLabel = d.toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "short", year: "numeric" });
+      if (!map.has(dateLabel)) {
+        map.set(dateLabel, []);
+        groups.push({ dateLabel, items: map.get(dateLabel)! });
+      }
+      map.get(dateLabel)!.push(snap);
+    });
+
+    return groups;
+  }, [filteredSnapshots]);
 
   // Filmstrip Player interval logic
   useEffect(() => {
@@ -1261,134 +1279,176 @@ pause
               </div>
             </div>
           ) : (
-            /* THUMBNAIL GALLERY GRID MODE */
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-              gap: "1.25rem"
-            }}>
-              {filteredSnapshots.map(snap => {
-                const isSelected = selectedSnapIds.includes(snap.id);
+            /* THUMBNAIL GALLERY GRID MODE WITH DAY DIVIDER BANNERS */
+            <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+              {groupedSnapshotsByDate.map(group => (
+                <div key={group.dateLabel} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  {/* Sticky Day Divider Banner Header */}
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "0.75rem 1.25rem",
+                    background: "linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)",
+                    color: "#FFFFFF",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 14px rgba(0, 0, 0, 0.18)",
+                    flexWrap: "wrap",
+                    gap: "0.5rem"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                      <Calendar size={18} style={{ color: "#A78BFA" }} />
+                      <span style={{ fontSize: "0.95rem", fontWeight: 800, letterSpacing: "-0.01em" }}>
+                        {group.dateLabel}
+                      </span>
+                    </div>
 
-                return (
-                  <div 
-                    key={snap.id} 
-                    className="glass-panel" 
-                    style={{
-                      background: "#FFFFFF",
-                      border: isSelected ? "2px solid #8B5CF6" : "1px solid var(--border-dim)",
-                      borderRadius: "12px",
-                      overflow: "hidden",
-                      display: "flex",
-                      flexDirection: "column",
-                      boxShadow: isSelected ? "0 4px 16px rgba(139, 92, 246, 0.25)" : "0 2px 8px rgba(0, 0, 0, 0.04)",
-                      position: "relative"
-                    }}
-                  >
-                    {/* Checkbox Overlay Top-Left */}
-                    <div 
-                      onClick={(e) => toggleSelectSnap(snap.id, e)}
-                      style={{
-                        position: "absolute",
-                        top: "0.5rem",
-                        left: "0.5rem",
-                        zIndex: 10,
-                        background: isSelected ? "#8B5CF6" : "rgba(15, 23, 42, 0.65)",
-                        color: "#FFFFFF",
-                        padding: "0.2rem",
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <span style={{
+                        background: "rgba(139, 92, 246, 0.2)",
+                        border: "1px solid rgba(139, 92, 246, 0.4)",
+                        color: "#C4B5FD",
+                        padding: "0.25rem 0.75rem",
                         borderRadius: "6px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
-                      }}
-                      title={isSelected ? "Deselect Screenshot" : "Select Screenshot for Deletion"}
-                    >
-                      {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
-                    </div>
-
-                    <div 
-                      onClick={() => openLightboxModal(snap)}
-                      style={{
-                        position: "relative",
-                        width: "100%",
-                        height: "155px",
-                        background: "#0F172A",
-                        cursor: "pointer",
-                        overflow: "hidden"
-                      }}
-                    >
-                      <img
-                        src={snap.imageUrl}
-                        alt={`Screenshot ${snap.user.name || snap.user.email}`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                      <div style={{
-                        position: "absolute",
-                        bottom: "0.5rem",
-                        right: "0.5rem",
-                        background: "rgba(15, 23, 42, 0.75)",
-                        color: "#FFFFFF",
-                        fontSize: "0.68rem",
-                        fontWeight: 700,
-                        padding: "0.2rem 0.5rem",
-                        borderRadius: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.3rem"
+                        fontSize: "0.75rem",
+                        fontWeight: 800
                       }}>
-                        <Eye size={12} />
-                        <span>Expand</span>
-                      </div>
-
-                      {snap.isIdle && (
-                        <div style={{
-                          position: "absolute",
-                          top: "0.5rem",
-                          right: "0.5rem",
-                          background: "rgba(245, 158, 11, 0.9)",
-                          color: "#FFFFFF",
-                          fontSize: "0.65rem",
-                          fontWeight: 800,
-                          padding: "0.15rem 0.45rem",
-                          borderRadius: "4px"
-                        }}>
-                          IDLE (&gt;2m)
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ padding: "0.85rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.38rem" }}>
-                        <Clock size={13} style={{ color: "#8B5CF6" }} />
-                        <span>
-                          {new Date(snap.capturedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}, {new Date(snap.capturedAt).toLocaleTimeString("en-GB", { hour12: false })}
-                        </span>
-                      </div>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBulkDelete([snap.id]);
-                          }}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#EF4444",
-                            cursor: "pointer",
-                            padding: "0.2rem"
-                          }}
-                          title="Delete Screenshot"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+                        📸 {group.items.length} {group.items.length === 1 ? "Screenshot" : "Screenshots"}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* 4-Column Responsive Gallery Grid for this Day */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                    gap: "1.25rem"
+                  }}>
+                    {group.items.map(snap => {
+                      const isSelected = selectedSnapIds.includes(snap.id);
+
+                      return (
+                        <div 
+                          key={snap.id} 
+                          className="glass-panel" 
+                          style={{
+                            background: "#FFFFFF",
+                            border: isSelected ? "2px solid #8B5CF6" : "1px solid var(--border-dim)",
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            display: "flex",
+                            flexDirection: "column",
+                            boxShadow: isSelected ? "0 4px 16px rgba(139, 92, 246, 0.25)" : "0 2px 8px rgba(0, 0, 0, 0.04)",
+                            position: "relative"
+                          }}
+                        >
+                          {/* Checkbox Overlay Top-Left */}
+                          <div 
+                            onClick={(e) => toggleSelectSnap(snap.id, e)}
+                            style={{
+                              position: "absolute",
+                              top: "0.5rem",
+                              left: "0.5rem",
+                              zIndex: 10,
+                              background: isSelected ? "#8B5CF6" : "rgba(15, 23, 42, 0.65)",
+                              color: "#FFFFFF",
+                              padding: "0.2rem",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
+                            }}
+                            title={isSelected ? "Deselect Screenshot" : "Select Screenshot for Deletion"}
+                          >
+                            {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                          </div>
+
+                          <div 
+                            onClick={() => openLightboxModal(snap)}
+                            style={{
+                              position: "relative",
+                              width: "100%",
+                              height: "155px",
+                              background: "#0F172A",
+                              cursor: "pointer",
+                              overflow: "hidden"
+                            }}
+                          >
+                            <img
+                              src={snap.imageUrl}
+                              alt={`Screenshot ${snap.user.name || snap.user.email}`}
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                            <div style={{
+                              position: "absolute",
+                              bottom: "0.5rem",
+                              right: "0.5rem",
+                              background: "rgba(15, 23, 42, 0.75)",
+                              color: "#FFFFFF",
+                              fontSize: "0.68rem",
+                              fontWeight: 700,
+                              padding: "0.2rem 0.5rem",
+                              borderRadius: "4px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.3rem"
+                            }}>
+                              <Eye size={12} />
+                              <span>Expand</span>
+                            </div>
+
+                            {snap.isIdle && (
+                              <div style={{
+                                position: "absolute",
+                                top: "0.5rem",
+                                right: "0.5rem",
+                                background: "rgba(245, 158, 11, 0.9)",
+                                color: "#FFFFFF",
+                                fontSize: "0.65rem",
+                                fontWeight: 800,
+                                padding: "0.15rem 0.45rem",
+                                borderRadius: "4px"
+                              }}>
+                                IDLE (&gt;2m)
+                              </div>
+                            )}
+                          </div>
+
+                          <div style={{ padding: "0.85rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.38rem" }}>
+                              <Clock size={13} style={{ color: "#8B5CF6" }} />
+                              <span>
+                                {new Date(snap.capturedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}, {new Date(snap.capturedAt).toLocaleTimeString("en-GB", { hour12: false })}
+                              </span>
+                            </div>
+
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBulkDelete([snap.id]);
+                                }}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#EF4444",
+                                  cursor: "pointer",
+                                  padding: "0.2rem"
+                                }}
+                                title="Delete Screenshot"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
