@@ -937,13 +937,13 @@ pause
                 key={u.id}
                 style={{
                   background: "linear-gradient(145deg, #0F172A 0%, #1E1B4B 100%)",
-                  border: isAgentActive ? "1.5px solid rgba(16, 185, 129, 0.4)" : "1px solid rgba(255, 255, 255, 0.12)",
+                  border: "1.5px solid #10B981",
                   borderRadius: "16px",
                   padding: "1.25rem",
                   display: "flex",
                   flexDirection: "column",
                   gap: "1rem",
-                  boxShadow: isAgentActive ? "0 8px 24px rgba(16, 185, 129, 0.15)" : "0 8px 20px rgba(0, 0, 0, 0.3)",
+                  boxShadow: "0 0 20px rgba(16, 185, 129, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)",
                   color: "#FFFFFF",
                   transition: "transform 0.2s ease, box-shadow 0.2s ease",
                   position: "relative"
