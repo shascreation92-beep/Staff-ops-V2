@@ -342,7 +342,7 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   };
 
   const handleManualCleanup = async () => {
-    if (!confirm("Are you sure you want to run 7-day retention cleanup? This will permanently delete screenshots older than 7 days and clear server disk space.")) {
+    if (!confirm("⚠️ 7-DAY BACKUP WARNING:\nThis action will permanently delete screenshots older than 7 days from the server to free disk space.\n\nMake sure you have downloaded any 7-Day Backup ZIP archives you want to keep on your personal laptop!\n\nClick 'OK' to proceed with deletion, or 'Cancel' to save your backup first.")) {
       return;
     }
     startTransition(async () => {
@@ -415,6 +415,12 @@ pause
   const handleDownloadUserFolderZip = (userToZip: UserInfo) => {
     const zipUrl = `/api/telemetry/download-zip?userId=${userToZip.id}&dateStr=${selectedDate}`;
     toast.success(`Preparing screenshot ZIP archive for ${userToZip.name || userToZip.email}...`);
+    window.open(zipUrl, "_blank");
+  };
+
+  const handleDownloadFull7DayZip = (userToZip: UserInfo) => {
+    const zipUrl = `/api/telemetry/download-zip?userId=${userToZip.id}&all7days=true`;
+    toast.success(`Preparing full 7-day screenshot backup ZIP archive for ${userToZip.name || userToZip.email}...`);
     window.open(zipUrl, "_blank");
   };
 
@@ -825,6 +831,48 @@ pause
                   </div>
                 </div>
 
+                {/* 7-Day Storage Backup Notice */}
+                <div style={{
+                  background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
+                  border: "1px solid #FCD34D",
+                  borderRadius: "8px",
+                  padding: "0.45rem 0.65rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "0.4rem"
+                }}>
+                  <div style={{ fontSize: "0.71rem", color: "#92400E", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <AlertTriangle size={13} style={{ color: "#D97706", flexShrink: 0 }} />
+                    <span>Auto-clean &gt;7 days</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadFull7DayZip(u);
+                    }}
+                    style={{
+                      background: "#D97706",
+                      color: "#FFFFFF",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "0.22rem 0.55rem",
+                      fontSize: "0.68rem",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      boxShadow: "0 2px 4px rgba(217, 119, 6, 0.25)",
+                      whiteSpace: "nowrap"
+                    }}
+                    title="Download full 7-Day screenshot backup ZIP archive to your personal laptop"
+                  >
+                    <Download size={11} />
+                    <span>Save 7-Day Backup</span>
+                  </button>
+                </div>
+
                 {/* Action Toolbar */}
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
@@ -883,7 +931,7 @@ pause
                       borderRadius: "8px",
                       cursor: "pointer"
                     }}
-                    title="Download 40s Screenshots ZIP Archive"
+                    title="Download 1-Minute Screenshots ZIP Archive"
                   >
                     <FileArchive size={15} style={{ color: "#8B5CF6" }} />
                   </button>
@@ -895,6 +943,54 @@ pause
       ) : (
         /* VIEW MODE 2: USER FOLDER DETAIL (IMAGE GALLERY GRID / SLIDESHOW) */
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* Orange 7-Day Backup Warning Banner inside User Folder */}
+          <div style={{
+            padding: "0.85rem 1.25rem",
+            borderRadius: "12px",
+            background: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+            border: "1px solid #F59E0B",
+            color: "#78350F",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            boxShadow: "0 4px 12px rgba(245, 158, 11, 0.15)"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <AlertTriangle size={20} style={{ color: "#D97706", flexShrink: 0 }} />
+              <div>
+                <strong style={{ fontSize: "0.88rem" }}>7-Day Auto Storage Retention Notice</strong>
+                <div style={{ fontSize: "0.76rem", color: "#92400E", marginTop: "0.1rem" }}>
+                  Screenshots older than 7 days are automatically cleaned daily from VPS storage. Save a 7-day backup ZIP directly to your personal PC to preserve permanent records!
+                </div>
+              </div>
+            </div>
+            {activeFolderUser && (
+              <button
+                onClick={() => handleDownloadFull7DayZip(activeFolderUser)}
+                style={{
+                  padding: "0.5rem 1rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  color: "#FFFFFF",
+                  background: "#D97706",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  boxShadow: "0 2px 8px rgba(217, 119, 6, 0.3)",
+                  whiteSpace: "nowrap"
+                }}
+                title="Download 7-Day Full Screenshot Backup ZIP Archive to PC"
+              >
+                <FileArchive size={15} />
+                <span>Save 7-Day Backup ZIP</span>
+              </button>
+            )}
+          </div>
           {/* Sub-toolbar with Bulk Selection & View Switcher */}
           <div style={{
             padding: "0.75rem 1.25rem",
