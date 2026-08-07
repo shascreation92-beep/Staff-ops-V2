@@ -1072,23 +1072,24 @@ pause
         <div style={{
           position: "fixed",
           top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(15, 23, 42, 0.85)",
-          backdropFilter: "blur(8px)",
-          zIndex: 2000,
+          background: "rgba(15, 23, 42, 0.88)",
+          backdropFilter: "blur(10px)",
+          zIndex: 99999,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "1.5rem"
+          padding: "1.5rem 1.5rem 1.5rem 18rem"
         }}>
           <div style={{
-            maxWidth: "1100px",
+            maxWidth: "1150px",
             width: "100%",
             background: "#FFFFFF",
             borderRadius: "16px",
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            boxShadow: "0 25px 50px rgba(0,0,0,0.4)"
+            boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
+            zIndex: 100000
           }}>
             <div style={{
               padding: "1rem 1.5rem",
