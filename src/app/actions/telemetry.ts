@@ -107,6 +107,7 @@ export async function uploadScreenshotAction(data: {
       return { success: false, error: "Malformed base64 image data." };
     }
 
+    const mimeType = matches[1].toLowerCase();
     const rawBuffer = Buffer.from(matches[2], "base64");
     const dateFolder = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const uploadDir = path.join(process.cwd(), "public", "uploads", "telemetry", userId, dateFolder);
