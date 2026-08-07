@@ -101,8 +101,8 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   // Bulk Selection State for Deletion
   const [selectedSnapIds, setSelectedSnapIds] = useState<string[]>([]);
 
-  // Live 40s Ticker seconds remaining state (Clock-synced)
-  const [countdownSec, setCountdownSec] = useState<number>(40);
+  // Live 60s Ticker seconds remaining state (Clock-synced)
+  const [countdownSec, setCountdownSec] = useState<number>(60);
 
   // View state: 'FOLDERS' | 'USER_FOLDER'
   const [activeFolderUser, setActiveFolderUser] = useState<UserInfo | null>(null);
@@ -134,7 +134,7 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
         const newSnaps = snapRes.snapshots as any[];
         if (previousSnapshotsCountRef.current > 0 && newSnaps.length > previousSnapshotsCountRef.current) {
           const newest = newSnaps[0];
-          toast.success(`📸 New 40s screenshot captured for ${newest.user?.name || newest.user?.email || "staff member"}!`);
+          toast.success(`📸 New 1-minute screenshot captured for ${newest.user?.name || newest.user?.email || "staff member"}!`);
         }
         previousSnapshotsCountRef.current = newSnaps.length;
         setSnapshots(newSnaps);
@@ -163,11 +163,11 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   useEffect(() => {
     const calculateSecs = () => {
       const currentSec = Math.floor(Date.now() / 1000);
-      const secsRemaining = 40 - (currentSec % 40);
-      setCountdownSec(secsRemaining === 0 ? 40 : secsRemaining);
+      const secsRemaining = 60 - (currentSec % 60);
+      setCountdownSec(secsRemaining === 0 ? 60 : secsRemaining);
 
       // Trigger safe telemetry update on boundary
-      if (secsRemaining === 40 || secsRemaining === 1) {
+      if (secsRemaining === 60 || secsRemaining === 1) {
         fetchTelemetryData();
       }
     };
@@ -435,10 +435,10 @@ pause
           </div>
           <div>
             <h1 style={{ fontSize: "1.35rem", fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>
-              40-Second Desktop Screen Audit & User Folders
+              1-Minute Desktop Screen Audit & User Folders
             </h1>
             <p style={{ fontSize: "0.82rem", color: "#94A3B8", margin: "0.2rem 0 0 0" }}>
-              Silent 40s desktop telemetry, live agent running status & auto 7-day retention
+              Silent 1m desktop telemetry, live agent running status & auto 7-day retention
             </p>
           </div>
         </div>
@@ -530,7 +530,7 @@ pause
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
         <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "#FFFFFF", borderRadius: "12px", border: "1px solid var(--border-dim)" }}>
           <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
-            Total 40s Shots Today
+            Total 1m Shots Today
           </div>
           <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "var(--text-primary)", marginTop: "0.2rem" }}>
             {activeSnapshotsCount}
@@ -561,7 +561,7 @@ pause
           </div>
           <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#10B981", marginTop: "0.35rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
             <Activity size={16} className="animate-pulse" />
-            <span>Ticking Every 40s</span>
+            <span>Ticking Every 60s</span>
           </div>
         </div>
       </div>

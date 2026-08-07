@@ -5,7 +5,7 @@ param(
     [string]$ServerUrl = "https://51-38-71-134.sslip.io",
     [string]$UserId = "",
     [string]$SecretToken = "staffops_agent_token",
-    [int]$IntervalSec = 40,
+    [int]$IntervalSec = 60,
     [int]$IdleThresholdSec = 120
 )
 

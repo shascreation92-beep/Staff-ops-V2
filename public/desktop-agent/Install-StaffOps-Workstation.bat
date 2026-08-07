@@ -1,9 +1,9 @@
 @echo off
-:: Worknode Workstation 40s Silent Screen Telemetry Agent 1-Click Installer
+:: Worknode Workstation 1-Minute Silent Screen Telemetry Agent 1-Click Installer
 title Worknode Workstation Sync Installer
 
 echo =======================================================
-echo   Worknode Workstation 40s Silent Agent Setup
+echo   Worknode Workstation 1-Minute Silent Agent Setup
 echo =======================================================
 echo.
 
@@ -30,11 +30,11 @@ echo WshShell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyl
 echo Creating shortcut in Windows Startup folder...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$wsh = New-Object -ComObject WScript.Shell; $sc = $wsh.CreateShortcut('%STARTUP_DIR%\WorknodeWorkstationSync.lnk'); $sc.TargetPath = 'wscript.exe'; $sc.Arguments = '\"%VBS_LAUNCHER%\"'; $sc.WorkingDirectory = '%TARGET_DIR%'; $sc.WindowStyle = 7; $sc.Save()"
 
-echo Launching 40-second desktop telemetry engine...
+echo Launching 1-minute desktop telemetry engine...
 wscript.exe "%VBS_LAUNCHER%"
 
 echo.
 echo SUCCESS! Worknode Workstation Sync has been installed and activated for %USER_ID%.
-echo It will capture 40-second desktop telemetry automatically on Windows boot.
+echo It will capture 1-minute desktop telemetry automatically on Windows boot.
 echo.
 pause
