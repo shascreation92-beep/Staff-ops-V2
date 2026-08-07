@@ -1,0 +1,28 @@
+name: Deploy to OVH Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Auto Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute Remote SSH Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            cd /var/www/staffops || cd ~/Staff-ops-V2 || cd /home/ubuntu/Staff-ops-V2
+            git pull origin main
+            npm install --production=false
+            npx prisma generate
+            npm run build
+            pm2 restart all
