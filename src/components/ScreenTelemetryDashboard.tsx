@@ -13,11 +13,6 @@ import {
   Trash2, 
   Eye, 
   Clock, 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
-  Film, 
   Grid, 
   FileArchive, 
   ArrowLeft,
@@ -109,12 +104,6 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
 
   // View state: 'FOLDERS' | 'USER_FOLDER'
   const [activeFolderUser, setActiveFolderUser] = useState<UserInfo | null>(null);
-  const [folderViewMode, setFolderViewMode] = useState<"FILMSTRIP" | "GRID">("GRID");
-
-  // Filmstrip Timeline Player state
-  const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1000); // ms per frame
 
   // Lightbox Modal state: Index, Zoom & Pan
   const [modalImageIndex, setModalImageIndex] = useState<number>(0);
@@ -209,16 +198,6 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     return groups;
   }, [filteredSnapshots]);
 
-  // Filmstrip Player interval logic
-  useEffect(() => {
-    let timer: any;
-    if (isPlaying && filteredSnapshots.length > 0) {
-      timer = setInterval(() => {
-        setCurrentFrameIndex(prev => (prev + 1) % filteredSnapshots.length);
-      }, playbackSpeed);
-    }
-    return () => clearInterval(timer);
-  }, [isPlaying, filteredSnapshots.length, playbackSpeed]);
 
   // Active snapshots list for Lightbox modal
   const modalSnapshots = activeFolderUser ? filteredSnapshots : snapshots;
@@ -1136,48 +1115,19 @@ pause
                 <span>{sortOrder === "NEWEST" ? "Fresh First ⬇️" : "Oldest First ⬆️"}</span>
               </button>
 
-              <div style={{ display: "flex", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "8px" }}>
-                <button
-                  onClick={() => setFolderViewMode("GRID")}
-                  style={{
-                    padding: "0.35rem 0.85rem",
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    borderRadius: "6px",
-                    border: "none",
-                    cursor: "pointer",
-                    background: folderViewMode === "GRID" ? "#FFFFFF" : "transparent",
-                    color: folderViewMode === "GRID" ? "#8B5CF6" : "#64748B",
-                    boxShadow: folderViewMode === "GRID" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.3rem"
-                  }}
-                >
-                  <Grid size={14} />
-                  <span>Image Gallery Grid ({filteredSnapshots.length})</span>
-                </button>
-
-                <button
-                  onClick={() => setFolderViewMode("FILMSTRIP")}
-                  style={{
-                    padding: "0.35rem 0.85rem",
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    borderRadius: "6px",
-                    border: "none",
-                    cursor: "pointer",
-                    background: folderViewMode === "FILMSTRIP" ? "#FFFFFF" : "transparent",
-                    color: folderViewMode === "FILMSTRIP" ? "#8B5CF6" : "#64748B",
-                    boxShadow: folderViewMode === "FILMSTRIP" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.3rem"
-                  }}
-                >
-                  <Film size={14} />
-                  <span>Timeline Slideshow</span>
-                </button>
+              <div style={{
+                padding: "0.4rem 0.85rem",
+                fontSize: "0.78rem",
+                fontWeight: 800,
+                borderRadius: "8px",
+                background: "rgba(139, 92, 246, 0.12)",
+                color: "#8B5CF6",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem"
+              }}>
+                <Grid size={14} />
+                <span>Image Gallery Grid ({filteredSnapshots.length})</span>
               </div>
             </div>
           </div>
@@ -1196,225 +1146,8 @@ pause
                 User Folder Empty for {selectedDate}
               </h3>
               <p style={{ fontSize: "0.82rem", marginTop: "0.25rem" }}>
-                No 40-second screen telemetry captured for {activeFolderUser.name || activeFolderUser.email} on this date.
+                No 1-minute screen telemetry captured for {activeFolderUser.name || activeFolderUser.email} on this date.
               </p>
-            </div>
-          ) : folderViewMode === "FILMSTRIP" ? (
-            /* FILMSTRIP TIMELINE PLAYER MODE */
-            <div style={{
-              background: "#0F172A",
-              borderRadius: "16px",
-              padding: "1.25rem",
-              color: "#FFFFFF",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem",
-              boxShadow: "0 15px 35px rgba(0, 0, 0, 0.3)"
-            }}>
-              {/* Screen Frame Display */}
-              <div style={{
-                position: "relative",
-                width: "100%",
-                height: "480px",
-                background: "#000000",
-                borderRadius: "10px",
-                overflow: "hidden",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
-                {filteredSnapshots[currentFrameIndex] && (
-                  <img
-                    src={filteredSnapshots[currentFrameIndex].imageUrl}
-                    alt="Timeline Frame"
-                    style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-                  />
-                )}
-
-                {/* Frame Badge Meta Header Overlay */}
-                {filteredSnapshots[currentFrameIndex] && (
-                  <div style={{
-                    position: "absolute",
-                    top: "1rem",
-                    left: "1rem",
-                    background: "rgba(15, 23, 42, 0.85)",
-                    backdropFilter: "blur(6px)",
-                    padding: "0.4rem 0.8rem",
-                    borderRadius: "6px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.6rem",
-                    fontSize: "0.78rem"
-                  }}>
-                    <Clock size={14} style={{ color: "#A78BFA" }} />
-                    <span>
-                      Frame {currentFrameIndex + 1} / {filteredSnapshots.length} — {new Date(filteredSnapshots[currentFrameIndex].capturedAt).toLocaleTimeString()}
-                    </span>
-                    {filteredSnapshots[currentFrameIndex].isIdle && (
-                      <span style={{ background: "#F59E0B", color: "#FFFFFF", padding: "0.1rem 0.4rem", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 800 }}>
-                        IDLE
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                <div style={{ position: "absolute", top: "1rem", right: "1rem", display: "flex", gap: "0.5rem" }}>
-                  <button
-                    onClick={() => filteredSnapshots[currentFrameIndex] && handleBulkDelete([filteredSnapshots[currentFrameIndex].id])}
-                    style={{
-                      background: "rgba(239, 68, 68, 0.85)",
-                      backdropFilter: "blur(6px)",
-                      border: "none",
-                      color: "#FFFFFF",
-                      padding: "0.4rem 0.7rem",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.3rem",
-                      fontSize: "0.75rem",
-                      fontWeight: 700
-                    }}
-                  >
-                    <Trash2 size={14} />
-                    <span>Delete</span>
-                  </button>
-
-                  <button
-                    onClick={() => filteredSnapshots[currentFrameIndex] && openLightboxModal(filteredSnapshots[currentFrameIndex])}
-                    style={{
-                      background: "rgba(255, 255, 255, 0.15)",
-                      backdropFilter: "blur(6px)",
-                      border: "none",
-                      color: "#FFFFFF",
-                      padding: "0.4rem 0.7rem",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.3rem",
-                      fontSize: "0.75rem",
-                      fontWeight: 700
-                    }}
-                  >
-                    <Eye size={14} />
-                    <span>Full Screen</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Player Timeline Controls */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                {/* Timeline Scrubber Range Slider */}
-                <input
-                  type="range"
-                  min={0}
-                  max={filteredSnapshots.length - 1}
-                  value={currentFrameIndex}
-                  onChange={e => setCurrentFrameIndex(parseInt(e.target.value, 10))}
-                  style={{ width: "100%", accentColor: "#8B5CF6", cursor: "pointer" }}
-                />
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <button
-                      onClick={() => setCurrentFrameIndex(prev => Math.max(0, prev - 1))}
-                      style={{ background: "rgba(255, 255, 255, 0.1)", border: "none", color: "#FFFFFF", padding: "0.4rem", borderRadius: "6px", cursor: "pointer" }}
-                    >
-                      <SkipBack size={16} />
-                    </button>
-
-                    <button
-                      onClick={() => setIsPlaying(!isPlaying)}
-                      style={{
-                        background: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
-                        border: "none",
-                        color: "#FFFFFF",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "8px",
-                        fontWeight: 800,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.4rem",
-                        fontSize: "0.82rem"
-                      }}
-                    >
-                      {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                      <span>{isPlaying ? "Pause Playback" : "Play Timeline"}</span>
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentFrameIndex(prev => Math.min(filteredSnapshots.length - 1, prev + 1))}
-                      style={{ background: "rgba(255, 255, 255, 0.1)", border: "none", color: "#FFFFFF", padding: "0.4rem", borderRadius: "6px", cursor: "pointer" }}
-                    >
-                      <SkipForward size={16} />
-                    </button>
-                  </div>
-
-                  {/* Playback Speed Selector */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.75rem", color: "#94A3B8" }}>
-                    <span>Playback Speed:</span>
-                    {[1000, 500, 250].map(speed => (
-                      <button
-                        key={speed}
-                        onClick={() => setPlaybackSpeed(speed)}
-                        style={{
-                          background: playbackSpeed === speed ? "#8B5CF6" : "rgba(255,255,255,0.1)",
-                          border: "none",
-                          color: "#FFFFFF",
-                          padding: "0.2rem 0.5rem",
-                          borderRadius: "4px",
-                          fontSize: "0.7rem",
-                          fontWeight: 700,
-                          cursor: "pointer"
-                        }}
-                      >
-                        {speed === 1000 ? "1x" : speed === 500 ? "2x" : "4x"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Filmstrip Carousel Bar */}
-                <div style={{
-                  display: "flex",
-                  gap: "0.5rem",
-                  overflowX: "auto",
-                  padding: "0.5rem 0",
-                  scrollBehavior: "smooth"
-                }}>
-                  {filteredSnapshots.map((snap, idx) => (
-                    <div
-                      key={snap.id}
-                      onClick={() => setCurrentFrameIndex(idx)}
-                      style={{
-                        flexShrink: 0,
-                        width: "85px",
-                        height: "55px",
-                        borderRadius: "6px",
-                        overflow: "hidden",
-                        border: idx === currentFrameIndex ? "2px solid #8B5CF6" : "1px solid rgba(255,255,255,0.2)",
-                        cursor: "pointer",
-                        opacity: idx === currentFrameIndex ? 1 : 0.6,
-                        position: "relative"
-                      }}
-                    >
-                      <img src={snap.imageUrl} alt="thumb" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{
-                        position: "absolute",
-                        bottom: 0, left: 0, right: 0,
-                        background: "rgba(0,0,0,0.7)",
-                        fontSize: "0.58rem",
-                        textAlign: "center",
-                        padding: "0.05rem"
-                      }}>
-                        {new Date(snap.capturedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           ) : (
             /* THUMBNAIL GALLERY GRID MODE WITH DAY DIVIDER BANNERS */
