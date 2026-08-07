@@ -33,7 +33,10 @@ import {
   X,
   CheckSquare,
   Square,
-  AlertTriangle
+  AlertTriangle,
+  ArrowUpDown,
+  ArrowDown,
+  ArrowUp
 } from "lucide-react";
 import { 
   getCompanyScreenshotsAction, 
@@ -177,10 +180,16 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     return () => clearInterval(timer);
   }, []);
 
-  // Filtered snapshots for current folder view
-  const filteredSnapshots = activeFolderUser
-    ? snapshots.filter(s => s.userId === activeFolderUser.id).sort((a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime())
-    : snapshots;
+  // Sort Order State: 'NEWEST' (Fresh First) | 'OLDEST'
+  const [sortOrder, setSortOrder] = useState<"NEWEST" | "OLDEST">("NEWEST");
+
+  // Filtered & Sorted snapshots for current folder view (Newest / Fresh First by default)
+  const userSnaps = activeFolderUser ? snapshots.filter(s => s.userId === activeFolderUser.id) : snapshots;
+  const filteredSnapshots = [...userSnaps].sort((a, b) => {
+    const timeA = new Date(a.capturedAt).getTime();
+    const timeB = new Date(b.capturedAt).getTime();
+    return sortOrder === "NEWEST" ? timeB - timeA : timeA - timeB;
+  });
 
   // Filmstrip Player interval logic
   useEffect(() => {
@@ -947,8 +956,31 @@ pause
               )}
             </div>
 
-            {/* Switcher Mode Tabs */}
-            <div style={{ display: "flex", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "8px" }}>
+            {/* Switcher Mode Tabs & Sort Order Toggle */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+              <button
+                onClick={() => setSortOrder(prev => prev === "NEWEST" ? "OLDEST" : "NEWEST")}
+                style={{
+                  padding: "0.4rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  borderRadius: "8px",
+                  border: "1px solid #CBD5E1",
+                  cursor: "pointer",
+                  background: "#FFFFFF",
+                  color: "#1E293B",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+                }}
+                title="Toggle Screenshot Sort Order"
+              >
+                <ArrowUpDown size={14} style={{ color: "#8B5CF6" }} />
+                <span>{sortOrder === "NEWEST" ? "Fresh First ⬇️" : "Oldest First ⬆️"}</span>
+              </button>
+
+              <div style={{ display: "flex", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "8px" }}>
               <button
                 onClick={() => setFolderViewMode("GRID")}
                 style={{
