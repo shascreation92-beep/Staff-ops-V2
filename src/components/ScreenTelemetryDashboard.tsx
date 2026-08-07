@@ -1,7 +1,28 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
-import { Monitor, ShieldAlert, Calendar, User, Download, RefreshCw, Trash2, Eye, Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import React, { useState, useEffect, useTransition, useRef } from "react";
+import { 
+  Folder, 
+  FolderOpen, 
+  Monitor, 
+  ShieldAlert, 
+  Calendar, 
+  User, 
+  Download, 
+  RefreshCw, 
+  Trash2, 
+  Eye, 
+  Clock, 
+  Play, 
+  Pause, 
+  SkipBack, 
+  SkipForward, 
+  Film, 
+  Grid, 
+  FileArchive, 
+  ArrowLeft,
+  ChevronRight
+} from "lucide-react";
 import { getCompanyScreenshotsAction, getTamperLogsAction, manualCleanOldScreenshotsAction } from "@/app/actions/telemetry";
 import MonitoringStatusDot from "./MonitoringStatusDot";
 import { toast } from "react-hot-toast";
@@ -52,6 +73,15 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [previewImage, setPreviewImage] = useState<ScreenshotItem | null>(null);
 
+  // View state: 'FOLDERS' | 'USER_FOLDER'
+  const [activeFolderUser, setActiveFolderUser] = useState<UserInfo | null>(null);
+  const [folderViewMode, setFolderViewMode] = useState<"FILMSTRIP" | "GRID">("FILMSTRIP");
+
+  // Filmstrip Timeline Player state
+  const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1000); // ms per frame
+
   const fetchTelemetryData = () => {
     startTransition(async () => {
       try {
@@ -79,6 +109,21 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     return () => clearInterval(interval);
   }, [selectedUserId, selectedDate]);
 
+  // Filmstrip Player interval logic
+  const filteredSnapshots = activeFolderUser
+    ? snapshots.filter(s => s.userId === activeFolderUser.id).sort((a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime())
+    : [];
+
+  useEffect(() => {
+    let timer: any;
+    if (isPlaying && filteredSnapshots.length > 0) {
+      timer = setInterval(() => {
+        setCurrentFrameIndex(prev => (prev + 1) % filteredSnapshots.length);
+      }, playbackSpeed);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying, filteredSnapshots.length, playbackSpeed]);
+
   const handleManualCleanup = async () => {
     if (!confirm("Are you sure you want to run 7-day retention cleanup? This will permanently delete screenshots older than 7 days.")) {
       return;
@@ -98,7 +143,7 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
 
   const handleDownloadAgent = () => {
     const serverUrl = typeof window !== "undefined" ? window.location.origin : "https://51-38-71-134.sslip.io";
-    const targetUserId = selectedUserId !== "ALL" ? selectedUserId : "";
+    const targetUserId = activeFolderUser ? activeFolderUser.id : (selectedUserId !== "ALL" ? selectedUserId : "");
 
     const installerContent = `@echo off
 :: Worknode Workstation 40s Silent Screen Telemetry Agent 1-Click Installer
@@ -147,6 +192,12 @@ pause
     toast.success("Workstation Agent 1-Click Installer downloaded!");
   };
 
+  const handleDownloadUserFolderZip = (userToZip: UserInfo) => {
+    const zipUrl = `/api/telemetry/download-zip?userId=${userToZip.id}&dateStr=${selectedDate}`;
+    toast.success(`Preparing screenshot ZIP archive for ${userToZip.name || userToZip.email}...`);
+    window.open(zipUrl, "_blank");
+  };
+
   const activeSnapshotsCount = snapshots.length;
   const idleCount = snapshots.filter(s => s.isIdle).length;
   const unresolvedTamperCount = tamperLogs.filter(t => !t.isResolved).length;
@@ -182,10 +233,10 @@ pause
           </div>
           <div>
             <h1 style={{ fontSize: "1.35rem", fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>
-              40-Second Desktop Screen Audit
+              40-Second Desktop Screen Audit & User Folders
             </h1>
             <p style={{ fontSize: "0.82rem", color: "#94A3B8", margin: "0.2rem 0 0 0" }}>
-              Silent 40s desktop telemetry, 7-day auto storage retention & tamper violation tracking
+              Organized user screenshot folders, 40s filmstrip playback & 7-day auto-purge retention
             </p>
           </div>
         </div>
@@ -295,49 +346,9 @@ pause
         </div>
       </div>
 
-      {/* Tamper Violations Alert Banner */}
-      {unresolvedTamperCount > 0 && (
-        <div style={{
-          padding: "1rem 1.25rem",
-          background: "rgba(239, 68, 68, 0.08)",
-          border: "1px solid rgba(239, 68, 68, 0.25)",
-          borderRadius: "12px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.6rem"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#EF4444", fontWeight: 800, fontSize: "0.92rem" }}>
-            <ShieldAlert size={18} />
-            <span>🚨 REAL-TIME TAMPER & VIOLATION ALERTS ({unresolvedTamperCount})</span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-            {tamperLogs.slice(0, 5).map(log => (
-              <div key={log.id} style={{
-                fontSize: "0.82rem",
-                color: "var(--text-primary)",
-                background: "#FFFFFF",
-                padding: "0.5rem 0.8rem",
-                borderRadius: "6px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
-              }}>
-                <div>
-                  <strong>{log.user.name || log.user.email}</strong> ({log.user.employee?.employeeId || "N/A"}): {log.reason}
-                </div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                  {new Date(log.createdAt).toLocaleTimeString()}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Filter Controls */}
+      {/* Breadcrumb Navigation Bar */}
       <div style={{
-        padding: "1rem 1.25rem",
+        padding: "0.85rem 1.25rem",
         background: "#FFFFFF",
         border: "1px solid var(--border-dim)",
         borderRadius: "12px",
@@ -347,25 +358,39 @@ pause
         flexWrap: "wrap",
         gap: "1rem"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-          {/* User Selector */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <User size={15} style={{ color: "var(--text-muted)" }} />
-            <select
-              value={selectedUserId}
-              onChange={e => setSelectedUserId(e.target.value)}
-              className="select-gold"
-              style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem", minWidth: "180px" }}
-            >
-              <option value="ALL">All Staff Members</option>
-              {staffList.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name || s.email} ({s.employee?.employeeId || "N/A"})
-                </option>
-              ))}
-            </select>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.9rem", fontWeight: 700 }}>
+          <button
+            onClick={() => setActiveFolderUser(null)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: activeFolderUser ? "var(--text-muted)" : "var(--primary-color)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              fontWeight: 800
+            }}
+          >
+            <Folder size={18} />
+            <span>All Staff User Folders</span>
+          </button>
 
+          {activeFolderUser && (
+            <>
+              <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
+              <span style={{ color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <FolderOpen size={18} style={{ color: "#8B5CF6" }} />
+                <span>{activeFolderUser.name || activeFolderUser.email}</span>
+                <span className="badge active" style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", marginLeft: "0.2rem" }}>
+                  {activeFolderUser.employee?.employeeId || "N/A"}
+                </span>
+              </span>
+            </>
+          )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
           {/* Date Selector */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
             <Calendar size={15} style={{ color: "var(--text-muted)" }} />
@@ -377,125 +402,573 @@ pause
               style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}
             />
           </div>
-        </div>
 
-        <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 600 }}>
-          Auto-capturing every <strong>40 Seconds</strong>
+          {activeFolderUser && (
+            <button
+              onClick={() => handleDownloadUserFolderZip(activeFolderUser)}
+              style={{
+                padding: "0.4rem 0.9rem",
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                color: "#1E293B",
+                background: "#F1F5F9",
+                border: "1px solid #CBD5E1",
+                borderRadius: "8px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem"
+              }}
+            >
+              <FileArchive size={15} style={{ color: "#8B5CF6" }} />
+              <span>Download User ZIP</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Screenshot Timeline Gallery Grid */}
-      {snapshots.length === 0 ? (
-        <div style={{
-          padding: "3rem",
-          textAlign: "center",
-          background: "#FFFFFF",
-          border: "1px dashed var(--border-dim)",
-          borderRadius: "12px",
-          color: "var(--text-muted)"
-        }}>
-          <Monitor size={36} style={{ margin: "0 auto 0.75rem", opacity: 0.4 }} />
-          <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
-            No Desktop Screenshots Found
-          </h3>
-          <p style={{ fontSize: "0.82rem", marginTop: "0.25rem" }}>
-            No 40-second screen telemetry captured for the selected user and date.
-          </p>
-        </div>
-      ) : (
+      {/* VIEW MODE 1: ALL USER FOLDERS GRID */}
+      {!activeFolderUser ? (
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
           gap: "1.25rem"
         }}>
-          {snapshots.map(snap => (
-            <div key={snap.id} className="glass-panel" style={{
-              background: "#FFFFFF",
-              border: "1px solid var(--border-dim)",
-              borderRadius: "12px",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
-              transition: "transform 0.2s ease, box-shadow 0.2s ease"
-            }}>
-              {/* Image Preview Thumbnail */}
-              <div 
-                onClick={() => setPreviewImage(snap)}
+          {staffList.map(u => {
+            const userSnaps = snapshots.filter(s => s.userId === u.id);
+            const latestSnap = userSnaps[0];
+            const userIdleCount = userSnaps.filter(s => s.isIdle).length;
+
+            return (
+              <div
+                key={u.id}
+                className="glass-panel"
                 style={{
-                  position: "relative",
-                  width: "100%",
-                  height: "155px",
-                  background: "#0F172A",
-                  cursor: "pointer",
-                  overflow: "hidden"
+                  background: "#FFFFFF",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "14px",
+                  padding: "1.25rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "1rem",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)",
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease"
                 }}
               >
-                <img
-                  src={snap.imageUrl}
-                  alt={`Screenshot ${snap.user.name || snap.user.email}`}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-                <div style={{
-                  position: "absolute",
-                  bottom: "0.5rem",
-                  right: "0.5rem",
-                  background: "rgba(15, 23, 42, 0.75)",
-                  backdropFilter: "blur(4px)",
-                  color: "#FFFFFF",
-                  fontSize: "0.68rem",
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <div style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "12px",
+                      background: "rgba(139, 92, 246, 0.12)",
+                      border: "1px solid rgba(139, 92, 246, 0.25)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#8B5CF6"
+                    }}>
+                      <Folder size={24} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                        {u.name || u.email.split("@")[0]}
+                      </h3>
+                      <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+                        {u.email}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className="badge active" style={{ fontSize: "0.62rem" }}>
+                    {u.employee?.employeeId || "N/A"}
+                  </span>
+                </div>
+
+                {/* Folder Thumbnail / Status Preview */}
+                <div 
+                  onClick={() => {
+                    setActiveFolderUser(u);
+                    setCurrentFrameIndex(0);
+                  }}
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: "130px",
+                    background: "#0F172A",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    cursor: "pointer"
+                  }}
+                >
+                  {latestSnap ? (
+                    <img
+                      src={latestSnap.imageUrl}
+                      alt="Latest capture"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <div style={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#64748B",
+                      fontSize: "0.78rem"
+                    }}>
+                      <Monitor size={28} style={{ opacity: 0.4, marginBottom: "0.4rem" }} />
+                      <span>No Captures Today</span>
+                    </div>
+                  )}
+
+                  <div style={{
+                    position: "absolute",
+                    bottom: "0.5rem",
+                    right: "0.5rem",
+                    background: "rgba(15, 23, 42, 0.8)",
+                    color: "#FFFFFF",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    padding: "0.2rem 0.5rem",
+                    borderRadius: "4px"
+                  }}>
+                    📁 Open Folder ({userSnaps.length})
+                  </div>
+                </div>
+
+                {/* Folder Meta Stats */}
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  <div>
+                    Shots Today: <strong style={{ color: "var(--text-primary)" }}>{userSnaps.length}</strong>
+                  </div>
+                  <div>
+                    Idle Shots: <strong style={{ color: userIdleCount > 0 ? "#F59E0B" : "var(--text-primary)" }}>{userIdleCount}</strong>
+                  </div>
+                </div>
+
+                {/* Action Toolbar */}
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button
+                    onClick={() => {
+                      setActiveFolderUser(u);
+                      setCurrentFrameIndex(0);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "0.5rem",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      color: "#FFFFFF",
+                      background: "linear-gradient(135deg, #0077B6 0%, #00B4D8 100%)",
+                      border: "none",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.3rem"
+                    }}
+                  >
+                    <FolderOpen size={14} />
+                    <span>View User Folder</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadUserFolderZip(u)}
+                    style={{
+                      padding: "0.5rem 0.7rem",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      color: "#334155",
+                      background: "#F1F5F9",
+                      border: "1px solid #CBD5E1",
+                      borderRadius: "8px",
+                      cursor: "pointer"
+                    }}
+                    title="Download 40s Screenshots ZIP Archive"
+                  >
+                    <FileArchive size={15} style={{ color: "#8B5CF6" }} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* VIEW MODE 2: USER FOLDER DETAIL (FILMSTRIP PLAYER / GRID) */
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* Sub-toolbar */}
+          <div style={{
+            padding: "0.75rem 1.25rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            borderRadius: "12px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "1rem"
+          }}>
+            <button
+              onClick={() => setActiveFolderUser(null)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--text-muted)",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem"
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Back to All User Folders</span>
+            </button>
+
+            {/* Switcher Mode Tabs */}
+            <div style={{ display: "flex", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "8px" }}>
+              <button
+                onClick={() => setFolderViewMode("FILMSTRIP")}
+                style={{
+                  padding: "0.35rem 0.85rem",
+                  fontSize: "0.78rem",
                   fontWeight: 700,
-                  padding: "0.2rem 0.5rem",
-                  borderRadius: "4px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: folderViewMode === "FILMSTRIP" ? "#FFFFFF" : "transparent",
+                  color: folderViewMode === "FILMSTRIP" ? "#8B5CF6" : "#64748B",
+                  boxShadow: folderViewMode === "FILMSTRIP" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
                   display: "flex",
                   alignItems: "center",
                   gap: "0.3rem"
-                }}>
-                  <Eye size={12} />
-                  <span>Expand</span>
-                </div>
+                }}
+              >
+                <Film size={14} />
+                <span>Filmstrip Timeline Playback</span>
+              </button>
 
-                {snap.isIdle && (
+              <button
+                onClick={() => setFolderViewMode("GRID")}
+                style={{
+                  padding: "0.35rem 0.85rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: folderViewMode === "GRID" ? "#FFFFFF" : "transparent",
+                  color: folderViewMode === "GRID" ? "#8B5CF6" : "#64748B",
+                  boxShadow: folderViewMode === "GRID" ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+              >
+                <Grid size={14} />
+                <span>Thumbnail Gallery ({filteredSnapshots.length})</span>
+              </button>
+            </div>
+          </div>
+
+          {filteredSnapshots.length === 0 ? (
+            <div style={{
+              padding: "3rem",
+              textAlign: "center",
+              background: "#FFFFFF",
+              border: "1px dashed var(--border-dim)",
+              borderRadius: "12px",
+              color: "var(--text-muted)"
+            }}>
+              <Folder size={40} style={{ margin: "0 auto 0.75rem", opacity: 0.3 }} />
+              <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
+                User Folder Empty for {selectedDate}
+              </h3>
+              <p style={{ fontSize: "0.82rem", marginTop: "0.25rem" }}>
+                No 40-second screen telemetry captured for {activeFolderUser.name || activeFolderUser.email} on this date.
+              </p>
+            </div>
+          ) : folderViewMode === "FILMSTRIP" ? (
+            /* FILMSTRIP TIMELINE PLAYER MODE */
+            <div style={{
+              background: "#0F172A",
+              borderRadius: "16px",
+              padding: "1.25rem",
+              color: "#FFFFFF",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
+              boxShadow: "0 15px 35px rgba(0, 0, 0, 0.3)"
+            }}>
+              {/* Screen Frame Display */}
+              <div style={{
+                position: "relative",
+                width: "100%",
+                height: "480px",
+                background: "#000000",
+                borderRadius: "10px",
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                {filteredSnapshots[currentFrameIndex] && (
+                  <img
+                    src={filteredSnapshots[currentFrameIndex].imageUrl}
+                    alt="Timeline Frame"
+                    style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                  />
+                )}
+
+                {/* Frame Badge Meta Header Overlay */}
+                {filteredSnapshots[currentFrameIndex] && (
                   <div style={{
                     position: "absolute",
-                    top: "0.5rem",
-                    left: "0.5rem",
-                    background: "rgba(245, 158, 11, 0.9)",
-                    color: "#FFFFFF",
-                    fontSize: "0.65rem",
-                    fontWeight: 800,
-                    padding: "0.15rem 0.45rem",
-                    borderRadius: "4px"
+                    top: "1rem",
+                    left: "1rem",
+                    background: "rgba(15, 23, 42, 0.85)",
+                    backdropFilter: "blur(6px)",
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.6rem",
+                    fontSize: "0.78rem"
                   }}>
-                    IDLE (&gt;2m)
+                    <Clock size={14} style={{ color: "#A78BFA" }} />
+                    <span>
+                      Frame {currentFrameIndex + 1} / {filteredSnapshots.length} — {new Date(filteredSnapshots[currentFrameIndex].capturedAt).toLocaleTimeString()}
+                    </span>
+                    {filteredSnapshots[currentFrameIndex].isIdle && (
+                      <span style={{ background: "#F59E0B", color: "#FFFFFF", padding: "0.1rem 0.4rem", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 800 }}>
+                        IDLE
+                      </span>
+                    )}
                   </div>
                 )}
+
+                <button
+                  onClick={() => filteredSnapshots[currentFrameIndex] && setPreviewImage(filteredSnapshots[currentFrameIndex])}
+                  style={{
+                    position: "absolute",
+                    top: "1rem",
+                    right: "1rem",
+                    background: "rgba(255, 255, 255, 0.15)",
+                    backdropFilter: "blur(6px)",
+                    border: "none",
+                    color: "#FFFFFF",
+                    padding: "0.4rem 0.7rem",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    fontSize: "0.75rem",
+                    fontWeight: 700
+                  }}
+                >
+                  <Eye size={14} />
+                  <span>Full Screen</span>
+                </button>
               </div>
 
-              {/* Card Meta Footer */}
-              <div style={{ padding: "0.85rem 1rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              {/* Player Timeline Controls */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {/* Timeline Scrubber Range Slider */}
+                <input
+                  type="range"
+                  min={0}
+                  max={filteredSnapshots.length - 1}
+                  value={currentFrameIndex}
+                  onChange={e => setCurrentFrameIndex(parseInt(e.target.value, 10))}
+                  style={{ width: "100%", accentColor: "#8B5CF6", cursor: "pointer" }}
+                />
+
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                    <MonitoringStatusDot status={snap.isIdle ? "IDLE" : "ACTIVE"} />
-                    <span>{snap.user.name || snap.user.email}</span>
-                  </span>
-                  <span className="badge active" style={{ fontSize: "0.62rem", padding: "0.1rem 0.35rem" }}>
-                    ID: {snap.user.employee?.employeeId || "N/A"}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <button
+                      onClick={() => setCurrentFrameIndex(prev => Math.max(0, prev - 1))}
+                      style={{ background: "rgba(255, 255, 255, 0.1)", border: "none", color: "#FFFFFF", padding: "0.4rem", borderRadius: "6px", cursor: "pointer" }}
+                    >
+                      <SkipBack size={16} />
+                    </button>
+
+                    <button
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      style={{
+                        background: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
+                        border: "none",
+                        color: "#FFFFFF",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "8px",
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.4rem",
+                        fontSize: "0.82rem"
+                      }}
+                    >
+                      {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                      <span>{isPlaying ? "Pause Playback" : "Play Timeline"}</span>
+                    </button>
+
+                    <button
+                      onClick={() => setCurrentFrameIndex(prev => Math.min(filteredSnapshots.length - 1, prev + 1))}
+                      style={{ background: "rgba(255, 255, 255, 0.1)", border: "none", color: "#FFFFFF", padding: "0.4rem", borderRadius: "6px", cursor: "pointer" }}
+                    >
+                      <SkipForward size={16} />
+                    </button>
+                  </div>
+
+                  {/* Playback Speed Selector */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.75rem", color: "#94A3B8" }}>
+                    <span>Playback Speed:</span>
+                    {[1000, 500, 250].map(speed => (
+                      <button
+                        key={speed}
+                        onClick={() => setPlaybackSpeed(speed)}
+                        style={{
+                          background: playbackSpeed === speed ? "#8B5CF6" : "rgba(255,255,255,0.1)",
+                          border: "none",
+                          color: "#FFFFFF",
+                          padding: "0.2rem 0.5rem",
+                          borderRadius: "4px",
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                          cursor: "pointer"
+                        }}
+                      >
+                        {speed === 1000 ? "1x" : speed === 500 ? "2x" : "4x"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.74rem", color: "var(--text-muted)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                    <Clock size={12} />
-                    <span>{new Date(snap.capturedAt).toLocaleTimeString()}</span>
-                  </div>
-                  <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#8B5CF6" }}>
-                    {snap.source}
-                  </span>
+                {/* Filmstrip Carousel Bar */}
+                <div style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  overflowX: "auto",
+                  padding: "0.5rem 0",
+                  scrollBehavior: "smooth"
+                }}>
+                  {filteredSnapshots.map((snap, idx) => (
+                    <div
+                      key={snap.id}
+                      onClick={() => setCurrentFrameIndex(idx)}
+                      style={{
+                        flexShrink: 0,
+                        width: "85px",
+                        height: "55px",
+                        borderRadius: "6px",
+                        overflow: "hidden",
+                        border: idx === currentFrameIndex ? "2px solid #8B5CF6" : "1px solid rgba(255,255,255,0.2)",
+                        cursor: "pointer",
+                        opacity: idx === currentFrameIndex ? 1 : 0.6,
+                        position: "relative"
+                      }}
+                    >
+                      <img src={snap.imageUrl} alt="thumb" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div style={{
+                        position: "absolute",
+                        bottom: 0, left: 0, right: 0,
+                        background: "rgba(0,0,0,0.7)",
+                        fontSize: "0.58rem",
+                        textAlign: "center",
+                        padding: "0.05rem"
+                      }}>
+                        {new Date(snap.capturedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          ))}
+          ) : (
+            /* THUMBNAIL GALLERY GRID MODE */
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+              gap: "1.25rem"
+            }}>
+              {filteredSnapshots.map(snap => (
+                <div key={snap.id} className="glass-panel" style={{
+                  background: "#FFFFFF",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)"
+                }}>
+                  <div 
+                    onClick={() => setPreviewImage(snap)}
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      height: "155px",
+                      background: "#0F172A",
+                      cursor: "pointer",
+                      overflow: "hidden"
+                    }}
+                  >
+                    <img
+                      src={snap.imageUrl}
+                      alt={`Screenshot ${snap.user.name || snap.user.email}`}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <div style={{
+                      position: "absolute",
+                      bottom: "0.5rem",
+                      right: "0.5rem",
+                      background: "rgba(15, 23, 42, 0.75)",
+                      color: "#FFFFFF",
+                      fontSize: "0.68rem",
+                      fontWeight: 700,
+                      padding: "0.2rem 0.5rem",
+                      borderRadius: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.3rem"
+                    }}>
+                      <Eye size={12} />
+                      <span>Expand</span>
+                    </div>
+
+                    {snap.isIdle && (
+                      <div style={{
+                        position: "absolute",
+                        top: "0.5rem",
+                        left: "0.5rem",
+                        background: "rgba(245, 158, 11, 0.9)",
+                        color: "#FFFFFF",
+                        fontSize: "0.65rem",
+                        fontWeight: 800,
+                        padding: "0.15rem 0.45rem",
+                        borderRadius: "4px"
+                      }}>
+                        IDLE (&gt;2m)
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ padding: "0.85rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <Clock size={13} style={{ color: "var(--text-muted)" }} />
+                      <span>{new Date(snap.capturedAt).toLocaleTimeString()}</span>
+                    </div>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#8B5CF6" }}>
+                      {snap.source}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -532,7 +1005,7 @@ pause
             }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>
-                  {previewImage.user.name || previewImage.user.email} — Desktop Capture
+                  {previewImage.user.name || previewImage.user.email} — 40s Desktop Screenshot
                 </h3>
                 <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>
                   Captured at {new Date(previewImage.capturedAt).toLocaleString()} ({previewImage.source})
