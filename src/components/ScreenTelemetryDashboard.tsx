@@ -123,14 +123,14 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
 
   useEffect(() => {
     const syncUserFromUrl = () => {
-      if (typeof window !== "undefined" && staffList.length > 0) {
+      if (typeof window !== "undefined") {
         const urlParams = new URLSearchParams(window.location.search);
         const userParam = urlParams.get("user") || urlParams.get("userId");
-        if (userParam) {
+        if (userParam && staffList.length > 0) {
           const found = staffList.find(u => u.id === userParam);
-          if (found) {
-            setActiveFolderUser(found);
-          }
+          setActiveFolderUser(found || null);
+        } else {
+          setActiveFolderUser(null);
         }
       }
     };
