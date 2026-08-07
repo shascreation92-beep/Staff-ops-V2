@@ -107,6 +107,12 @@ export async function uploadScreenshotAction(data: {
       return { success: false, error: "Malformed base64 image data." };
     }
 
+    const mimeType = matches[1].toLowerCase();
+    let ext = "png";
+    if (mimeType.includes("jpeg") || mimeType.includes("jpg")) ext = "jpg";
+    else if (mimeType.includes("webp")) ext = "webp";
+    else if (mimeType.includes("png")) ext = "png";
+
     const imageBuffer = Buffer.from(matches[2], "base64");
     const dateFolder = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const uploadDir = path.join(process.cwd(), "public", "uploads", "telemetry", userId, dateFolder);
@@ -115,7 +121,7 @@ export async function uploadScreenshotAction(data: {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    const fileName = `snap_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webp`;
+    const fileName = `snap_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
     const fullPath = path.join(uploadDir, fileName);
     fs.writeFileSync(fullPath, imageBuffer);
 
