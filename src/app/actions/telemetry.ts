@@ -408,3 +408,54 @@ export async function getUsersMonitoringStatusAction() {
 
   return { success: true, userStatusMap };
 }
+
+/**
+ * Delete selective or bulk screenshots by snapshot IDs (deletes database records AND physical files from disk)
+ */
+export async function deleteScreenshotsAction(snapshotIds: string[]) {
+  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+
+  if (!snapshotIds || snapshotIds.length === 0) {
+    return { success: false, error: "No screenshots selected for deletion." };
+  }
+
+  // Find snapshots to delete
+  const snapshots = await db.screensnapshot.findMany({
+    where: {
+      id: { in: snapshotIds },
+      ...(currentUser.role !== "SUPER_ADMIN" ? { companyId: currentUser.companyId } : {})
+    },
+    select: {
+      id: true,
+      imageUrl: true
+    }
+  });
+
+  if (snapshots.length === 0) {
+    return { success: false, error: "No matching screenshots found." };
+  }
+
+  // Delete physical files from disk to free VPS storage space
+  for (const s of snapshots) {
+    try {
+      if (s.imageUrl && s.imageUrl.startsWith("/uploads/")) {
+        const fullPath = path.join(process.cwd(), "public", s.imageUrl.replace(/^\//, "").replace(/\//g, path.sep));
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to delete physical screenshot file:", s.imageUrl, e);
+    }
+  }
+
+  // Delete database records
+  await db.screensnapshot.deleteMany({
+    where: {
+      id: { in: snapshots.map(s => s.id) }
+    }
+  });
+
+  revalidatePath("/screen-telemetry");
+  return { success: true, count: snapshots.length };
+}

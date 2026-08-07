@@ -30,9 +30,18 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  X
+  X,
+  CheckSquare,
+  Square,
+  AlertTriangle
 } from "lucide-react";
-import { getCompanyScreenshotsAction, getTamperLogsAction, manualCleanOldScreenshotsAction, getUsersMonitoringStatusAction } from "@/app/actions/telemetry";
+import { 
+  getCompanyScreenshotsAction, 
+  getTamperLogsAction, 
+  manualCleanOldScreenshotsAction, 
+  getUsersMonitoringStatusAction,
+  deleteScreenshotsAction
+} from "@/app/actions/telemetry";
 import MonitoringStatusDot from "./MonitoringStatusDot";
 import { toast } from "react-hot-toast";
 
@@ -87,6 +96,9 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   const [selectedUserId, setSelectedUserId] = useState<string>("ALL");
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [previewImage, setPreviewImage] = useState<ScreenshotItem | null>(null);
+
+  // Bulk Selection State for Deletion
+  const [selectedSnapIds, setSelectedSnapIds] = useState<string[]>([]);
 
   // Live 40s Ticker seconds remaining state (Clock-synced)
   const [countdownSec, setCountdownSec] = useState<number>(40);
@@ -164,11 +176,12 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     return () => clearInterval(timer);
   }, []);
 
-  // Filmstrip Player interval logic
+  // Filtered snapshots for current folder view
   const filteredSnapshots = activeFolderUser
     ? snapshots.filter(s => s.userId === activeFolderUser.id).sort((a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime())
     : snapshots;
 
+  // Filmstrip Player interval logic
   useEffect(() => {
     let timer: any;
     if (isPlaying && filteredSnapshots.length > 0) {
@@ -189,6 +202,55 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     setPreviewImage(snap);
     setZoomScale(1);
     setPanPos({ x: 0, y: 0 });
+  };
+
+  // Checkbox selection handlers
+  const toggleSelectSnap = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedSnapIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllFolderSnaps = () => {
+    const folderSnapIds = filteredSnapshots.map(s => s.id);
+    const allSelected = folderSnapIds.every(id => selectedSnapIds.includes(id));
+    if (allSelected) {
+      setSelectedSnapIds(prev => prev.filter(id => !folderSnapIds.includes(id)));
+    } else {
+      setSelectedSnapIds(prev => Array.from(new Set([...prev, ...folderSnapIds])));
+    }
+  };
+
+  // Bulk Delete Action
+  const handleBulkDelete = async (idsToDelete?: string[]) => {
+    const ids = idsToDelete || selectedSnapIds;
+    if (ids.length === 0) {
+      toast.error("No screenshots selected for deletion.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to permanently delete ${ids.length} screenshot(s)?\nThis will remove them from the database and free up VPS disk space.`)) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await deleteScreenshotsAction(ids);
+        if (res.success) {
+          toast.success(`Successfully deleted ${res.count} screenshot(s) and freed VPS disk space!`);
+          setSelectedSnapIds(prev => prev.filter(id => !ids.includes(id)));
+          if (previewImage && ids.includes(previewImage.id)) {
+            setPreviewImage(null);
+          }
+          fetchTelemetryData();
+        } else {
+          toast.error(res.error || "Failed to delete screenshots.");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Deletion failed.");
+      }
+    });
   };
 
   // Keyboard navigation listener (Left, Right, Escape)
@@ -252,7 +314,7 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   };
 
   const handleManualCleanup = async () => {
-    if (!confirm("Are you sure you want to run 7-day retention cleanup? This will permanently delete screenshots older than 7 days.")) {
+    if (!confirm("Are you sure you want to run 7-day retention cleanup? This will permanently delete screenshots older than 7 days and clear server disk space.")) {
       return;
     }
     startTransition(async () => {
@@ -338,6 +400,8 @@ pause
   const activeSnapshotsCount = snapshots.length;
   const idleCount = snapshots.filter(s => s.isIdle).length;
   const unresolvedTamperCount = tamperLogs.filter(t => !t.isResolved).length;
+
+  const isAllFolderSelected = filteredSnapshots.length > 0 && filteredSnapshots.every(s => selectedSnapIds.includes(s.id));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -433,7 +497,7 @@ pause
               alignItems: "center",
               gap: "0.4rem"
             }}
-            title="Clean screenshots older than 7 days"
+            title="Clean screenshots older than 7 days to free VPS disk space"
           >
             <Trash2 size={15} />
             <span>7-Day Storage Clean</span>
@@ -760,6 +824,25 @@ pause
                     <span>View User Folder</span>
                   </button>
 
+                  {userSnaps.length > 0 && (
+                    <button
+                      onClick={() => handleBulkDelete(userSnaps.map(s => s.id))}
+                      style={{
+                        padding: "0.55rem 0.7rem",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        color: "#DC2626",
+                        background: "#FEF2F2",
+                        border: "1px solid #FECACA",
+                        borderRadius: "8px",
+                        cursor: "pointer"
+                      }}
+                      title="Delete all screenshots in this folder to free VPS space"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleDownloadUserFolderZip(u)}
                     style={{
@@ -784,7 +867,7 @@ pause
       ) : (
         /* VIEW MODE 2: USER FOLDER DETAIL (IMAGE GALLERY GRID / SLIDESHOW) */
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          {/* Sub-toolbar */}
+          {/* Sub-toolbar with Bulk Selection & View Switcher */}
           <div style={{
             padding: "0.75rem 1.25rem",
             background: "#FFFFFF",
@@ -796,23 +879,72 @@ pause
             flexWrap: "wrap",
             gap: "1rem"
           }}>
-            <button
-              onClick={() => setActiveFolderUser(null)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--text-muted)",
-                fontSize: "0.82rem",
-                fontWeight: 700,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.4rem"
-              }}
-            >
-              <ArrowLeft size={16} />
-              <span>Back to All User Folders</span>
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+              <button
+                onClick={() => setActiveFolderUser(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  fontSize: "0.82rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem"
+                }}
+              >
+                <ArrowLeft size={16} />
+                <span>Back to All User Folders</span>
+              </button>
+
+              {/* Bulk Selection Controls Bar */}
+              {filteredSnapshots.length > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", borderLeft: "1px solid #E2E8F0", paddingLeft: "1rem" }}>
+                  <button
+                    onClick={toggleSelectAllFolderSnaps}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "var(--text-primary)",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.4rem"
+                    }}
+                  >
+                    {isAllFolderSelected ? <CheckSquare size={16} style={{ color: "#8B5CF6" }} /> : <Square size={16} style={{ color: "#94A3B8" }} />}
+                    <span>{isAllFolderSelected ? "Deselect All" : "Select All"}</span>
+                  </button>
+
+                  {selectedSnapIds.length > 0 && (
+                    <button
+                      onClick={() => handleBulkDelete()}
+                      disabled={isPending}
+                      style={{
+                        padding: "0.35rem 0.85rem",
+                        fontSize: "0.78rem",
+                        fontWeight: 800,
+                        color: "#FFFFFF",
+                        background: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                        boxShadow: "0 2px 8px rgba(239, 68, 68, 0.3)"
+                      }}
+                    >
+                      <Trash2 size={14} />
+                      <span>Delete Selected ({selectedSnapIds.length})</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Switcher Mode Tabs */}
             <div style={{ display: "flex", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "8px" }}>
@@ -936,29 +1068,49 @@ pause
                   </div>
                 )}
 
-                <button
-                  onClick={() => filteredSnapshots[currentFrameIndex] && openLightboxModal(filteredSnapshots[currentFrameIndex])}
-                  style={{
-                    position: "absolute",
-                    top: "1rem",
-                    right: "1rem",
-                    background: "rgba(255, 255, 255, 0.15)",
-                    backdropFilter: "blur(6px)",
-                    border: "none",
-                    color: "#FFFFFF",
-                    padding: "0.4rem 0.7rem",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem",
-                    fontWeight: 700
-                  }}
-                >
-                  <Eye size={14} />
-                  <span>Full Screen</span>
-                </button>
+                <div style={{ position: "absolute", top: "1rem", right: "1rem", display: "flex", gap: "0.5rem" }}>
+                  <button
+                    onClick={() => filteredSnapshots[currentFrameIndex] && handleBulkDelete([filteredSnapshots[currentFrameIndex].id])}
+                    style={{
+                      background: "rgba(239, 68, 68, 0.85)",
+                      backdropFilter: "blur(6px)",
+                      border: "none",
+                      color: "#FFFFFF",
+                      padding: "0.4rem 0.7rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                      fontSize: "0.75rem",
+                      fontWeight: 700
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    <span>Delete</span>
+                  </button>
+
+                  <button
+                    onClick={() => filteredSnapshots[currentFrameIndex] && openLightboxModal(filteredSnapshots[currentFrameIndex])}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.15)",
+                      backdropFilter: "blur(6px)",
+                      border: "none",
+                      color: "#FFFFFF",
+                      padding: "0.4rem 0.7rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                      fontSize: "0.75rem",
+                      fontWeight: 700
+                    }}
+                  >
+                    <Eye size={14} />
+                    <span>Full Screen</span>
+                  </button>
+                </div>
               </div>
 
               {/* Player Timeline Controls */}
@@ -1081,78 +1233,126 @@ pause
               gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
               gap: "1.25rem"
             }}>
-              {filteredSnapshots.map(snap => (
-                <div key={snap.id} className="glass-panel" style={{
-                  background: "#FFFFFF",
-                  border: "1px solid var(--border-dim)",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  display: "flex",
-                  flexDirection: "column",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)"
-                }}>
+              {filteredSnapshots.map(snap => {
+                const isSelected = selectedSnapIds.includes(snap.id);
+
+                return (
                   <div 
-                    onClick={() => openLightboxModal(snap)}
+                    key={snap.id} 
+                    className="glass-panel" 
                     style={{
-                      position: "relative",
-                      width: "100%",
-                      height: "155px",
-                      background: "#0F172A",
-                      cursor: "pointer",
-                      overflow: "hidden"
+                      background: "#FFFFFF",
+                      border: isSelected ? "2px solid #8B5CF6" : "1px solid var(--border-dim)",
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      boxShadow: isSelected ? "0 4px 16px rgba(139, 92, 246, 0.25)" : "0 2px 8px rgba(0, 0, 0, 0.04)",
+                      position: "relative"
                     }}
                   >
-                    <img
-                      src={snap.imageUrl}
-                      alt={`Screenshot ${snap.user.name || snap.user.email}`}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                    <div style={{
-                      position: "absolute",
-                      bottom: "0.5rem",
-                      right: "0.5rem",
-                      background: "rgba(15, 23, 42, 0.75)",
-                      color: "#FFFFFF",
-                      fontSize: "0.68rem",
-                      fontWeight: 700,
-                      padding: "0.2rem 0.5rem",
-                      borderRadius: "4px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.3rem"
-                    }}>
-                      <Eye size={12} />
-                      <span>Expand</span>
-                    </div>
-
-                    {snap.isIdle && (
-                      <div style={{
+                    {/* Checkbox Overlay Top-Left */}
+                    <div 
+                      onClick={(e) => toggleSelectSnap(snap.id, e)}
+                      style={{
                         position: "absolute",
                         top: "0.5rem",
                         left: "0.5rem",
-                        background: "rgba(245, 158, 11, 0.9)",
+                        zIndex: 10,
+                        background: isSelected ? "#8B5CF6" : "rgba(15, 23, 42, 0.65)",
                         color: "#FFFFFF",
-                        fontSize: "0.65rem",
-                        fontWeight: 800,
-                        padding: "0.15rem 0.45rem",
-                        borderRadius: "4px"
-                      }}>
-                        IDLE (&gt;2m)
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ padding: "0.85rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                      <Clock size={13} style={{ color: "var(--text-muted)" }} />
-                      <span>{new Date(snap.capturedAt).toLocaleTimeString()}</span>
+                        padding: "0.2rem",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
+                      }}
+                      title={isSelected ? "Deselect Screenshot" : "Select Screenshot for Deletion"}
+                    >
+                      {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
                     </div>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#8B5CF6" }}>
-                      {snap.source}
-                    </span>
+
+                    <div 
+                      onClick={() => openLightboxModal(snap)}
+                      style={{
+                        position: "relative",
+                        width: "100%",
+                        height: "155px",
+                        background: "#0F172A",
+                        cursor: "pointer",
+                        overflow: "hidden"
+                      }}
+                    >
+                      <img
+                        src={snap.imageUrl}
+                        alt={`Screenshot ${snap.user.name || snap.user.email}`}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                      <div style={{
+                        position: "absolute",
+                        bottom: "0.5rem",
+                        right: "0.5rem",
+                        background: "rgba(15, 23, 42, 0.75)",
+                        color: "#FFFFFF",
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        padding: "0.2rem 0.5rem",
+                        borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.3rem"
+                      }}>
+                        <Eye size={12} />
+                        <span>Expand</span>
+                      </div>
+
+                      {snap.isIdle && (
+                        <div style={{
+                          position: "absolute",
+                          top: "0.5rem",
+                          right: "0.5rem",
+                          background: "rgba(245, 158, 11, 0.9)",
+                          color: "#FFFFFF",
+                          fontSize: "0.65rem",
+                          fontWeight: 800,
+                          padding: "0.15rem 0.45rem",
+                          borderRadius: "4px"
+                        }}>
+                          IDLE (&gt;2m)
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ padding: "0.85rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                        <Clock size={13} style={{ color: "var(--text-muted)" }} />
+                        <span>{new Date(snap.capturedAt).toLocaleTimeString()}</span>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBulkDelete([snap.id]);
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#EF4444",
+                            cursor: "pointer",
+                            padding: "0.2rem"
+                          }}
+                          title="Delete Screenshot"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -1242,6 +1442,28 @@ pause
                     Reset
                   </button>
                 </div>
+
+                {/* Delete Screenshot Button */}
+                <button
+                  onClick={() => handleBulkDelete([currentModalSnap.id])}
+                  style={{
+                    padding: "0.45rem 0.85rem",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    color: "#FFFFFF",
+                    background: "rgba(239, 68, 68, 0.85)",
+                    border: "1px solid rgba(239, 68, 68, 0.4)",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}
+                  title="Delete Screenshot to free VPS disk space"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
 
                 {/* Download Image Button */}
                 <button
