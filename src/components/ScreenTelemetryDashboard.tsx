@@ -792,7 +792,6 @@ pause
                 <div 
                   onClick={() => {
                     setActiveFolderUser(u);
-                    setCurrentFrameIndex(0);
                   }}
                   style={{
                     position: "relative",
@@ -899,7 +898,6 @@ pause
                   <button
                     onClick={() => {
                       setActiveFolderUser(u);
-                      setCurrentFrameIndex(0);
                     }}
                     style={{
                       flex: 1,
