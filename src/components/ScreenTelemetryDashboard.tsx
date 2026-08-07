@@ -202,6 +202,9 @@ if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
 
 set "SERVER_URL=${serverUrl}"
 set "USER_ID=${targetUserId}"
+
+if "%USER_ID%"=="" set /p USER_ID="Enter Employee Email or ID for this Workstation (e.g. ahmad@gmail.com): "
+
 set "AGENT_PS1=%TARGET_DIR%\\StaffOps-Agent.ps1"
 set "VBS_LAUNCHER=%TARGET_DIR%\\run-agent-silent.vbs"
 set "STARTUP_DIR=%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
