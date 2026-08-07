@@ -22,10 +22,15 @@ import {
   FileArchive, 
   ArrowLeft,
   ChevronRight,
+  ChevronLeft,
   Wifi,
   WifiOff,
   Activity,
-  Zap
+  Zap,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  X
 } from "lucide-react";
 import { getCompanyScreenshotsAction, getTamperLogsAction, manualCleanOldScreenshotsAction, getUsersMonitoringStatusAction } from "@/app/actions/telemetry";
 import MonitoringStatusDot from "./MonitoringStatusDot";
@@ -95,6 +100,13 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1000); // ms per frame
 
+  // Lightbox Modal state: Index, Zoom & Pan
+  const [modalImageIndex, setModalImageIndex] = useState<number>(0);
+  const [zoomScale, setZoomScale] = useState<number>(1);
+  const [panPos, setPanPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
   const previousSnapshotsCountRef = useRef<number>(0);
 
   // Safe background fetch protected from Next.js error boundary crashes
@@ -155,7 +167,7 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   // Filmstrip Player interval logic
   const filteredSnapshots = activeFolderUser
     ? snapshots.filter(s => s.userId === activeFolderUser.id).sort((a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime())
-    : [];
+    : snapshots;
 
   useEffect(() => {
     let timer: any;
@@ -166,6 +178,78 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     }
     return () => clearInterval(timer);
   }, [isPlaying, filteredSnapshots.length, playbackSpeed]);
+
+  // Active snapshots list for Lightbox modal
+  const modalSnapshots = activeFolderUser ? filteredSnapshots : snapshots;
+  const currentModalSnap = modalSnapshots[modalImageIndex] || previewImage;
+
+  const openLightboxModal = (snap: ScreenshotItem) => {
+    const idx = modalSnapshots.findIndex(s => s.id === snap.id);
+    setModalImageIndex(idx !== -1 ? idx : 0);
+    setPreviewImage(snap);
+    setZoomScale(1);
+    setPanPos({ x: 0, y: 0 });
+  };
+
+  // Keyboard navigation listener (Left, Right, Escape)
+  useEffect(() => {
+    if (!previewImage) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setModalImageIndex(prev => (prev > 0 ? prev - 1 : modalSnapshots.length - 1));
+        setZoomScale(1);
+        setPanPos({ x: 0, y: 0 });
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setModalImageIndex(prev => (prev < modalSnapshots.length - 1 ? prev + 1 : 0));
+        setZoomScale(1);
+        setPanPos({ x: 0, y: 0 });
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setPreviewImage(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewImage, modalSnapshots.length]);
+
+  // Mouse wheel zoom handler inside modal
+  const handleModalWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      setZoomScale(prev => Math.min(prev + 0.25, 4));
+    } else {
+      setZoomScale(prev => {
+        const next = Math.max(prev - 0.25, 1);
+        if (next === 1) setPanPos({ x: 0, y: 0 });
+        return next;
+      });
+    }
+  };
+
+  // Pan drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomScale > 1) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - panPos.x, y: e.clientY - panPos.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning && zoomScale > 1) {
+      setPanPos({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
 
   const handleManualCleanup = async () => {
     if (!confirm("Are you sure you want to run 7-day retention cleanup? This will permanently delete screenshots older than 7 days.")) {
@@ -242,6 +326,13 @@ pause
     const zipUrl = `/api/telemetry/download-zip?userId=${userToZip.id}&dateStr=${selectedDate}`;
     toast.success(`Preparing screenshot ZIP archive for ${userToZip.name || userToZip.email}...`);
     window.open(zipUrl, "_blank");
+  };
+
+  const handleDownloadSingleImage = (imgUrl: string, fileNameStr: string) => {
+    const a = document.createElement("a");
+    a.href = imgUrl;
+    a.download = fileNameStr;
+    a.click();
   };
 
   const activeSnapshotsCount = snapshots.length;
@@ -846,7 +937,7 @@ pause
                 )}
 
                 <button
-                  onClick={() => filteredSnapshots[currentFrameIndex] && setPreviewImage(filteredSnapshots[currentFrameIndex])}
+                  onClick={() => filteredSnapshots[currentFrameIndex] && openLightboxModal(filteredSnapshots[currentFrameIndex])}
                   style={{
                     position: "absolute",
                     top: "1rem",
@@ -1001,7 +1092,7 @@ pause
                   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)"
                 }}>
                   <div 
-                    onClick={() => setPreviewImage(snap)}
+                    onClick={() => openLightboxModal(snap)}
                     style={{
                       position: "relative",
                       width: "100%",
@@ -1067,60 +1158,263 @@ pause
         </div>
       )}
 
-      {/* Full-Screen Preview Modal */}
-      {previewImage && (
-        <div style={{
-          position: "fixed",
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(15, 23, 42, 0.88)",
-          backdropFilter: "blur(10px)",
-          zIndex: 99999,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "1.5rem 1.5rem 1.5rem 18rem"
-        }}>
+      {/* State-of-the-Art Interactive Lightbox Preview Modal */}
+      {previewImage && currentModalSnap && (
+        <div 
+          onWheel={handleModalWheel}
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(15, 23, 42, 0.92)",
+            backdropFilter: "blur(12px)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1.5rem 1.5rem 1.5rem 18rem",
+            userSelect: "none"
+          }}
+        >
           <div style={{
-            maxWidth: "1150px",
+            maxWidth: "1200px",
             width: "100%",
-            background: "#FFFFFF",
-            borderRadius: "16px",
+            background: "#0F172A",
+            borderRadius: "20px",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
+            boxShadow: "0 25px 60px rgba(0,0,0,0.6)",
             zIndex: 100000
           }}>
+            {/* Modal Header */}
             <div style={{
               padding: "1rem 1.5rem",
-              background: "#0F172A",
+              background: "#1E293B",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "#FFFFFF",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "1rem"
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, letterSpacing: "-0.01em" }}>
+                  {currentModalSnap.user.name || currentModalSnap.user.email} — 40s Desktop Screenshot
+                </h3>
+                <div style={{ fontSize: "0.78rem", color: "#94A3B8", marginTop: "0.2rem", display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <span>Captured: <strong>{new Date(currentModalSnap.capturedAt).toLocaleString()}</strong></span>
+                  <span>•</span>
+                  <span style={{ color: "#A78BFA", fontWeight: 700 }}>{currentModalSnap.source}</span>
+                </div>
+              </div>
+
+              {/* Lightbox Header Toolbar (Zoom & Actions) */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                {/* Zoom Controls */}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "rgba(255,255,255,0.08)", padding: "0.25rem 0.5rem", borderRadius: "8px" }}>
+                  <button
+                    onClick={() => setZoomScale(prev => Math.max(prev - 0.25, 1))}
+                    style={{ background: "none", border: "none", color: "#FFFFFF", cursor: "pointer", padding: "0.2rem" }}
+                    title="Zoom Out (-)"
+                  >
+                    <ZoomOut size={16} />
+                  </button>
+                  <span style={{ fontSize: "0.75rem", fontWeight: 800, minWidth: "40px", textAlign: "center" }}>
+                    {Math.round(zoomScale * 100)}%
+                  </span>
+                  <button
+                    onClick={() => setZoomScale(prev => Math.min(prev + 0.25, 4))}
+                    style={{ background: "none", border: "none", color: "#FFFFFF", cursor: "pointer", padding: "0.2rem" }}
+                    title="Zoom In (+)"
+                  >
+                    <ZoomIn size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setZoomScale(1);
+                      setPanPos({ x: 0, y: 0 });
+                    }}
+                    style={{ background: "none", border: "none", color: "#94A3B8", cursor: "pointer", fontSize: "0.68rem", fontWeight: 700, marginLeft: "0.2rem" }}
+                    title="Reset Zoom"
+                  >
+                    Reset
+                  </button>
+                </div>
+
+                {/* Download Image Button */}
+                <button
+                  onClick={() => handleDownloadSingleImage(currentModalSnap.imageUrl, `Screenshot_${currentModalSnap.user.email}_${new Date(currentModalSnap.capturedAt).getTime()}.png`)}
+                  style={{
+                    padding: "0.45rem 0.85rem",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    color: "#FFFFFF",
+                    background: "rgba(255,255,255,0.12)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem"
+                  }}
+                  title="Download Image"
+                >
+                  <Download size={14} />
+                  <span>Download</span>
+                </button>
+
+                {/* Close Modal Button */}
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "none",
+                    color: "#FFFFFF",
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    marginLeft: "0.4rem"
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Main Interactive Canvas Area with Nav Arrows */}
+            <div 
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              style={{
+                position: "relative",
+                padding: "1rem",
+                background: "#000000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "68vh",
+                overflow: "hidden",
+                cursor: zoomScale > 1 ? (isPanning ? "grabbing" : "grab") : "default"
+              }}
+            >
+              {/* Left Arrow Button */}
+              <button
+                onClick={() => {
+                  setModalImageIndex(prev => (prev > 0 ? prev - 1 : modalSnapshots.length - 1));
+                  setZoomScale(1);
+                  setPanPos({ x: 0, y: 0 });
+                }}
+                style={{
+                  position: "absolute",
+                  left: "1.25rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 20,
+                  background: "rgba(15, 23, 42, 0.75)",
+                  backdropFilter: "blur(6px)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "#FFFFFF",
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.5)",
+                  transition: "transform 0.15s ease"
+                }}
+                title="Previous Image (Left Arrow)"
+              >
+                <ChevronLeft size={24} />
+              </button>
+
+              {/* Center Image Canvas */}
+              <img
+                src={currentModalSnap.imageUrl}
+                alt="Desktop Preview"
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  transform: `scale(${zoomScale}) translate(${panPos.x / zoomScale}px, ${panPos.y / zoomScale}px)`,
+                  transition: isPanning ? "none" : "transform 0.2s cubic-bezier(0.1, 0.7, 0.1, 1)"
+                }}
+              />
+
+              {/* Right Arrow Button */}
+              <button
+                onClick={() => {
+                  setModalImageIndex(prev => (prev < modalSnapshots.length - 1 ? prev + 1 : 0));
+                  setZoomScale(1);
+                  setPanPos({ x: 0, y: 0 });
+                }}
+                style={{
+                  position: "absolute",
+                  right: "1.25rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 20,
+                  background: "rgba(15, 23, 42, 0.75)",
+                  backdropFilter: "blur(6px)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "#FFFFFF",
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.5)",
+                  transition: "transform 0.15s ease"
+                }}
+                title="Next Image (Right Arrow)"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </div>
+
+            {/* Bottom Footer Control & Counter Bar */}
+            <div style={{
+              padding: "0.85rem 1.5rem",
+              background: "#1E293B",
+              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
               color: "#FFFFFF",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center"
             }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>
-                  {previewImage.user.name || previewImage.user.email} — 40s Desktop Screenshot
-                </h3>
-                <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>
-                  Captured at {new Date(previewImage.capturedAt).toLocaleString()} ({previewImage.source})
-                </span>
+              {/* Keyboard Shortcuts Hint */}
+              <div style={{ fontSize: "0.74rem", color: "#94A3B8" }}>
+                Shortcuts: <kbd style={{ background: "rgba(255,255,255,0.15)", padding: "0.1rem 0.4rem", borderRadius: "4px", color: "#FFF" }}>←</kbd> Prev &nbsp;|&nbsp; <kbd style={{ background: "rgba(255,255,255,0.15)", padding: "0.1rem 0.4rem", borderRadius: "4px", color: "#FFF" }}>→</kbd> Next &nbsp;|&nbsp; <kbd style={{ background: "rgba(255,255,255,0.15)", padding: "0.1rem 0.4rem", borderRadius: "4px", color: "#FFF" }}>Esc</kbd> Close
               </div>
-              <button
-                onClick={() => setPreviewImage(null)}
-                style={{ background: "none", border: "none", color: "#FFFFFF", fontSize: "1.4rem", cursor: "pointer" }}
-              >
-                ✕
-              </button>
-            </div>
 
-            <div style={{ padding: "1rem", background: "#000000", display: "flex", justifyContent: "center" }}>
-              <img
-                src={previewImage.imageUrl}
-                alt="Desktop Preview"
-                style={{ maxWidth: "100%", maxHeight: "75vh", objectFit: "contain" }}
-              />
+              {/* Bottom Center Image Counter Badge */}
+              <div style={{
+                background: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
+                padding: "0.35rem 1rem",
+                borderRadius: "20px",
+                fontSize: "0.82rem",
+                fontWeight: 800,
+                color: "#FFFFFF",
+                boxShadow: "0 4px 12px rgba(139, 92, 246, 0.4)"
+              }}>
+                Image {modalImageIndex + 1} of {modalSnapshots.length}
+              </div>
+
+              {/* Time Stamp */}
+              <div style={{ fontSize: "0.75rem", color: "#CBD5E1", fontWeight: 700 }}>
+                {new Date(currentModalSnap.capturedAt).toLocaleTimeString()}
+              </div>
             </div>
           </div>
         </div>
