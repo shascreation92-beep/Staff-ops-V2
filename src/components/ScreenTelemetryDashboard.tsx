@@ -105,6 +105,39 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
   // View state: 'FOLDERS' | 'USER_FOLDER'
   const [activeFolderUser, setActiveFolderUser] = useState<UserInfo | null>(null);
 
+  // Sync active user folder state with URL query parameter (?user=userId) so browser refreshes (F5) maintain active folder view
+  const handleSelectUserFolder = (user: UserInfo | null) => {
+    setActiveFolderUser(user);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (user) {
+        url.searchParams.set("user", user.id);
+      } else {
+        url.searchParams.delete("user");
+      }
+      window.history.pushState({}, "", url.toString());
+    }
+  };
+
+  useEffect(() => {
+    const syncUserFromUrl = () => {
+      if (typeof window !== "undefined" && staffList.length > 0) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const userParam = urlParams.get("user") || urlParams.get("userId");
+        if (userParam) {
+          const found = staffList.find(u => u.id === userParam);
+          if (found) {
+            setActiveFolderUser(found);
+          }
+        }
+      }
+    };
+
+    syncUserFromUrl();
+    window.addEventListener("popstate", syncUserFromUrl);
+    return () => window.removeEventListener("popstate", syncUserFromUrl);
+  }, [staffList]);
+
   // Lightbox Modal state: Index, Zoom & Pan
   const [modalImageIndex, setModalImageIndex] = useState<number>(0);
   const [zoomScale, setZoomScale] = useState<number>(1);
@@ -634,7 +667,7 @@ pause
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.9rem", fontWeight: 700 }}>
           <button
-            onClick={() => setActiveFolderUser(null)}
+            onClick={() => handleSelectUserFolder(null)}
             style={{
               background: "none",
               border: "none",
@@ -791,7 +824,7 @@ pause
                 {/* Folder Thumbnail / Status Preview */}
                 <div 
                   onClick={() => {
-                    setActiveFolderUser(u);
+                    handleSelectUserFolder(u);
                   }}
                   style={{
                     position: "relative",
@@ -897,7 +930,7 @@ pause
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
                     onClick={() => {
-                      setActiveFolderUser(u);
+                      handleSelectUserFolder(u);
                     }}
                     style={{
                       flex: 1,
@@ -1024,7 +1057,7 @@ pause
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               <button
-                onClick={() => setActiveFolderUser(null)}
+                onClick={() => handleSelectUserFolder(null)}
                 style={{
                   background: "none",
                   border: "none",
