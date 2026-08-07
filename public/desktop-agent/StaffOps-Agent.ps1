@@ -2,13 +2,17 @@
 # Captures 40-second Windows Desktop Screenshots & Idle Telemetry with ZERO dependencies.
 
 param(
-    [string]$ServerUrl = "http://116.203.213.113",
+    [string]$ServerUrl = "https://51-38-71-134.sslip.io",
+    [string]$UserId = "",
     [string]$SecretToken = "staffops_agent_token",
     [int]$IntervalSec = 40,
     [int]$IdleThresholdSec = 120
 )
 
-Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+# Enable TLS 1.2 & TLS 1.3 for secure HTTPS API communication
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+
+Add-Type -AssemblyName System.Windows.Forms,System.Drawing -ErrorAction SilentlyContinue
 
 # Win32 GetLastInputInfo API binding for native idle detection
 $User32Signature = @"
@@ -59,19 +63,34 @@ function Capture-DesktopBase64 {
 function Send-TelemetryPayload ($base64Img, $isIdle) {
     if ([string]::IsNullOrEmpty($base64Img)) { return }
 
-    $payload = @{
+    $payloadObj = @{
         base64Image = $base64Img
         dutyStatus = "ON_DUTY"
         isIdle = $isIdle
         source = "DESKTOP_AGENT_NATIVE"
         secretToken = $SecretToken
-    } | ConvertTo-Json -Depth 3
+    }
+
+    if (-not [string]::IsNullOrEmpty($UserId)) {
+        $payloadObj["userId"] = $UserId
+    }
+
+    $payload = $payloadObj | ConvertTo-Json -Depth 3
 
     try {
         $endpoint = "$ServerUrl/api/telemetry/screenshot"
-        $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $payload -ContentType "application/json" -TimeoutSec 15
-    } catch {}
+        $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $payload -ContentType "application/json" -TimeoutSec 20
+        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [40s Screen Telemetry] Upload Successful! Snapshot ID: $($response.snapshotId)" -ForegroundColor Green
+    } catch {
+        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [40s Screen Telemetry] Error uploading: $_" -ForegroundColor Red
+    }
 }
+
+Write-Host "=================================================" -ForegroundColor Cyan
+Write-Host "   Worknode 40s Silent Windows Desktop Agent    " -ForegroundColor Gold
+Write-Host "   Server: $ServerUrl                           " -ForegroundColor Gray
+if ($UserId) { Write-Host "   Target User ID: $UserId                      " -ForegroundColor Gray }
+Write-Host "=================================================" -ForegroundColor Cyan
 
 # Infinite 40-Second Native Worker Loop
 while ($true) {
@@ -80,7 +99,9 @@ while ($true) {
         $isIdle = $idleSec -ge $IdleThresholdSec
         $base64Data = Capture-DesktopBase64
         Send-TelemetryPayload -base64Img $base64Data -isIdle $isIdle
-    } catch {}
+    } catch {
+        Write-Host "Loop execution error: $_" -ForegroundColor Red
+    }
 
     Start-Sleep -Seconds $IntervalSec
 }

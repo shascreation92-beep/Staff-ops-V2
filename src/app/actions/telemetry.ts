@@ -75,9 +75,14 @@ export async function uploadScreenshotAction(data: {
       return { success: false, error: "Invalid Desktop Agent Secret Token." };
     }
 
-    // Desktop Agent authentication
-    const dbUser = await db.user.findUnique({
-      where: { id: data.userId }
+    // Desktop Agent authentication: lookup by ID or Email
+    const dbUser = await db.user.findFirst({
+      where: {
+        OR: [
+          { id: data.userId },
+          { email: data.userId }
+        ]
+      }
     });
     if (!dbUser || dbUser.isArchived || dbUser.status === "BLOCKED") {
       return { success: false, error: "Unauthorized Desktop Agent." };

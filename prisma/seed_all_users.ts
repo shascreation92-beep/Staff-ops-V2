@@ -80,6 +80,13 @@ async function main() {
       role: "SALES_ASSOCIATE",
       passwordRaw: "pass123",
       companyId: companyId
+    },
+    {
+      email: "ahmad@gmail.com",
+      name: "Ahmad",
+      role: "SALES_ASSOCIATE",
+      passwordRaw: "pass123",
+      companyId: companyId
     }
   ];
 
