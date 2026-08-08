@@ -106,6 +106,13 @@ export default function UKMarketTrendsList({
   const [newsCategoryFilter, setNewsCategoryFilter] = useState<string>("ALL");
   const [activeNewsModal, setActiveNewsModal] = useState<any | null>(null);
 
+  // 6 Furniture-Specific API & Sales Assistant States
+  const [adScannerText, setAdScannerText] = useState<string>("");
+  const [selectedObjectionType, setSelectedObjectionType] = useState<string>("PRICE");
+  const [copiedObjection, setCopiedObjection] = useState<boolean>(false);
+  const [townSearchInput, setTownSearchInput] = useState<string>("");
+  const [townSuggestions, setTownSuggestions] = useState<any[]>([]);
+
   useEffect(() => {
     fetch("/api/uk-news")
       .then(res => res.json())
@@ -116,6 +123,69 @@ export default function UKMarketTrendsList({
       })
       .catch(err => console.error(err));
   }, []);
+
+  // Banned Keyword Anti-Flagging Scanner Rules
+  const BANNED_KEYWORDS = [
+    { word: "whatsapp", replacement: "contact us via direct message" },
+    { word: "cheap replica", replacement: "high-quality custom model" },
+    { word: "cash guaranteed", replacement: "cash on delivery option" },
+    { word: "100% free delivery worldwide", replacement: "free local UK delivery" },
+    { word: "original brand copy", replacement: "handcrafted bespoke design" },
+    { word: "wire transfer only", replacement: "secure payment on delivery" },
+    { word: "crypto payment", replacement: "standard cash or card payment" }
+  ];
+
+  const getScanResults = (text: string) => {
+    if (!text.trim()) return { isSafe: true, riskScore: 0, flagged: [], safeText: "" };
+    const lower = text.toLowerCase();
+    const flagged: string[] = [];
+    let safeText = text;
+
+    BANNED_KEYWORDS.forEach(item => {
+      if (lower.includes(item.word)) {
+        flagged.push(item.word);
+        const regex = new RegExp(item.word, "gi");
+        safeText = safeText.replace(regex, item.replacement);
+      }
+    });
+
+    return {
+      isSafe: flagged.length === 0,
+      riskScore: Math.min(100, flagged.length * 40),
+      flagged,
+      safeText
+    };
+  };
+
+  const HIGH_PURCHASING_POWER_POSTCODES = [
+    "SW1A", "SW3", "W8", "W1J", "SW19", "B91", "HG1", "WA15", "AL1", "TW9", "BA1", "M1", "B2"
+  ];
+
+  const checkIsHighPurchasingPower = (postcodeOrText?: string | null): boolean => {
+    if (!postcodeOrText) return false;
+    const t = postcodeOrText.toUpperCase();
+    return HIGH_PURCHASING_POWER_POSTCODES.some(p => t.includes(p));
+  };
+
+  const getObjectionReplyText = (type: string, trend?: TrendItem | null): string => {
+    const kw = trend?.keyword || "furniture item";
+    if (type === "PRICE") {
+      return `Hi! Our prices for "${kw}" are direct from our UK manufacturing warehouse with zero retail markup, so they are already set at minimum trade cost. However, we can offer free priority delivery if you confirm your order today!`;
+    }
+    if (type === "DELIVERY") {
+      return `Hi! Yes, we have active delivery drivers in your area. If you confirm your order before 2 PM, we can assign a 2-man delivery slot for you as early as tomorrow morning!`;
+    }
+    if (type === "ASSEMBLY") {
+      return `Hi! Our beds and wardrobes come with clear step-by-step assembly guides. We also offer optional 2-man room-of-choice assembly upon delivery for a small service fee. Let us know if you'd like us to include assembly!`;
+    }
+    if (type === "UPSTAIRS") {
+      return `Hi! Yes, our 2-man delivery team can carry your "${kw}" upstairs into your room of choice, as long as hallways and staircases are clear!`;
+    }
+    if (type === "COD") {
+      return `Hi! Yes, we support Cash on Delivery (COD) for local deliveries! You can inspect your item upon arrival and pay cash directly to the driver upon delivery.`;
+    }
+    return `Hi! Thank you for inquiring about "${kw}". Let us know your delivery postcode and we will send you full details!`;
+  };
 
   const [isPending, startTransition] = useTransition();
   const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
@@ -413,6 +483,19 @@ export default function UKMarketTrendsList({
     const kw = trend.keyword;
     const postcode = trend.postcode || "your local area";
 
+    // Nextdoor Community Pitch Generator (3 Community Tones)
+    if (selectedTone === "NEXTDOOR_FRIENDLY") {
+      return `Hi neighbors! 🏡 We are downsizing our bedroom setup in ${postcode} and have a brand new, immaculate condition "${kw}" available. Handcrafted UK quality with plush velvet options. Feel free to message me for pictures or to arrange local delivery!`;
+    }
+
+    if (selectedTone === "NEXTDOOR_WAREHOUSE") {
+      return `Hello community! 🏬 We are a local family-owned furniture supplier serving ${postcode} & surrounding areas. We supply custom-made Divan Beds, Sliding Wardrobes & Sofas direct from our UK manufacturing warehouse with zero retail markups. Message us to check inventory!`;
+    }
+
+    if (selectedTone === "NEXTDOOR_SAMEDAY") {
+      return `Local Delivery Alert! 🚚 We have priority delivery drivers operating in ${postcode} today. If anyone is looking for a "${kw}", we can deliver directly to your door with Cash on Delivery (COD) options. Send a message to claim today's delivery slot!`;
+    }
+
     // Direct Messenger Templates for Chat platforms (Facebook, Vinted)
     if (trend.source === "FACEBOOK" || trend.source === "VINTED") {
       if (selectedTone === "URGENT") {
@@ -565,6 +648,44 @@ export default function UKMarketTrendsList({
             Sync Trends Now
           </button>
         ) : null}
+      </div>
+
+      {/* 🛡️ ANTI-FLAGGING BANNED KEYWORD SCANNER (FB MARKETPLACE / EBAY) */}
+      <div className="glass-panel" style={{ padding: "0.85rem 1.1rem", borderRadius: "12px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+            <Sparkles style={{ color: getScanResults(adScannerText).isSafe ? "#10B981" : "#EF4444" }} size={16} />
+            <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>
+              🛡️ ANTI-FLAGGING BANNED KEYWORD SCANNER (FB MARKETPLACE / EBAY)
+            </span>
+          </div>
+          <span className="badge" style={{
+            fontSize: "0.68rem",
+            fontWeight: 800,
+            background: getScanResults(adScannerText).isSafe ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
+            color: getScanResults(adScannerText).isSafe ? "#10B981" : "#EF4444",
+            padding: "0.15rem 0.5rem"
+          }}>
+            {getScanResults(adScannerText).isSafe ? "🟢 SAFE TO POST" : `🔴 RISK DETECTED (${getScanResults(adScannerText).flagged.length} WORD FLAGGED)`}
+          </span>
+        </div>
+
+        <input
+          type="text"
+          placeholder="Paste furniture ad title or copy here to test for shadow-ban risk words before posting..."
+          value={adScannerText}
+          onChange={(e) => setAdScannerText(e.target.value)}
+          className="input-gold"
+          style={{ width: "100%", fontSize: "0.78rem", padding: "0.45rem" }}
+        />
+
+        {!getScanResults(adScannerText).isSafe && (
+          <div style={{ fontSize: "0.72rem", color: "#EF4444", background: "rgba(239, 68, 68, 0.05)", padding: "0.5rem", borderRadius: "6px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+            <strong>Flagged Trigger Words:</strong> {getScanResults(adScannerText).flagged.join(", ")}.
+            <br />
+            <strong>Suggested Safe Replacements:</strong> "{getScanResults(adScannerText).safeText}"
+          </div>
+        )}
       </div>
 
       {/* 2. Visual Platform Workspaces Tabs Array (Clean, no Tab A/B/C/D labels) */}
@@ -786,8 +907,49 @@ export default function UKMarketTrendsList({
                   {brandText}
                 </div>
 
-                {/* Category & Postcode */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                {/* 1-Click Buyer Objection Replier */}
+                <div className="glass-panel" style={{ padding: "0.85rem", borderRadius: "10px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", color: "var(--gold-premium)" }}>
+                      💰 1-Click Buyer Objection Replier
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(getObjectionReplyText(selectedObjectionType, activeDrawerTrend));
+                        setCopiedObjection(true);
+                        toast.success("Objection response copied!");
+                        setTimeout(() => setCopiedObjection(false), 2000);
+                      }}
+                      className="btn-glass"
+                      style={{ fontSize: "0.65rem", padding: "0.15rem 0.4rem" }}
+                    >
+                      {copiedObjection ? "✓ Copied" : "Copy Answer"}
+                    </button>
+                  </div>
+
+                  <select
+                    value={selectedObjectionType}
+                    onChange={(e) => setSelectedObjectionType(e.target.value)}
+                    className="input-gold"
+                    style={{ width: "100%", fontSize: "0.75rem", padding: "0.35rem" }}
+                  >
+                    <option value="PRICE">🏷️ "What's your last price / best offer?"</option>
+                    <option value="DELIVERY">🚚 "Can you deliver today / Is delivery free?"</option>
+                    <option value="ASSEMBLY">🛠️ "Is assembly included?"</option>
+                    <option value="UPSTAIRS">🏠 "Can you bring it upstairs into my bedroom?"</option>
+                    <option value="COD">💵 "Do you accept Cash on Delivery?"</option>
+                  </select>
+
+                  <textarea
+                    readOnly
+                    value={getObjectionReplyText(selectedObjectionType, activeDrawerTrend)}
+                    className="input-gold"
+                    style={{ width: "100%", height: "75px", fontSize: "0.72rem", background: "#F8FAFC", padding: "0.5rem", resize: "none" }}
+                  />
+                </div>
+
+                {/* Hashtag Generator */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap" }}>
                     <span style={{ 
                       fontSize: "0.6rem", 
@@ -1138,6 +1300,9 @@ export default function UKMarketTrendsList({
                       <option value="POLITE">Polite Opener</option>
                       <option value="URGENT">Urgent Clearance</option>
                       <option value="OFFER">Direct Sourcing Offer</option>
+                      <option value="NEXTDOOR_FRIENDLY">🏡 Nextdoor Friendly Resident</option>
+                      <option value="NEXTDOOR_WAREHOUSE">🏬 Nextdoor Direct Warehouse</option>
+                      <option value="NEXTDOOR_SAMEDAY">🚚 Nextdoor Same-Day Special</option>
                     </select>
                   </div>
                 </div>
