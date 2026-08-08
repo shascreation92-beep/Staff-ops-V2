@@ -625,22 +625,6 @@ export default function UKMarketTrendsList({
           </div>
         )}
 
-        <button 
-          onClick={handleExportCSV}
-          className="btn-gold"
-          style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: "0.35rem", 
-            fontSize: "0.8rem", 
-            padding: "0.45rem 0.75rem", 
-            borderRadius: "6px",
-            marginLeft: "auto"
-          }}
-        >
-          <Download size={14} />
-          <span>Export CSV</span>
-        </button>
 
         <div style={{ display: "flex", alignItems: "center", fontSize: "0.68rem", color: "var(--text-muted)", background: "rgba(15, 23, 42, 0.03)", padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
           Refresh: Every Day

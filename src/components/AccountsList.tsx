@@ -763,14 +763,6 @@ export default function AccountsList({
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", width: "100%" }}>
           {/* Action Buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button 
-              className="btn-gold" 
-              onClick={handleExportCSV}
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", whiteSpace: "nowrap" }}
-            >
-              <Download size={15} />
-              <span>EXPORT CSV</span>
-            </button>
             {(isSuperAdmin || isCompanyOwner) && (
               <button 
                 className="btn-gold" 

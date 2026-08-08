@@ -150,14 +150,6 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
             <UserPlus size={16} />
             <span>+ ADD REPRESENTATIVE</span>
           </button>
-          <button 
-            className="btn-gold" 
-            onClick={handleExportCSV}
-            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-          >
-            <Download size={16} />
-            <span>EXPORT CSV</span>
-          </button>
           <NotificationBell />
         </div>
       </div>

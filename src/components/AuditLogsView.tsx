@@ -157,14 +157,6 @@ export default function AuditLogsView({
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "1.5rem" }}>
             <button 
               className="btn-gold" 
-              onClick={handleExportCSV}
-              style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.78rem", padding: "0.45rem 0.75rem" }}
-            >
-              <Download size={14} />
-              <span>Export CSV</span>
-            </button>
-            <button 
-              className="btn-gold" 
               onClick={handleClearLogs}
               disabled={isPending}
               style={{ 
