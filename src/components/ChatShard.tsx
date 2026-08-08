@@ -612,7 +612,7 @@ export default function ChatShard({
               if (checkIsMentioned(latestMsg.message) && !notifiedMessageIds.current.has(latestMsg.id)) {
                 notifiedMessageIds.current.add(latestMsg.id);
                 if (!mutedGroups.includes(group.id) && !isDnd) {
-                  triggerMentionNotification(latestMsg, group.name || "Group");
+                  showMentionToast(latestMsg, group.name || "Group");
                 }
               }
             }
