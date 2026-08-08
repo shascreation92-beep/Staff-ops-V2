@@ -20,6 +20,7 @@ import {
   Wallet,
   Monitor,
   Activity,
+  Cpu,
   Pencil,
   HelpCircle,
   TrendingUp,
@@ -479,6 +480,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       label: "Screen Audit", 
       path: "/screen-telemetry", 
       icon: Monitor,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
+    },
+    { 
+      id: "workstation-telemetry", 
+      label: "Workstation Hardware", 
+      path: "/workstation-telemetry", 
+      icon: Cpu,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
     { 
