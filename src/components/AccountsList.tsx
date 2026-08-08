@@ -759,10 +759,10 @@ export default function AccountsList({
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       
       {/* Toolbar Controls */}
-      <div className="glass-panel table-panel" style={{ padding: "0.6rem 1.25rem", marginBottom: 0, position: "relative", zIndex: 50 }}>
-        <div className="table-toolbar table-toolbar-responsive">
-          {/* Left Column: Action Buttons */}
-          <div className="toolbar-left-group">
+      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", marginBottom: 0, position: "relative", zIndex: 50, overflow: "visible" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", width: "100%" }}>
+          {/* Action Buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
             <button 
               className="btn-gold" 
               onClick={handleExportCSV}
@@ -806,9 +806,9 @@ export default function AccountsList({
             )}
           </div>
 
-          {/* Center Column: Search & Filters */}
-          <div className="toolbar-center-group">
-            <div className="table-search-wrapper" style={{ minWidth: "150px", maxWidth: "220px", flex: "1 1 auto" }}>
+          {/* Search, Filters & Notification Bell Group */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", flex: "1 1 auto", justifyContent: "flex-end" }}>
+            <div className="table-search-wrapper" style={{ width: "180px", flexShrink: 0 }}>
               <Search className="header-search-icon" />
               <input
                 type="text"
@@ -819,59 +819,55 @@ export default function AccountsList({
               />
             </div>
 
-            <div className="table-filter-group" style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", flex: "1 1 auto" }}>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="table-select-filter"
-              >
-                <option value="ALL">ALL STATUSES</option>
-                <option value="DRAFT">DRAFT</option>
-                <option value="PENDING_TL">PENDING TL APPROVAL</option>
-                <option value="FORWARDED_TO_IT">PENDING IT APPROVAL</option>
-                <option value="SUBMITTED">SUBMITTED</option>
-                <option value="UNDER_REVIEW">UNDER REVIEW</option>
-                <option value="APPROVED_BY_TEAM_LEAD">APPROVED BY TL</option>
-                <option value="ASSIGNED_TO_IT">ASSIGNED TO IT</option>
-                <option value="IN_PROGRESS">IN PROGRESS</option>
-                <option value="COMPLETED">COMPLETED</option>
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="REJECTED">REJECTED</option>
-              </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="table-select-filter"
+            >
+              <option value="ALL">ALL STATUSES</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="PENDING_TL">PENDING TL APPROVAL</option>
+              <option value="FORWARDED_TO_IT">PENDING IT APPROVAL</option>
+              <option value="SUBMITTED">SUBMITTED</option>
+              <option value="UNDER_REVIEW">UNDER REVIEW</option>
+              <option value="APPROVED_BY_TEAM_LEAD">APPROVED BY TL</option>
+              <option value="ASSIGNED_TO_IT">ASSIGNED TO IT</option>
+              <option value="IN_PROGRESS">IN PROGRESS</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
 
+            <select
+              value={platformFilter}
+              onChange={(e) => setPlatformFilter(e.target.value)}
+              className="table-select-filter"
+            >
+              <option value="ALL">ALL PLATFORMS</option>
+              {platforms.map(p => (
+                <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
+              ))}
+            </select>
+
+            {(isIT || isSuperAdmin) && teamLeads && teamLeads.length > 0 && (
               <select
-                value={platformFilter}
-                onChange={(e) => setPlatformFilter(e.target.value)}
+                value={teamLeadFilter}
+                onChange={(e) => setTeamLeadFilter(e.target.value)}
                 className="table-select-filter"
+                style={{ minWidth: "140px" }}
               >
-                <option value="ALL">ALL PLATFORMS</option>
-                {platforms.map(p => (
-                  <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
+                <option value="ALL">ALL TEAM LEADS</option>
+                {teamLeads.map(tl => (
+                  <option key={tl.id} value={tl.id}>TL: {tl.name || tl.email}</option>
                 ))}
               </select>
+            )}
 
-              {(isIT || isSuperAdmin) && teamLeads && teamLeads.length > 0 && (
-                <select
-                  value={teamLeadFilter}
-                  onChange={(e) => setTeamLeadFilter(e.target.value)}
-                  className="table-select-filter"
-                  style={{ minWidth: "140px" }}
-                >
-                  <option value="ALL">ALL TEAM LEADS</option>
-                  {teamLeads.map(tl => (
-                    <option key={tl.id} value={tl.id}>TL: {tl.name || tl.email}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column: Notification Bell */}
-          <div className="toolbar-right-group">
             <NotificationBell />
           </div>
         </div>
       </div>
+
 
       {/* Main Table listing */}
       <div className="glass-panel table-panel table-panel-flat">
