@@ -457,10 +457,20 @@ export default function AccountsList({
           glow: "none"
         };
       }
-      const tlName = acc.user_account_updatedByIdTouser?.name || "Udeen";
+      const approver = acc.user_account_updatedByIdTouser;
+      const approverName = approver?.name || "TL";
+      const approverRole = approver?.role;
+      
+      let labelText = `APPROVED BY TL (${approverName.toUpperCase()})`;
+      if (approverRole === "IT_DEPARTMENT") {
+        labelText = `FORWARDED BY IT (${approverName.toUpperCase()})`;
+      } else if (approverRole === "SUPER_ADMIN" || approverRole === "COMPANY_OWNER") {
+        labelText = `APPROVED BY ADMIN (${approverName.toUpperCase()})`;
+      }
+
       return {
         color: "#A78BFA",
-        text: `APPROVED BY TL (${tlName.toUpperCase()})`,
+        text: labelText,
         bg: "rgba(167, 139, 250, 0.08)",
         border: "rgba(167, 139, 250, 0.25)",
         glow: "none"
