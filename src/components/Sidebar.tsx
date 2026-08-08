@@ -809,21 +809,22 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 <span 
                   style={{
                     marginLeft: "auto",
-                    background: "linear-gradient(135deg, #ff4d4d, #cc0000)",
-                    color: "white",
+                    background: "rgba(239, 68, 68, 0.12)",
+                    color: "#EF4444",
+                    border: "1px solid rgba(239, 68, 68, 0.35)",
+                    backdropFilter: "blur(4px)",
                     borderRadius: "9999px",
-                    padding: "0.15rem 0.5rem",
-                    fontSize: "0.7rem",
-                    fontWeight: "bold",
+                    padding: "0.15rem 0.55rem",
+                    fontSize: "0.72rem",
+                    fontWeight: 800,
                     lineHeight: 1,
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    boxShadow: "0 0 8px rgba(239, 68, 68, 0.4)",
-                    animation: "pulse 2s infinite"
+                    boxShadow: "0 0 10px rgba(239, 68, 68, 0.15)"
                   }}
                 >
-                  🔴 {pendingRequestsCount}
+                  {pendingRequestsCount}
                 </span>
               )}
               {item.id === "chat-space" && (chatStatus.hasUnread || chatStatus.hasJoinRequests) && (
