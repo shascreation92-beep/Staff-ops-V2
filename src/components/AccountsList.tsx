@@ -808,7 +808,7 @@ export default function AccountsList({
 
           {/* Center Column: Search & Filters */}
           <div className="toolbar-center-group">
-            <div className="table-search-wrapper" style={{ minWidth: "180px", maxWidth: "260px", flex: "1 1 auto" }}>
+            <div className="table-search-wrapper" style={{ minWidth: "150px", maxWidth: "220px", flex: "1 1 auto" }}>
               <Search className="header-search-icon" />
               <input
                 type="text"
@@ -819,7 +819,7 @@ export default function AccountsList({
               />
             </div>
 
-            <div className="table-filter-group">
+            <div className="table-filter-group" style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", flex: "1 1 auto" }}>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}

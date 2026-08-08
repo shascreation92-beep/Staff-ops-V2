@@ -1669,7 +1669,7 @@ textarea::placeholder {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 0.85rem !important;
+  gap: 0.85rem 1.25rem !important;
   flex-wrap: wrap !important;
   width: 100% !important;
 }
@@ -1679,7 +1679,7 @@ textarea::placeholder {
   align-items: center !important;
   gap: 0.5rem !important;
   flex-wrap: wrap !important;
-  flex-shrink: 0 !important;
+  flex: 0 1 auto !important;
 }
 
 .toolbar-center-group {
@@ -1688,6 +1688,7 @@ textarea::placeholder {
   gap: 0.75rem !important;
   flex-wrap: wrap !important;
   flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
 .table-filter-group {
@@ -1695,6 +1696,7 @@ textarea::placeholder {
   align-items: center !important;
   gap: 0.5rem !important;
   flex-wrap: wrap !important;
+  flex: 1 1 auto !important;
 }
 
 .toolbar-right-group {
@@ -1716,6 +1718,7 @@ textarea::placeholder {
   cursor: pointer !important;
   white-space: nowrap !important;
   max-width: 100% !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
 .table-select-filter:hover {
