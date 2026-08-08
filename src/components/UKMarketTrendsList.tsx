@@ -117,37 +117,148 @@ export default function UKMarketTrendsList({
   const [townSearchInput, setTownSearchInput] = useState<string>("");
   const [townSuggestions, setTownSuggestions] = useState<any[]>([]);
 
-  // Item 7: FB Marketplace Anti-Spam Posting Delay & Cooldown Timer State
-  const [targetPostsCount, setTargetPostsCount] = useState<number>(10);
-  const [postedCount, setPostedCount] = useState<number>(0);
-  const [cooldownRemaining, setCooldownRemaining] = useState<number>(540); // 9 minutes = 540 seconds
-  const [isCooldownActive, setIsCooldownActive] = useState<boolean>(false);
+  // Interactive UK Location Map & Radius Extractor State
+  const [selectedClusterKey, setSelectedClusterKey] = useState<string>("MANCHESTER");
+  const [selectedRadiusMiles, setSelectedRadiusMiles] = useState<number>(15);
+  const [copiedAllTowns, setCopiedAllTowns] = useState<boolean>(false);
+  const [customSearchLocation, setCustomSearchLocation] = useState<string>("");
 
-  useEffect(() => {
-    let interval: any = null;
-    if (isCooldownActive && cooldownRemaining > 0) {
-      interval = setInterval(() => {
-        setCooldownRemaining(prev => prev - 1);
-      }, 1000);
-    } else if (isCooldownActive && cooldownRemaining === 0) {
-      setIsCooldownActive(false);
-      setPostedCount(prev => prev + 1);
-      playCrystalChime();
-      sendDesktopNotification({
-        title: "🟢 FB Marketplace Safe to Post!",
-        body: "Your 9-minute anti-spam cooldown has finished. You can now post your next furniture listing safely!",
-        url: "/uk-market-trends"
-      });
-      toast.success("Cooldown complete! Safe to post next listing.");
-      setCooldownRemaining(540);
+  const UK_REGIONAL_TOWN_CLUSTERS: { [key: string]: { center: string; postcode: string; lat: number; lng: number; towns: { name: string; dist: string; density: string }[] } } = {
+    "MANCHESTER": {
+      center: "Greater Manchester & North West",
+      postcode: "M1",
+      lat: 53.4808,
+      lng: -2.2426,
+      towns: [
+        { name: "Manchester", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Salford", dist: "1.8 miles", density: "🔥 HIGH" },
+        { name: "Stockport", dist: "6.2 miles", density: "🔥 VERY HIGH" },
+        { name: "Altrincham", dist: "8.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Bolton", dist: "10.4 miles", density: "🔥 HIGH" },
+        { name: "Bury", dist: "8.7 miles", density: "🔥 HIGH" },
+        { name: "Oldham", dist: "6.9 miles", density: "🔥 HIGH" },
+        { name: "Rochdale", dist: "10.8 miles", density: "MEDIUM" },
+        { name: "Ashton-under-Lyne", dist: "6.5 miles", density: "HIGH" },
+        { name: "Sale", dist: "5.4 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Stretford", dist: "3.9 miles", density: "HIGH" },
+        { name: "Wilmslow", dist: "11.2 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Didsbury", dist: "4.8 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Cheadle", dist: "7.5 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Hyde", dist: "7.2 miles", density: "MEDIUM" }
+      ]
+    },
+    "LONDON_SOUTH": {
+      center: "South London & Surrey Hub",
+      postcode: "SW19",
+      lat: 51.4214,
+      lng: -0.2067,
+      towns: [
+        { name: "Wimbledon", dist: "0.0 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Croydon", dist: "6.4 miles", density: "🔥 VERY HIGH" },
+        { name: "Sutton", dist: "4.8 miles", density: "🔥 HIGH" },
+        { name: "Kingston upon Thames", dist: "4.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Merton", dist: "1.2 miles", density: "HIGH" },
+        { name: "Wandsworth", dist: "3.5 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Battersea", dist: "5.2 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Clapham", dist: "4.9 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Brixton", dist: "5.8 miles", density: "🔥 VERY HIGH" },
+        { name: "Richmond", dist: "5.6 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Twickenham", dist: "6.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Morden", dist: "2.3 miles", density: "HIGH" }
+      ]
+    },
+    "LONDON_NORTH": {
+      center: "North London & Hertfordshire",
+      postcode: "N1",
+      lat: 51.5362,
+      lng: -0.1030,
+      towns: [
+        { name: "Islington", dist: "0.0 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Camden", dist: "1.9 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Haringey", dist: "3.8 miles", density: "🔥 HIGH" },
+        { name: "Enfield", dist: "9.2 miles", density: "🔥 VERY HIGH" },
+        { name: "Barnet", dist: "9.8 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Finchley", dist: "6.5 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Edmonton", dist: "7.1 miles", density: "HIGH" },
+        { name: "Tottenham", dist: "5.4 miles", density: "🔥 VERY HIGH" },
+        { name: "Wood Green", dist: "4.7 miles", density: "HIGH" },
+        { name: "Muswell Hill", dist: "5.3 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Highgate", dist: "4.2 miles", density: "⭐ LUXURY ULTRA" }
+      ]
+    },
+    "BIRMINGHAM": {
+      center: "West Midlands & Solihull",
+      postcode: "B1",
+      lat: 52.4862,
+      lng: -1.8904,
+      towns: [
+        { name: "Birmingham", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Solihull", dist: "7.4 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Sutton Coldfield", dist: "6.9 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Dudley", dist: "8.5 miles", density: "🔥 HIGH" },
+        { name: "Walsall", dist: "8.2 miles", density: "🔥 HIGH" },
+        { name: "West Bromwich", dist: "5.1 miles", density: "HIGH" },
+        { name: "Halesowen", dist: "7.8 miles", density: "HIGH" },
+        { name: "Stourbridge", dist: "11.4 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Oldbury", dist: "5.5 miles", density: "MEDIUM" },
+        { name: "Smethwick", dist: "3.8 miles", density: "HIGH" },
+        { name: "Tamworth", dist: "13.6 miles", density: "HIGH" },
+        { name: "Redditch", dist: "12.8 miles", density: "HIGH" }
+      ]
+    },
+    "LEEDS": {
+      center: "West Yorkshire & Bradford",
+      postcode: "LS1",
+      lat: 53.7997,
+      lng: -1.5491,
+      towns: [
+        { name: "Leeds", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Bradford", dist: "8.6 miles", density: "🔥 VERY HIGH" },
+        { name: "Wakefield", dist: "9.1 miles", density: "🔥 HIGH" },
+        { name: "Huddersfield", dist: "14.2 miles", density: "HIGH" },
+        { name: "Halifax", dist: "14.8 miles", density: "HIGH" },
+        { name: "Dewsbury", dist: "8.9 miles", density: "MEDIUM" },
+        { name: "Keighley", dist: "17.1 miles", density: "MEDIUM" },
+        { name: "Batley", dist: "7.3 miles", density: "HIGH" },
+        { name: "Pudsey", dist: "4.8 miles", density: "HIGH" },
+        { name: "Morley", dist: "4.9 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Ilkley", dist: "15.4 miles", density: "⭐ LUXURY ULTRA" }
+      ]
+    },
+    "BRISTOL": {
+      center: "Bristol & Bath Region",
+      postcode: "BS1",
+      lat: 51.4545,
+      lng: -2.5879,
+      towns: [
+        { name: "Bristol", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Bath", dist: "11.5 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Weston-super-Mare", dist: "18.4 miles", density: "HIGH" },
+        { name: "Keynsham", dist: "5.2 miles", density: "HIGH" },
+        { name: "Yate", dist: "9.8 miles", density: "HIGH" },
+        { name: "Thornbury", dist: "11.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Portishead", dist: "8.7 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Clevedon", dist: "12.3 miles", density: "HIGH" },
+        { name: "Filton", dist: "4.5 miles", density: "HIGH" }
+      ]
+    },
+    "GLASGOW": {
+      center: "Central Scotland & Lanarkshire",
+      postcode: "G1",
+      lat: 55.8642,
+      lng: -4.2518,
+      towns: [
+        { name: "Glasgow", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Paisley", dist: "7.1 miles", density: "🔥 HIGH" },
+        { name: "East Kilbride", dist: "8.4 miles", density: "🔥 HIGH" },
+        { name: "Hamilton", dist: "10.8 miles", density: "HIGH" },
+        { name: "Cumbernauld", dist: "12.6 miles", density: "HIGH" },
+        { name: "Coatbridge", dist: "8.9 miles", density: "HIGH" },
+        { name: "Airdrie", dist: "10.5 miles", density: "MEDIUM" },
+        { name: "Rutherglen", dist: "2.8 miles", density: "HIGH" },
+        { name: "Newton Mearns", dist: "7.3 miles", density: "⭐ LUXURY ULTRA" }
+      ]
     }
-    return () => clearInterval(interval);
-  }, [isCooldownActive, cooldownRemaining]);
-
-  const formatTimer = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   // Item 12: FB High Purchasing Power Zip Code & Location Detector State & Data
@@ -751,100 +862,180 @@ export default function UKMarketTrendsList({
         )}
       </div>
 
-      {/* 2-COLUMN GRID: ITEM 7 (POSTING COOLDOWN TIMER) & ITEM 12 (HIGH PURCHASING POWER RADAR) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem" }}>
-        
-        {/* ITEM 7: FB MARKETPLACE ANTI-SPAM POSTING COOLDOWN TIMER */}
-        <div className="glass-panel" style={{ padding: "0.9rem 1.1rem", borderRadius: "12px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <Clock style={{ color: "var(--gold-premium)" }} size={16} />
-              <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                ⏱️ FB MARKETPLACE ANTI-SPAM COOLDOWN TIMER
-              </span>
-            </div>
-            <span className="badge" style={{ fontSize: "0.68rem", fontWeight: 800, background: "rgba(59, 130, 246, 0.1)", color: "#2563EB" }}>
-              Posted Today: {postedCount} / {targetPostsCount}
-            </span>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#F8FAFC", padding: "0.6rem 0.85rem", borderRadius: "8px", border: "1px solid var(--border-dim)" }}>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Recommended Safe Gap</span>
-              <span style={{ fontSize: "1.25rem", fontWeight: 900, color: isCooldownActive ? "#EF4444" : "#10B981" }}>
-                {formatTimer(cooldownRemaining)}
-              </span>
-            </div>
-
-            <div style={{ display: "flex", gap: "0.4rem" }}>
-              {!isCooldownActive ? (
-                <button
-                  onClick={() => setIsCooldownActive(true)}
-                  className="btn-gold"
-                  style={{ fontSize: "0.72rem", padding: "0.4rem 0.8rem", borderRadius: "6px" }}
-                >
-                  ▶ Start 9m Cooldown
-                </button>
-              ) : (
-                <button
-                  onClick={() => { setIsCooldownActive(false); setCooldownRemaining(540); }}
-                  className="btn-glass"
-                  style={{ fontSize: "0.72rem", padding: "0.4rem 0.8rem", borderRadius: "6px", color: "#EF4444" }}
-                >
-                  ⏸ Pause Timer
-                </button>
-              )}
-            </div>
-          </div>
-          <p style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
-            * Prevents Facebook algorithms from flagging your account for rapid posting. Keeps a safe 9-minute interval between furniture ads.
-          </p>
-        </div>
-
-        {/* ITEM 12: FB HIGH PURCHASING POWER ZIP CODE & LOCATION DETECTOR */}
-        <div className="glass-panel" style={{ padding: "0.9rem 1.1rem", borderRadius: "12px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <Building style={{ color: "var(--gold-primary)" }} size={16} />
-              <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                🏰 FB HIGH PURCHASING POWER ZIP CODE RADAR
-              </span>
-            </div>
-            {getPurchasingPowerDetails(radarInput)?.tier.includes("PREMIUM") || getPurchasingPowerDetails(radarInput)?.tier.includes("LUXURY") ? (
-              <span className="badge" style={{ fontSize: "0.68rem", fontWeight: 800, background: "rgba(212, 175, 55, 0.15)", color: "var(--gold-primary)" }}>
-                ⭐ HIGH BUYING POWER
-              </span>
-            ) : (
-              <span className="badge" style={{ fontSize: "0.68rem", fontWeight: 700, background: "rgba(100, 116, 139, 0.1)", color: "#64748B" }}>
-                REGIONAL AREA
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: "flex", gap: "0.4rem" }}>
-            <input
-              type="text"
-              placeholder="Enter UK Postcode or Town (e.g. SW19, W8, B91, Harrogate)..."
-              value={radarInput}
-              onChange={(e) => setRadarInput(e.target.value)}
-              className="input-gold"
-              style={{ flex: 1, fontSize: "0.75rem", padding: "0.4rem 0.6rem" }}
-            />
-          </div>
-
-          {getPurchasingPowerDetails(radarInput) && (
-            <div style={{ background: "#F8FAFC", padding: "0.55rem 0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
-                <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>📍 {getPurchasingPowerDetails(radarInput)?.name}</span>
-                <span style={{ fontWeight: 800, color: "var(--gold-premium)" }}>Suggested RRP: {getPurchasingPowerDetails(radarInput)?.rrp}</span>
-              </div>
-              <p style={{ fontSize: "0.7rem", color: "var(--text-secondary)", lineHeight: "1.35" }}>
-                <strong>Best Furniture Upsell:</strong> {getPurchasingPowerDetails(radarInput)?.upsell}
+      {/* 🇬🇧 INTERACTIVE UK LOCATION MAP & RADIUS EXTRACTOR FOR FB MARKETPLACE */}
+      <div className="glass-panel" style={{ padding: "1.1rem", borderRadius: "14px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <MapPin style={{ color: "var(--gold-premium)" }} size={20} />
+            <div>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                🇬🇧 INTERACTIVE UK LOCATION MAP & RADIUS EXTRACTOR (FOR FB MARKETPLACE)
+              </h3>
+              <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                Select any UK regional hub to extract all surrounding towns & postcodes within radius for 1-click copying to Facebook Marketplace listings.
               </p>
             </div>
-          )}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <select
+              value={selectedClusterKey}
+              onChange={(e) => setSelectedClusterKey(e.target.value)}
+              className="input-gold"
+              style={{ fontSize: "0.78rem", padding: "0.45rem", fontWeight: 700 }}
+            >
+              <option value="MANCHESTER">📍 Greater Manchester & North West (M1)</option>
+              <option value="LONDON_SOUTH">📍 South London & Surrey Hub (SW19)</option>
+              <option value="LONDON_NORTH">📍 North London & Herts (N1)</option>
+              <option value="BIRMINGHAM">📍 West Midlands & Solihull (B1)</option>
+              <option value="LEEDS">📍 West Yorkshire & Bradford (LS1)</option>
+              <option value="BRISTOL">📍 Bristol & Bath Region (BS1)</option>
+              <option value="GLASGOW">📍 Central Scotland (G1)</option>
+            </select>
+
+            <select
+              value={selectedRadiusMiles}
+              onChange={(e) => setSelectedRadiusMiles(Number(e.target.value))}
+              className="input-gold"
+              style={{ fontSize: "0.78rem", padding: "0.45rem", fontWeight: 700 }}
+            >
+              <option value={5}>Radius: 5 Miles</option>
+              <option value={10}>Radius: 10 Miles</option>
+              <option value={15}>Radius: 15 Miles (Recommended)</option>
+              <option value={25}>Radius: 25 Miles</option>
+              <option value={50}>Radius: 50 Miles</option>
+            </select>
+          </div>
         </div>
 
+        {/* INTERACTIVE UK VISUAL REGION RADAR MAP PANEL */}
+        <div style={{
+          position: "relative",
+          width: "100%",
+          height: "180px",
+          background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
+          borderRadius: "10px",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "1px solid rgba(212, 175, 55, 0.3)"
+        }}>
+          {/* Map Grid Background Graphic */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(rgba(212, 175, 55, 0.15) 1px, transparent 1px)",
+            backgroundSize: "20px 20px"
+          }} />
+
+          {/* Interactive Region Hotspot Pins */}
+          <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", padding: "1rem", textAlign: "center" }}>
+            <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-primary)", textTransform: "uppercase", letterSpacing: "0.05em", background: "rgba(212, 175, 55, 0.12)", padding: "0.2rem 0.6rem", borderRadius: "20px", border: "1px solid rgba(212, 175, 55, 0.3)" }}>
+              🎯 ACTIVE REGIONAL HUB: {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.center}
+            </span>
+
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
+              {Object.keys(UK_REGIONAL_TOWN_CLUSTERS).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => setSelectedClusterKey(key)}
+                  style={{
+                    padding: "0.35rem 0.65rem",
+                    fontSize: "0.7rem",
+                    fontWeight: selectedClusterKey === key ? 800 : 600,
+                    background: selectedClusterKey === key ? "var(--gold-premium)" : "rgba(255, 255, 255, 0.1)",
+                    color: selectedClusterKey === key ? "#FFFFFF" : "#CBD5E1",
+                    border: selectedClusterKey === key ? "none" : "1px solid rgba(255, 255, 255, 0.15)",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  📍 {UK_REGIONAL_TOWN_CLUSTERS[key].postcode} - {key.replace("_", " ")}
+                </button>
+              ))}
+            </div>
+
+            <span style={{ fontSize: "0.72rem", color: "#94A3B8" }}>
+              Extracted <strong>{UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.length} Surrounding Towns</strong> within {selectedRadiusMiles}-mile delivery radius around {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.postcode}.
+            </span>
+          </div>
+        </div>
+
+        {/* EXTRACTED TOWNS TABLE & 1-CLICK COPY ACTIONS */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+              <Sparkles size={14} style={{ color: "var(--gold-premium)" }} />
+              Extracted Nearby Towns for FB Marketplace Tags ({UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.length} Towns)
+            </span>
+
+            <div style={{ display: "flex", gap: "0.4rem" }}>
+              <button
+                onClick={() => {
+                  const commaList = UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey].towns.map(t => t.name).join(", ");
+                  navigator.clipboard.writeText(commaList);
+                  setCopiedAllTowns(true);
+                  toast.success(`Copied ${UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey].towns.length} towns for FB Marketplace!`);
+                  setTimeout(() => setCopiedAllTowns(false), 2000);
+                }}
+                className="btn-gold"
+                style={{ fontSize: "0.72rem", padding: "0.35rem 0.75rem", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
+              >
+                <Copy size={13} />
+                <span>{copiedAllTowns ? "✓ Copied All Towns!" : "📋 Copy All Towns for FB Tags"}</span>
+              </button>
+            </div>
+          </div>
+
+          <div style={{ maxHeight: "180px", overflowY: "auto", border: "1px solid var(--border-dim)", borderRadius: "8px", background: "#F8FAFC" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.72rem", textAlign: "left" }}>
+              <thead>
+                <tr style={{ background: "#EDF2F7", color: "var(--text-muted)", borderBottom: "1px solid var(--border-dim)" }}>
+                  <th style={{ padding: "0.45rem 0.75rem" }}>Town / District</th>
+                  <th style={{ padding: "0.45rem 0.75rem" }}>Est. Distance</th>
+                  <th style={{ padding: "0.45rem 0.75rem" }}>FB Buyer Density</th>
+                  <th style={{ padding: "0.45rem 0.75rem", textAlign: "right" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.map((town, idx) => (
+                  <tr key={idx} style={{ borderBottom: "1px solid var(--border-dim)", background: idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC" }}>
+                    <td style={{ padding: "0.45rem 0.75rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                      📍 {town.name}
+                    </td>
+                    <td style={{ padding: "0.45rem 0.75rem", color: "var(--text-secondary)" }}>
+                      {town.dist}
+                    </td>
+                    <td style={{ padding: "0.45rem 0.75rem" }}>
+                      <span className="badge" style={{
+                        fontSize: "0.6rem",
+                        fontWeight: 800,
+                        background: town.density.includes("LUXURY") ? "rgba(212, 175, 55, 0.15)" : town.density.includes("VERY HIGH") ? "rgba(239, 68, 68, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                        color: town.density.includes("LUXURY") ? "var(--gold-primary)" : town.density.includes("VERY HIGH") ? "#EF4444" : "#2563EB"
+                      }}>
+                        {town.density}
+                      </span>
+                    </td>
+                    <td style={{ padding: "0.45rem 0.75rem", textAlign: "right" }}>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(town.name);
+                          toast.success(`Copied "${town.name}"!`);
+                        }}
+                        className="btn-glass"
+                        style={{ fontSize: "0.62rem", padding: "0.15rem 0.4rem" }}
+                      >
+                        Copy Town
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* 2. Visual Platform Workspaces Tabs Array (Clean, no Tab A/B/C/D labels) */}
