@@ -551,7 +551,7 @@ export default function WorkstationTelemetryDashboard() {
                 border: w.network.isVpnActive ? "1px solid rgba(139, 92, 246, 0.2)" : "1px solid var(--border-dim)",
                 display: "flex",
                 alignItems: "center",
-                justify-content: "space-between"
+                justifyContent: "space-between"
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", overflow: "hidden" }}>
                   <span style={{ fontSize: "1rem" }}>{getCountryFlag(w.network.countryCode)}</span>
