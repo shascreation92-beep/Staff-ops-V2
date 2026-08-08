@@ -370,9 +370,9 @@ export default function NotificationBell() {
                     {timeAgo(n.createdAt)}
                   </span>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
