@@ -532,7 +532,7 @@ export default function ChatShard({
                 if (checkIsMentioned(m.message) && !notifiedMessageIds.current.has(m.id)) {
                   notifiedMessageIds.current.add(m.id);
                   if (!mutedGroups.includes(activeContact.id) && !isDnd) {
-                    triggerMentionNotification(m, activeContact.name || "Group");
+                    showMentionToast(m, activeContact.name || "Group");
                   }
                 }
               }
