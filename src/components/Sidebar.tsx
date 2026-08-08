@@ -19,6 +19,7 @@ import {
   Megaphone,
   Wallet,
   Monitor,
+  Activity,
   Pencil,
   HelpCircle,
   TrendingUp,
