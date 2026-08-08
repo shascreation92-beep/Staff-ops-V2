@@ -1308,6 +1308,9 @@ export default function UKMarketTrendsList({
             </div>
 
           </div>
+        </>
+      )}
+
       {/* LIVE NEWS ARTICLE MODAL */}
       {activeNewsModal && (
         <div style={{

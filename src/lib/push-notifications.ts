@@ -1,6 +1,6 @@
 "use client";
 
-import { playNotificationTone } from "@/components/NotificationBell";
+import { playCrystalChime } from "@/components/NotificationBell";
 
 export interface DesktopNotificationParams {
   title: string;
@@ -41,7 +41,7 @@ export function sendDesktopNotification({
   if (!isNotificationSupported()) return;
 
   if (playSound) {
-    playNotificationTone();
+    playCrystalChime();
   }
 
   if (Notification.permission === "granted") {
