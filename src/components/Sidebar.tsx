@@ -481,6 +481,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
     { 
+      id: "system-health", 
+      label: "Hosting & System Health", 
+      path: "/system-health", 
+      icon: Activity,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
+    },
+    { 
       id: "associates-requests", 
       label: "Associates Requests", 
       path: "/associates-requests", 
