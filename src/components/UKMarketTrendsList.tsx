@@ -101,6 +101,22 @@ export default function UKMarketTrendsList({
   const [selectedTone, setSelectedTone] = useState<string>("POLITE");
   const [generatedHashtags, setGeneratedHashtags] = useState<string>("");
 
+  // Live UK E-Commerce & Retail News Ticker State
+  const [ukNews, setUkNews] = useState<any[]>([]);
+  const [newsCategoryFilter, setNewsCategoryFilter] = useState<string>("ALL");
+  const [activeNewsModal, setActiveNewsModal] = useState<any | null>(null);
+
+  useEffect(() => {
+    fetch("/api/uk-news")
+      .then(res => res.json())
+      .then(data => {
+        if (data.news && Array.isArray(data.news)) {
+          setUkNews(data.news);
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
+
   const [isPending, startTransition] = useTransition();
   const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
   const [copiedSubject, setCopiedSubject] = useState<boolean>(false);
@@ -458,6 +474,73 @@ export default function UKMarketTrendsList({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", height: "100%", width: "100%", overflowY: "auto", paddingBottom: "1.5rem", position: "relative" }}>
       
+      {/* LIVE UK E-COMMERCE & RETAIL NEWS TICKER MARQUEE */}
+      {ukNews.length > 0 && (
+        <div className="glass-panel" style={{
+          padding: "0.65rem 1rem",
+          background: "#FFFFFF",
+          borderLeft: "4px solid var(--gold-primary)",
+          display: "flex",
+          alignItems: "center",
+          gap: "1rem",
+          overflow: "hidden",
+          borderRadius: "10px"
+        }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            fontSize: "0.72rem",
+            fontWeight: 800,
+            color: "var(--gold-primary)",
+            whiteSpace: "nowrap",
+            background: "rgba(212, 175, 55, 0.1)",
+            padding: "0.25rem 0.65rem",
+            borderRadius: "6px"
+          }}>
+            <Sparkles size={13} />
+            <span>UK LIVE NEWS</span>
+          </div>
+
+          <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+            <div style={{
+              display: "flex",
+              gap: "2.5rem",
+              whiteSpace: "nowrap",
+              overflowX: "auto",
+              padding: "0.2rem 0"
+            }}>
+              {ukNews.map((news) => (
+                <div
+                  key={news.id}
+                  onClick={() => setActiveNewsModal(news)}
+                  style={{
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    fontSize: "0.78rem"
+                  }}
+                >
+                  <span className="badge" style={{
+                    fontSize: "0.65rem",
+                    padding: "0.1rem 0.4rem",
+                    background: news.sentiment === "POSITIVE" ? "rgba(16, 185, 129, 0.1)" : (news.sentiment === "WARNING" ? "rgba(239, 68, 68, 0.1)" : "rgba(59, 130, 246, 0.1)"),
+                    color: news.sentiment === "POSITIVE" ? "#10B981" : (news.sentiment === "WARNING" ? "#EF4444" : "#3B82F6"),
+                    border: "none",
+                    fontWeight: 700
+                  }}>
+                    {news.category}
+                  </span>
+                  <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{news.title}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>({news.source})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. Page Header Block */}
       <div className="glass-panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem", borderRadius: "12px", background: "rgba(255, 255, 255, 0.45)", border: "1px solid var(--border-dim)" }}>
         <div>
@@ -1225,7 +1308,80 @@ export default function UKMarketTrendsList({
             </div>
 
           </div>
-        </>
+      {/* LIVE NEWS ARTICLE MODAL */}
+      {activeNewsModal && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(15, 23, 42, 0.6)",
+          backdropFilter: "blur(6px)",
+          zIndex: 999999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1rem"
+        }}>
+          <div className="glass-panel" style={{
+            width: "100%",
+            maxWidth: "560px",
+            background: "#FFFFFF",
+            padding: "1.75rem",
+            borderRadius: "16px",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.2rem"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span className="badge" style={{
+                  background: "rgba(212, 175, 55, 0.12)",
+                  color: "var(--gold-primary)",
+                  border: "1px solid rgba(212, 175, 55, 0.3)",
+                  fontSize: "0.7rem",
+                  fontWeight: 700
+                }}>
+                  {activeNewsModal.category}
+                </span>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{activeNewsModal.source} • {activeNewsModal.pubDate}</span>
+              </div>
+              <button
+                onClick={() => setActiveNewsModal(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.35 }}>
+              {activeNewsModal.title}
+            </h3>
+
+            <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.6, background: "#F8FAFC", padding: "1rem", borderRadius: "10px", border: "1px solid var(--border-dim)" }}>
+              {activeNewsModal.summary}
+            </p>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <button
+                onClick={() => setActiveNewsModal(null)}
+                className="btn-glass"
+                style={{ padding: "0.5rem 1rem", fontSize: "0.82rem" }}
+              >
+                Close
+              </button>
+              <a
+                href={activeNewsModal.link}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-gold"
+                style={{ padding: "0.5rem 1.1rem", fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: "0.4rem", textDecoration: "none" }}
+              >
+                <span>Read Full Article</span>
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

@@ -21,6 +21,7 @@ import {
   rejectJoinRequestAction
 } from "@/app/actions/chat";
 import { playCrystalChime } from "./NotificationBell";
+import { sendDesktopNotification } from "@/lib/push-notifications";
 import { useSearchParams } from "next/navigation";
 import { EMOJI_DATASET } from "./emojis";
 import { 
@@ -374,7 +375,14 @@ export default function ChatShard({
   };
 
   // Trigger interactive toast notifications
-  const triggerMentionNotification = (msg: any, channelName: string) => {
+  const showMentionToast = (msg: any, channelName: string) => {
+    sendDesktopNotification({
+      title: `🔔 Mentioned in #${channelName}`,
+      body: `${msg.sender?.name || "Colleague"}: ${msg.message}`,
+      url: `/chat-space?groupId=${msg.groupId}`,
+      playSound: true
+    });
+
     playNotificationChime();
 
     toast((t) => (

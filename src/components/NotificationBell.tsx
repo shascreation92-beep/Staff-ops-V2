@@ -5,6 +5,7 @@ import { Bell, Check, Archive, RefreshCw, Volume2, VolumeX } from "lucide-react"
 import { useRouter } from "next/navigation";
 import { formatDate12h } from "@/lib/date-formatter";
 import { useAnnouncements } from "./AnnouncementProvider";
+import { sendDesktopNotification, requestNotificationPermission, isNotificationSupported } from "@/lib/push-notifications";
 
 let globalAudioCtx: AudioContext | null = null;
 
@@ -146,6 +147,16 @@ export default function NotificationBell() {
         if (prevUnreadCountRef.current !== null && unreadCount > prevUnreadCountRef.current) {
           if (soundEnabled) {
             playCrystalChime();
+          }
+          // Trigger Native Desktop Notification
+          const latest = data.find(n => !n.isRead) || data[0];
+          if (latest) {
+            sendDesktopNotification({
+              title: latest.title || "StaffOps Alert",
+              body: latest.message ? latest.message.replace(/^\[(?:NOTE|CHAT)_ID:[^\]]+\]\s*/, "") : "New system alert received",
+              url: latest.type === "CHAT_DIRECT" ? "/chat-space" : "/accounts",
+              playSound: false // Sound already played above
+            });
           }
         }
         prevUnreadCountRef.current = unreadCount;
