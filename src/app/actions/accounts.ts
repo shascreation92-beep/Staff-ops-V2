@@ -1016,3 +1016,34 @@ export async function getAccountHistoryAction(accountId: string) {
   return { success: true, history };
 }
 
+/**
+ * Create a new platform dynamically
+ */
+export async function createPlatformAction(name: string) {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]);
+  const cleanName = sanitizeInput(name);
+  if (!cleanName) throw new Error("Platform name is required.");
+
+  const existing = await db.platform.findFirst({
+    where: {
+      name: cleanName,
+      isArchived: false
+    }
+  });
+
+  if (existing) {
+    return { success: true, platform: existing };
+  }
+
+  const newPlatform = await db.platform.create({
+    data: {
+      id: `plat_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: cleanName,
+      updatedAt: new Date()
+    }
+  });
+
+  revalidatePath("/accounts");
+  return { success: true, platform: newPlatform };
+}
+

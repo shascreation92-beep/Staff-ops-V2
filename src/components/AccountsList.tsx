@@ -9,7 +9,8 @@ import {
   updateAccountAdsAction,
   updateAccountIssueAction,
   updateAccountCommentAction,
-  updateAccountITNotesAction
+  updateAccountITNotesAction,
+  createPlatformAction
 } from "@/app/actions/accounts";
 import { 
   Search, 
@@ -125,6 +126,14 @@ export default function AccountsList({
   const [wizardSubmissionDate, setWizardSubmissionDate] = useState(new Date().toISOString().split("T")[0]);
   const [wizardComment, setWizardComment] = useState("");
   const [wizardErrorMsg, setWizardErrorMsg] = useState<string | null>(null);
+
+  const [localPlatforms, setLocalPlatforms] = useState(platforms);
+  const [showCustomPlatformInput, setShowCustomPlatformInput] = useState(false);
+  const [customPlatformName, setCustomPlatformName] = useState("");
+
+  useEffect(() => {
+    setLocalPlatforms(platforms);
+  }, [platforms]);
 
   // Comment Modal state
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -1649,26 +1658,107 @@ export default function AccountsList({
             {/* Step Body */}
             <div style={{ minHeight: "140px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               {wizardStep === 1 && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
+                <div className="form-group" style={{ marginBottom: 0, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                   <label className="form-label">Platform Selection</label>
-                  <select
-                    value={wizardPlatformId}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setWizardPlatformId(val);
-                      if (val) {
-                        setWizardStep(2);
-                        setWizardErrorMsg(null);
-                      }
-                    }}
-                    className="select-gold"
-                    style={{ width: "100%" }}
-                  >
-                    <option value="">Select Platform...</option>
-                    {platforms.map(p => (
-                      <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
-                    ))}
-                  </select>
+                  
+                  {!showCustomPlatformInput ? (
+                    <>
+                      <select
+                        value={wizardPlatformId}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "ADD_NEW_CUSTOM") {
+                            setShowCustomPlatformInput(true);
+                            return;
+                          }
+                          setWizardPlatformId(val);
+                          if (val) {
+                            setWizardStep(2);
+                            setWizardErrorMsg(null);
+                          }
+                        }}
+                        className="select-gold"
+                        style={{ width: "100%" }}
+                      >
+                        <option value="">Select Platform...</option>
+                        {localPlatforms.map(p => (
+                          <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
+                        ))}
+                        <option value="ADD_NEW_CUSTOM" style={{ fontWeight: 700, color: "var(--gold-primary)" }}>
+                          + Add New Custom Platform...
+                        </option>
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomPlatformInput(true)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--gold-primary)",
+                          fontSize: "0.78rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          textAlign: "left",
+                          padding: 0
+                        }}
+                      >
+                        + Can't find your platform? Add custom platform
+                      </button>
+                    </>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <input
+                        type="text"
+                        placeholder="Type new platform name (e.g. TikTok, Etsy)..."
+                        value={customPlatformName}
+                        onChange={(e) => setCustomPlatformName(e.target.value)}
+                        className="input-gold"
+                        style={{ width: "100%" }}
+                        autoFocus
+                      />
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCustomPlatformInput(false);
+                            setCustomPlatformName("");
+                          }}
+                          className="btn-glass"
+                          style={{ padding: "0.35rem 0.75rem", fontSize: "0.78rem" }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!customPlatformName.trim()) {
+                              setWizardErrorMsg("Platform name is required.");
+                              return;
+                            }
+                            try {
+                              const res = await createPlatformAction(customPlatformName.trim());
+                              if (res.success && res.platform) {
+                                setLocalPlatforms(prev => [...prev, res.platform]);
+                                setWizardPlatformId(res.platform.id);
+                                setShowCustomPlatformInput(false);
+                                setCustomPlatformName("");
+                                setWizardStep(2);
+                                setWizardErrorMsg(null);
+                                toast.success(`Added platform "${res.platform.name}"!`);
+                              }
+                            } catch (err: any) {
+                              setWizardErrorMsg(err.message || "Failed to create platform.");
+                            }
+                          }}
+                          className="btn-gold"
+                          style={{ padding: "0.35rem 0.75rem", fontSize: "0.78rem", flex: 1 }}
+                        >
+                          Save & Select Platform
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

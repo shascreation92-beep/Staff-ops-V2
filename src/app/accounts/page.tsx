@@ -43,12 +43,43 @@ export default async function AccountsPage() {
     }
   });
 
-  // Fetch platforms
-  const platforms = await db.platform.findMany({
+  // Fetch platforms (auto-seed standard platforms if empty)
+  let platforms = await db.platform.findMany({
     where: {
       isArchived: false
     }
   });
+
+  if (platforms.length === 0) {
+    const defaultPlatformNames = [
+      "Facebook",
+      "eBay",
+      "Gumtree",
+      "Vinted",
+      "AutoTrader",
+      "Shopify",
+      "Amazon",
+      "Google Ads",
+      "Website / Direct",
+      "Other"
+    ];
+
+    for (const name of defaultPlatformNames) {
+      await db.platform.create({
+        data: {
+          id: `plat_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name,
+          updatedAt: new Date()
+        }
+      }).catch(() => null);
+    }
+
+    platforms = await db.platform.findMany({
+      where: {
+        isArchived: false
+      }
+    });
+  }
 
   // Fetch companies (for Super Admin provisioning selection)
   let companies: any[] = [];
