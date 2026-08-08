@@ -38,9 +38,7 @@ export async function GET() {
         },
         employee: {
           select: {
-            employeeId: true,
-            designation: true,
-            joiningDate: true
+            employeeId: true
           }
         }
       },
@@ -95,7 +93,7 @@ export async function GET() {
         image: u.image,
         companyName: u.company?.name || "Worknode Company",
         employeeId: u.employee?.employeeId || `EMP-${100 + index}`,
-        designation: u.employee?.designation || u.role.replace("_", " "),
+        designation: u.role.replace("_", " "),
         isPaused,
         hardware: {
           ramUsedGb,
