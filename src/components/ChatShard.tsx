@@ -20,6 +20,7 @@ import {
   approveJoinRequestAction,
   rejectJoinRequestAction
 } from "@/app/actions/chat";
+import { playCrystalChime } from "./NotificationBell";
 import { useSearchParams } from "next/navigation";
 import { EMOJI_DATASET } from "./emojis";
 import { 
@@ -499,6 +500,15 @@ export default function ChatShard({
           setMessages(data);
           
           if (!isGroup) {
+            data.forEach((m: any) => {
+              if (m.senderId !== currentUser.id && !notifiedMessageIds.current.has(m.id)) {
+                notifiedMessageIds.current.add(m.id);
+                if (!isDnd) {
+                  playCrystalChime();
+                }
+              }
+            });
+
             setAllDirectMessages(prev => {
               const otherMsgs = prev.filter(m => 
                 !((m.senderId === currentUser.id && m.receiverId === activeContact.id) ||

@@ -6,39 +6,72 @@ import { useRouter } from "next/navigation";
 import { formatDate12h } from "@/lib/date-formatter";
 import { useAnnouncements } from "./AnnouncementProvider";
 
+let globalAudioCtx: AudioContext | null = null;
+
+function getGlobalAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  if (!globalAudioCtx) {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioCtx) {
+      globalAudioCtx = new AudioCtx();
+    }
+  }
+  if (globalAudioCtx && globalAudioCtx.state === "suspended") {
+    globalAudioCtx.resume().catch(() => null);
+  }
+  return globalAudioCtx;
+}
+
+if (typeof window !== "undefined") {
+  const unlockAudio = () => {
+    getGlobalAudioContext();
+  };
+  window.addEventListener("click", unlockAudio);
+  window.addEventListener("keydown", unlockAudio);
+  window.addEventListener("touchstart", unlockAudio);
+}
+
 /**
  * Web Audio API synthesized Crystal Glass Chime sound tone
  */
 export function playCrystalChime() {
   try {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    const ctx = getGlobalAudioContext();
+    if (!ctx) return;
 
-    const playNote = (freq: number, startTime: number, duration: number, gainVal: number) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+    const playNotes = () => {
+      const now = ctx.currentTime;
 
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, startTime);
+      const playNote = (freq: number, startTime: number, duration: number, gainVal: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(gainVal, startTime + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, startTime);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(gainVal, startTime + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
-      osc.start(startTime);
-      osc.stop(startTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+
+      // Pleasant Glassy E6 & B6 Chime Sequence
+      playNote(1318.51, now, 0.45, 0.35);          // E6
+      playNote(2637.02, now, 0.45, 0.08);          // E7 harmonic
+      playNote(1975.53, now + 0.08, 0.65, 0.45);   // B6
+      playNote(3951.07, now + 0.08, 0.65, 0.10);   // B7 harmonic
     };
 
-    const now = ctx.currentTime;
-    // Pleasant Glassy E6 & B6 Chime Sequence
-    playNote(1318.51, now, 0.45, 0.25);          // E6
-    playNote(2637.02, now, 0.45, 0.05);          // E7 harmonic
-    playNote(1975.53, now + 0.08, 0.65, 0.35);   // B6
-    playNote(3951.07, now + 0.08, 0.65, 0.06);   // B7 harmonic
+    if (ctx.state === "suspended") {
+      ctx.resume().then(() => playNotes()).catch(() => null);
+    } else {
+      playNotes();
+    }
   } catch (e) {
     console.error("Audio playback error:", e);
   }
