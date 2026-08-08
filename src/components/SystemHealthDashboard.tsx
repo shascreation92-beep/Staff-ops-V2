@@ -201,7 +201,7 @@ export default function SystemHealthDashboard() {
               border: "1px solid rgba(212, 175, 55, 0.3)",
               display: "flex",
               alignItems: "center",
-              justify-content: "center",
+              justifyContent: "center",
               color: "var(--gold-primary)"
             }}>
               <Server size={24} />
