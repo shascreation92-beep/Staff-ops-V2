@@ -113,6 +113,65 @@ export default function UKMarketTrendsList({
   const [townSearchInput, setTownSearchInput] = useState<string>("");
   const [townSuggestions, setTownSuggestions] = useState<any[]>([]);
 
+  // Item 7: FB Marketplace Anti-Spam Posting Delay & Cooldown Timer State
+  const [targetPostsCount, setTargetPostsCount] = useState<number>(10);
+  const [postedCount, setPostedCount] = useState<number>(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(540); // 9 minutes = 540 seconds
+  const [isCooldownActive, setIsCooldownActive] = useState<boolean>(false);
+
+  useEffect(() => {
+    let interval: any = null;
+    if (isCooldownActive && cooldownRemaining > 0) {
+      interval = setInterval(() => {
+        setCooldownRemaining(prev => prev - 1);
+      }, 1000);
+    } else if (isCooldownActive && cooldownRemaining === 0) {
+      setIsCooldownActive(false);
+      setPostedCount(prev => prev + 1);
+      playCrystalChime();
+      sendDesktopNotification({
+        title: "🟢 FB Marketplace Safe to Post!",
+        body: "Your 9-minute anti-spam cooldown has finished. You can now post your next furniture listing safely!",
+        url: "/uk-market-trends"
+      });
+      toast.success("Cooldown complete! Safe to post next listing.");
+      setCooldownRemaining(540);
+    }
+    return () => clearInterval(interval);
+  }, [isCooldownActive, cooldownRemaining]);
+
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Item 12: FB High Purchasing Power Zip Code & Location Detector State & Data
+  const [radarInput, setRadarInput] = useState<string>("SW19");
+
+  const RICH_UK_LOCATIONS: { [key: string]: { name: string; tier: string; upsell: string; rrp: string } } = {
+    "SW19": { name: "Wimbledon, London", tier: "PREMIUM HIGH", upsell: "Plush Velvet Ottoman Storage Bed + Memory Foam Mattress", rrp: "£499 - £899" },
+    "W8": { name: "Kensington, London", tier: "LUXURY ULTRA", upsell: "3-Door Mirrored Sliding Wardrobe + King Divan Set", rrp: "£650 - £1,200" },
+    "SW3": { name: "Chelsea, London", tier: "LUXURY ULTRA", upsell: "Corner Recliner Sofa in Plush Velvet", rrp: "£799 - £1,499" },
+    "B91": { name: "Solihull, West Midlands", tier: "PREMIUM HIGH", upsell: "Gas-Lift Ottoman Bed Frame with LED Headboard", rrp: "£450 - £799" },
+    "HG1": { name: "Harrogate, North Yorkshire", tier: "PREMIUM HIGH", upsell: "Chesterfield Plush Velvet Sleigh Bed Set", rrp: "£420 - £750" },
+    "WA15": { name: "Hale / Altrincham, Greater Manchester", tier: "PREMIUM HIGH", upsell: "203cm Sliding Wardrobe + Orthopaedic Mattress", rrp: "£550 - £950" },
+    "AL1": { name: "St Albans, Hertfordshire", tier: "PREMIUM HIGH", upsell: "Double Divan Bed with 4 Storage Drawers", rrp: "£380 - £680" },
+    "TW9": { name: "Richmond, London", tier: "PREMIUM HIGH", upsell: "Corner Velvet Lounge Sofa + Matching Footstool", rrp: "£699 - £1,199" },
+    "BA1": { name: "Bath, Somerset", tier: "PREMIUM HIGH", upsell: "Super King Ottoman Bed + Pocket Sprung Mattress", rrp: "£599 - £1,050" }
+  };
+
+  const getPurchasingPowerDetails = (query: string) => {
+    if (!query.trim()) return null;
+    const clean = query.trim().toUpperCase();
+    for (const key in RICH_UK_LOCATIONS) {
+      if (clean.includes(key)) {
+        return RICH_UK_LOCATIONS[key];
+      }
+    }
+    return { name: clean, tier: "STANDARD REGIONAL", upsell: "Standard Divan Bed / 2-Door Wardrobe Package", rrp: "£250 - £450" };
+  };
+
   useEffect(() => {
     fetch("/api/uk-news")
       .then(res => res.json())
@@ -686,6 +745,102 @@ export default function UKMarketTrendsList({
             <strong>Suggested Safe Replacements:</strong> "{getScanResults(adScannerText).safeText}"
           </div>
         )}
+      </div>
+
+      {/* 2-COLUMN GRID: ITEM 7 (POSTING COOLDOWN TIMER) & ITEM 12 (HIGH PURCHASING POWER RADAR) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem" }}>
+        
+        {/* ITEM 7: FB MARKETPLACE ANTI-SPAM POSTING COOLDOWN TIMER */}
+        <div className="glass-panel" style={{ padding: "0.9rem 1.1rem", borderRadius: "12px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Clock style={{ color: "var(--gold-premium)" }} size={16} />
+              <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                ⏱️ FB MARKETPLACE ANTI-SPAM COOLDOWN TIMER
+              </span>
+            </div>
+            <span className="badge" style={{ fontSize: "0.68rem", fontWeight: 800, background: "rgba(59, 130, 246, 0.1)", color: "#2563EB" }}>
+              Posted Today: {postedCount} / {targetPostsCount}
+            </span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#F8FAFC", padding: "0.6rem 0.85rem", borderRadius: "8px", border: "1px solid var(--border-dim)" }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Recommended Safe Gap</span>
+              <span style={{ fontSize: "1.25rem", fontWeight: 900, color: isCooldownActive ? "#EF4444" : "#10B981" }}>
+                {formatTimer(cooldownRemaining)}
+              </span>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.4rem" }}>
+              {!isCooldownActive ? (
+                <button
+                  onClick={() => setIsCooldownActive(true)}
+                  className="btn-gold"
+                  style={{ fontSize: "0.72rem", padding: "0.4rem 0.8rem", borderRadius: "6px" }}
+                >
+                  ▶ Start 9m Cooldown
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setIsCooldownActive(false); setCooldownRemaining(540); }}
+                  className="btn-glass"
+                  style={{ fontSize: "0.72rem", padding: "0.4rem 0.8rem", borderRadius: "6px", color: "#EF4444" }}
+                >
+                  ⏸ Pause Timer
+                </button>
+              )}
+            </div>
+          </div>
+          <p style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
+            * Prevents Facebook algorithms from flagging your account for rapid posting. Keeps a safe 9-minute interval between furniture ads.
+          </p>
+        </div>
+
+        {/* ITEM 12: FB HIGH PURCHASING POWER ZIP CODE & LOCATION DETECTOR */}
+        <div className="glass-panel" style={{ padding: "0.9rem 1.1rem", borderRadius: "12px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Building style={{ color: "var(--gold-primary)" }} size={16} />
+              <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                🏰 FB HIGH PURCHASING POWER ZIP CODE RADAR
+              </span>
+            </div>
+            {getPurchasingPowerDetails(radarInput)?.tier.includes("PREMIUM") || getPurchasingPowerDetails(radarInput)?.tier.includes("LUXURY") ? (
+              <span className="badge" style={{ fontSize: "0.68rem", fontWeight: 800, background: "rgba(212, 175, 55, 0.15)", color: "var(--gold-primary)" }}>
+                ⭐ HIGH BUYING POWER
+              </span>
+            ) : (
+              <span className="badge" style={{ fontSize: "0.68rem", fontWeight: 700, background: "rgba(100, 116, 139, 0.1)", color: "#64748B" }}>
+                REGIONAL AREA
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: "0.4rem" }}>
+            <input
+              type="text"
+              placeholder="Enter UK Postcode or Town (e.g. SW19, W8, B91, Harrogate)..."
+              value={radarInput}
+              onChange={(e) => setRadarInput(e.target.value)}
+              className="input-gold"
+              style={{ flex: 1, fontSize: "0.75rem", padding: "0.4rem 0.6rem" }}
+            />
+          </div>
+
+          {getPurchasingPowerDetails(radarInput) && (
+            <div style={{ background: "#F8FAFC", padding: "0.55rem 0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
+                <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>📍 {getPurchasingPowerDetails(radarInput)?.name}</span>
+                <span style={{ fontWeight: 800, color: "var(--gold-premium)" }}>Suggested RRP: {getPurchasingPowerDetails(radarInput)?.rrp}</span>
+              </div>
+              <p style={{ fontSize: "0.7rem", color: "var(--text-secondary)", lineHeight: "1.35" }}>
+                <strong>Best Furniture Upsell:</strong> {getPurchasingPowerDetails(radarInput)?.upsell}
+              </p>
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* 2. Visual Platform Workspaces Tabs Array (Clean, no Tab A/B/C/D labels) */}
