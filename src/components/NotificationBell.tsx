@@ -1,10 +1,48 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Bell, Check, Archive, RefreshCw } from "lucide-react";
+import { Bell, Check, Archive, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDate12h } from "@/lib/date-formatter";
 import { useAnnouncements } from "./AnnouncementProvider";
+
+/**
+ * Web Audio API synthesized Crystal Glass Chime sound tone
+ */
+export function playCrystalChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+
+    const playNote = (freq: number, startTime: number, duration: number, gainVal: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(gainVal, startTime + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+
+    const now = ctx.currentTime;
+    // Pleasant Glassy E6 & B6 Chime Sequence
+    playNote(1318.51, now, 0.45, 0.25);          // E6
+    playNote(2637.02, now, 0.45, 0.05);          // E7 harmonic
+    playNote(1975.53, now + 0.08, 0.65, 0.35);   // B6
+    playNote(3951.07, now + 0.08, 0.65, 0.06);   // B7 harmonic
+  } catch (e) {
+    console.error("Audio playback error:", e);
+  }
+}
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -31,7 +69,25 @@ export default function NotificationBell() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const prevUnreadCountRef = useRef<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("worknode_notification_sound");
+    if (saved !== null) {
+      setSoundEnabled(saved === "true");
+    }
+  }, []);
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem("worknode_notification_sound", String(next));
+    if (next) {
+      playCrystalChime();
+    }
+  };
 
   // Close notifications dropdown on click outside
   useEffect(() => {
@@ -50,7 +106,16 @@ export default function NotificationBell() {
     try {
       const res = await fetch("/api/notifications");
       if (res.ok) {
-        const data = await res.json();
+        const data: Notification[] = await res.json();
+        const unreadCount = data.filter(n => !n.isRead).length;
+
+        // Play chime tone if new unread notification arrived
+        if (prevUnreadCountRef.current !== null && unreadCount > prevUnreadCountRef.current) {
+          if (soundEnabled) {
+            playCrystalChime();
+          }
+        }
+        prevUnreadCountRef.current = unreadCount;
         setNotifications(data);
       }
     } catch (err) {
@@ -77,7 +142,7 @@ export default function NotificationBell() {
       clearInterval(interval);
       window.removeEventListener("notification-updated", handlePoll);
     };
-  }, []);
+  }, [soundEnabled]);
 
   // Close on Escape key
   useEffect(() => {
@@ -213,13 +278,37 @@ export default function NotificationBell() {
             <span style={{ fontSize: "0.80rem", fontWeight: 700, color: "var(--gold-primary)", fontFamily: "var(--font-mono)" }}>
               ALERTS ({unreadCount} UNREAD)
             </span>
-            <button 
-              onClick={fetchNotifications} 
-              disabled={loadingNotifications}
-              style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
-            >
-              <RefreshCw size={13} className={loadingNotifications ? "animate-spin" : ""} />
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <button
+                type="button"
+                onClick={toggleSound}
+                style={{
+                  background: soundEnabled ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
+                  border: soundEnabled ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
+                  borderRadius: "6px",
+                  padding: "0.2rem 0.45rem",
+                  color: soundEnabled ? "#10B981" : "#EF4444",
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.25rem"
+                }}
+                title={soundEnabled ? "Notification sound enabled (Click to test/mute)" : "Notification sound muted (Click to enable)"}
+              >
+                {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                <span>{soundEnabled ? "Chime ON" : "Muted"}</span>
+              </button>
+              <button 
+                onClick={fetchNotifications} 
+                disabled={loadingNotifications}
+                style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
+                title="Refresh notifications"
+              >
+                <RefreshCw size={13} className={loadingNotifications ? "animate-spin" : ""} />
+              </button>
+            </div>
           </div>
 
           {notifications.length === 0 ? (
