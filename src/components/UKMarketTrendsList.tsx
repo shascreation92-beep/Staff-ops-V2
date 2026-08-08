@@ -117,148 +117,211 @@ export default function UKMarketTrendsList({
   const [townSearchInput, setTownSearchInput] = useState<string>("");
   const [townSuggestions, setTownSuggestions] = useState<any[]>([]);
 
-  // Interactive UK Location Map & Radius Extractor State
+  // Interactive UK Location Map & Granular Neighborhood Extractor State
   const [selectedClusterKey, setSelectedClusterKey] = useState<string>("MANCHESTER");
   const [selectedRadiusMiles, setSelectedRadiusMiles] = useState<number>(15);
+  const [fbFormatMode, setFbFormatMode] = useState<"STANDARD_FB" | "HYPER_LOCAL" | "POSTCODE_CITY">("STANDARD_FB");
   const [copiedAllTowns, setCopiedAllTowns] = useState<boolean>(false);
   const [customSearchLocation, setCustomSearchLocation] = useState<string>("");
 
-  const UK_REGIONAL_TOWN_CLUSTERS: { [key: string]: { center: string; postcode: string; lat: number; lng: number; towns: { name: string; dist: string; density: string }[] } } = {
+  const UK_REGIONAL_TOWN_CLUSTERS: { 
+    [key: string]: { 
+      center: string; 
+      postcode: string; 
+      lat: number; 
+      lng: number; 
+      towns: { name: string; city: string; postcode: string; dist: string; density: string }[] 
+    } 
+  } = {
     "MANCHESTER": {
-      center: "Greater Manchester & North West",
+      center: "Greater Manchester & Cheshire Hub",
       postcode: "M1",
       lat: 53.4808,
       lng: -2.2426,
       towns: [
-        { name: "Manchester", dist: "0.0 miles", density: "🔥 VERY HIGH" },
-        { name: "Salford", dist: "1.8 miles", density: "🔥 HIGH" },
-        { name: "Stockport", dist: "6.2 miles", density: "🔥 VERY HIGH" },
-        { name: "Altrincham", dist: "8.1 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Bolton", dist: "10.4 miles", density: "🔥 HIGH" },
-        { name: "Bury", dist: "8.7 miles", density: "🔥 HIGH" },
-        { name: "Oldham", dist: "6.9 miles", density: "🔥 HIGH" },
-        { name: "Rochdale", dist: "10.8 miles", density: "MEDIUM" },
-        { name: "Ashton-under-Lyne", dist: "6.5 miles", density: "HIGH" },
-        { name: "Sale", dist: "5.4 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Stretford", dist: "3.9 miles", density: "HIGH" },
-        { name: "Wilmslow", dist: "11.2 miles", density: "⭐ LUXURY ULTRA" },
-        { name: "Didsbury", dist: "4.8 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Cheadle", dist: "7.5 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Hyde", dist: "7.2 miles", density: "MEDIUM" }
+        { name: "Manchester", city: "Manchester", postcode: "M1", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Didsbury", city: "Manchester", postcode: "M20", dist: "4.5 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Chorlton-cum-Hardy", city: "Manchester", postcode: "M21", dist: "3.8 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Ancoats", city: "Manchester", postcode: "M4", dist: "0.8 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Salford Quays & MediaCity", city: "Salford", postcode: "M50", dist: "2.1 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Salford", city: "Salford", postcode: "M3", dist: "1.2 miles", density: "🔥 VERY HIGH" },
+        { name: "Stockport", city: "Stockport", postcode: "SK1", dist: "6.2 miles", density: "🔥 VERY HIGH" },
+        { name: "Altrincham", city: "Trafford", postcode: "WA14", dist: "8.1 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Wilmslow", city: "Cheshire", postcode: "SK9", dist: "11.2 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Alderley Edge", city: "Cheshire", postcode: "SK9", dist: "13.5 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Hale & Hale Barns", city: "Trafford", postcode: "WA15", dist: "8.9 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Bramhall", city: "Stockport", postcode: "SK7", dist: "9.4 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Cheadle & Cheadle Hulme", city: "Stockport", postcode: "SK8", dist: "7.5 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Sale", city: "Trafford", postcode: "M33", dist: "5.4 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Prestwich", city: "Bury", postcode: "M25", dist: "4.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Fallowfield", city: "Manchester", postcode: "M14", dist: "2.9 miles", density: "🔥 VERY HIGH" },
+        { name: "Rusholme", city: "Manchester", postcode: "M14", dist: "2.1 miles", density: "HIGH" },
+        { name: "Whalley Range", city: "Manchester", postcode: "M16", dist: "2.6 miles", density: "HIGH" },
+        { name: "Stretford", city: "Trafford", postcode: "M32", dist: "3.9 miles", density: "HIGH" },
+        { name: "Urmston", city: "Trafford", postcode: "M41", dist: "5.8 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Eccles", city: "Salford", postcode: "M30", dist: "4.7 miles", density: "HIGH" },
+        { name: "Swinton", city: "Salford", postcode: "M27", dist: "4.9 miles", density: "HIGH" },
+        { name: "Bolton", city: "Bolton", postcode: "BL1", dist: "10.4 miles", density: "🔥 VERY HIGH" },
+        { name: "Bury", city: "Bury", postcode: "BL9", dist: "8.7 miles", density: "🔥 VERY HIGH" },
+        { name: "Oldham", city: "Oldham", postcode: "OL1", dist: "6.9 miles", density: "🔥 HIGH" },
+        { name: "Rochdale", city: "Rochdale", postcode: "OL16", dist: "10.8 miles", density: "MEDIUM" },
+        { name: "Ashton-under-Lyne", city: "Tameside", postcode: "OL6", dist: "6.5 miles", density: "HIGH" },
+        { name: "Hyde", city: "Tameside", postcode: "SK14", dist: "7.2 miles", density: "MEDIUM" },
+        { name: "Denton", city: "Tameside", postcode: "M34", dist: "5.8 miles", density: "HIGH" },
+        { name: "Middleton", city: "Rochdale", postcode: "M24", dist: "5.3 miles", density: "HIGH" },
+        { name: "Wythenshawe", city: "Manchester", postcode: "M22", dist: "7.1 miles", density: "HIGH" },
+        { name: "Warrington", city: "Warrington", postcode: "WA1", dist: "16.8 miles", density: "🔥 VERY HIGH" },
+        { name: "Wigan", city: "Wigan", postcode: "WN1", dist: "17.4 miles", density: "HIGH" },
+        { name: "Leigh", city: "Wigan", postcode: "WN7", dist: "12.1 miles", density: "HIGH" },
+        { name: "Knutsford", city: "Cheshire", postcode: "WA16", dist: "14.2 miles", density: "⭐ LUXURY ULTRA" }
       ]
     },
     "LONDON_SOUTH": {
-      center: "South London & Surrey Hub",
+      center: "South London, Surrey & Wandsworth Hub",
       postcode: "SW19",
       lat: 51.4214,
       lng: -0.2067,
       towns: [
-        { name: "Wimbledon", dist: "0.0 miles", density: "⭐ LUXURY ULTRA" },
-        { name: "Croydon", dist: "6.4 miles", density: "🔥 VERY HIGH" },
-        { name: "Sutton", dist: "4.8 miles", density: "🔥 HIGH" },
-        { name: "Kingston upon Thames", dist: "4.1 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Merton", dist: "1.2 miles", density: "HIGH" },
-        { name: "Wandsworth", dist: "3.5 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Battersea", dist: "5.2 miles", density: "⭐ LUXURY ULTRA" },
-        { name: "Clapham", dist: "4.9 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Brixton", dist: "5.8 miles", density: "🔥 VERY HIGH" },
-        { name: "Richmond", dist: "5.6 miles", density: "⭐ LUXURY ULTRA" },
-        { name: "Twickenham", dist: "6.1 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Morden", dist: "2.3 miles", density: "HIGH" }
+        { name: "Wimbledon", city: "London", postcode: "SW19", dist: "0.0 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Putney", city: "London", postcode: "SW15", dist: "2.8 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Chelsea & Fulham", city: "London", postcode: "SW3", dist: "5.1 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Battersea", city: "London", postcode: "SW11", dist: "4.2 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Clapham", city: "London", postcode: "SW4", dist: "4.5 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Wandsworth", city: "London", postcode: "SW18", dist: "2.4 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Balham", city: "London", postcode: "SW12", dist: "3.6 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Tooting", city: "London", postcode: "SW17", dist: "2.1 miles", density: "🔥 VERY HIGH" },
+        { name: "Richmond upon Thames", city: "London", postcode: "TW9", dist: "5.6 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Kingston upon Thames", city: "London", postcode: "KT1", dist: "4.1 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Surbiton", city: "Surrey", postcode: "KT6", dist: "5.2 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Teddington & Hampton", city: "Middlesex", postcode: "TW11", dist: "5.8 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Twickenham", city: "London", postcode: "TW1", dist: "6.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Raynes Park", city: "London", postcode: "SW20", dist: "1.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Morden", city: "Surrey", postcode: "SM4", dist: "2.3 miles", density: "HIGH" },
+        { name: "Sutton", city: "Surrey", postcode: "SM1", dist: "4.8 miles", density: "🔥 VERY HIGH" },
+        { name: "Croydon", city: "London", postcode: "CR0", dist: "6.4 miles", density: "🔥 VERY HIGH" },
+        { name: "Brixton", city: "London", postcode: "SW2", dist: "5.8 miles", density: "🔥 VERY HIGH" },
+        { name: "Streatham", city: "London", postcode: "SW16", dist: "4.3 miles", density: "HIGH" },
+        { name: "Epsom & Ewell", city: "Surrey", postcode: "KT19", dist: "7.2 miles", density: "⭐ LUXURY ULTRA" }
       ]
     },
     "LONDON_NORTH": {
-      center: "North London & Hertfordshire",
+      center: "North London, Camden & Hertfordshire Hub",
       postcode: "N1",
       lat: 51.5362,
       lng: -0.1030,
       towns: [
-        { name: "Islington", dist: "0.0 miles", density: "⭐ LUXURY ULTRA" },
-        { name: "Camden", dist: "1.9 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Haringey", dist: "3.8 miles", density: "🔥 HIGH" },
-        { name: "Enfield", dist: "9.2 miles", density: "🔥 VERY HIGH" },
-        { name: "Barnet", dist: "9.8 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Finchley", dist: "6.5 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Edmonton", dist: "7.1 miles", density: "HIGH" },
-        { name: "Tottenham", dist: "5.4 miles", density: "🔥 VERY HIGH" },
-        { name: "Wood Green", dist: "4.7 miles", density: "HIGH" },
-        { name: "Muswell Hill", dist: "5.3 miles", density: "⭐ LUXURY ULTRA" },
-        { name: "Highgate", dist: "4.2 miles", density: "⭐ LUXURY ULTRA" }
+        { name: "Islington", city: "London", postcode: "N1", dist: "0.0 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Camden Town & Primrose Hill", city: "London", postcode: "NW1", dist: "1.9 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Hampstead & Belsize Park", city: "London", postcode: "NW3", dist: "3.5 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Highgate", city: "London", postcode: "N6", dist: "4.2 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Muswell Hill", city: "London", postcode: "N10", dist: "5.3 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Finchley", city: "London", postcode: "N3", dist: "6.5 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Barnet", city: "London", postcode: "EN5", dist: "9.8 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Haringey & Crouch End", city: "London", postcode: "N8", dist: "3.8 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Stoke Newington", city: "London", postcode: "N16", dist: "2.1 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Hackney", city: "London", postcode: "E8", dist: "2.4 miles", density: "🔥 VERY HIGH" },
+        { name: "Enfield", city: "Middlesex", postcode: "EN1", dist: "9.2 miles", density: "🔥 VERY HIGH" },
+        { name: "Edmonton", city: "London", postcode: "N9", dist: "7.1 miles", density: "HIGH" },
+        { name: "Tottenham", city: "London", postcode: "N17", dist: "5.4 miles", density: "🔥 VERY HIGH" },
+        { name: "Wood Green", city: "London", postcode: "N22", dist: "4.7 miles", density: "HIGH" },
+        { name: "St Albans", city: "Hertfordshire", postcode: "AL1", dist: "18.5 miles", density: "⭐ LUXURY ULTRA" }
       ]
     },
     "BIRMINGHAM": {
-      center: "West Midlands & Solihull",
+      center: "West Midlands, Solihull & Sutton Coldfield Hub",
       postcode: "B1",
       lat: 52.4862,
       lng: -1.8904,
       towns: [
-        { name: "Birmingham", dist: "0.0 miles", density: "🔥 VERY HIGH" },
-        { name: "Solihull", dist: "7.4 miles", density: "⭐ LUXURY ULTRA" },
-        { name: "Sutton Coldfield", dist: "6.9 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Dudley", dist: "8.5 miles", density: "🔥 HIGH" },
-        { name: "Walsall", dist: "8.2 miles", density: "🔥 HIGH" },
-        { name: "West Bromwich", dist: "5.1 miles", density: "HIGH" },
-        { name: "Halesowen", dist: "7.8 miles", density: "HIGH" },
-        { name: "Stourbridge", dist: "11.4 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Oldbury", dist: "5.5 miles", density: "MEDIUM" },
-        { name: "Smethwick", dist: "3.8 miles", density: "HIGH" },
-        { name: "Tamworth", dist: "13.6 miles", density: "HIGH" },
-        { name: "Redditch", dist: "12.8 miles", density: "HIGH" }
+        { name: "Birmingham City Centre", city: "Birmingham", postcode: "B1", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Solihull", city: "Solihull", postcode: "B91", dist: "7.4 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Edgbaston & Harborne", city: "Birmingham", postcode: "B15", dist: "2.1 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Sutton Coldfield", city: "Birmingham", postcode: "B72", dist: "6.9 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Moseley & Kings Heath", city: "Birmingham", postcode: "B13", dist: "3.2 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Jewellery Quarter", city: "Birmingham", postcode: "B18", dist: "1.1 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Dudley", city: "Dudley", postcode: "DY1", dist: "8.5 miles", density: "🔥 HIGH" },
+        { name: "Walsall", city: "Walsall", postcode: "WS1", dist: "8.2 miles", density: "🔥 HIGH" },
+        { name: "West Bromwich", city: "Sandwell", postcode: "B70", dist: "5.1 miles", density: "HIGH" },
+        { name: "Halesowen", city: "Dudley", postcode: "B63", dist: "7.8 miles", density: "HIGH" },
+        { name: "Stourbridge", city: "Dudley", postcode: "DY8", dist: "11.4 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Oldbury & Smethwick", city: "Sandwell", postcode: "B68", dist: "4.2 miles", density: "HIGH" },
+        { name: "Tamworth", city: "Staffordshire", postcode: "B79", dist: "13.6 miles", density: "HIGH" },
+        { name: "Redditch", city: "Worcestershire", postcode: "B97", dist: "12.8 miles", density: "HIGH" },
+        { name: "Royal Leamington Spa", city: "Warwickshire", postcode: "CV32", dist: "21.4 miles", density: "⭐ LUXURY ULTRA" }
       ]
     },
     "LEEDS": {
-      center: "West Yorkshire & Bradford",
+      center: "West Yorkshire, Bradford & Harrogate Hub",
       postcode: "LS1",
       lat: 53.7997,
       lng: -1.5491,
       towns: [
-        { name: "Leeds", dist: "0.0 miles", density: "🔥 VERY HIGH" },
-        { name: "Bradford", dist: "8.6 miles", density: "🔥 VERY HIGH" },
-        { name: "Wakefield", dist: "9.1 miles", density: "🔥 HIGH" },
-        { name: "Huddersfield", dist: "14.2 miles", density: "HIGH" },
-        { name: "Halifax", dist: "14.8 miles", density: "HIGH" },
-        { name: "Dewsbury", dist: "8.9 miles", density: "MEDIUM" },
-        { name: "Keighley", dist: "17.1 miles", density: "MEDIUM" },
-        { name: "Batley", dist: "7.3 miles", density: "HIGH" },
-        { name: "Pudsey", dist: "4.8 miles", density: "HIGH" },
-        { name: "Morley", dist: "4.9 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Ilkley", dist: "15.4 miles", density: "⭐ LUXURY ULTRA" }
+        { name: "Leeds", city: "Leeds", postcode: "LS1", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Headingley & Hyde Park", city: "Leeds", postcode: "LS6", dist: "2.1 miles", density: "🔥 VERY HIGH" },
+        { name: "Roundhay & Alwoodley", city: "Leeds", postcode: "LS17", dist: "4.8 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Horsforth", city: "Leeds", postcode: "LS18", dist: "5.2 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Bradford", city: "Bradford", postcode: "BD1", dist: "8.6 miles", density: "🔥 VERY HIGH" },
+        { name: "Harrogate", city: "North Yorkshire", postcode: "HG1", dist: "14.5 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Ilkley", city: "Bradford", postcode: "LS29", dist: "15.4 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Wakefield", city: "Wakefield", postcode: "WF1", dist: "9.1 miles", density: "🔥 HIGH" },
+        { name: "Huddersfield", city: "Kirklees", postcode: "HD1", dist: "14.2 miles", density: "HIGH" },
+        { name: "Halifax", city: "Calderdale", postcode: "HX1", dist: "14.8 miles", density: "HIGH" },
+        { name: "Dewsbury & Batley", city: "Kirklees", postcode: "WF13", dist: "7.8 miles", density: "HIGH" },
+        { name: "Pudsey & Farsley", city: "Leeds", postcode: "LS28", dist: "4.8 miles", density: "HIGH" },
+        { name: "Morley", city: "Leeds", postcode: "LS27", dist: "4.9 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Guiseley & Yeadon", city: "Leeds", postcode: "LS20", dist: "8.7 miles", density: "⭐ PREMIUM HIGH" }
       ]
     },
     "BRISTOL": {
-      center: "Bristol & Bath Region",
+      center: "Bristol, Bath & North Somerset Hub",
       postcode: "BS1",
       lat: 51.4545,
       lng: -2.5879,
       towns: [
-        { name: "Bristol", dist: "0.0 miles", density: "🔥 VERY HIGH" },
-        { name: "Bath", dist: "11.5 miles", density: "⭐ LUXURY ULTRA" },
-        { name: "Weston-super-Mare", dist: "18.4 miles", density: "HIGH" },
-        { name: "Keynsham", dist: "5.2 miles", density: "HIGH" },
-        { name: "Yate", dist: "9.8 miles", density: "HIGH" },
-        { name: "Thornbury", dist: "11.1 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Portishead", dist: "8.7 miles", density: "⭐ PREMIUM HIGH" },
-        { name: "Clevedon", dist: "12.3 miles", density: "HIGH" },
-        { name: "Filton", dist: "4.5 miles", density: "HIGH" }
+        { name: "Bristol City Centre", city: "Bristol", postcode: "BS1", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "Clifton & Redland", city: "Bristol", postcode: "BS8", dist: "1.8 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Bath", city: "Somerset", postcode: "BA1", dist: "11.5 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Henleaze & Westbury-on-Trym", city: "Bristol", postcode: "BS9", dist: "3.2 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Bedminster & Southville", city: "Bristol", postcode: "BS3", dist: "1.4 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Weston-super-Mare", city: "North Somerset", postcode: "BS23", dist: "18.4 miles", density: "HIGH" },
+        { name: "Keynsham", city: "Bath & NE Somerset", postcode: "BS31", dist: "5.2 miles", density: "HIGH" },
+        { name: "Yate & Chipping Sodbury", city: "South Gloucestershire", postcode: "BS37", dist: "9.8 miles", density: "HIGH" },
+        { name: "Thornbury", city: "South Gloucestershire", postcode: "BS35", dist: "11.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Portishead", city: "North Somerset", postcode: "BS20", dist: "8.7 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Clevedon", city: "North Somerset", postcode: "BS21", dist: "12.3 miles", density: "HIGH" },
+        { name: "Filton & Bradley Stoke", city: "South Gloucestershire", postcode: "BS34", dist: "5.1 miles", density: "HIGH" }
       ]
     },
     "GLASGOW": {
-      center: "Central Scotland & Lanarkshire",
+      center: "Central Scotland, Glasgow & Lanarkshire Hub",
       postcode: "G1",
       lat: 55.8642,
       lng: -4.2518,
       towns: [
-        { name: "Glasgow", dist: "0.0 miles", density: "🔥 VERY HIGH" },
-        { name: "Paisley", dist: "7.1 miles", density: "🔥 HIGH" },
-        { name: "East Kilbride", dist: "8.4 miles", density: "🔥 HIGH" },
-        { name: "Hamilton", dist: "10.8 miles", density: "HIGH" },
-        { name: "Cumbernauld", dist: "12.6 miles", density: "HIGH" },
-        { name: "Coatbridge", dist: "8.9 miles", density: "HIGH" },
-        { name: "Airdrie", dist: "10.5 miles", density: "MEDIUM" },
-        { name: "Rutherglen", dist: "2.8 miles", density: "HIGH" },
-        { name: "Newton Mearns", dist: "7.3 miles", density: "⭐ LUXURY ULTRA" }
+        { name: "Glasgow City Centre", city: "Glasgow", postcode: "G1", dist: "0.0 miles", density: "🔥 VERY HIGH" },
+        { name: "West End & Hillhead", city: "Glasgow", postcode: "G12", dist: "2.4 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Newton Mearns & Giffnock", city: "East Renfrewshire", postcode: "G77", dist: "7.3 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Bearsden & Milngavie", city: "East Dunbartonshire", postcode: "G61", dist: "6.1 miles", density: "⭐ LUXURY ULTRA" },
+        { name: "Merchant City & Shawlands", city: "Glasgow", postcode: "G41", dist: "2.1 miles", density: "⭐ PREMIUM HIGH" },
+        { name: "Paisley", city: "Renfrewshire", postcode: "PA1", dist: "7.1 miles", density: "🔥 HIGH" },
+        { name: "East Kilbride", city: "South Lanarkshire", postcode: "G74", dist: "8.4 miles", density: "🔥 HIGH" },
+        { name: "Hamilton", city: "South Lanarkshire", postcode: "ML3", dist: "10.8 miles", density: "HIGH" },
+        { name: "Cumbernauld", city: "North Lanarkshire", postcode: "G67", dist: "12.6 miles", density: "HIGH" },
+        { name: "Coatbridge & Airdrie", city: "North Lanarkshire", postcode: "ML5", dist: "9.2 miles", density: "HIGH" },
+        { name: "Clydebank", city: "West Dunbartonshire", postcode: "G81", dist: "6.8 miles", density: "HIGH" }
       ]
     }
+  };
+
+  const getFormattedFbLocationTag = (town: { name: string; city: string; postcode: string }) => {
+    if (fbFormatMode === "HYPER_LOCAL") {
+      return `${town.name}, ${town.city}, United Kingdom`;
+    }
+    if (fbFormatMode === "POSTCODE_CITY") {
+      return `${town.postcode} ${town.name}, ${town.city}`;
+    }
+    // Default STANDARD_FB: "Town, United Kingdom"
+    return `${town.name}, United Kingdom`;
   };
 
   // Item 12: FB High Purchasing Power Zip Code & Location Detector State & Data
@@ -965,73 +1028,132 @@ export default function UKMarketTrendsList({
 
         {/* EXTRACTED TOWNS TABLE & 1-CLICK COPY ACTIONS */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-              <Sparkles size={14} style={{ color: "var(--gold-premium)" }} />
-              Extracted Nearby Towns for FB Marketplace Tags ({UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.length} Towns)
-            </span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <Sparkles size={14} style={{ color: "var(--gold-premium)" }} />
+                Extracted ({UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.length} Sub-Districts & Neighborhoods)
+              </span>
+            </div>
+
+            {/* FB Format Mode Selector */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "#F1F5F9", padding: "0.2rem", borderRadius: "8px" }}>
+              <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "var(--text-muted)", padding: "0 0.4rem" }}>FB Tag Format:</span>
+              <button
+                onClick={() => setFbFormatMode("STANDARD_FB")}
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: fbFormatMode === "STANDARD_FB" ? 800 : 600,
+                  padding: "0.25rem 0.5rem",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: fbFormatMode === "STANDARD_FB" ? "var(--gold-premium)" : "transparent",
+                  color: fbFormatMode === "STANDARD_FB" ? "#FFFFFF" : "var(--text-secondary)"
+                }}
+              >
+                Town, United Kingdom
+              </button>
+              <button
+                onClick={() => setFbFormatMode("HYPER_LOCAL")}
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: fbFormatMode === "HYPER_LOCAL" ? 800 : 600,
+                  padding: "0.25rem 0.5rem",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: fbFormatMode === "HYPER_LOCAL" ? "var(--gold-premium)" : "transparent",
+                  color: fbFormatMode === "HYPER_LOCAL" ? "#FFFFFF" : "var(--text-secondary)"
+                }}
+              >
+                Neighborhood, City, UK
+              </button>
+              <button
+                onClick={() => setFbFormatMode("POSTCODE_CITY")}
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: fbFormatMode === "POSTCODE_CITY" ? 800 : 600,
+                  padding: "0.25rem 0.5rem",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: fbFormatMode === "POSTCODE_CITY" ? "var(--gold-premium)" : "transparent",
+                  color: fbFormatMode === "POSTCODE_CITY" ? "#FFFFFF" : "var(--text-secondary)"
+                }}
+              >
+                Postcode Area
+              </button>
+            </div>
 
             <div style={{ display: "flex", gap: "0.4rem" }}>
               <button
                 onClick={() => {
-                  const commaList = UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey].towns.map(t => t.name).join(", ");
-                  navigator.clipboard.writeText(commaList);
+                  const formattedList = UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey].towns.map(t => getFormattedFbLocationTag(t)).join(", ");
+                  navigator.clipboard.writeText(formattedList);
                   setCopiedAllTowns(true);
-                  toast.success(`Copied ${UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey].towns.length} towns for FB Marketplace!`);
+                  toast.success(`Copied ${UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey].towns.length} FB Marketplace formatted tags!`);
                   setTimeout(() => setCopiedAllTowns(false), 2000);
                 }}
                 className="btn-gold"
                 style={{ fontSize: "0.72rem", padding: "0.35rem 0.75rem", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
               >
                 <Copy size={13} />
-                <span>{copiedAllTowns ? "✓ Copied All Towns!" : "📋 Copy All Towns for FB Tags"}</span>
+                <span>{copiedAllTowns ? "✓ Copied All FB Tags!" : "📋 Copy All FB Formatted Tags"}</span>
               </button>
             </div>
           </div>
 
-          <div style={{ maxHeight: "180px", overflowY: "auto", border: "1px solid var(--border-dim)", borderRadius: "8px", background: "#F8FAFC" }}>
+          <div style={{ maxHeight: "220px", overflowY: "auto", border: "1px solid var(--border-dim)", borderRadius: "8px", background: "#F8FAFC" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.72rem", textAlign: "left" }}>
               <thead>
                 <tr style={{ background: "#EDF2F7", color: "var(--text-muted)", borderBottom: "1px solid var(--border-dim)" }}>
-                  <th style={{ padding: "0.45rem 0.75rem" }}>Town / District</th>
-                  <th style={{ padding: "0.45rem 0.75rem" }}>Est. Distance</th>
-                  <th style={{ padding: "0.45rem 0.75rem" }}>FB Buyer Density</th>
+                  <th style={{ padding: "0.45rem 0.75rem" }}>Neighborhood / District</th>
+                  <th style={{ padding: "0.45rem 0.75rem" }}>Postcode</th>
+                  <th style={{ padding: "0.45rem 0.75rem" }}>Exact FB Marketplace Tag</th>
+                  <th style={{ padding: "0.45rem 0.75rem" }}>Buyer Density</th>
                   <th style={{ padding: "0.45rem 0.75rem", textAlign: "right" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.map((town, idx) => (
-                  <tr key={idx} style={{ borderBottom: "1px solid var(--border-dim)", background: idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC" }}>
-                    <td style={{ padding: "0.45rem 0.75rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                      📍 {town.name}
-                    </td>
-                    <td style={{ padding: "0.45rem 0.75rem", color: "var(--text-secondary)" }}>
-                      {town.dist}
-                    </td>
-                    <td style={{ padding: "0.45rem 0.75rem" }}>
-                      <span className="badge" style={{
-                        fontSize: "0.6rem",
-                        fontWeight: 800,
-                        background: town.density.includes("LUXURY") ? "rgba(212, 175, 55, 0.15)" : town.density.includes("VERY HIGH") ? "rgba(239, 68, 68, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                        color: town.density.includes("LUXURY") ? "var(--gold-primary)" : town.density.includes("VERY HIGH") ? "#EF4444" : "#2563EB"
-                      }}>
-                        {town.density}
-                      </span>
-                    </td>
-                    <td style={{ padding: "0.45rem 0.75rem", textAlign: "right" }}>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(town.name);
-                          toast.success(`Copied "${town.name}"!`);
-                        }}
-                        className="btn-glass"
-                        style={{ fontSize: "0.62rem", padding: "0.15rem 0.4rem" }}
-                      >
-                        Copy Town
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.map((town, idx) => {
+                  const formattedTag = getFormattedFbLocationTag(town);
+                  return (
+                    <tr key={idx} style={{ borderBottom: "1px solid var(--border-dim)", background: idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC" }}>
+                      <td style={{ padding: "0.45rem 0.75rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                        📍 {town.name} ({town.city})
+                      </td>
+                      <td style={{ padding: "0.45rem 0.75rem", fontWeight: 600, color: "#2563EB" }}>
+                        {town.postcode}
+                      </td>
+                      <td style={{ padding: "0.45rem 0.75rem", fontWeight: 600, color: "var(--gold-premium)" }}>
+                        "{formattedTag}"
+                      </td>
+                      <td style={{ padding: "0.45rem 0.75rem" }}>
+                        <span className="badge" style={{
+                          fontSize: "0.6rem",
+                          fontWeight: 800,
+                          background: town.density.includes("LUXURY") ? "rgba(212, 175, 55, 0.15)" : town.density.includes("VERY HIGH") ? "rgba(239, 68, 68, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                          color: town.density.includes("LUXURY") ? "var(--gold-primary)" : town.density.includes("VERY HIGH") ? "#EF4444" : "#2563EB"
+                        }}>
+                          {town.density}
+                        </span>
+                      </td>
+                      <td style={{ padding: "0.45rem 0.75rem", textAlign: "right" }}>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(formattedTag);
+                            toast.success(`Copied "${formattedTag}"!`);
+                          }}
+                          className="btn-glass"
+                          style={{ fontSize: "0.62rem", padding: "0.15rem 0.45rem" }}
+                        >
+                          Copy FB Tag
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
