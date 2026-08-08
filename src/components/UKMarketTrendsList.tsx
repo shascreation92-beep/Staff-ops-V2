@@ -19,10 +19,14 @@ import {
   Send,
   MessageCircle,
   HelpCircle,
-  Download
+  Download,
+  Clock,
+  Building
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { downloadCSV } from "@/lib/csv-exporter";
+import { playCrystalChime } from "@/components/NotificationBell";
+import { sendDesktopNotification } from "@/lib/push-notifications";
 import { 
   forceSyncTrendsAction, 
   updateTenantTrendsConfigAction,
