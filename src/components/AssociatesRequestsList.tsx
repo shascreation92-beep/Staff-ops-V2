@@ -95,17 +95,17 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
           <table className="premium-table">
             <thead>
               <tr>
-                <th>Associate Name</th>
-                <th>Platform</th>
-                <th>Serial Code</th>
-                <th>ID Name</th>
-                <th>Ads Published</th>
-                <th>Verification</th>
-                <th onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")} style={{ cursor: "pointer", userSelect: "none" }}>
+                <th style={{ textAlign: "center" }}>Associate Name</th>
+                <th style={{ textAlign: "center" }}>Platform</th>
+                <th style={{ textAlign: "center" }}>Serial Code</th>
+                <th style={{ textAlign: "center" }}>ID Name</th>
+                <th style={{ textAlign: "center" }}>Ads Published</th>
+                <th style={{ textAlign: "center" }}>Verification</th>
+                <th onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")} style={{ textAlign: "center", cursor: "pointer", userSelect: "none" }}>
                   Submitted Date {sortOrder === "desc" ? "↓" : "↑"}
                 </th>
-                <th>Comments</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
+                <th style={{ textAlign: "center" }}>Comments</th>
+                <th style={{ textAlign: "center" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -161,22 +161,22 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
 
                         return (
                           <tr key={req.id}>
-                            <td style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                            <td style={{ textAlign: "center", fontWeight: 700, color: "var(--text-primary)" }}>
                               {associateName}
                             </td>
-                            <td>
+                            <td style={{ textAlign: "center" }}>
                               <span className="badge developer" style={{ fontSize: "0.75rem" }}>
                                 {req.platform?.name || "N/A"}
                               </span>
                             </td>
-                            <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
+                            <td style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
                               {req.serialCode}
                             </td>
-                            <td>
+                            <td style={{ textAlign: "center" }}>
                                <span style={{ fontWeight: 600 }}>{req.idName}</span>
                             </td>
-                            <td style={{ fontWeight: 600 }}>{req.adsPublished.toString()}</td>
-                            <td>
+                            <td style={{ textAlign: "center", fontWeight: 600 }}>{req.adsPublished.toString()}</td>
+                            <td style={{ textAlign: "center" }}>
                               <span
                                 className={`badge ${req.verificationStatus === "Yes" ? "verified" : "danger"}`}
                                 style={{ fontSize: "0.7rem" }}
@@ -184,13 +184,13 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                                 {req.verificationStatus === "Yes" ? "Verified" : "Unverified"}
                               </span>
                             </td>
-                             <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: "1.2" }}>
-                               <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                             <td style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: "1.2" }}>
+                               <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem", alignItems: "center" }}>
                                  <span style={{ fontWeight: 600 }}>{datePart}</span>
                                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{timePart}</span>
                                </div>
                              </td>
-                             <td>
+                             <td style={{ textAlign: "center" }}>
                                <button
                                  onClick={() => handleOpenCommentModal(req.comment || "")}
                                  style={{
@@ -198,9 +198,10 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                                    border: "none",
                                    cursor: "pointer",
                                    padding: "0.25rem",
-                                   display: "flex",
+                                   display: "inline-flex",
                                    alignItems: "center",
                                    justifyContent: "center",
+                                   margin: "0 auto",
                                    transition: "transform 0.2s ease"
                                  }}
                                  title={req.comment ? `Comment: "${req.comment}"` : "No comment"}
@@ -225,8 +226,8 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                                  )}
                                </button>
                              </td>
-                            <td style={{ textAlign: "right" }}>
-                              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                            <td style={{ textAlign: "center" }}>
+                              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center" }}>
                                 <button
                                   onClick={() => handleAction(req.id, "FORWARDED_TO_IT", "Approve")}
                                   className="btn-success"
