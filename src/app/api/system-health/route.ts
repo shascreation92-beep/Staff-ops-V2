@@ -168,7 +168,7 @@ export async function GET() {
 
   // Restrict to Super Admin or IT Lead
   const role = session.user.role;
-  if (role !== "SUPER_ADMIN" && role !== "IT_LEAD" && role !== "COMPANY_OWNER") {
+  if (role !== "SUPER_ADMIN" && role !== "IT_DEPARTMENT" && role !== "COMPANY_OWNER") {
     return NextResponse.json({ error: "Forbidden: Access restricted to Super Admin" }, { status: 403 });
   }
 
