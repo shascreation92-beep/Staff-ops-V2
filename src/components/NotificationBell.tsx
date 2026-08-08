@@ -260,18 +260,16 @@ export default function NotificationBell() {
           position: "absolute",
           top: "120%",
           right: 0,
-          width: "340px",
-          zIndex: 9999,
+          width: "350px",
+          zIndex: 999999,
           background: "#FFFFFF",
           border: "1px solid var(--border-dim)",
-          boxShadow: "0 15px 40px rgba(0, 0, 0, 0.12)",
+          boxShadow: "0 20px 45px rgba(0, 0, 0, 0.18)",
           borderRadius: "12px",
           padding: "1rem",
           display: "flex",
           flexDirection: "column",
           gap: "0.75rem",
-          maxHeight: "400px",
-          overflowY: "auto",
           backdropFilter: "none"
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.5rem" }}>
@@ -311,13 +309,13 @@ export default function NotificationBell() {
             </div>
           </div>
 
-          {notifications.length === 0 ? (
-            <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
-              No active system alerts.
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              {notifications.map((n) => (
+          <div style={{ overflowY: "auto", maxHeight: "300px", display: "flex", flexDirection: "column", gap: "0.75rem", paddingRight: "0.25rem" }}>
+            {notifications.length === 0 ? (
+              <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                No active system alerts.
+              </div>
+            ) : (
+              notifications.map((n) => (
                 <div 
                   key={n.id}
                   onClick={() => handleNotificationClick(n)}
