@@ -963,47 +963,52 @@ pause
             const uStatus = statusMap[u.id];
 
             const isPaused = pausedUserIds.includes(u.id);
-            const isAgentActive = !isPaused && (uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE");
+            const lastSnapTime = latestSnap ? new Date(latestSnap.capturedAt).getTime() : 0;
+            const isSnapRecent = lastSnapTime > 0 && (Date.now() - lastSnapTime) <= 5 * 60 * 1000;
+            const isAgentActive = !isPaused && (uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE" || isSnapRecent);
 
             return (
               <div
                 key={u.id}
                 style={{
                   background: "linear-gradient(145deg, #0F172A 0%, #1E1B4B 100%)",
-                  border: isPaused ? "1.5px solid #F59E0B" : "1.5px solid #10B981",
+                  border: isPaused ? "1.5px solid #F59E0B" : (isAgentActive ? "1.5px solid #8B5CF6" : "1.5px solid #EF4444"),
                   borderRadius: "16px",
                   padding: "1.25rem",
                   display: "flex",
                   flexDirection: "column",
                   gap: "1rem",
-                  boxShadow: isPaused ? "0 0 20px rgba(245, 158, 11, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)" : "0 0 20px rgba(16, 185, 129, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)",
+                  boxShadow: isPaused ? "0 0 20px rgba(245, 158, 11, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)" : (isAgentActive ? "0 0 20px rgba(139, 92, 246, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)" : "0 0 15px rgba(239, 68, 68, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3)"),
                   color: "#FFFFFF",
                   transition: "transform 0.2s ease, box-shadow 0.2s ease",
                   position: "relative"
                 }}
               >
-                {/* Header: User Avatar + Name & Employee ID */}
+                {/* Header: User Avatar + Name (with Purple/Red Glowing Status Dot) & Employee ID */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                     <div style={{
                       width: "44px",
                       height: "44px",
                       borderRadius: "12px",
-                      background: isPaused ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" : (isAgentActive ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" : "linear-gradient(135deg, #334155 0%, #1E293B 100%)"),
+                      background: isPaused ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" : (isAgentActive ? "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)" : "linear-gradient(135deg, #334155 0%, #1E293B 100%)"),
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       color: "#FFFFFF",
                       fontSize: "0.9rem",
                       fontWeight: 900,
-                      boxShadow: isAgentActive ? "0 4px 12px rgba(16, 185, 129, 0.3)" : "none"
+                      boxShadow: isAgentActive ? "0 4px 12px rgba(139, 92, 246, 0.4)" : "none"
                     }}>
                       {(u.name || u.email).slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "#FFFFFF" }}>
-                        {u.name || u.email.split("@")[0]}
-                      </h3>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                        <MonitoringStatusDot status={isAgentActive ? "ACTIVE" : "OFF_DUTY"} size={11} />
+                        <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "#FFFFFF" }}>
+                          {u.name || u.email.split("@")[0]}
+                        </h3>
+                      </div>
                       <div style={{ fontSize: "0.72rem", color: "#94A3B8", marginTop: "0.1rem" }}>
                         {u.email}
                       </div>
@@ -1027,21 +1032,21 @@ pause
                 <div style={{
                   padding: "0.45rem 0.85rem",
                   borderRadius: "8px",
-                  background: isPaused ? "rgba(245, 158, 11, 0.15)" : (isAgentActive ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)"),
-                  border: isPaused ? "1px solid rgba(245, 158, 11, 0.35)" : (isAgentActive ? "1px solid rgba(16, 185, 129, 0.35)" : "1px solid rgba(239, 68, 68, 0.35)"),
+                  background: isPaused ? "rgba(245, 158, 11, 0.15)" : (isAgentActive ? "rgba(139, 92, 246, 0.15)" : "rgba(239, 68, 68, 0.15)"),
+                  border: isPaused ? "1px solid rgba(245, 158, 11, 0.35)" : (isAgentActive ? "1px solid rgba(139, 92, 246, 0.35)" : "1px solid rgba(239, 68, 68, 0.35)"),
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   fontSize: "0.75rem",
                   fontWeight: 700
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: isPaused ? "#FBBF24" : (isAgentActive ? "#34D399" : "#F87171") }}>
-                    {isPaused ? <Pause size={14} /> : (isAgentActive ? <Wifi size={14} className="animate-pulse" /> : <WifiOff size={14} />)}
-                    <span>{isPaused ? "Telemetry Suspended by Admin" : (isAgentActive ? "Live Agent Running (60s)" : "Agent Offline on PC")}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: isPaused ? "#FBBF24" : (isAgentActive ? "#C4B5FD" : "#F87171") }}>
+                    {isPaused ? <Pause size={14} /> : (isAgentActive ? <Wifi size={14} className="animate-pulse" style={{ color: "#A78BFA" }} /> : <WifiOff size={14} />)}
+                    <span>{isPaused ? "Telemetry Suspended by Admin" : (isAgentActive ? "🟣 Agent Active & Capturing (60s)" : "🔴 Agent Offline on PC")}</span>
                   </div>
 
                   {isAgentActive && (
-                    <span style={{ fontSize: "0.7rem", color: "#34D399", fontWeight: 800 }}>
+                    <span style={{ fontSize: "0.7rem", color: "#C4B5FD", fontWeight: 800 }}>
                       Next SS: {countdownSec}s
                     </span>
                   )}

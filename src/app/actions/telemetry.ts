@@ -414,7 +414,7 @@ export async function getUsersMonitoringStatusAction() {
     companyFilter = { companyId: currentUser.companyId };
   }
 
-  const ninetySecondsAgo = new Date(Date.now() - 90 * 1000);
+  const fiveMinutesAgo = new Date(Date.now() - 300 * 1000); // 5-minute active window for desktop agent telemetry
 
   // Fetch all active users in company
   const users = await db.user.findMany({
@@ -461,7 +461,7 @@ export async function getUsersMonitoringStatusAction() {
     }
 
     const capturedDate = new Date(snap.capturedAt);
-    const isRecent = capturedDate >= ninetySecondsAgo;
+    const isRecent = capturedDate >= fiveMinutesAgo;
 
     if (isRecent) {
       userStatusMap[u.id] = {
