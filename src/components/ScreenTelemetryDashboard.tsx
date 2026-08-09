@@ -244,15 +244,15 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     fetchTelemetryData();
   }, [selectedUserId, selectedDate]);
 
-  // Live 10-second countdown ticker timer (synced directly with system clock)
+  // Live 60-second countdown ticker timer (synced directly with system clock)
   useEffect(() => {
     const calculateSecs = () => {
       const currentSec = Math.floor(Date.now() / 1000);
-      const secsRemaining = 10 - (currentSec % 10);
-      setCountdownSec(secsRemaining === 0 ? 10 : secsRemaining);
+      const secsRemaining = 60 - (currentSec % 60);
+      setCountdownSec(secsRemaining === 0 ? 60 : secsRemaining);
 
-      // Trigger safe telemetry update every 10 seconds
-      if (secsRemaining === 10 || secsRemaining === 1) {
+      // Background silent refresh every 15 seconds to keep active status fresh
+      if (currentSec % 15 === 0) {
         fetchTelemetryData();
       }
     };
