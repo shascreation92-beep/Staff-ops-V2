@@ -43,6 +43,83 @@ export default async function ITManagementPage() {
     }
   });
 
+  // Fetch all staff users for Remote IT Commands & Asset Assignments
+  const allStaff = await db.user.findMany({
+    where: {
+      ...companyFilter,
+      isArchived: false
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      employee: {
+        select: {
+          employeeId: true
+        }
+      }
+    },
+    orderBy: {
+      name: "asc"
+    }
+  });
+
+  // Fetch Laptop Assets Inventory
+  const laptopAssets = await db.laptopasset.findMany({
+    where: {
+      ...companyFilter
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          employee: {
+            select: {
+              employeeId: true
+            }
+          }
+        }
+      },
+      company: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
+  // Fetch Anti-Tamper Security Logs
+  const tamperLogs = await db.tamperlog.findMany({
+    where: {
+      ...companyFilter
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          employee: {
+            select: {
+              employeeId: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    },
+    take: 50
+  });
+
   // Fetch active companies
   const companies = await db.company.findMany({
     where: { isArchived: false, status: "APPROVED" },
@@ -54,6 +131,9 @@ export default async function ITManagementPage() {
       <div className="dashboard-container" style={{ padding: "2rem" }}>
         <ITManagementDirectory 
           itPersonnel={itPersonnel} 
+          allStaff={allStaff}
+          laptopAssets={laptopAssets}
+          tamperLogs={tamperLogs}
           companies={companies}
           currentUserRole={user.role}
           currentUserCompanyId={user.companyId}

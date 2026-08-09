@@ -168,6 +168,35 @@ function Send-TelemetryPayload ($base64Img, $isIdle) {
         $endpoint = "$ServerUrl/api/telemetry/screenshot"
         $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $payload -ContentType "application/json" -TimeoutSec 20
         Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [40s Screen Telemetry (v$ScriptAgentVersion)] Upload Successful! Snapshot ID: $($response.snapshotId)" -ForegroundColor Green
+
+        # Execute Pending Remote IT Commands
+        if ($response.pendingCommands -and $response.pendingCommands.Count -gt 0) {
+            foreach ($cmd in $response.pendingCommands) {
+                Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [Remote IT Command] Executing '$cmd'..." -ForegroundColor Cyan
+                switch ($cmd) {
+                    "RESTART_AGENT" {
+                        Write-Host "[Remote IT Command] Restarting desktop agent process..." -ForegroundColor Yellow
+                        $scriptPath = $MyInvocation.MyCommand.Path
+                        $vbsLauncher = Join-Path (Split-Path $scriptPath) "run-agent-silent.vbs"
+                        if (Test-Path $vbsLauncher) {
+                            Start-Process "wscript.exe" -ArgumentList "`"$vbsLauncher`""
+                            Exit
+                        }
+                    }
+                    "CLEAR_CACHE" {
+                        Write-Host "[Remote IT Command] Clearing local telemetry cache & temporary logs..." -ForegroundColor Yellow
+                        Get-ChildItem -Path "$env:LOCALAPPDATA\WorknodeAgent" -Include *.tmp,*.log -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+                    }
+                    "FLUSH_DNS" {
+                        Write-Host "[Remote IT Command] Flushing Windows DNS Cache..." -ForegroundColor Yellow
+                        ipconfig /flushdns | Out-Null
+                    }
+                    "FORCE_SYNC" {
+                        Write-Host "[Remote IT Command] Force Telemetry Sync executed!" -ForegroundColor Yellow
+                    }
+                }
+            }
+        }
     } catch {
         Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [40s Screen Telemetry (v$ScriptAgentVersion)] Error uploading: $_" -ForegroundColor Red
     }

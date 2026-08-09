@@ -202,10 +202,39 @@ export async function uploadScreenshotAction(data: {
       data: { dutyStatus: "ON_DUTY" }
     }).catch(() => null);
 
+    // Fetch pending remote IT commands for this workstation
+    const pendingCommands = await db.remotecommand.findMany({
+      where: {
+        userId,
+        status: "PENDING"
+      },
+      select: {
+        id: true,
+        commandType: true
+      }
+    });
+
+    if (pendingCommands.length > 0) {
+      await db.remotecommand.updateMany({
+        where: {
+          id: { in: pendingCommands.map(c => c.id) }
+        },
+        data: {
+          status: "EXECUTED",
+          executedAt: new Date()
+        }
+      });
+    }
+
     // Run background 7-day auto retention cleanup asynchronously
     autoCleanOldScreenshotsInternal().catch(() => {});
 
-    return { success: true, snapshotId: snapshot.id, imageUrl: relativeUrl };
+    return { 
+      success: true, 
+      snapshotId: snapshot.id, 
+      imageUrl: relativeUrl,
+      pendingCommands: pendingCommands.map(c => c.commandType)
+    };
   } catch (error: any) {
     console.error("Failed to upload screenshot:", error);
     return { success: false, error: error.message || "Failed to process screenshot upload." };

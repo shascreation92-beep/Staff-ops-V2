@@ -146,6 +146,7 @@ model company {
   specialrequest specialrequest[]
   tenanttrendsconfig tenanttrendsconfig?
   leaverequest   leaverequest[]
+  laptopasset    laptopasset[]
 }
 
 model employee {
@@ -280,6 +281,8 @@ model user {
   leaverequest                             leaverequest[]
   screensnapshot                           screensnapshot[]
   tamperlog                                tamperlog[]
+  remotecommand                            remotecommand[]
+  laptopasset                              laptopasset[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -660,5 +663,49 @@ model tamperlog {
   @@index([companyId])
   @@index([createdAt])
   @@index([companyId, isResolved, createdAt])
+}
+
+model remotecommand {
+  id            String    @id @default(uuid())
+  userId        String
+  companyId     String?
+  commandType   String    // "RESTART_AGENT", "CLEAR_CACHE", "FLUSH_DNS", "FORCE_SYNC"
+  status        String    @default("PENDING") // "PENDING", "EXECUTED", "FAILED"
+  issuedBy      String
+  resultDetails String?   @db.Text
+  issuedAt      DateTime  @default(now())
+  executedAt    DateTime?
+
+  user          user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([companyId, status])
+}
+
+model laptopasset {
+  id              String    @id @default(uuid())
+  assetTag        String    @unique
+  serialNumber    String    @unique
+  brand           String
+  model           String?
+  specsCpu        String?
+  specsRam        String?
+  specsStorage    String?
+  windowsVersion  String?
+  assigneeUserId  String?
+  companyId       String?
+  laptopPassword  String?
+  vpnCredentials  String?
+  conditionStatus String    @default("EXCELLENT") // "EXCELLENT", "GOOD", "REPAIR_REQUIRED", "ARCHIVED"
+  repairNotes     String?   @db.Text
+  warrantyExpiry  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            user?     @relation(fields: [assigneeUserId], references: [id], onDelete: SetNull)
+  company         company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([assigneeUserId])
+  @@index([companyId])
 }
 
