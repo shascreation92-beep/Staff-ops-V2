@@ -14,10 +14,13 @@ param(
 
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing -ErrorAction SilentlyContinue
 
-# Win32 GetLastInputInfo API binding for native idle detection
+# Win32 GetLastInputInfo & SetProcessDPIAware API binding
 $User32Signature = @"
 [DllImport("user32.dll")]
 public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+[DllImport("user32.dll")]
+public static extern bool SetProcessDPIAware();
 
 public struct LASTINPUTINFO {
     public uint cbSize;
@@ -25,6 +28,10 @@ public struct LASTINPUTINFO {
 }
 "@
 Add-Type -MemberDefinition $User32Signature -Name User32API -Namespace Win32Utils -ErrorAction SilentlyContinue
+
+try {
+    [Win32Utils.User32API]::SetProcessDPIAware() | Out-Null
+} catch {}
 
 function Get-SystemIdleSeconds {
     try {
@@ -40,7 +47,15 @@ function Get-SystemIdleSeconds {
 
 function Capture-DesktopBase64 {
     try {
-        $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+        try {
+            [Win32Utils.User32API]::SetProcessDPIAware() | Out-Null
+        } catch {}
+
+        $bounds = [System.Windows.Forms.SystemInformation]::VirtualScreen
+        if ($null -eq $bounds -or $bounds.Width -le 0 -or $bounds.Height -le 0) {
+            $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+        }
+
         $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
         $graphics = [System.Drawing.Graphics]::FromImage($bmp)
         $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
@@ -61,7 +76,25 @@ function Capture-DesktopBase64 {
         $base64 = [Convert]::ToBase64String($bytes)
         return "data:image/jpeg;base64,$base64"
     } catch {
-        return $null
+        # Fallback: Create placeholder bitmap if screen is locked or sleeping (prevents telemetry drop)
+        try {
+            $fallbackBmp = New-Object System.Drawing.Bitmap 800, 450
+            $g = [System.Drawing.Graphics]::FromImage($fallbackBmp)
+            $g.Clear([System.Drawing.Color]::FromArgb(15, 23, 42))
+            $font = New-Object System.Drawing.Font("Arial", 16, [System.Drawing.FontStyle]::Bold)
+            $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(248, 113, 113))
+            $g.DrawString("🔒 Windows Screen Locked / Display Sleeping", $font, $brush, 180, 210)
+            
+            $ms = New-Object System.IO.MemoryStream
+            $fallbackBmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Jpeg)
+            $bytes = $ms.ToArray()
+            $g.Dispose()
+            $fallbackBmp.Dispose()
+            $ms.Dispose()
+            return "data:image/jpeg;base64,$([Convert]::ToBase64String($bytes))"
+        } catch {
+            return $null
+        }
     }
 }
 
