@@ -624,15 +624,16 @@ model shiftduty {
 }
 
 model screensnapshot {
-  id          String   @id @default(uuid())
-  userId      String
-  companyId   String?
-  imageUrl    String   @db.Text
-  capturedAt  DateTime @default(now())
-  dutyStatus  String   @default("ON_DUTY")
-  isIdle      Boolean  @default(false)
-  source      String   @default("DESKTOP_AGENT") // "DESKTOP_AGENT", "WEB_APP"
-  createdAt   DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  companyId    String?
+  imageUrl     String   @db.Text
+  capturedAt   DateTime @default(now())
+  dutyStatus   String   @default("ON_DUTY")
+  isIdle       Boolean  @default(false)
+  source       String   @default("DESKTOP_AGENT") // "DESKTOP_AGENT", "WEB_APP"
+  agentVersion String?  @default("2.4")
+  createdAt    DateTime @default(now())
 
   user        user     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

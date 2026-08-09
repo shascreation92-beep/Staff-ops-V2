@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { enforceAuth } from "@/lib/auth-helpers";
 import { revalidatePath } from "next/cache";
+import { CURRENT_AGENT_VERSION } from "@/lib/agent-version";
 import fs from "fs";
 import path from "path";
 
@@ -105,6 +106,7 @@ export async function uploadScreenshotAction(data: {
   source?: string;
   userId?: string;
   secretToken?: string;
+  agentVersion?: string;
 }) {
   let user: any = null;
 
@@ -189,7 +191,8 @@ export async function uploadScreenshotAction(data: {
         capturedAt: new Date(),
         dutyStatus: data.dutyStatus || user.dutyStatus || "ON_DUTY",
         isIdle: data.isIdle || false,
-        source: data.source || "DESKTOP_AGENT"
+        source: data.source || "DESKTOP_AGENT",
+        agentVersion: data.agentVersion || "2.4"
       }
     });
 
@@ -454,14 +457,21 @@ export async function getUsersMonitoringStatusAction() {
   const userStatusMap: Record<string, {
     status: "ACTIVE" | "IDLE" | "INTERRUPTED" | "OFF_DUTY";
     lastCapturedAt: string | null;
+    agentVersion?: string | null;
+    isOutdated?: boolean;
   }> = {};
 
   for (const u of users) {
     const snap = latestSnapshots.find(s => s.userId === u.id);
+    const agentVer = snap?.agentVersion || null;
+    const isOutdated = Boolean(agentVer && agentVer !== CURRENT_AGENT_VERSION);
+
     if (!snap) {
       userStatusMap[u.id] = {
         status: u.dutyStatus === "ON_DUTY" ? "INTERRUPTED" : "OFF_DUTY",
-        lastCapturedAt: null
+        lastCapturedAt: null,
+        agentVersion: null,
+        isOutdated: false
       };
       continue;
     }
@@ -472,17 +482,23 @@ export async function getUsersMonitoringStatusAction() {
     if (isRecent) {
       userStatusMap[u.id] = {
         status: snap.isIdle ? "IDLE" : "ACTIVE",
-        lastCapturedAt: capturedDate.toISOString()
+        lastCapturedAt: capturedDate.toISOString(),
+        agentVersion: agentVer,
+        isOutdated
       };
     } else if (u.dutyStatus === "ON_DUTY") {
       userStatusMap[u.id] = {
         status: "INTERRUPTED",
-        lastCapturedAt: capturedDate.toISOString()
+        lastCapturedAt: capturedDate.toISOString(),
+        agentVersion: agentVer,
+        isOutdated
       };
     } else {
       userStatusMap[u.id] = {
         status: "OFF_DUTY",
-        lastCapturedAt: capturedDate.toISOString()
+        lastCapturedAt: capturedDate.toISOString(),
+        agentVersion: agentVer,
+        isOutdated
       };
     }
   }

@@ -47,6 +47,7 @@ import {
 } from "@/app/actions/telemetry";
 import MonitoringStatusDot from "./MonitoringStatusDot";
 import { toast } from "react-hot-toast";
+import { CURRENT_AGENT_VERSION } from "@/lib/agent-version";
 
 interface UserInfo {
   id: string;
@@ -651,7 +652,7 @@ pause
             }}
           >
             <Download size={15} />
-            <span>Download Desktop Agent</span>
+            <span>Download Desktop Agent (v{CURRENT_AGENT_VERSION})</span>
           </button>
 
           <button
@@ -1015,18 +1016,58 @@ pause
                     </div>
                   </div>
 
-                  <span style={{
-                    background: "rgba(255, 255, 255, 0.1)",
-                    color: "#A78BFA",
-                    fontSize: "0.65rem",
-                    fontWeight: 800,
-                    padding: "0.2rem 0.55rem",
-                    borderRadius: "6px",
-                    border: "1px solid rgba(167, 139, 250, 0.2)"
-                  }}>
-                    {u.employee?.employeeId || "STAFF"}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                    <span style={{
+                      background: uStatus?.isOutdated ? "rgba(245, 158, 11, 0.2)" : "rgba(255, 255, 255, 0.1)",
+                      color: uStatus?.isOutdated ? "#FBBF24" : "#A78BFA",
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      padding: "0.2rem 0.55rem",
+                      borderRadius: "6px",
+                      border: uStatus?.isOutdated ? "1px solid rgba(245, 158, 11, 0.4)" : "1px solid rgba(167, 139, 250, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.3rem"
+                    }}>
+                      <span>{u.employee?.employeeId || "STAFF"}</span>
+                      <span style={{ opacity: 0.5 }}>|</span>
+                      <span style={{ color: "#38BDF8", fontWeight: 900 }}>v{uStatus?.agentVersion || CURRENT_AGENT_VERSION}</span>
+                    </span>
+                  </div>
                 </div>
+
+                {/* Outdated Version Warning Banner */}
+                {uStatus?.isOutdated && (
+                  <div style={{
+                    padding: "0.35rem 0.65rem",
+                    borderRadius: "6px",
+                    background: "rgba(245, 158, 11, 0.15)",
+                    border: "1px solid rgba(245, 158, 11, 0.4)",
+                    color: "#FBBF24",
+                    fontSize: "0.7rem",
+                    fontWeight: 800,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center"
+                  }}>
+                    <span>⚠️ Outdated Agent (v{uStatus.agentVersion || "2.1"})</span>
+                    <button
+                      onClick={() => handleDownloadAgent()}
+                      style={{
+                        background: "#F59E0B",
+                        color: "#000000",
+                        border: "none",
+                        padding: "0.15rem 0.45rem",
+                        borderRadius: "4px",
+                        fontSize: "0.65rem",
+                        fontWeight: 900,
+                        cursor: "pointer"
+                      }}
+                    >
+                      Update v{CURRENT_AGENT_VERSION}
+                    </button>
+                  </div>
+                )}
 
                 {/* Live Running Status Pill */}
                 <div style={{

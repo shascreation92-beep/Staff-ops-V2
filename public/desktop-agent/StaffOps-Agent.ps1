@@ -9,10 +9,34 @@ param(
     [int]$IdleThresholdSec = 120
 )
 
+$ScriptAgentVersion = "2.4"
+
 # Enable TLS 1.2 & TLS 1.3 for secure HTTPS API communication
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
 
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing -ErrorAction SilentlyContinue
+
+function Check-SelfAutoUpdate {
+    try {
+        $vUrl = "$ServerUrl/desktop-agent/version.txt"
+        $remoteVer = (Invoke-RestMethod -Uri $vUrl -TimeoutSec 8).Trim()
+        if ($remoteVer -and $remoteVer -ne $ScriptAgentVersion) {
+            Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [Auto-Update Engine] New Agent Version ($remoteVer) detected! Upgrading from v$ScriptAgentVersion..." -ForegroundColor Yellow
+            $scriptPath = $MyInvocation.MyCommand.Path
+            if ($scriptPath) {
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+                (New-Object System.Net.WebClient).DownloadFile("$ServerUrl/desktop-agent/StaffOps-Agent.ps1", $scriptPath)
+                Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [Auto-Update Engine] Upgrade complete! Restarting agent..." -ForegroundColor Green
+                
+                $vbsLauncher = Join-Path (Split-Path $scriptPath) "run-agent-silent.vbs"
+                if (Test-Path $vbsLauncher) {
+                    Start-Process "wscript.exe" -ArgumentList "`"$vbsLauncher`""
+                    Exit
+                }
+            }
+        }
+    } catch {}
+}
 
 # Win32 GetLastInputInfo, SetProcessDPIAware & GDI Desktop Capture API binding
 $User32Signature = @"
@@ -130,6 +154,7 @@ function Send-TelemetryPayload ($base64Img, $isIdle) {
         dutyStatus = "ON_DUTY"
         isIdle = $isIdle
         source = "DESKTOP_AGENT_NATIVE"
+        agentVersion = $ScriptAgentVersion
         secretToken = $SecretToken
     }
 
@@ -142,21 +167,22 @@ function Send-TelemetryPayload ($base64Img, $isIdle) {
     try {
         $endpoint = "$ServerUrl/api/telemetry/screenshot"
         $response = Invoke-RestMethod -Uri $endpoint -Method Post -Body $payload -ContentType "application/json" -TimeoutSec 20
-        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [40s Screen Telemetry] Upload Successful! Snapshot ID: $($response.snapshotId)" -ForegroundColor Green
+        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [40s Screen Telemetry (v$ScriptAgentVersion)] Upload Successful! Snapshot ID: $($response.snapshotId)" -ForegroundColor Green
     } catch {
-        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [40s Screen Telemetry] Error uploading: $_" -ForegroundColor Red
+        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] [40s Screen Telemetry (v$ScriptAgentVersion)] Error uploading: $_" -ForegroundColor Red
     }
 }
 
 Write-Host "=================================================" -ForegroundColor Cyan
-Write-Host "   Worknode 40s Silent Windows Desktop Agent    " -ForegroundColor Gold
+Write-Host "   Worknode 40s Silent Agent Engine (v$ScriptAgentVersion)  " -ForegroundColor Gold
 Write-Host "   Server: $ServerUrl                           " -ForegroundColor Gray
 if ($UserId) { Write-Host "   Target User ID: $UserId                      " -ForegroundColor Gray }
 Write-Host "=================================================" -ForegroundColor Cyan
 
-# Infinite 40-Second Native Worker Loop
+# Infinite 40-Second Native Worker Loop with Auto-Self-Update Check
 while ($true) {
     try {
+        Check-SelfAutoUpdate
         $idleSec = Get-SystemIdleSeconds
         $isIdle = $idleSec -ge $IdleThresholdSec
         $base64Data = Capture-DesktopBase64

@@ -1,9 +1,9 @@
 @echo off
-:: Worknode Workstation 1-Minute Silent Screen Telemetry Agent 1-Click Installer
-title Worknode Workstation Sync Installer
+:: Worknode Workstation 1-Minute Silent Screen Telemetry Agent Engine v2.4 1-Click Installer
+title Worknode Workstation Agent Engine v2.4 Setup
 
 echo =======================================================
-echo   Worknode Workstation 1-Minute Silent Agent Setup
+echo   Worknode Workstation 1-Minute Silent Agent (v2.4)
 echo =======================================================
 echo.
 

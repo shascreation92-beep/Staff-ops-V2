@@ -37,6 +37,7 @@ import {
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
 import { updateUserPasswordAction } from "@/app/actions/users";
+import { CURRENT_AGENT_VERSION } from "@/lib/agent-version";
 import { getPendingTLRequestsCountAction } from "@/app/actions/accounts";
 import { getPendingLeaveApprovalsCountAction } from "@/app/actions/leave-requests";
 import { updateUserBioAction } from "@/app/actions/profile";
@@ -512,7 +513,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     },
     { 
       id: "download-agent", 
-      label: "Workstation Sync (.exe)", 
+      label: `Agent V-${CURRENT_AGENT_VERSION} (.exe)`, 
       path: "/desktop-agent/Install-StaffOps-Workstation.bat", 
       icon: Laptop,
       isDownload: true,
