@@ -964,7 +964,7 @@ pause
 
             const isPaused = pausedUserIds.includes(u.id);
             const lastSnapTime = latestSnap ? new Date(latestSnap.capturedAt).getTime() : 0;
-            const isSnapRecent = lastSnapTime > 0 && (Date.now() - lastSnapTime) <= 5 * 60 * 1000;
+            const isSnapRecent = lastSnapTime > 0 && (Date.now() - lastSnapTime) <= 10 * 60 * 1000;
             const isAgentActive = !isPaused && (uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE" || isSnapRecent);
 
             return (
