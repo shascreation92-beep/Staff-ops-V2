@@ -1045,10 +1045,26 @@ pause
                     <span>{isPaused ? "Telemetry Suspended by Admin" : (isAgentActive ? "🟣 Agent Active & Capturing (60s)" : "🔴 Agent Offline on PC")}</span>
                   </div>
 
-                  {isAgentActive && (
-                    <span style={{ fontSize: "0.7rem", color: "#C4B5FD", fontWeight: 800 }}>
-                      Next SS: {countdownSec}s
-                    </span>
+                  {!isAgentActive && !isPaused && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadAgent();
+                      }}
+                      style={{
+                        fontSize: "0.65rem",
+                        color: "#F87171",
+                        background: "rgba(239, 68, 68, 0.2)",
+                        border: "1px solid rgba(239, 68, 68, 0.4)",
+                        padding: "0.15rem 0.45rem",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                        fontWeight: 800
+                      }}
+                      title="Click to download and run Desktop Agent installer on this associate's PC"
+                    >
+                      ⚡ Launch Agent
+                    </button>
                   )}
                 </div>
 
