@@ -244,15 +244,15 @@ export default function ScreenTelemetryDashboard({ currentUserRole, staffList }:
     fetchTelemetryData();
   }, [selectedUserId, selectedDate]);
 
-  // Live 1-second countdown ticker timer (synced directly with system clock)
+  // Live 10-second countdown ticker timer (synced directly with system clock)
   useEffect(() => {
     const calculateSecs = () => {
       const currentSec = Math.floor(Date.now() / 1000);
-      const secsRemaining = 60 - (currentSec % 60);
-      setCountdownSec(secsRemaining === 0 ? 60 : secsRemaining);
+      const secsRemaining = 10 - (currentSec % 10);
+      setCountdownSec(secsRemaining === 0 ? 10 : secsRemaining);
 
-      // Trigger safe telemetry update on boundary
-      if (secsRemaining === 60 || secsRemaining === 1) {
+      // Trigger safe telemetry update every 10 seconds
+      if (secsRemaining === 10 || secsRemaining === 1) {
         fetchTelemetryData();
       }
     };
@@ -1050,9 +1050,7 @@ pause
                       Next SS: {countdownSec}s
                     </span>
                   )}
-                </div>
-
-                {/* Screen Preview Monitor Display */}
+                  {/* Screen Preview Monitor Display */}
                 <div 
                   onClick={() => handleSelectUserFolder(u)}
                   style={{
@@ -1067,12 +1065,33 @@ pause
                     boxShadow: "inset 0 2px 6px rgba(0,0,0,0.5)"
                   }}
                 >
-                  {latestSnap && isAgentActive ? (
-                    <img
-                      src={latestSnap.imageUrl}
-                      alt="Latest capture"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+                  {latestSnap ? (
+                    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                      <img
+                        src={latestSnap.imageUrl}
+                        alt="Latest capture"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                      <div style={{
+                        position: "absolute",
+                        bottom: "6px",
+                        right: "6px",
+                        background: "rgba(15, 23, 42, 0.85)",
+                        backdropFilter: "blur(6px)",
+                        padding: "0.2rem 0.5rem",
+                        borderRadius: "6px",
+                        fontSize: "0.62rem",
+                        fontWeight: 800,
+                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                        color: isAgentActive ? "#A855F7" : "#F87171",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.3rem"
+                      }}>
+                        <MonitoringStatusDot status={isAgentActive ? "ACTIVE" : "OFF_DUTY"} size={7} />
+                        <span>{isAgentActive ? "LIVE CAPTURE" : "LAST CAPTURE"}</span>
+                      </div>
+                    </div>
                   ) : (
                     <div style={{
                       height: "100%",
@@ -1108,14 +1127,14 @@ pause
                   </div>
                 </div>
 
-                {/* Actions Row */}
-                <div style={{ display: "flex", gap: "0.5rem" }}>
+                {/* Actions Row with View, Start/Stop Pause & Refresh Buttons */}
+                <div style={{ display: "flex", gap: "0.4rem" }}>
                   <button
                     onClick={() => handleSelectUserFolder(u)}
                     style={{
                       flex: 1,
-                      padding: "0.6rem",
-                      fontSize: "0.8rem",
+                      padding: "0.55rem 0.4rem",
+                      fontSize: "0.78rem",
                       fontWeight: 800,
                       color: "#FFFFFF",
                       background: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
@@ -1125,11 +1144,11 @@ pause
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0.4rem",
+                      gap: "0.3rem",
                       boxShadow: "0 4px 14px rgba(139, 92, 246, 0.3)"
                     }}
                   >
-                    <FolderOpen size={15} />
+                    <FolderOpen size={14} />
                     <span>View</span>
                   </button>
 
@@ -1137,8 +1156,8 @@ pause
                   <button
                     onClick={() => handleTogglePause(u)}
                     style={{
-                      padding: "0.6rem 0.75rem",
-                      fontSize: "0.8rem",
+                      padding: "0.55rem 0.65rem",
+                      fontSize: "0.78rem",
                       fontWeight: 800,
                       color: "#FFFFFF",
                       background: isPaused ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)",
@@ -1147,20 +1166,44 @@ pause
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: "0.3rem",
+                      gap: "0.25rem",
                       boxShadow: isPaused ? "0 4px 12px rgba(16, 185, 129, 0.3)" : "0 4px 12px rgba(239, 68, 68, 0.3)"
                     }}
-                    title={isPaused ? "Resume screen capture for this staff member" : "Pause screen capture for this staff member"}
+                    title={isPaused ? "Resume screen telemetry capture for this staff member" : "Stop / Pause screen telemetry capture for this staff member"}
                   >
-                    {isPaused ? <Play size={14} /> : <Pause size={14} />}
-                    <span>{isPaused ? "Start" : "Stop"}</span>
+                    {isPaused ? <Play size={13} /> : <Pause size={13} />}
+                    <span>{isPaused ? "Resume" : "Stop"}</span>
+                  </button>
+
+                  {/* Force Card Status Refresh Button */}
+                  <button
+                    onClick={() => {
+                      fetchTelemetryData();
+                      toast.success(`🔄 Refreshed live telemetry status for ${u.name || u.email.split("@")[0]}!`);
+                    }}
+                    style={{
+                      padding: "0.55rem 0.55rem",
+                      fontSize: "0.78rem",
+                      fontWeight: 800,
+                      color: "#FFFFFF",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid rgba(255, 255, 255, 0.15)",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                    title="Force sync & refresh live status for this card"
+                  >
+                    <RefreshCw size={13} />
                   </button>
 
                   <button
                     onClick={() => handleDownloadFull7DayZip(u)}
                     style={{
-                      padding: "0.6rem 0.75rem",
-                      fontSize: "0.8rem",
+                      padding: "0.55rem 0.6rem",
+                      fontSize: "0.78rem",
                       fontWeight: 800,
                       color: "#FFFFFF",
                       background: "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
@@ -1169,14 +1212,15 @@ pause
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: "0.3rem",
-                      boxShadow: "0 4px 12px rgba(217, 119, 6, 0.3)"
+                      justifyContent: "center",
+                      gap: "0.2rem"
                     }}
-                    title="Download 7-Day Screenshot Backup ZIP Archive"
+                    title="Download 7-Day Backup ZIP"
                   >
-                    <Download size={14} />
+                    <FileArchive size={13} />
                     <span>7-Day ZIP</span>
                   </button>
+                </div>
 
                   {userSnaps.length > 0 && (
                     <button

@@ -193,6 +193,12 @@ export async function uploadScreenshotAction(data: {
       }
     });
 
+    // Automatically ensure user's dutyStatus is ON_DUTY when desktop agent captures telemetry
+    await db.user.update({
+      where: { id: userId },
+      data: { dutyStatus: "ON_DUTY" }
+    }).catch(() => null);
+
     // Run background 7-day auto retention cleanup asynchronously
     autoCleanOldScreenshotsInternal().catch(() => {});
 
