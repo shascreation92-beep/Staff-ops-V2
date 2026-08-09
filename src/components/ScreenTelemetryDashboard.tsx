@@ -1050,7 +1050,9 @@ pause
                       Next SS: {countdownSec}s
                     </span>
                   )}
-                  {/* Screen Preview Monitor Display */}
+                </div>
+
+                {/* Screen Preview Monitor Display */}
                 <div 
                   onClick={() => handleSelectUserFolder(u)}
                   style={{
@@ -1127,12 +1129,13 @@ pause
                   </div>
                 </div>
 
-                {/* Actions Row with View, Start/Stop Pause & Refresh Buttons */}
-                <div style={{ display: "flex", gap: "0.4rem" }}>
+                {/* Actions Row with View, Start/Stop Pause, 7-Day ZIP, Refresh & Delete Buttons */}
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                   <button
                     onClick={() => handleSelectUserFolder(u)}
                     style={{
                       flex: 1,
+                      minWidth: "70px",
                       padding: "0.55rem 0.4rem",
                       fontSize: "0.78rem",
                       fontWeight: 800,
@@ -1175,30 +1178,6 @@ pause
                     <span>{isPaused ? "Resume" : "Stop"}</span>
                   </button>
 
-                  {/* Force Card Status Refresh Button */}
-                  <button
-                    onClick={() => {
-                      fetchTelemetryData();
-                      toast.success(`🔄 Refreshed live telemetry status for ${u.name || u.email.split("@")[0]}!`);
-                    }}
-                    style={{
-                      padding: "0.55rem 0.55rem",
-                      fontSize: "0.78rem",
-                      fontWeight: 800,
-                      color: "#FFFFFF",
-                      background: "rgba(255, 255, 255, 0.1)",
-                      border: "1px solid rgba(255, 255, 255, 0.15)",
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}
-                    title="Force sync & refresh live status for this card"
-                  >
-                    <RefreshCw size={13} />
-                  </button>
-
                   <button
                     onClick={() => handleDownloadFull7DayZip(u)}
                     style={{
@@ -1220,24 +1199,50 @@ pause
                     <FileArchive size={13} />
                     <span>7-Day ZIP</span>
                   </button>
-                </div>
+
+                  {/* Force Card Status Refresh Button */}
+                  <button
+                    onClick={() => {
+                      fetchTelemetryData();
+                      toast.success(`🔄 Refreshed live telemetry status for ${u.name || u.email.split("@")[0]}!`);
+                    }}
+                    style={{
+                      padding: "0.55rem 0.6rem",
+                      fontSize: "0.78rem",
+                      fontWeight: 800,
+                      color: "#FFFFFF",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid rgba(255, 255, 255, 0.15)",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                    title="Force sync & refresh live status for this card"
+                  >
+                    <RefreshCw size={13} />
+                  </button>
 
                   {userSnaps.length > 0 && (
                     <button
                       onClick={() => handleBulkDelete(userSnaps.map(s => s.id))}
                       style={{
-                        padding: "0.6rem 0.75rem",
-                        fontSize: "0.8rem",
+                        padding: "0.55rem 0.6rem",
+                        fontSize: "0.78rem",
                         fontWeight: 800,
                         color: "#F87171",
                         background: "rgba(239, 68, 68, 0.15)",
                         border: "1px solid rgba(239, 68, 68, 0.3)",
                         borderRadius: "10px",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
                       }}
-                      title="Delete all screenshots in this folder to free VPS space"
+                      title="Delete all screenshots in this folder to free space"
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={13} />
                     </button>
                   )}
                 </div>
