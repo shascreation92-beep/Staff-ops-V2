@@ -86,6 +86,8 @@ interface TamperLogItem {
 interface UserStatusInfo {
   status: "ACTIVE" | "IDLE" | "INTERRUPTED" | "OFF_DUTY";
   lastCapturedAt: string | null;
+  agentVersion?: string | null;
+  isOutdated?: boolean;
 }
 
 interface Props {
