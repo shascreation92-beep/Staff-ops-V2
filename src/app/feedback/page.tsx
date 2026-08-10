@@ -1,7 +1,10 @@
 import React from "react";
 import { enforceAuth } from "@/lib/auth-helpers";
 import { getAllFeedbackAction, getUserFeedbackHistoryAction } from "@/app/actions/feedback";
+import DashboardLayout from "@/components/DashboardLayout";
 import FeedbackHub from "@/components/FeedbackHub";
+
+export const dynamic = "force-dynamic";
 
 export default async function FeedbackPage() {
   const user = await enforceAuth([
@@ -24,12 +27,14 @@ export default async function FeedbackPage() {
   }
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "1.5rem" }}>
-      <FeedbackHub 
-        userRole={user.role}
-        initialHistory={historyList}
-        initialAdminFeedbackList={adminFeedbackList}
-      />
-    </div>
+    <DashboardLayout user={user}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "1.5rem", width: "100%" }}>
+        <FeedbackHub 
+          userRole={user.role}
+          initialHistory={historyList}
+          initialAdminFeedbackList={adminFeedbackList}
+        />
+      </div>
+    </DashboardLayout>
   );
 }
