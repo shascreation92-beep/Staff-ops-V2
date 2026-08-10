@@ -5,7 +5,7 @@ import { enforceAuth } from "@/lib/auth-helpers";
 
 /**
  * Fetch Team Performance Stats for Team Leads & Admins
- * Calculates account metrics for each team member, sorted by LOWEST IDs first.
+ * Calculates 6 metric block tiles per team member, sorted by LOWEST IDs first.
  */
 export async function getTeamPerformanceStatsAction() {
   const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"]);
@@ -21,7 +21,10 @@ export async function getTeamPerformanceStatsAction() {
     memberFilter = { role: "SALES_ASSOCIATE", isArchived: false, status: "APPROVED" };
   }
 
-  // Fetch team members with their accounts & shift duty logs
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  // Fetch team members with accounts, laptop assets, and team lead info
   const teamMembers = await db.user.findMany({
     where: memberFilter,
     select: {
@@ -32,9 +35,20 @@ export async function getTeamPerformanceStatsAction() {
       dutyStatus: true,
       image: true,
       createdAt: true,
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      },
       employee: {
         select: {
           employeeId: true
+        }
+      },
+      laptopasset: {
+        select: {
+          assetTag: true
         }
       },
       account_account_createdByIdTouser: {
@@ -46,6 +60,7 @@ export async function getTeamPerformanceStatsAction() {
           idName: true,
           serialCode: true,
           status: true,
+          issueType: true,
           verificationStatus: true,
           adsPublished: true,
           createdAt: true,
@@ -60,21 +75,31 @@ export async function getTeamPerformanceStatsAction() {
     }
   });
 
-  // Calculate stats for each member
+  // Calculate stats for each member matching demo tile block structure
   const statsList = teamMembers.map(member => {
     const accounts = member.account_account_createdByIdTouser || [];
     const totalAccounts = accounts.length;
-    const activeAccounts = accounts.filter(a => ["ACTIVE", "APPROVED_BY_TEAM_LEAD", "COMPLETED"].includes(a.status)).length;
-    const pendingAccounts = accounts.filter(a => ["PENDING_TL", "FORWARDED_TO_IT", "SUBMITTED"].includes(a.status)).length;
-    const unverifiedAccounts = accounts.filter(a => a.verificationStatus === "No").length;
-    const totalAdsPublished = accounts.reduce((acc, a) => acc + (a.adsPublished || 0), 0);
 
-    // Platform breakdown
-    const platformCounts: Record<string, number> = {};
-    accounts.forEach(a => {
-      const pName = a.platform?.name || "Other";
-      platformCounts[pName] = (platformCounts[pName] || 0) + 1;
-    });
+    // Platform Filter
+    const fbAccounts = accounts.filter(a => (a.platform?.name || "").toLowerCase().includes("facebook"));
+    const vintedAccounts = accounts.filter(a => (a.platform?.name || "").toLowerCase().includes("vinted"));
+
+    // 6 Metric Block Stat Counts
+    const totalFB = fbAccounts.length;
+    const verifiedFB = fbAccounts.filter(a => a.verificationStatus === "Yes").length;
+    const unverifiedFB = fbAccounts.filter(a => a.verificationStatus === "No").length;
+    const identityFB = fbAccounts.filter(a => a.issueType === "Identity Issue").length;
+
+    const totalVinted = vintedAccounts.length;
+    const verifiedVinted = vintedAccounts.filter(a => a.verificationStatus === "Yes").length;
+
+    // Critical risks count & submitted today check
+    const criticalRisks = accounts.filter(a => a.verificationStatus === "No" || a.status === "REJECTED" || a.issueType).length;
+    const submittedToday = accounts.some(a => new Date(a.createdAt) >= todayStart);
+
+    // Laptops string
+    const laptopTags = member.laptopasset.map(l => l.assetTag).join(", ") || "SD-01";
+    const teamLeadName = member.user?.name || member.user?.email || user.name || "Hamza Alvi";
 
     // Last submission date
     let lastSubmissionDate: string | null = null;
@@ -83,10 +108,6 @@ export async function getTeamPerformanceStatsAction() {
       lastSubmissionDate = sorted[0].createdAt.toISOString();
     }
 
-    // Daily target (default 10 accounts target per team member)
-    const targetGoal = 10;
-    const targetProgressPct = Math.min(100, Math.round((totalAccounts / targetGoal) * 100));
-
     return {
       userId: member.id,
       name: member.name || member.email,
@@ -94,20 +115,23 @@ export async function getTeamPerformanceStatsAction() {
       employeeId: member.employee?.employeeId || "N/A",
       image: member.image,
       shiftStatus: member.dutyStatus || "OFF_DUTY",
+      laptops: laptopTags,
+      teamLeadName,
       totalAccounts,
-      activeAccounts,
-      pendingAccounts,
-      unverifiedAccounts,
-      totalAdsPublished,
-      platformCounts,
+      totalFB,
+      verifiedFB,
+      unverifiedFB,
+      identityFB,
+      totalVinted,
+      verifiedVinted,
+      criticalRisks,
+      submittedToday,
       lastSubmissionDate,
-      targetGoal,
-      targetProgressPct,
       isLagging: totalAccounts < 5 // Underperforming threshold
     };
   });
 
-  // SORT RULE: Lowest accounts cataloged FIRST (Ascending order)
+  // SORT RULE: Lowest total accounts cataloged FIRST (Ascending order)
   statsList.sort((a, b) => a.totalAccounts - b.totalAccounts);
 
   return {

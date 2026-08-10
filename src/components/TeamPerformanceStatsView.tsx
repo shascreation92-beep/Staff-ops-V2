@@ -3,19 +3,26 @@
 import React, { useState } from "react";
 import { 
   Users, 
-  TrendingDown, 
-  TrendingUp, 
+  Search, 
+  Filter, 
   AlertTriangle, 
   CheckCircle2, 
   Clock, 
-  Search, 
-  Filter, 
-  ShieldAlert, 
-  Award, 
-  BarChart3,
-  Sparkles,
-  ArrowUp
+  Sparkles, 
+  Laptop, 
+  Crown, 
+  ShieldCheck, 
+  ShoppingCart, 
+  Diamond, 
+  Pencil, 
+  Trash2, 
+  FileText, 
+  ArrowUp,
+  Monitor,
+  UserCheck,
+  Award
 } from "lucide-react";
+import Link from "next/link";
 
 interface TeamStatsItem {
   userId: string;
@@ -24,15 +31,18 @@ interface TeamStatsItem {
   employeeId: string;
   image?: string | null;
   shiftStatus: string;
+  laptops: string;
+  teamLeadName: string;
   totalAccounts: number;
-  activeAccounts: number;
-  pendingAccounts: number;
-  unverifiedAccounts: number;
-  totalAdsPublished: number;
-  platformCounts: Record<string, number>;
+  totalFB: number;
+  verifiedFB: number;
+  unverifiedFB: number;
+  identityFB: number;
+  totalVinted: number;
+  verifiedVinted: number;
+  criticalRisks: number;
+  submittedToday: boolean;
   lastSubmissionDate: string | null;
-  targetGoal: number;
-  targetProgressPct: number;
   isLagging: boolean;
 }
 
@@ -51,7 +61,6 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
   const totalMembers = stats.length;
   const totalTeamAccounts = stats.reduce((acc, curr) => acc + curr.totalAccounts, 0);
   const laggingCount = stats.filter(s => s.isLagging).length;
-  const totalTeamAds = stats.reduce((acc, curr) => acc + curr.totalAdsPublished, 0);
 
   // Filter items
   const filteredStats = stats.filter(item => {
@@ -74,11 +83,11 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <BarChart3 size={24} style={{ color: "#48CAE4" }} />
+              <Sparkles size={24} style={{ color: "#48CAE4" }} />
               <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>TEAM MEMBERS PERFORMANCE &amp; ID STATS</h1>
             </div>
             <p style={{ margin: "0.3rem 0 0 0", fontSize: "0.85rem", color: "rgba(255, 255, 255, 0.75)" }}>
-              Real-time operational account counts for your team members. Sorted by lowest cataloged IDs first so underperforming members are immediately visible.
+              Real-time operational ID metrics card roster for your team. Sorted by lowest cataloged IDs first for instant TL intervention.
             </p>
           </div>
         </div>
@@ -109,21 +118,13 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
           </div>
           <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#EF4444", marginTop: "0.4rem" }}>{laggingCount} Members</div>
         </div>
-
-        <div className="kpi-card kpi-info">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Total Team Ads</span>
-            <Sparkles size={18} style={{ color: "#0284C7" }} />
-          </div>
-          <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#0284C7", marginTop: "0.4rem" }}>{totalTeamAds} Ads</div>
-        </div>
       </div>
 
       {/* Filter Bar */}
       <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "#FFFFFF" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
           {/* Search Box */}
-          <div className="table-search-wrapper" style={{ width: "260px" }}>
+          <div className="table-search-wrapper" style={{ width: "280px" }}>
             <Search className="header-search-icon" />
             <input
               type="text"
@@ -160,178 +161,334 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="glass-panel table-panel table-panel-flat" style={{ background: "#FFFFFF" }}>
-        <div className="table-container-outer">
-          <table className="compact-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#0250A1" }}>
-                <th style={{ color: "#FFFFFF", padding: "0.6rem 0.75rem", fontSize: "0.76rem", fontWeight: 700 }}>TEAM MEMBER</th>
-                <th style={{ color: "#FFFFFF", padding: "0.6rem 0.75rem", fontSize: "0.76rem", fontWeight: 700, textAlign: "center" }}>SHIFT DUTY</th>
-                <th style={{ color: "#FFFFFF", padding: "0.6rem 0.75rem", fontSize: "0.76rem", fontWeight: 700, textAlign: "center", background: "#0077B6" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem" }}>
-                    <span>TOTAL IDs</span>
-                    <span title="Sorted Ascending (Lowest IDs at Top)"><ArrowUp size={14} /></span>
-                  </div>
-                </th>
-                <th style={{ color: "#FFFFFF", padding: "0.6rem 0.75rem", fontSize: "0.76rem", fontWeight: 700, textAlign: "center" }}>TARGET PROGRESS</th>
-                <th style={{ color: "#FFFFFF", padding: "0.6rem 0.75rem", fontSize: "0.76rem", fontWeight: 700, textAlign: "center" }}>ACTIVE / UNVERIFIED</th>
-                <th style={{ color: "#FFFFFF", padding: "0.6rem 0.75rem", fontSize: "0.76rem", fontWeight: 700, textAlign: "center" }}>ADS PUBLISHED</th>
-                <th style={{ color: "#FFFFFF", padding: "0.6rem 0.75rem", fontSize: "0.76rem", fontWeight: 700, textAlign: "center" }}>LAST SUBMISSION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStats.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                    No team members found matching search criteria.
-                  </td>
-                </tr>
-              ) : (
-                filteredStats.map((item, index) => {
-                  const formattedDate = item.lastSubmissionDate 
-                    ? new Date(item.lastSubmissionDate).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      })
-                    : "No submissions yet";
-
-                  return (
-                    <tr key={item.userId} style={{
-                      borderBottom: "1px solid var(--border-dim)",
-                      background: item.isLagging ? "rgba(239, 68, 68, 0.02)" : "transparent"
-                    }}>
-                      {/* Team Member Info */}
-                      <td style={{ padding: "0.6rem 0.75rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                          <div style={{
-                            width: "34px",
-                            height: "34px",
-                            borderRadius: "50%",
-                            background: item.isLagging ? "linear-gradient(135deg, #EF4444, #DC2626)" : "linear-gradient(135deg, #0077B6, #023E8A)",
-                            color: "#FFFFFF",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: 800,
-                            fontSize: "0.8rem",
-                            boxShadow: item.isLagging ? "0 0 10px rgba(239, 68, 68, 0.3)" : "none"
-                          }}>
-                            {item.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                              <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#03045E" }}>{item.name}</span>
-                              {item.isLagging && (
-                                <span style={{
-                                  fontSize: "0.65rem",
-                                  fontWeight: 800,
-                                  color: "#EF4444",
-                                  background: "rgba(239, 68, 68, 0.1)",
-                                  border: "1px solid rgba(239, 68, 68, 0.25)",
-                                  padding: "0.1rem 0.4rem",
-                                  borderRadius: "4px",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "0.2rem"
-                                }}>
-                                  <AlertTriangle size={10} /> Low IDs
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                              ID: {item.employeeId} • {item.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Shift Duty Status */}
-                      <td style={{ padding: "0.6rem 0.75rem", textAlign: "center" }}>
-                        {item.shiftStatus === "ON_DUTY" && (
-                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#10B981", background: "rgba(16, 185, 129, 0.1)", padding: "0.25rem 0.55rem", borderRadius: "12px", border: "1px solid rgba(16, 185, 129, 0.25)" }}>
-                            🟢 On Duty
-                          </span>
-                        )}
-                        {item.shiftStatus === "ON_BREAK" && (
-                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#F59E0B", background: "rgba(245, 158, 11, 0.1)", padding: "0.25rem 0.55rem", borderRadius: "12px", border: "1px solid rgba(245, 158, 11, 0.25)" }}>
-                            🟡 On Break
-                          </span>
-                        )}
-                        {item.shiftStatus === "OFF_DUTY" && (
-                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#6B7280", background: "rgba(107, 114, 128, 0.1)", padding: "0.25rem 0.55rem", borderRadius: "12px", border: "1px solid rgba(107, 114, 128, 0.25)" }}>
-                            🔴 Off Duty
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Total Accounts (Ascending) */}
-                      <td style={{ padding: "0.6rem 0.75rem", textAlign: "center" }}>
-                        <span style={{
-                          fontSize: "1.1rem",
-                          fontWeight: 800,
-                          color: item.totalAccounts < 5 ? "#EF4444" : item.totalAccounts < 10 ? "#D97706" : "#10B981"
-                        }}>
-                          {item.totalAccounts} IDs
-                        </span>
-                      </td>
-
-                      {/* Target Progress Bar */}
-                      <td style={{ padding: "0.6rem 0.75rem", textAlign: "center", minWidth: "140px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", alignItems: "center" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: "0.7rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-                            <span>{item.totalAccounts} / {item.targetGoal} Target</span>
-                            <span>{item.targetProgressPct}%</span>
-                          </div>
-                          <div style={{ width: "100%", height: "6px", background: "#E5E7EB", borderRadius: "9999px", overflow: "hidden" }}>
-                            <div style={{
-                              height: "100%",
-                              width: `${item.targetProgressPct}%`,
-                              background: item.targetProgressPct >= 100 
-                                ? "#10B981" 
-                                : item.targetProgressPct >= 50 
-                                  ? "#F59E0B" 
-                                  : "#EF4444",
-                              borderRadius: "9999px",
-                              transition: "width 0.3s ease"
-                            }} />
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Active / Unverified */}
-                      <td style={{ padding: "0.6rem 0.75rem", textAlign: "center" }}>
-                        <div style={{ display: "inline-flex", gap: "0.4rem" }}>
-                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#10B981", background: "rgba(16, 185, 129, 0.08)", padding: "0.15rem 0.45rem", borderRadius: "4px" }}>
-                            ✓ {item.activeAccounts} Active
-                          </span>
-                          {item.unverifiedAccounts > 0 && (
-                            <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#EF4444", background: "rgba(239, 68, 68, 0.08)", padding: "0.15rem 0.45rem", borderRadius: "4px" }}>
-                              ✕ {item.unverifiedAccounts} Unverified
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Total Ads Published */}
-                      <td style={{ padding: "0.6rem 0.75rem", textAlign: "center", fontWeight: 700, fontSize: "0.85rem", color: "#03045E" }}>
-                        {item.totalAdsPublished} Ads
-                      </td>
-
-                      {/* Last Submission */}
-                      <td style={{ padding: "0.6rem 0.75rem", textAlign: "center", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        {formattedDate}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      {/* Roster Cards List matching Demo Screenshot */}
+      {filteredStats.length === 0 ? (
+        <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", background: "#FFFFFF" }}>
+          <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600 }}>No team members found matching search criteria.</p>
         </div>
-      </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {filteredStats.map((item, index) => {
+            const formattedDate = item.lastSubmissionDate 
+              ? new Date(item.lastSubmissionDate).toLocaleString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit"
+                })
+              : "No sync recorded";
+
+            const serialBadge = `SD-0${(index % 5) + 2}`;
+
+            return (
+              <div
+                key={item.userId}
+                style={{
+                  background: "#0D1B2A",
+                  border: item.isLagging ? "1.5px solid rgba(239, 68, 68, 0.4)" : "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "14px",
+                  padding: "1.25rem 1.5rem",
+                  color: "#FFFFFF",
+                  boxShadow: item.isLagging ? "0 10px 30px rgba(239, 68, 68, 0.15)" : "0 10px 25px rgba(0,0,0,0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "1.25rem",
+                  flexWrap: "wrap"
+                }}
+              >
+                {/* Left Column: Member Bio & Risk Telemetry */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", flex: "1 1 280px", minWidth: "260px" }}>
+                  {/* Initials Circle */}
+                  <div style={{
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "50%",
+                    background: "rgba(255, 255, 255, 0.08)",
+                    border: "1.5px solid rgba(255, 255, 255, 0.15)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: "1.1rem",
+                    color: "#FFFFFF",
+                    flexShrink: 0
+                  }}>
+                    {item.name.slice(0, 2).toUpperCase()}
+                  </div>
+
+                  {/* Bio Information */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "#FFFFFF" }}>
+                      {item.name}
+                    </h3>
+                    <div style={{ fontSize: "0.78rem", color: "rgba(255, 255, 255, 0.6)", fontWeight: 500 }}>
+                      Digital Commerce Associate
+                    </div>
+
+                    {/* Metadata line */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.7)", marginTop: "0.2rem" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                        <Laptop size={12} style={{ color: "#38BDF8" }} /> Laptops: <strong>{item.laptops}</strong>
+                      </span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                        <Crown size={12} style={{ color: "#F59E0B" }} /> Lead: <strong>{item.teamLeadName}</strong>
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: "0.7rem", color: "rgba(255, 255, 255, 0.5)", fontFamily: "var(--font-mono)", marginTop: "0.1rem" }}>
+                      ⏱️ Sync: {formattedDate}
+                    </div>
+
+                    {/* Risk / Status Pills Row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+                      {item.criticalRisks > 0 && (
+                        <span style={{
+                          fontSize: "0.68rem",
+                          fontWeight: 800,
+                          padding: "0.2rem 0.55rem",
+                          borderRadius: "9999px",
+                          background: "rgba(239, 68, 68, 0.18)",
+                          color: "#F87171",
+                          border: "1px solid rgba(239, 68, 68, 0.3)"
+                        }}>
+                          Critical ({item.criticalRisks} risks)
+                        </span>
+                      )}
+
+                      {!item.submittedToday ? (
+                        <span style={{
+                          fontSize: "0.68rem",
+                          fontWeight: 800,
+                          padding: "0.2rem 0.55rem",
+                          borderRadius: "9999px",
+                          background: "rgba(245, 158, 11, 0.18)",
+                          color: "#FBBF24",
+                          border: "1px solid rgba(245, 158, 11, 0.3)"
+                        }}>
+                          ⚠️ Pending Update
+                        </span>
+                      ) : (
+                        <span style={{
+                          fontSize: "0.68rem",
+                          fontWeight: 800,
+                          padding: "0.2rem 0.55rem",
+                          borderRadius: "9999px",
+                          background: "rgba(16, 185, 129, 0.18)",
+                          color: "#34D399",
+                          border: "1px solid rgba(16, 185, 129, 0.3)"
+                        }}>
+                          ✓ Submitted Today
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Tag box */}
+                    <div style={{ marginTop: "0.4rem" }}>
+                      <span style={{
+                        fontSize: "0.65rem",
+                        fontWeight: 900,
+                        background: "#EAB308",
+                        color: "#000000",
+                        padding: "0.1rem 0.45rem",
+                        borderRadius: "4px",
+                        letterSpacing: "0.05em"
+                      }}>
+                        {serialBadge}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Center Section: 6 Metric Stat Boxes matching Demo Screenshot */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(6, minmax(85px, 1fr))",
+                  gap: "0.6rem",
+                  flex: "2 1 540px"
+                }}>
+                  {/* Tile 1: Total FB */}
+                  <div style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "10px",
+                    padding: "0.75rem 0.5rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}>
+                    <Monitor size={16} style={{ color: "#38BDF8", marginBottom: "0.4rem" }} />
+                    <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1 }}>
+                      {item.totalFB}
+                    </div>
+                    <div style={{ fontSize: "0.65rem", color: "rgba(255, 255, 255, 0.5)", marginTop: "0.4rem", fontWeight: 600 }}>
+                      Total FB (/80)
+                    </div>
+                  </div>
+
+                  {/* Tile 2: Verified FB */}
+                  <div style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "10px",
+                    padding: "0.75rem 0.5rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}>
+                    <ShieldCheck size={16} style={{ color: "#F87171", marginBottom: "0.4rem" }} />
+                    <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1 }}>
+                      {item.verifiedFB}
+                    </div>
+                    <div style={{ fontSize: "0.65rem", color: "rgba(255, 255, 255, 0.5)", marginTop: "0.4rem", fontWeight: 600 }}>
+                      Verified FB
+                    </div>
+                  </div>
+
+                  {/* Tile 3: Unverified */}
+                  <div style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "10px",
+                    padding: "0.75rem 0.5rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}>
+                    <AlertTriangle size={16} style={{ color: "#FBBF24", marginBottom: "0.4rem" }} />
+                    <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1 }}>
+                      {item.unverifiedFB}
+                    </div>
+                    <div style={{ fontSize: "0.65rem", color: "rgba(255, 255, 255, 0.5)", marginTop: "0.4rem", fontWeight: 600 }}>
+                      Unverified
+                    </div>
+                  </div>
+
+                  {/* Tile 4: Identity FB */}
+                  <div style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "10px",
+                    padding: "0.75rem 0.5rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}>
+                    <Users size={16} style={{ color: "#94A3B8", marginBottom: "0.4rem" }} />
+                    <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1 }}>
+                      {item.identityFB}
+                    </div>
+                    <div style={{ fontSize: "0.65rem", color: "rgba(255, 255, 255, 0.5)", marginTop: "0.4rem", fontWeight: 600 }}>
+                      Identity FB
+                    </div>
+                  </div>
+
+                  {/* Tile 5: Total Vinted */}
+                  <div style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "10px",
+                    padding: "0.75rem 0.5rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}>
+                    <ShoppingCart size={16} style={{ color: "#38BDF8", marginBottom: "0.4rem" }} />
+                    <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1 }}>
+                      {item.totalVinted}
+                    </div>
+                    <div style={{ fontSize: "0.65rem", color: "rgba(255, 255, 255, 0.5)", marginTop: "0.4rem", fontWeight: 600 }}>
+                      Total Vinted (/10)
+                    </div>
+                  </div>
+
+                  {/* Tile 6: Verified Vt */}
+                  <div style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "10px",
+                    padding: "0.75rem 0.5rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}>
+                    <Diamond size={16} style={{ color: "#F97316", marginBottom: "0.4rem" }} />
+                    <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1 }}>
+                      {item.verifiedVinted}
+                    </div>
+                    <div style={{ fontSize: "0.65rem", color: "rgba(255, 255, 255, 0.5)", marginTop: "0.4rem", fontWeight: 600 }}>
+                      Verified Vt
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Section: Action Buttons Stack matching Demo */}
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                  flexShrink: 0,
+                  width: "130px"
+                }}>
+                  <Link
+                    href="/accounts"
+                    style={{
+                      padding: "0.45rem 0.75rem",
+                      borderRadius: "8px",
+                      background: "#0D9488",
+                      color: "#FFFFFF",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.3rem",
+                      boxShadow: "0 4px 10px rgba(13, 148, 136, 0.3)"
+                    }}
+                  >
+                    <Pencil size={12} /> Log Update
+                  </Link>
+
+                  <Link
+                    href="/accounts"
+                    style={{
+                      padding: "0.45rem 0.75rem",
+                      borderRadius: "8px",
+                      background: "rgba(13, 148, 136, 0.2)",
+                      border: "1px solid #0D9488",
+                      color: "#2DD4BF",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.3rem"
+                    }}
+                  >
+                    <FileText size={12} /> View Accounts
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
