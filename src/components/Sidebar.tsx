@@ -559,10 +559,10 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     },
     { 
       id: "feedback", 
-      label: "Staff Feedback", 
+      label: "Submit Feedback", 
       path: "/feedback", 
       icon: MessageSquare,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
     },
     { 
       id: "settings", 
@@ -936,8 +936,9 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
 
       <div className="sidebar-footer-wrap">
-        <button
-          onClick={() => setShowFeedbackModal(true)}
+        <Link
+          href="/feedback"
+          onClick={() => setIsOpen(false)}
           style={{
             width: "100%",
             marginBottom: "0.5rem",
@@ -952,13 +953,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             alignItems: "center",
             justifyContent: "center",
             gap: "0.5rem",
-            cursor: "pointer",
+            textDecoration: "none",
             transition: "all 0.2s ease"
           }}
         >
           <Sparkles size={16} />
           <span>💡 Submit Feedback</span>
-        </button>
+        </Link>
 
         <button
           onClick={() => signOut({ callbackUrl: "/auth/signin" })}
@@ -968,12 +969,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           <span>Logout</span>
         </button>
       </div>
-
-      {/* Feedback Modal Dialog */}
-      <FeedbackModal
-        isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-      />
 
 
       {/* Change Password Modal */}

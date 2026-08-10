@@ -40,6 +40,28 @@ export async function submitFeedbackAction(data: {
     }
   });
 
+  // Notify Super Admins of new feedback submission
+  try {
+    const superAdmins = await db.user.findMany({
+      where: { role: "SUPER_ADMIN" },
+      select: { id: true }
+    });
+
+    for (const sa of superAdmins) {
+      await db.notification.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: sa.id,
+          title: `💬 New Feedback: ${data.subject.slice(0, 30)}`,
+          message: `${user.name || user.email} submitted a ${data.category.replace("_", " ")}: "${data.subject}"`,
+          type: "SYSTEM_ALERT"
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Failed to create feedback notification:", err);
+  }
+
   revalidatePath("/feedback");
   return { 
     success: true, 
@@ -49,7 +71,27 @@ export async function submitFeedbackAction(data: {
 }
 
 /**
- * 2. Fetch All Submissions for Super Admin & Company Owner
+ * 2. Fetch Personal Feedback History for Current User
+ */
+export async function getUserFeedbackHistoryAction() {
+  const user = await enforceAuth([
+    "SUPER_ADMIN",
+    "COMPANY_OWNER",
+    "TEAM_LEAD",
+    "SALES_ASSOCIATE",
+    "IT_DEPARTMENT"
+  ]);
+
+  const items = await db.feedback.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" }
+  });
+
+  return { success: true, history: items };
+}
+
+/**
+ * 3. Fetch All Submissions for Super Admin & Company Owner
  */
 export async function getAllFeedbackAction(filters?: {
   statusFilter?: string;
@@ -105,7 +147,7 @@ export async function getAllFeedbackAction(filters?: {
 }
 
 /**
- * 3. Update Feedback Status & Super Admin Reply
+ * 4. Update Feedback Status & Super Admin Reply
  */
 export async function updateFeedbackStatusAction(data: {
   feedbackId: string;
@@ -118,7 +160,7 @@ export async function updateFeedbackStatusAction(data: {
     return { success: false, error: "Missing required arguments." };
   }
 
-  await db.feedback.update({
+  const updated = await db.feedback.update({
     where: { id: data.feedbackId },
     data: {
       status: data.status,
@@ -128,12 +170,29 @@ export async function updateFeedbackStatusAction(data: {
     }
   });
 
+  // Create system notification for employee when status changes or reply is added
+  try {
+    if (updated.userId) {
+      await db.notification.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: updated.userId,
+          title: `📢 Update on your Feedback: ${updated.subject.slice(0, 25)}...`,
+          message: `Super Admin updated status to "${data.status.replace("_", " ")}"${data.adminReply ? `: "${data.adminReply.slice(0, 60)}..."` : "."}`,
+          type: "SYSTEM_ALERT"
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Failed to notify user of feedback status update:", err);
+  }
+
   revalidatePath("/feedback");
   return { success: true, message: "Feedback status and reply updated successfully!" };
 }
 
 /**
- * 4. Delete Feedback Record
+ * 5. Delete Feedback Record
  */
 export async function deleteFeedbackAction(feedbackId: string) {
   await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
