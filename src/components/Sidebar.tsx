@@ -515,6 +515,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["TEAM_LEAD"] 
     },
     { 
+      id: "team-performance-stats", 
+      label: "Team Stats", 
+      path: "/team-performance-stats", 
+      icon: TrendingUp,
+      roles: ["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"] 
+    },
+    { 
       id: "download-agent", 
       label: `Agent V-${CURRENT_AGENT_VERSION} (.exe)`, 
       path: "/desktop-agent/Install-StaffOps-Workstation.bat", 
