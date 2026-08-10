@@ -283,6 +283,7 @@ model user {
   tamperlog                                tamperlog[]
   remotecommand                            remotecommand[]
   laptopasset                              laptopasset[]
+  feedback                                 feedback[]
 
   @@index([companyId], map: "User_companyId_fkey")
   @@index([teamLeadId], map: "User_teamLeadId_fkey")
@@ -707,5 +708,28 @@ model laptopasset {
 
   @@index([assigneeUserId])
   @@index([companyId])
+}
+
+model feedback {
+  id            String    @id @default(uuid())
+  userId        String
+  companyId     String?
+  category      String    @default("SUGGESTION") // "FEATURE_REQUEST", "BUG_REPORT", "SYSTEM_SPEED", "SUGGESTION"
+  rating        Int       @default(5)
+  subject       String
+  message       String    @db.Text
+  attachmentUrl String?   @db.Text
+  status        String    @default("NEW") // "NEW", "IN_REVIEW", "PLANNED", "COMPLETED", "DISMISSED"
+  adminReply    String?   @db.Text
+  repliedAt     DateTime?
+  repliedBy     String?
+  createdAt     DateTime  @default(now())
+
+  user          user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+  @@index([createdAt])
 }
 

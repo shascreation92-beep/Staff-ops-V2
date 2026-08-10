@@ -32,7 +32,8 @@ import {
   UserX,
   CheckCircle2,
   AlertCircle,
-  Bell
+  Bell,
+  Sparkles
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -46,6 +47,7 @@ import { getChatBadgeStatusAction } from "@/app/actions/chat";
 import { getSpecialRequestsBadgeStatusAction } from "@/app/actions/special-requests";
 import { toggleShiftDutyAction, getUserCurrentDutyAction, getCompanyDutyAttendanceAction } from "@/app/actions/shift";
 import { useITConfig } from "./ITConfigProvider";
+import FeedbackModal from "./FeedbackModal";
 import { toast } from "react-hot-toast";
 import { useRef } from "react";
 
@@ -115,6 +117,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
 
   // Display Picture (DP) Crop and Upload state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -555,6 +558,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
     },
     { 
+      id: "feedback", 
+      label: "Staff Feedback", 
+      path: "/feedback", 
+      icon: MessageSquare,
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
+    },
+    { 
       id: "settings", 
       label: user.role === "SUPER_ADMIN" ? "Platform Shard" : (user.role === "IT_DEPARTMENT" ? "User Management" : "Rule Engine"), 
       path: "/settings", 
@@ -927,6 +937,30 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
       <div className="sidebar-footer-wrap">
         <button
+          onClick={() => setShowFeedbackModal(true)}
+          style={{
+            width: "100%",
+            marginBottom: "0.5rem",
+            padding: "0.6rem 0.85rem",
+            borderRadius: "8px",
+            border: "1px solid rgba(0, 119, 182, 0.25)",
+            background: "linear-gradient(135deg, rgba(0, 119, 182, 0.08) 0%, rgba(2, 62, 138, 0.08) 100%)",
+            color: "#0077B6",
+            fontWeight: 700,
+            fontSize: "0.82rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
+            cursor: "pointer",
+            transition: "all 0.2s ease"
+          }}
+        >
+          <Sparkles size={16} />
+          <span>💡 Submit Feedback</span>
+        </button>
+
+        <button
           onClick={() => signOut({ callbackUrl: "/auth/signin" })}
           className="sidebar-logout-btn"
         >
@@ -934,6 +968,12 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           <span>Logout</span>
         </button>
       </div>
+
+      {/* Feedback Modal Dialog */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+      />
 
 
       {/* Change Password Modal */}
