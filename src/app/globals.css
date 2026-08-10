@@ -1408,62 +1408,90 @@ textarea::placeholder {
   display: none; /* Chrome, Safari, Edge */
 }
 
+.compact-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: auto !important;
+}
+
 .compact-table th {
-  padding: 0.5rem 0.6rem !important;
-  font-size: 0.74rem !important;
+  padding: 0.6rem 0.75rem !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
   white-space: nowrap !important;
+  letter-spacing: 0.02em;
 }
 
 .compact-table td {
-  padding: 0.5rem 0.6rem !important;
-  font-size: 0.78rem !important;
+  padding: 0.6rem 0.75rem !important;
+  font-size: 0.8rem !important;
+  vertical-align: middle !important;
 }
 
 .col-platform {
-  min-width: 100px !important;
+  width: 110px !important;
+  max-width: 125px !important;
+  text-align: left !important;
+}
+
+.col-serial {
+  width: 100px !important;
+  max-width: 120px !important;
+  text-align: left !important;
+}
+
+.col-id-name {
+  width: 140px !important;
+  max-width: 170px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  text-align: left !important;
 }
 
 .col-ads {
-  min-width: 90px !important;
+  width: 90px !important;
+  max-width: 105px !important;
+  text-align: center !important;
 }
 
 .col-verified {
-  min-width: 90px !important;
-}
-
-.col-comments {
-  min-width: 95px !important;
-  text-align: center !important;
-}
-
-.col-it-comments {
-  min-width: 110px !important;
-  text-align: center !important;
-}
-
-.col-status {
-  min-width: 120px !important;
+  width: 90px !important;
+  max-width: 105px !important;
   text-align: center !important;
 }
 
 .col-time {
-  min-width: 110px !important;
+  width: 135px !important;
+  max-width: 150px !important;
+  text-align: center !important;
 }
 
-.col-id-name {
-  min-width: 130px !important;
-  max-width: 150px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
+.col-comments {
+  width: 85px !important;
+  max-width: 100px !important;
+  text-align: center !important;
 }
 
 .col-requested-by {
-  min-width: 130px !important;
+  width: 125px !important;
   max-width: 150px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
+  text-align: left !important;
+}
+
+.col-it-comments {
+  width: 95px !important;
+  max-width: 110px !important;
+  text-align: center !important;
+}
+
+.col-status {
+  width: 135px !important;
+  max-width: 150px !important;
+  text-align: center !important;
 }
 
 /* Symmetric Operations Dashboard Grid Overhauls */

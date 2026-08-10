@@ -869,7 +869,7 @@ export default function AccountsList({
               <tr>
                 {isSuperAdmin && <th className="col-requested-by">Tenant Company</th>}
                 <th className="col-platform">Platform</th>
-                <th>ID Serial</th>
+                <th className="col-serial">ID Serial</th>
                 <th className="col-id-name">ID Name</th>
                 <th className="col-ads">Ads Pub.</th>
                 <th className="col-verified">Verified</th>
@@ -909,7 +909,7 @@ export default function AccountsList({
                           {acc.platform?.name}
                         </span>
                       </td>
-                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 500 }}>
+                      <td className="col-serial" style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 500 }}>
                         {acc.serialCode}
                       </td>
                       <td className="col-id-name">
