@@ -456,187 +456,92 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     });
   };
 
-  // Define sidebar menu options based on user role permissions
-  const menuItems = [
-    { 
-      id: "dashboard", 
-      label: "Dashboard", 
-      path: "/", 
+  // Define hierarchical category groups with role-based filtering
+  const categoryGroups = [
+    {
+      id: "overview",
+      title: "Overview & Operations",
       icon: LayoutDashboard,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"],
+      items: [
+        { id: "dashboard", label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] },
+        { id: "team-live-roster", label: "Team Live Roster", path: "/team-live-roster", icon: Users, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"] },
+        { id: "team-performance-stats", label: "Team Stats", path: "/team-performance-stats", icon: TrendingUp, roles: ["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "uk-market-trends", label: "UK Market Trends", path: "/uk-market-trends", icon: TrendingUp, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE"] }
+      ]
     },
-    { 
-      id: "accounts", 
-      label: user.role === "TEAM_LEAD" ? "My Data / Add Account" : "User Data", 
-      path: "/accounts", 
+    {
+      id: "accounts-requests",
+      title: "Account Data & Requests",
       icon: Database,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"],
+      items: [
+        { id: "accounts", label: user.role === "TEAM_LEAD" ? "My Data / Add Account" : "User Data", path: "/accounts", icon: Database, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] },
+        { id: "master-accounts-pool", label: "Master Accounts Pool", path: "/master-accounts-pool", icon: DatabaseCubeIcon, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "associates-requests", label: "Associates Requests", path: "/associates-requests", icon: ClipboardCheck, roles: ["TEAM_LEAD"] },
+        { id: "my-team", label: "My Team", path: "/my-team", icon: UserCheck, roles: ["TEAM_LEAD"] }
+      ]
     },
     {
-      id: "chat-space",
-      label: "Chat Workspace",
-      path: "/chat-space",
+      id: "communication",
+      title: "Communication & Support",
       icon: MessageSquare,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"],
+      items: [
+        { id: "chat-space", label: "Chat Workspace", path: "/chat-space", icon: MessageSquare, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] },
+        { id: "special-requests", label: ["TEAM_LEAD", "SALES_ASSOCIATE"].includes(user.role) ? "Special Request" : "Special Requests", path: "/special-requests", icon: HelpCircle, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] },
+        { id: "personal-notes", label: "My Personal Notes", path: "/personal-notes", icon: FileText, roles: ["TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] },
+        { id: "announcements", label: "Announcements", path: "/announcements", icon: Megaphone, roles: ["COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "feedback", label: "Submit Feedback", path: "/feedback", icon: MessageSquare, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] }
+      ]
     },
     {
-      id: "master-accounts-pool",
-      label: "Master Accounts Pool",
-      path: "/master-accounts-pool",
-      icon: DatabaseCubeIcon,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]
-    },
-    {
-      id: "team-live-roster",
-      label: "Team Live Roster",
-      path: "/team-live-roster",
-      icon: Users,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]
-    },
-    { 
-      id: "screen-telemetry", 
-      label: "Screen Audit", 
-      path: "/screen-telemetry", 
+      id: "it-telemetry",
+      title: "IT & Workstation Telemetry",
       icon: Monitor,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "workstation-telemetry", 
-      label: "Workstation Hardware", 
-      path: "/workstation-telemetry", 
-      icon: Cpu,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "system-health", 
-      label: "Hosting & System Health", 
-      path: "/system-health", 
-      icon: Activity,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "associates-requests", 
-      label: "Associates Requests", 
-      path: "/associates-requests", 
-      icon: ClipboardCheck,
-      roles: ["TEAM_LEAD"] 
-    },
-    { 
-      id: "my-team", 
-      label: "My Team", 
-      path: "/my-team", 
-      icon: UserCheck,
-      roles: ["TEAM_LEAD"] 
-    },
-    { 
-      id: "team-performance-stats", 
-      label: "Team Stats", 
-      path: "/team-performance-stats", 
-      icon: TrendingUp,
-      roles: ["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "download-agent", 
-      label: `Agent V-${CURRENT_AGENT_VERSION} (.zip)`, 
-      path: "/api/download-agent", 
-      icon: Laptop,
-      isDownload: true,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "team-leads", 
-      label: "Team Leads", 
-      path: "/team-leads", 
-      icon: UserCheck,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "it-management", 
-      label: "IT Management", 
-      path: "/it-management", 
-      icon: Shield,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"],
+      items: [
+        { id: "screen-telemetry", label: "Screen Audit", path: "/screen-telemetry", icon: Monitor, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "workstation-telemetry", label: "Workstation Hardware", path: "/workstation-telemetry", icon: Cpu, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "it-management", label: "IT Management", path: "/it-management", icon: Shield, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "it-accounts-parser", label: "IT Accounts Parser", path: "/it-accounts-parser", icon: ClipboardCheck, roles: ["IT_DEPARTMENT"] },
+        { id: "it-operational-logs", label: "IT Operational Logs", path: "/it-operational-logs", icon: ClipboardCheck, roles: ["SUPER_ADMIN", "COMPANY_OWNER"] },
+        { id: "system-health", label: "Hosting & System Health", path: "/system-health", icon: Activity, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "it-config", label: "IT Configurations", path: "#it-config", icon: Wallet, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "download-agent", label: `Agent V-${CURRENT_AGENT_VERSION} (.zip)`, path: "/api/download-agent", icon: Laptop, isDownload: true, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] }
+      ]
     },
     {
-      id: "companies",
-      label: "Companies Directory",
-      path: "/companies",
-      icon: Building2,
-      roles: ["SUPER_ADMIN"]
-    },
-    { 
-      id: "it-accounts-parser", 
-      label: "IT Accounts Parser", 
-      path: "/it-accounts-parser", 
-      icon: ClipboardCheck,
-      roles: ["IT_DEPARTMENT"] 
-    },
-    { 
-      id: "it-operational-logs", 
-      label: "IT Operational Logs", 
-      path: "/it-operational-logs", 
-      icon: ClipboardCheck,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
-    },
-    { 
-      id: "feedback", 
-      label: "Submit Feedback", 
-      path: "/feedback", 
-      icon: MessageSquare,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "settings", 
-      label: user.role === "SUPER_ADMIN" ? "Platform Shard" : (user.role === "IT_DEPARTMENT" ? "User Management" : "Rule Engine"), 
-      path: "/settings", 
+      id: "administration",
+      title: "Administration & Security",
       icon: Sliders,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "personal-notes", 
-      label: "My Personal Notes", 
-      path: "/personal-notes", 
-      icon: FileText,
-      roles: ["TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
-    },
-    { 
-      id: "special-requests", 
-      label: ["TEAM_LEAD", "SALES_ASSOCIATE"].includes(user.role) ? "Special Request" : "Special Requests", 
-      path: "/special-requests", 
-      icon: HelpCircle,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
-    },
-    {
-      id: "uk-market-trends",
-      label: "UK Market Trends",
-      path: "/uk-market-trends",
-      icon: TrendingUp,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE"]
-    },
-    { 
-      id: "announcements", 
-      label: "Announcements", 
-      path: "/announcements", 
-      icon: Megaphone,
-      roles: ["COMPANY_OWNER", "IT_DEPARTMENT"] 
-    },
-    {
-      id: "it-config",
-      label: "IT Configurations",
-      path: "#it-config",
-      icon: Wallet,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]
-    },
-    { 
-      id: "audit-logs", 
-      label: "Audit Logs", 
-      path: "/audit-logs", 
-      icon: FileText,
-      roles: ["SUPER_ADMIN"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"],
+      items: [
+        { id: "settings", label: user.role === "SUPER_ADMIN" ? "Platform Shard" : (user.role === "IT_DEPARTMENT" ? "User Management" : "Rule Engine"), path: "/settings", icon: Sliders, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "companies", label: "Companies Directory", path: "/companies", icon: Building2, roles: ["SUPER_ADMIN"] },
+        { id: "team-leads", label: "Team Leads", path: "/team-leads", icon: UserCheck, roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] },
+        { id: "audit-logs", label: "Audit Logs", path: "/audit-logs", icon: FileText, roles: ["SUPER_ADMIN"] }
+      ]
     }
   ];
 
-  const filteredItems = menuItems.filter(item => item.roles.includes(user.role));
+  // Expanded categories state
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  // Auto-expand category containing active path
+  useEffect(() => {
+    categoryGroups.forEach(group => {
+      const hasActiveChild = group.items.some(item => item.path === pathname && item.roles.includes(user.role));
+      if (hasActiveChild) {
+        setExpandedCategories(prev => ({ ...prev, [group.id]: true }));
+      }
+    });
+  }, [pathname, user.role]);
+
+  const toggleCategory = (catId: string) => {
+    setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
+  };
+
   const userInitials = user.name ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "OP";
 
   const getDesignation = (role: user_role) => {
@@ -782,205 +687,322 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             overflowY: "auto"
           }}
         >
-          {filteredItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.path;
+          {categoryGroups.map((group) => {
+            const visibleItems = group.items.filter(item => item.roles.includes(user.role));
+            if (visibleItems.length === 0) return null;
 
-            if (item.id === "it-config") {
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setIsOpen(false);
-                    setShowITConfigOverlay(true);
-                  }}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    width: "100%",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "0.75rem 1rem",
-                    color: "#94A3B8",
-                    borderRadius: "12px",
-                    fontSize: "0.88rem",
-                    fontWeight: 500,
-                    gap: "0.85rem",
-                    transition: "all 0.2s ease"
-                  }}
-                >
-                  <Icon size={19} style={{ color: "#64748B" }} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            }
-
-            if ((item as any).isDownload) {
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setIsOpen(false);
-                    setShowAgentInstallModal(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "0.75rem 1rem",
-                    color: "#94A3B8",
-                    borderRadius: "12px",
-                    fontSize: "0.88rem",
-                    fontWeight: 500,
-                    gap: "0.85rem",
-                    transition: "all 0.2s ease"
-                  }}
-                >
-                  <Icon size={19} style={{ color: "#64748B" }} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            }
+            const isExpanded = !!expandedCategories[group.id];
+            const GroupIcon = group.icon;
 
             return (
-              <Link
-                key={item.id}
-                href={item.path}
-                scroll={false}
-                prefetch={true}
-                onClick={() => setIsOpen(false)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.85rem",
-                  padding: "0.75rem 1rem",
-                  color: isActive ? "#FFFFFF" : "#94A3B8",
-                  fontWeight: isActive ? 800 : 500,
-                  fontSize: "0.88rem",
-                  textDecoration: "none",
-                  borderRadius: "12px",
-                  background: isActive ? "rgba(255, 255, 255, 0.09)" : "transparent",
-                  position: "relative",
-                  transition: "all 0.2s ease",
-                  boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.1)" : "none"
-                }}
-              >
-                {/* Glowing Neon Green Indicator Notch for Active Item */}
-                {isActive && (
-                  <span 
-                    style={{
-                      position: "absolute",
-                      left: "-0.85rem",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      width: "5px",
-                      height: "65%",
-                      borderRadius: "0 6px 6px 0",
-                      background: "#10B981",
-                      boxShadow: "0 0 14px #10B981, 0 0 24px rgba(16, 185, 129, 0.9)"
-                    }}
-                  />
-                )}
-
-                <Icon size={19} style={{ color: isActive ? "#38BDF8" : "#64748B", transition: "color 0.2s ease" }} />
-                <span>{item.label}</span>
-
-                {/* Badge Indicator Pills */}
-                {item.id === "associates-requests" && pendingRequestsCount > 0 && (
-                  <span 
-                    style={{
-                      marginLeft: "auto",
-                      background: "#F59E0B",
-                      color: "#000000",
-                      borderRadius: "6px",
-                      padding: "0.15rem 0.55rem",
-                      fontSize: "0.75rem",
-                      fontWeight: 900,
-                      lineHeight: 1,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 0 10px rgba(245, 158, 11, 0.5)"
-                    }}
-                  >
-                    {pendingRequestsCount}
+              <div key={group.id} style={{ marginBottom: "0.4rem" }}>
+                {/* Level 0: Parent Category Header with + / - Circle Badge */}
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(group.id)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.65rem",
+                    padding: "0.6rem 0.6rem",
+                    background: "transparent",
+                    border: "none",
+                    color: isExpanded ? "#FFFFFF" : "#94A3B8",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    borderRadius: "10px",
+                    textAlign: "left",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  {/* Circle + / - Toggle Badge */}
+                  <span style={{
+                    width: "22px",
+                    height: "22px",
+                    borderRadius: "50%",
+                    background: isExpanded ? "rgba(56, 189, 248, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                    border: isExpanded ? "1.5px solid #38BDF8" : "1.5px solid rgba(255, 255, 255, 0.2)",
+                    color: isExpanded ? "#38BDF8" : "#94A3B8",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.85rem",
+                    fontWeight: 900,
+                    flexShrink: 0,
+                    boxShadow: isExpanded ? "0 0 8px rgba(56, 189, 248, 0.3)" : "none"
+                  }}>
+                    {isExpanded ? "−" : "+"}
                   </span>
-                )}
-                {item.id === "chat-space" && (chatStatus.hasUnread || chatStatus.hasJoinRequests) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
-                    {chatStatus.hasJoinRequests && (
-                      <span 
-                        style={{
-                          width: "9px",
-                          height: "9px",
-                          borderRadius: "50%",
-                          background: "#3B82F6",
-                          boxShadow: "0 0 8px #3B82F6",
-                          display: "inline-block"
-                        }}
-                        title="Pending Join Requests"
-                      />
-                    )}
-                    {chatStatus.hasUnread && (
-                      <span 
-                        style={{
-                          width: "9px",
-                          height: "9px",
-                          borderRadius: "50%",
-                          background: "#10B981",
-                          boxShadow: "0 0 8px #10B981",
-                          display: "inline-block"
-                        }}
-                        title="Unread Messages"
-                      />
-                    )}
+
+                  <GroupIcon size={17} style={{ color: isExpanded ? "#38BDF8" : "#64748B" }} />
+                  <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {group.title}
+                  </span>
+                </button>
+
+                {/* Level 1: Child Items Branch Container */}
+                {isExpanded && (
+                  <div style={{
+                    position: "relative",
+                    marginLeft: "0.75rem",
+                    paddingLeft: "1.1rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.3rem",
+                    marginTop: "0.2rem"
+                  }}>
+                    {visibleItems.map((item, index) => {
+                      const Icon = item.icon;
+                      const isActive = pathname === item.path;
+                      const isLast = index === visibleItems.length - 1;
+
+                      {/* Special IT Config Button */}
+                      if (item.id === "it-config") {
+                        return (
+                          <div key={item.id} style={{ position: "relative" }}>
+                            {/* Curved Branch Connecting Line */}
+                            <span style={{
+                              position: "absolute",
+                              left: "-1.1rem",
+                              top: 0,
+                              height: isLast ? "50%" : "100%",
+                              width: "1.1rem",
+                              borderLeft: "2px solid rgba(56, 189, 248, 0.35)",
+                              borderBottom: "2px solid rgba(56, 189, 248, 0.35)",
+                              borderBottomLeftRadius: "8px",
+                              pointerEvents: "none"
+                            }} />
+
+                            <button
+                              onClick={() => {
+                                setIsOpen(false);
+                                setShowITConfigOverlay(true);
+                              }}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                width: "100%",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                padding: "0.55rem 0.75rem",
+                                color: "#94A3B8",
+                                borderRadius: "10px",
+                                fontSize: "0.83rem",
+                                fontWeight: 500,
+                                gap: "0.65rem",
+                                transition: "all 0.2s ease"
+                              }}
+                            >
+                              <Icon size={17} style={{ color: "#64748B" }} />
+                              <span>{item.label}</span>
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      {/* Download Agent Button */}
+                      if ((item as any).isDownload) {
+                        return (
+                          <div key={item.id} style={{ position: "relative" }}>
+                            {/* Curved Branch Connecting Line */}
+                            <span style={{
+                              position: "absolute",
+                              left: "-1.1rem",
+                              top: 0,
+                              height: isLast ? "50%" : "100%",
+                              width: "1.1rem",
+                              borderLeft: "2px solid rgba(56, 189, 248, 0.35)",
+                              borderBottom: "2px solid rgba(56, 189, 248, 0.35)",
+                              borderBottomLeftRadius: "8px",
+                              pointerEvents: "none"
+                            }} />
+
+                            <button
+                              onClick={() => {
+                                setIsOpen(false);
+                                setShowAgentInstallModal(true);
+                              }}
+                              style={{
+                                width: "100%",
+                                textAlign: "left",
+                                background: "transparent",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                padding: "0.55rem 0.75rem",
+                                color: "#94A3B8",
+                                borderRadius: "10px",
+                                fontSize: "0.83rem",
+                                fontWeight: 500,
+                                gap: "0.65rem",
+                                transition: "all 0.2s ease"
+                              }}
+                            >
+                              <Icon size={17} style={{ color: "#64748B" }} />
+                              <span>{item.label}</span>
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      {/* Standard Navigation Item */}
+                      return (
+                        <div key={item.id} style={{ position: "relative" }}>
+                          {/* Curved Branch Connecting Line */}
+                          <span style={{
+                            position: "absolute",
+                            left: "-1.1rem",
+                            top: 0,
+                            height: isLast ? "50%" : "100%",
+                            width: "1.1rem",
+                            borderLeft: "2px solid rgba(56, 189, 248, 0.35)",
+                            borderBottom: "2px solid rgba(56, 189, 248, 0.35)",
+                            borderBottomLeftRadius: "8px",
+                            pointerEvents: "none"
+                          }} />
+
+                          <Link
+                            href={item.path}
+                            scroll={false}
+                            prefetch={true}
+                            onClick={() => setIsOpen(false)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.65rem",
+                              padding: "0.55rem 0.75rem",
+                              color: isActive ? "#FFFFFF" : "#94A3B8",
+                              fontWeight: isActive ? 800 : 500,
+                              fontSize: "0.83rem",
+                              textDecoration: "none",
+                              borderRadius: "10px",
+                              background: isActive ? "rgba(255, 255, 255, 0.09)" : "transparent",
+                              position: "relative",
+                              transition: "all 0.2s ease",
+                              boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.1)" : "none"
+                            }}
+                          >
+                            {/* Glowing Neon Green Indicator Notch for Active Item */}
+                            {isActive && (
+                              <span 
+                                style={{
+                                  position: "absolute",
+                                  left: "-0.65rem",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  width: "4px",
+                                  height: "65%",
+                                  borderRadius: "0 4px 4px 0",
+                                  background: "#10B981",
+                                  boxShadow: "0 0 12px #10B981, 0 0 20px rgba(16, 185, 129, 0.9)"
+                                }}
+                              />
+                            )}
+
+                            <Icon size={17} style={{ color: isActive ? "#38BDF8" : "#64748B", transition: "color 0.2s ease" }} />
+                            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+
+                            {/* Badge Indicator Pills */}
+                            {item.id === "associates-requests" && pendingRequestsCount > 0 && (
+                              <span 
+                                style={{
+                                  marginLeft: "auto",
+                                  background: "#F59E0B",
+                                  color: "#000000",
+                                  borderRadius: "6px",
+                                  padding: "0.15rem 0.5rem",
+                                  fontSize: "0.72rem",
+                                  fontWeight: 900,
+                                  lineHeight: 1,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  boxShadow: "0 0 10px rgba(245, 158, 11, 0.5)"
+                                }}
+                              >
+                                {pendingRequestsCount}
+                              </span>
+                            )}
+                            {item.id === "chat-space" && (chatStatus.hasUnread || chatStatus.hasJoinRequests) && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+                                {chatStatus.hasJoinRequests && (
+                                  <span 
+                                    style={{
+                                      width: "8px",
+                                      height: "8px",
+                                      borderRadius: "50%",
+                                      background: "#3B82F6",
+                                      boxShadow: "0 0 8px #3B82F6",
+                                      display: "inline-block"
+                                    }}
+                                    title="Pending Join Requests"
+                                  />
+                                )}
+                                {chatStatus.hasUnread && (
+                                  <span 
+                                    style={{
+                                      width: "8px",
+                                      height: "8px",
+                                      borderRadius: "50%",
+                                      background: "#10B981",
+                                      boxShadow: "0 0 8px #10B981",
+                                      display: "inline-block"
+                                    }}
+                                    title="Unread Messages"
+                                  />
+                                )}
+                              </div>
+                            )}
+                            {item.id === "special-requests" && specialRequestStatus.hasUnread && (
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+                                <span 
+                                  style={{
+                                    width: "8px",
+                                    height: "8px",
+                                    borderRadius: "50%",
+                                    background: specialRequestStatus.dotColor === "red" 
+                                      ? "#EF4444" 
+                                      : specialRequestStatus.dotColor === "orange" 
+                                        ? "#F59E0B" 
+                                        : "#10B981",
+                                    boxShadow: specialRequestStatus.dotColor === "red" 
+                                      ? "0 0 10px #EF4444" 
+                                      : specialRequestStatus.dotColor === "orange" 
+                                        ? "0 0 10px #F59E0B" 
+                                        : "0 0 10px #10B981",
+                                    display: "inline-block"
+                                  }}
+                                  title="Support Request Alert"
+                                />
+                              </div>
+                            )}
+                            {item.id === "leave-requests" && pendingLeavesCount > 0 && (
+                              <span 
+                                style={{
+                                  marginLeft: "auto",
+                                  background: "#F59E0B",
+                                  color: "#000000",
+                                  borderRadius: "6px",
+                                  padding: "0.15rem 0.5rem",
+                                  fontSize: "0.72rem",
+                                  fontWeight: 900
+                                }}
+                              >
+                                {pendingLeavesCount}
+                              </span>
+                            )}
+                          </Link>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
-                {item.id === "special-requests" && specialRequestStatus.hasUnread && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
-                    <span 
-                      style={{
-                        width: "9px",
-                        height: "9px",
-                        borderRadius: "50%",
-                        background: specialRequestStatus.dotColor === "red" 
-                          ? "#EF4444" 
-                          : specialRequestStatus.dotColor === "orange" 
-                            ? "#F59E0B" 
-                            : "#10B981",
-                        boxShadow: specialRequestStatus.dotColor === "red" 
-                          ? "0 0 10px #EF4444" 
-                          : specialRequestStatus.dotColor === "orange" 
-                            ? "0 0 10px #F59E0B" 
-                            : "0 0 10px #10B981",
-                        display: "inline-block"
-                      }}
-                      title="Support Request Alert"
-                    />
-                  </div>
-                )}
-                {item.id === "leave-requests" && pendingLeavesCount > 0 && (
-                  <span 
-                    style={{
-                      marginLeft: "auto",
-                      background: "#F59E0B",
-                      color: "#000000",
-                      borderRadius: "6px",
-                      padding: "0.15rem 0.55rem",
-                      fontSize: "0.75rem",
-                      fontWeight: 900
-                    }}
-                  >
-                    {pendingLeavesCount}
-                  </span>
-                )}
-              </Link>
+              </div>
             );
           })}
         </nav>
