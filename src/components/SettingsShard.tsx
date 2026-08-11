@@ -581,8 +581,8 @@ export default function SettingsShard({
           </div>
 
           <a
-            href="/desktop-agent/Install-StaffOps-Workstation.bat"
-            download
+            href="/api/download-agent"
+            download="StaffOps-Agent-Setup.zip"
             style={{
               height: "36px",
               background: "linear-gradient(135deg, #0077B6, #023E8A)",

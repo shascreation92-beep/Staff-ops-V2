@@ -523,8 +523,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
     },
     { 
       id: "download-agent", 
-      label: `Agent V-${CURRENT_AGENT_VERSION} (.exe)`, 
-      path: "/desktop-agent/Install-StaffOps-Workstation.bat", 
+      label: `Agent V-${CURRENT_AGENT_VERSION} (.zip)`, 
+      path: "/api/download-agent", 
       icon: Laptop,
       isDownload: true,
       roles: ["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"] 
