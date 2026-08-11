@@ -37,6 +37,33 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
   // Read Announcements context
   const { activeStripAnn, dismissStrip, openGlobalAnnDetails } = useAnnouncements();
 
+  // Automatic ChunkLoadError recovery after deployment updates
+  useEffect(() => {
+    const handleChunkError = (event: ErrorEvent | PromiseRejectionEvent) => {
+      const errorMsg = (event as any)?.message || (event as any)?.reason?.message || "";
+      if (
+        errorMsg.includes("Failed to load chunk") ||
+        errorMsg.includes("Loading chunk") ||
+        errorMsg.includes("ChunkLoadError")
+      ) {
+        console.warn("[DashboardLayout] ChunkLoadError detected due to deployment build update. Refreshing client bundles...");
+        const lastReload = sessionStorage.getItem("chunk_reload_ts");
+        const now = Date.now();
+        if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+          sessionStorage.setItem("chunk_reload_ts", now.toString());
+          window.location.reload();
+        }
+      }
+    };
+
+    window.addEventListener("error", handleChunkError as any);
+    window.addEventListener("unhandledrejection", handleChunkError as any);
+    return () => {
+      window.removeEventListener("error", handleChunkError as any);
+      window.removeEventListener("unhandledrejection", handleChunkError as any);
+    };
+  }, []);
+
   useEffect(() => {
     if (user.role === "SALES_ASSOCIATE") {
       getUpgradeInvitationAction().then((res) => {
