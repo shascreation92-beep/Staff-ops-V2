@@ -199,105 +199,38 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
                   flexWrap: "wrap"
                 }}
               >
-                {/* Left Column: Member Bio & Risk Telemetry */}
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", flex: "1 1 280px", minWidth: "260px" }}>
-                  {/* Initials Circle */}
+                {/* Left Column: Member Profile (DP + Name + Designation) */}
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: "1 1 260px", minWidth: "220px" }}>
+                  {/* Circle DP */}
                   <div style={{
                     width: "56px",
                     height: "56px",
                     borderRadius: "50%",
                     background: "rgba(255, 255, 255, 0.08)",
-                    border: "1.5px solid rgba(255, 255, 255, 0.15)",
+                    border: "1.5px solid rgba(255, 255, 255, 0.18)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: 800,
                     fontSize: "1.1rem",
                     color: "#FFFFFF",
-                    flexShrink: 0
+                    flexShrink: 0,
+                    overflow: "hidden"
                   }}>
-                    {item.name.slice(0, 2).toUpperCase()}
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      item.name.slice(0, 2).toUpperCase()
+                    )}
                   </div>
 
-                  {/* Bio Information */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  {/* Name and Designation */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
                     <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "#FFFFFF" }}>
                       {item.name}
                     </h3>
-                    <div style={{ fontSize: "0.78rem", color: "rgba(255, 255, 255, 0.6)", fontWeight: 500 }}>
-                      Digital Commerce Associate
-                    </div>
-
-                    {/* Metadata line */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.7)", marginTop: "0.2rem" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-                        <Laptop size={12} style={{ color: "#38BDF8" }} /> Laptops: <strong>{item.laptops}</strong>
-                      </span>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-                        <Crown size={12} style={{ color: "#F59E0B" }} /> Lead: <strong>{item.teamLeadName}</strong>
-                      </span>
-                    </div>
-
-                    <div style={{ fontSize: "0.7rem", color: "rgba(255, 255, 255, 0.5)", fontFamily: "var(--font-mono)", marginTop: "0.1rem" }}>
-                      ⏱️ Sync: {formattedDate}
-                    </div>
-
-                    {/* Risk / Status Pills Row */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
-                      {item.criticalRisks > 0 && (
-                        <span style={{
-                          fontSize: "0.68rem",
-                          fontWeight: 800,
-                          padding: "0.2rem 0.55rem",
-                          borderRadius: "9999px",
-                          background: "rgba(239, 68, 68, 0.18)",
-                          color: "#F87171",
-                          border: "1px solid rgba(239, 68, 68, 0.3)"
-                        }}>
-                          Critical ({item.criticalRisks} risks)
-                        </span>
-                      )}
-
-                      {!item.submittedToday ? (
-                        <span style={{
-                          fontSize: "0.68rem",
-                          fontWeight: 800,
-                          padding: "0.2rem 0.55rem",
-                          borderRadius: "9999px",
-                          background: "rgba(245, 158, 11, 0.18)",
-                          color: "#FBBF24",
-                          border: "1px solid rgba(245, 158, 11, 0.3)"
-                        }}>
-                          ⚠️ Pending Update
-                        </span>
-                      ) : (
-                        <span style={{
-                          fontSize: "0.68rem",
-                          fontWeight: 800,
-                          padding: "0.2rem 0.55rem",
-                          borderRadius: "9999px",
-                          background: "rgba(16, 185, 129, 0.18)",
-                          color: "#34D399",
-                          border: "1px solid rgba(16, 185, 129, 0.3)"
-                        }}>
-                          ✓ Submitted Today
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Tag box */}
-                    <div style={{ marginTop: "0.4rem" }}>
-                      <span style={{
-                        fontSize: "0.65rem",
-                        fontWeight: 900,
-                        background: "#EAB308",
-                        color: "#000000",
-                        padding: "0.1rem 0.45rem",
-                        borderRadius: "4px",
-                        letterSpacing: "0.05em"
-                      }}>
-                        {serialBadge}
-                      </span>
+                    <div style={{ fontSize: "0.82rem", color: "rgba(255, 255, 255, 0.65)", fontWeight: 500 }}>
+                      Sales Representative
                     </div>
                   </div>
                 </div>
