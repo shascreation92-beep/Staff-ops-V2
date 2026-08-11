@@ -766,8 +766,18 @@ export async function getPendingTLRequestsAction() {
       platform: true,
       user_account_createdByIdTouser: {
         select: {
+          id: true,
           name: true,
-          email: true
+          email: true,
+          role: true
+        }
+      },
+      user_account_updatedByIdTouser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
         }
       }
     },
@@ -776,6 +786,150 @@ export async function getPendingTLRequestsAction() {
     }
   });
   return requests;
+}
+
+/**
+ * Team Lead Account Editing Action
+ */
+export async function updateAccountDetailsByTLAction(params: {
+  accountId: string;
+  platformId?: string;
+  serialCode?: string;
+  idName?: string;
+  adsPublished?: number;
+  verificationStatus?: "Yes" | "No";
+  comment?: string;
+}) {
+  try {
+    const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"]);
+
+    const account = await db.account.findUnique({
+      where: { id: params.accountId }
+    });
+
+    if (!account) {
+      return { success: false, error: "Account not found." };
+    }
+
+    if (user.role !== "SUPER_ADMIN" && account.companyId !== user.companyId) {
+      return { success: false, error: "UNAUTHORIZED: Access to another company's record is forbidden." };
+    }
+
+    const updateData: any = {
+      updatedById: user.id,
+      updatedAt: new Date()
+    };
+
+    if (params.platformId) updateData.platformId = sanitizeInput(params.platformId);
+    if (params.idName) updateData.idName = sanitizeInput(params.idName);
+    if (typeof params.adsPublished === "number" && !isNaN(params.adsPublished)) {
+      updateData.adsPublished = Math.max(0, params.adsPublished);
+    }
+    if (params.verificationStatus) updateData.verificationStatus = params.verificationStatus;
+    if (params.comment !== undefined) updateData.comment = sanitizeInput(params.comment);
+
+    if (params.serialCode) {
+      const cleanSerial = sanitizeInput(params.serialCode);
+      if (cleanSerial !== account.serialCode) {
+        const existing = await db.account.findUnique({
+          where: { serialCode: cleanSerial }
+        });
+        if (existing) {
+          return { success: false, error: `Serial Code "${cleanSerial}" is already in use by another account.` };
+        }
+        updateData.serialCode = cleanSerial;
+      }
+    }
+
+    const updated = await db.account.update({
+      where: { id: params.accountId },
+      data: updateData,
+      include: {
+        platform: true,
+        user_account_createdByIdTouser: { select: { id: true, name: true, email: true } },
+        user_account_updatedByIdTouser: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    await db.accounthistory.create({
+      data: {
+        id: crypto.randomUUID(),
+        accountId: params.accountId,
+        fromStatus: account.status,
+        toStatus: account.status,
+        changedById: user.id,
+        notes: `Account details edited by Team Lead (${user.name || user.email}).`
+      }
+    });
+
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "",
+      userRole: user.role,
+      action: "EDIT_ACCOUNT_DETAILS",
+      entity: "account",
+      entityId: params.accountId,
+      oldValue: JSON.stringify(account),
+      newValue: JSON.stringify(updated)
+    });
+
+    revalidatePath("/associates-requests");
+    revalidatePath("/accounts");
+    return { success: true, account: updated };
+  } catch (err: any) {
+    console.error("[UPDATE_ACCOUNT_DETAILS_TL_ERROR]", err);
+    return { success: false, error: err.message || "Failed to update account details." };
+  }
+}
+
+/**
+ * Bulk Update Account Status Action (Approve / Reject multiple requests)
+ */
+export async function bulkUpdateAccountStatusAction(
+  accountIds: string[],
+  toStatus: "FORWARDED_TO_IT" | "REJECTED",
+  notes?: string
+) {
+  try {
+    const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"]);
+
+    if (!accountIds || accountIds.length === 0) {
+      return { success: false, error: "No accounts selected for bulk processing." };
+    }
+
+    let successCount = 0;
+    const errors: string[] = [];
+
+    for (const accountId of accountIds) {
+      try {
+        const res = await updateAccountStatusAction(accountId, toStatus, notes || `Bulk ${toStatus === "FORWARDED_TO_IT" ? "Approved" : "Rejected"} by Team Lead`);
+        if (res?.success !== false) {
+          successCount++;
+        }
+      } catch (err: any) {
+        errors.push(`Account ${accountId}: ${err.message}`);
+      }
+    }
+
+    revalidatePath("/associates-requests");
+    revalidatePath("/accounts");
+    return { success: true, count: successCount, total: accountIds.length, errors };
+  } catch (err: any) {
+    console.error("[BULK_UPDATE_ACCOUNT_STATUS_ERROR]", err);
+    return { success: false, error: err.message || "Failed to execute bulk status update." };
+  }
+}
+
+/**
+ * Get active platforms dropdown
+ */
+export async function getPlatformsAction() {
+  await enforceAuth();
+  const platforms = await db.platform.findMany({
+    where: { isArchived: false },
+    orderBy: { name: "asc" }
+  });
+  return platforms;
 }
 
 export async function updateAccountIssueAction(accountId: string, issueType: string) {
