@@ -2,11 +2,12 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle, Copy, Download, UserPlus } from "lucide-react";
+import { Users, Mail, Clock, Laptop, Key, Shield, Network, Eye, EyeOff, Edit3, X, Save, AlertCircle, Copy, Download, UserPlus, Trash2, AlertTriangle } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import { toast } from "react-hot-toast";
 import { saveAssociateEmployeeITAction } from "@/app/actions/employees";
 import { addSalesAssociateAction } from "@/app/actions/accounts";
+import { requestUserDeletionAction, getPendingUserDeletionIdsAction } from "@/app/actions/special-requests";
 import { formatDate12h } from "@/lib/date-formatter";
 import { downloadCSV } from "@/lib/csv-exporter";
 
@@ -43,6 +44,16 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
   const [addEmail, setAddEmail] = useState("");
   const [addPassword, setAddPassword] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const [pendingUserIds, setPendingUserIds] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    getPendingUserDeletionIdsAction().then((res) => {
+      if (res?.success && res.pendingUserIds) {
+        setPendingUserIds(res.pendingUserIds);
+      }
+    }).catch(() => {});
+  }, []);
 
   const ITEMS_PER_PAGE = 50;
   const totalRecords = members.length;
@@ -177,7 +188,7 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
           </div>
         ) : (
           paginatedMembers.map((member) => (
-            <MemberCard key={member.id} member={member} />
+            <MemberCard key={member.id} member={member} isPendingDeletion={pendingUserIds.includes(member.id)} />
           ))
         )}
       </div>
@@ -435,11 +446,31 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
   );
 }
 
-function MemberCard({ member }: { member: TeamMember }) {
+function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendingDeletion?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+
+  const handleRequestDeletion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(async () => {
+      try {
+        const res = await requestUserDeletionAction(member.id, deleteReason);
+        if (res.success) {
+          toast.success(res.message || "Deletion request submitted to IT Department.");
+          setShowDeleteModal(false);
+          router.refresh();
+        } else {
+          toast.error(res.error || "Failed to submit deletion request.");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to submit deletion request.");
+      }
+    });
+  };
 
   // Form states for IT Deployment specs
   const [laptopBrand, setLaptopBrand] = useState<string>(member.employee?.laptopBrand || "");
@@ -536,11 +567,30 @@ function MemberCard({ member }: { member: TeamMember }) {
         gap: "1rem",
         position: "relative",
         transition: "all 0.3s ease",
-        border: "1px solid var(--border-dim)",
+        border: isPendingDeletion ? "1.5px solid #F59E0B" : "1px solid var(--border-dim)",
         background: "#FFFFFF",
         boxShadow: "0 4px 20px rgba(0,0,0,0.03)"
       }}
     >
+      {/* Pending Deletion Warning Badge */}
+      {isPendingDeletion && (
+        <div style={{
+          background: "#FEF3C7",
+          border: "1px solid #F59E0B",
+          borderRadius: "8px",
+          padding: "0.5rem 0.75rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          fontSize: "0.75rem",
+          fontWeight: 700,
+          color: "#92400E"
+        }}>
+          <AlertTriangle size={14} style={{ color: "#D97706", flexShrink: 0 }} />
+          <span>DELETION PENDING (Awaiting IT Approval)</span>
+        </div>
+      )}
+
       {/* Employee Database Profile (Employee DP / Front-Face) */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
         <div className="user-avatar-gold" style={{
@@ -561,18 +611,47 @@ function MemberCard({ member }: { member: TeamMember }) {
           />
         </div>
         <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-          <span
-            style={{
-              fontWeight: 800,
-              fontSize: "1.05rem",
-              color: "var(--text-primary)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {member.name || "Unnamed Associate"}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span
+              style={{
+                fontWeight: 800,
+                fontSize: "1.05rem",
+                color: "var(--text-primary)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {member.name || "Unnamed Associate"}
+            </span>
+
+            {/* Delete Member Button */}
+            {!isPendingDeletion ? (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                title="Request Member Deletion (Routes to IT for approval)"
+                style={{
+                  background: "rgba(239, 68, 68, 0.08)",
+                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                  borderRadius: "6px",
+                  padding: "0.25rem 0.5rem",
+                  color: "#EF4444",
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.25rem"
+                }}
+              >
+                <Trash2 size={12} />
+                <span>Delete</span>
+              </button>
+            ) : (
+              <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#D97706" }}>Pending IT</span>
+            )}
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.15rem" }}>
             <span
               style={{
@@ -969,6 +1048,131 @@ function MemberCard({ member }: { member: TeamMember }) {
           </div>
         )}
       </div>
+
+      {/* Delete Request Modal */}
+      {showDeleteModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 8, 20, 0.75)",
+          backdropFilter: "blur(6px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          padding: "1rem"
+        }}>
+          <div className="glass-panel" style={{
+            width: "100%",
+            maxWidth: "460px",
+            background: "#FFFFFF",
+            borderRadius: "16px",
+            padding: "2rem",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.3)",
+            position: "relative"
+          }}>
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              style={{
+                position: "absolute",
+                top: "1.25rem",
+                right: "1.25rem",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#64748B"
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "rgba(239, 68, 68, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#EF4444" }}>
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, margin: 0, color: "#0F172A" }}>
+                  Request Member Deletion
+                </h3>
+                <p style={{ fontSize: "0.8rem", color: "#64748B", margin: 0 }}>
+                  This request will be routed to the IT Department for confirmation.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleRequestDeletion} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+              <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: "8px", padding: "0.75rem", fontSize: "0.8rem", color: "#991B1B" }}>
+                ⚠️ You are requesting deletion for <strong>{member.name || member.email}</strong>. Once approved by IT, their account, employee ID, laptop credentials, and VPN mappings will be permanently wiped.
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
+                  Reason / Notes for IT Department
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Employee offboarded from team / contract ended"
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.65rem",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    fontSize: "0.85rem",
+                    outline: "none",
+                    resize: "vertical"
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: "0.65rem",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    background: "#F8FAFC",
+                    color: "#475569",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  style={{
+                    flex: 1.5,
+                    padding: "0.65rem",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#EF4444",
+                    color: "#FFFFFF",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem"
+                  }}
+                >
+                  {isPending ? "Submitting..." : "Send Request to IT"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

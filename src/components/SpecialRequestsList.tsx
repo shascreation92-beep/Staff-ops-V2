@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { 
   createSpecialRequestAction, 
   updateSpecialRequestStatusAction,
-  markSpecialRequestsAsReadAction
+  markSpecialRequestsAsReadAction,
+  approveUserDeletionITAction,
+  rejectUserDeletionITAction
 } from "@/app/actions/special-requests";
 import { 
   Ticket, 
@@ -389,7 +391,86 @@ export default function SpecialRequestsList({
                     Submitted by <strong style={{ color: "var(--text-primary)" }}>{req.requester?.name || "Unknown"}</strong> on {new Date(req.createdAt).toLocaleDateString()} at {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
 
-                  {isHandler && req.status !== "RESOLVED" && req.status !== "REJECTED" && (
+                  {req.title.includes("[IT MEMBER DELETION REQUEST]") && req.status === "PENDING" && isHandler ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm("Are you sure you want to approve this deletion? This member's account, employee ID, laptop credentials, and VPN mappings will be PERMANENTLY wiped.")) {
+                            startTransition(async () => {
+                              try {
+                                const res = await approveUserDeletionITAction(req.id);
+                                if (res.success) {
+                                  toast.success(res.message || "Member permanently deleted from system & IT department.");
+                                  router.refresh();
+                                } else {
+                                  toast.error(res.error || "Failed to approve deletion.");
+                                }
+                              } catch (err: any) {
+                                toast.error(err.message || "Failed to approve deletion.");
+                              }
+                            });
+                          }
+                        }}
+                        disabled={isPending}
+                        style={{
+                          background: "#EF4444",
+                          color: "#FFFFFF",
+                          border: "none",
+                          borderRadius: "6px",
+                          padding: "0.35rem 0.75rem",
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.3rem"
+                        }}
+                      >
+                        <CheckCircle2 size={12} />
+                        Approve & Wipe Member
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const reason = prompt("Enter reason for rejecting deletion request:");
+                          if (reason !== null) {
+                            startTransition(async () => {
+                              try {
+                                const res = await rejectUserDeletionITAction(req.id, reason);
+                                if (res.success) {
+                                  toast.success(res.message || "Deletion request rejected.");
+                                  router.refresh();
+                                } else {
+                                  toast.error(res.error || "Failed to reject deletion.");
+                                }
+                              } catch (err: any) {
+                                toast.error(err.message || "Failed to reject deletion.");
+                              }
+                            });
+                          }
+                        }}
+                        disabled={isPending}
+                        style={{
+                          background: "#F8FAFC",
+                          color: "#64748B",
+                          border: "1px solid #CBD5E1",
+                          borderRadius: "6px",
+                          padding: "0.35rem 0.75rem",
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.3rem"
+                        }}
+                      >
+                        <XCircle size={12} />
+                        Reject Request
+                      </button>
+                    </div>
+                  ) : isHandler && req.status !== "RESOLVED" && req.status !== "REJECTED" && (
                     <button
                       type="button"
                       onClick={() => {

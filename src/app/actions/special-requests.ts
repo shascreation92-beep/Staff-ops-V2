@@ -364,3 +364,296 @@ export async function markSpecialRequestsAsReadAction() {
     throw new Error(error.message || "Failed to mark notifications as read.");
   }
 }
+
+// Request deletion of a member by Team Lead/Admin (routed to IT)
+export async function requestUserDeletionAction(targetUserId: string, reason?: string) {
+  const requester = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]);
+
+  const targetUser = await db.user.findUnique({
+    where: { id: targetUserId },
+    include: { company: true }
+  });
+
+  if (!targetUser) {
+    return { success: false, error: "Member not found." };
+  }
+
+  const companyId = targetUser.companyId || requester.companyId || "";
+  if (!companyId) {
+    return { success: false, error: "No company context found for member." };
+  }
+
+  // Check if a pending deletion ticket already exists for this user
+  const existingPending = await db.specialrequest.findFirst({
+    where: {
+      companyId,
+      category: "IT",
+      status: "PENDING",
+      title: { contains: `Remove Member: ${targetUser.email}` }
+    }
+  });
+
+  if (existingPending) {
+    return { success: false, error: `A deletion request for ${targetUser.name || targetUser.email} is already pending IT approval.` };
+  }
+
+  const ticketId = crypto.randomUUID();
+  const title = `[IT MEMBER DELETION REQUEST] Remove Member: ${targetUser.email}`;
+  const description = JSON.stringify({
+    action: "DELETE_USER",
+    targetUserId: targetUser.id,
+    targetUserName: targetUser.name || targetUser.email,
+    targetUserEmail: targetUser.email,
+    reason: reason || "Offboarding request by Team Lead / Admin"
+  });
+
+  await db.specialrequest.create({
+    data: {
+      id: ticketId,
+      companyId,
+      requesterId: requester.id,
+      category: "IT",
+      priority: "HIGH",
+      title,
+      description,
+      status: "PENDING"
+    }
+  });
+
+  // Log action
+  await logAction({
+    userId: requester.id,
+    userEmail: requester.email,
+    userRole: requester.role,
+    action: "REQUEST_USER_DELETION",
+    entity: "user",
+    entityId: targetUser.id,
+    newValue: `Requested deletion for member ${targetUser.name || targetUser.email} (${reason || "No reason specified"})`
+  });
+
+  // Notify IT Department members
+  const itStaff = await db.user.findMany({
+    where: {
+      companyId,
+      role: "IT_DEPARTMENT",
+      isArchived: false
+    }
+  });
+
+  if (itStaff.length > 0) {
+    await db.notification.createMany({
+      data: itStaff.map(it => ({
+        id: crypto.randomUUID(),
+        userId: it.id,
+        title: "⚠️ IT Member Deletion Approval Required",
+        message: `${requester.name || "A Team Lead"} requested permanent deletion of ${targetUser.name || targetUser.email}. Please review and confirm in Associates Requests.`,
+        type: "SPECIAL_REQUEST",
+        isRead: false
+      }))
+    });
+  }
+
+  revalidatePath("/my-team");
+  revalidatePath("/user-directory");
+  revalidatePath("/associates-requests");
+  revalidatePath("/special-requests");
+
+  return { success: true, message: `Deletion request for ${targetUser.name || targetUser.email} sent to IT Department for approval.` };
+}
+
+// Approve member deletion request (IT Department action - Permanently Wipes User & Employee record)
+export async function approveUserDeletionITAction(requestId: string) {
+  const itUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+
+  const ticket = await db.specialrequest.findUnique({
+    where: { id: requestId },
+    include: { requester: true }
+  });
+
+  if (!ticket) {
+    return { success: false, error: "Deletion request ticket not found." };
+  }
+
+  let parsedPayload: any = {};
+  try {
+    parsedPayload = JSON.parse(ticket.description);
+  } catch (e) {
+    // fallback search from title
+  }
+
+  const targetUserId = parsedPayload.targetUserId;
+  if (!targetUserId) {
+    return { success: false, error: "Invalid deletion request format." };
+  }
+
+  const targetUser = await db.user.findUnique({
+    where: { id: targetUserId }
+  });
+
+  const userName = targetUser?.name || parsedPayload.targetUserName || "Member";
+  const userEmail = targetUser?.email || parsedPayload.targetUserEmail || "";
+
+  // 1. Permanently delete employee record linked to user
+  await db.employee.deleteMany({
+    where: {
+      OR: [
+        { userId: targetUserId },
+        { email: userEmail }
+      ]
+    }
+  });
+
+  // 2. Permanently delete user record
+  if (targetUser) {
+    try {
+      await db.user.delete({
+        where: { id: targetUserId }
+      });
+    } catch (err) {
+      console.warn("Soft archiving user if cascade delete fails:", err);
+      await db.user.update({
+        where: { id: targetUserId },
+        data: {
+          isArchived: true,
+          status: "REJECTED",
+          archivedAt: new Date(),
+          archivedBy: itUser.id
+        }
+      });
+    }
+  }
+
+  // 3. Mark ticket as RESOLVED
+  await db.specialrequest.update({
+    where: { id: requestId },
+    data: {
+      status: "RESOLVED",
+      notes: `Approved and permanently wiped by IT Member ${itUser.name || itUser.email} on ${new Date().toLocaleString()}`
+    }
+  });
+
+  // 4. Audit Log
+  await logAction({
+    userId: itUser.id,
+    userEmail: itUser.email,
+    userRole: itUser.role,
+    action: "APPROVE_PERMANENT_USER_DELETION",
+    entity: "user",
+    entityId: targetUserId,
+    newValue: `Permanently wiped user & employee record for ${userName} (${userEmail})`
+  });
+
+  // 5. Notify Requester Team Lead
+  if (ticket.requesterId) {
+    await db.notification.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: ticket.requesterId,
+        title: "✅ Member Deletion Confirmed",
+        message: `${userName} (${userEmail}) has been permanently deleted from the system and IT department by ${itUser.name || "IT"}.`,
+        type: "SPECIAL_REQUEST",
+        isRead: false
+      }
+    });
+  }
+
+  revalidatePath("/my-team");
+  revalidatePath("/user-directory");
+  revalidatePath("/associates-requests");
+  revalidatePath("/special-requests");
+  revalidatePath("/it-management");
+
+  return { success: true, message: `Member ${userName} has been permanently deleted from system & IT department.` };
+}
+
+// Reject member deletion request (IT Department action)
+export async function rejectUserDeletionITAction(requestId: string, reason?: string) {
+  const itUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+
+  const ticket = await db.specialrequest.findUnique({
+    where: { id: requestId }
+  });
+
+  if (!ticket) {
+    return { success: false, error: "Deletion request ticket not found." };
+  }
+
+  let parsedPayload: any = {};
+  try {
+    parsedPayload = JSON.parse(ticket.description);
+  } catch (e) {}
+
+  const userName = parsedPayload.targetUserName || "Member";
+
+  // Mark ticket as REJECTED
+  await db.specialrequest.update({
+    where: { id: requestId },
+    data: {
+      status: "REJECTED",
+      notes: `Rejected by IT Member ${itUser.name || itUser.email}: ${reason || "No reason specified"}`
+    }
+  });
+
+  // Log action
+  await logAction({
+    userId: itUser.id,
+    userEmail: itUser.email,
+    userRole: itUser.role,
+    action: "REJECT_USER_DELETION",
+    entity: "specialrequest",
+    entityId: requestId,
+    newValue: `Rejected deletion request for ${userName}. Reason: ${reason || "None"}`
+  });
+
+  // Notify requester
+  if (ticket.requesterId) {
+    await db.notification.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: ticket.requesterId,
+        title: "❌ Member Deletion Request Rejected",
+        message: `IT Department rejected the deletion request for ${userName}. Reason: ${reason || "Not specified"}.`,
+        type: "SPECIAL_REQUEST",
+        isRead: false
+      }
+    });
+  }
+
+  revalidatePath("/my-team");
+  revalidatePath("/user-directory");
+  revalidatePath("/associates-requests");
+  revalidatePath("/special-requests");
+
+  return { success: true, message: `Deletion request for ${userName} rejected.` };
+}
+
+// Fetch map of pending deletion request user IDs for badges
+export async function getPendingUserDeletionIdsAction() {
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "IT_DEPARTMENT"]);
+  const companyId = user.companyId || "";
+
+  const pendingTickets = await db.specialrequest.findMany({
+    where: {
+      ...(companyId ? { companyId } : {}),
+      category: "IT",
+      status: "PENDING",
+      title: { contains: "[IT MEMBER DELETION REQUEST]" }
+    },
+    select: {
+      id: true,
+      description: true
+    }
+  });
+
+  const pendingUserIds: string[] = [];
+  for (const t of pendingTickets) {
+    try {
+      const payload = JSON.parse(t.description);
+      if (payload.targetUserId) {
+        pendingUserIds.push(payload.targetUserId);
+      }
+    } catch (e) {}
+  }
+
+  return { success: true, pendingUserIds };
+}
