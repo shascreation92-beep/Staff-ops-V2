@@ -1543,7 +1543,7 @@ export default function ChatShard({
       height: "100%",
       flex: 1,
       minHeight: 0,
-      background: "#FFFFFF",
+      background: "#0B0916",
       overflow: "hidden",
       transition: "grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
     }}>
@@ -1592,7 +1592,8 @@ export default function ChatShard({
         borderRight: "1px solid var(--border-dim)",
         display: "flex",
         flexDirection: "column",
-        background: "#F9FAFB",
+        background: "rgba(20, 18, 38, 0.85)",
+        backdropFilter: "blur(16px)",
         height: "100%",
         minHeight: 0,
         overflow: "hidden"
@@ -2637,7 +2638,7 @@ export default function ChatShard({
         </div>
       ) : activeContact ? (
         /* Standard Direct Messaging Feed */
-        <div style={{ display: "flex", flexDirection: "column", background: "#FFFFFF", height: "100%", minHeight: 0, overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", height: "100%", minHeight: 0, overflow: "hidden" }}>
           {/* Sticky Header displaying Name, Role/Designation, and green status dot */}
           <div style={{
             padding: "1rem 1.5rem",
@@ -2645,7 +2646,7 @@ export default function ChatShard({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            background: "#FFFFFF",
+            background: "rgba(20, 18, 38, 0.85)",
             position: "sticky",
             top: 0,
             zIndex: 10,
@@ -2762,7 +2763,7 @@ export default function ChatShard({
               display: "flex",
               flexDirection: "column",
               gap: "1.25rem",
-              background: "#FAFBFB",
+              background: "#0B0916",
               minHeight: 0,
               position: "relative"
             }}
@@ -2878,8 +2879,8 @@ export default function ChatShard({
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        background: m.isDeleted ? "rgba(0, 0, 0, 0.05)" : isOwn ? "#0250A1" : (isMentioned ? "rgba(245, 158, 11, 0.08)" : "#EAEBEF"),
-                        color: m.isDeleted ? "var(--text-muted)" : isOwn ? "#FFFFFF" : "var(--text-primary)",
+                        background: m.isDeleted ? "rgba(255, 255, 255, 0.03)" : isOwn ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : (isMentioned ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.06)"),
+                        color: m.isDeleted ? "var(--text-muted)" : "#FFFFFF",
                         padding: "0.65rem 0.9rem",
                         borderRadius: isOwn ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
                         borderLeft: isMentioned ? "3.5px solid #F59E0B" : "none",
@@ -3199,7 +3200,7 @@ export default function ChatShard({
               </span>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", background: "#FFFFFF", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", background: "rgba(20, 18, 38, 0.85)", borderTop: "1px solid rgba(255, 255, 255, 0.09)", flexShrink: 0 }}>
               {/* WhatsApp Reply Preview Bar */}
               {replyingTo && (
                 <div style={{
@@ -3250,7 +3251,7 @@ export default function ChatShard({
 
               <form onSubmit={handleSendMessage} style={{
                 padding: "1rem 1.5rem",
-                background: "#FFFFFF",
+                background: "rgba(20, 18, 38, 0.85)",
                 display: "flex",
                 alignItems: "center",
                 gap: "0.75rem",

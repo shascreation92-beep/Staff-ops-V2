@@ -1104,22 +1104,22 @@ export default function UKMarketTrendsList({
             </div>
           </div>
 
-          <div style={{ maxHeight: "220px", overflowY: "auto", border: "1px solid var(--border-dim)", borderRadius: "8px", background: "#F8FAFC" }}>
+          <div style={{ maxHeight: "220px", overflowY: "auto", border: "1px solid rgba(255, 255, 255, 0.09)", borderRadius: "8px", background: "rgba(20, 18, 38, 0.75)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.72rem", textAlign: "left" }}>
               <thead>
-                <tr style={{ background: "#EDF2F7", color: "var(--text-muted)", borderBottom: "1px solid var(--border-dim)" }}>
-                  <th style={{ padding: "0.45rem 0.75rem" }}>Neighborhood / District</th>
-                  <th style={{ padding: "0.45rem 0.75rem" }}>Postcode</th>
-                  <th style={{ padding: "0.45rem 0.75rem" }}>Exact FB Marketplace Tag</th>
-                  <th style={{ padding: "0.45rem 0.75rem" }}>Buyer Density</th>
-                  <th style={{ padding: "0.45rem 0.75rem", textAlign: "right" }}>Action</th>
+                <tr style={{ background: "#0284C7", color: "#FFFFFF", borderBottom: "1px solid rgba(255, 255, 255, 0.1)" }}>
+                  <th style={{ padding: "0.45rem 0.75rem", color: "#FFFFFF" }}>Neighborhood / District</th>
+                  <th style={{ padding: "0.45rem 0.75rem", color: "#FFFFFF" }}>Postcode</th>
+                  <th style={{ padding: "0.45rem 0.75rem", color: "#FFFFFF" }}>Exact FB Marketplace Tag</th>
+                  <th style={{ padding: "0.45rem 0.75rem", color: "#FFFFFF" }}>Buyer Density</th>
+                  <th style={{ padding: "0.45rem 0.75rem", textAlign: "right", color: "#FFFFFF" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.map((town, idx) => {
                   const formattedTag = getFormattedFbLocationTag(town);
                   return (
-                    <tr key={idx} style={{ borderBottom: "1px solid var(--border-dim)", background: idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC" }}>
+                    <tr key={idx} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)", background: idx % 2 === 0 ? "rgba(20, 18, 38, 0.6)" : "rgba(255, 255, 255, 0.02)" }}>
                       <td style={{ padding: "0.45rem 0.75rem", fontWeight: 700, color: "var(--text-primary)" }}>
                         📍 {town.name} ({town.city})
                       </td>

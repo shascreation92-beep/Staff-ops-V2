@@ -761,7 +761,7 @@ export default function AccountsList({
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       
       {/* Toolbar Controls */}
-      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", marginBottom: 0, position: "relative", zIndex: 50, overflow: "visible" }}>
+      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", marginBottom: 0, position: "relative", zIndex: 50, overflow: "visible", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.09)" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", width: "100%" }}>
           {/* Action Buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
