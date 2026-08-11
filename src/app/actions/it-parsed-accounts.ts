@@ -135,10 +135,8 @@ export async function getParsedAccountsLedgerAction(page: number = 1, filterAgen
       ...(targetCompanyId ? { companyId: targetCompanyId } : {})
     };
 
-    // If IT_DEPARTMENT, only allow seeing their own uploaded accounts
-    if (user.role === "IT_DEPARTMENT") {
-      whereClause.agentId = user.id;
-    } else if (filterAgentId) {
+    // Allow company-wide IT access for all IT_DEPARTMENT members
+    if (filterAgentId && (user.role === "SUPER_ADMIN" || user.role === "COMPANY_OWNER")) {
       // Owner/Super admin can filter by a specific agent
       whereClause.agentId = filterAgentId;
     }

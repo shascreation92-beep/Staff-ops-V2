@@ -408,6 +408,13 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
     }
 
     if (!targetCompanyId) {
+      const primaryComp = await db.company.findFirst({ select: { id: true } });
+      if (primaryComp) {
+        targetCompanyId = primaryComp.id;
+      }
+    }
+
+    if (!targetCompanyId) {
       return { success: false, error: `No company context found to assign ${targetRole.replace("_", " ")}.` };
     }
 
