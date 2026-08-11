@@ -36,7 +36,8 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Plus
+  Plus,
+  Info
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -206,6 +207,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
   // User Bio States
   const [showBioModal, setShowBioModal] = useState(false);
+  const [showBioViewModal, setShowBioViewModal] = useState(false);
   const [bioInput, setBioInput] = useState(user.bio || "");
   const [currentBio, setCurrentBio] = useState(user.bio || "");
   const [isUpdatingBio, setIsUpdatingBio] = useState(false);
@@ -712,11 +714,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "0.78rem", color: "#94A3B8", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.3rem" }}>
-              Hello 👋
-            </div>
             <div style={{ 
-              fontSize: "1.1rem", 
+              fontSize: "1.15rem", 
               fontWeight: 800, 
               color: "#FFFFFF", 
               letterSpacing: "-0.01em",
@@ -726,35 +725,40 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             }} title={user.name || "Operator"}>
               {user.name || "Operator"}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.15rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginTop: "0.2rem" }}>
               <span style={{ 
-                fontSize: "0.68rem", 
+                fontSize: "0.72rem", 
                 fontWeight: 700, 
                 color: "#60A5FA", 
                 background: "rgba(59, 130, 246, 0.15)",
+                border: "1px solid rgba(59, 130, 246, 0.3)",
                 borderRadius: "6px",
-                padding: "0.1rem 0.45rem",
+                padding: "0.15rem 0.55rem",
                 display: "inline-block"
               }}>
                 {getDesignation(user.role)}
               </span>
 
-              {/* Edit Bio Trigger Icon */}
+              {/* Glowing Cyan Info Icon for Bio Popup Modal */}
               <button
                 type="button"
-                onClick={() => setShowBioModal(true)}
+                onClick={() => setShowBioViewModal(true)}
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "#94A3B8",
+                  background: "rgba(56, 189, 248, 0.15)",
+                  border: "1px solid rgba(56, 189, 248, 0.4)",
+                  color: "#38BDF8",
                   cursor: "pointer",
-                  padding: 0,
+                  padding: "0.2rem",
+                  borderRadius: "50%",
                   display: "flex",
-                  alignItems: "center"
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 0 8px rgba(56, 189, 248, 0.4)",
+                  transition: "all 0.2s ease"
                 }}
-                title="Edit User Bio"
+                title="View Bio & Profile Info"
               >
-                <Pencil size={12} />
+                <Info size={13} />
               </button>
             </div>
           </div>
@@ -1087,6 +1091,153 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           </div>
         </div>
       )}
+
+      {/* Bio View Card Modal */}
+      {showBioViewModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
+          zIndex: 99999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div style={{
+            maxWidth: "420px",
+            width: "100%",
+            padding: "1.75rem",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
+            color: "#FFFFFF"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <div style={{
+                  padding: "0.45rem",
+                  borderRadius: "10px",
+                  background: "rgba(56, 189, 248, 0.15)",
+                  color: "#38BDF8",
+                  display: "flex",
+                  alignItems: "center"
+                }}>
+                  <Info size={18} />
+                </div>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, margin: 0, color: "#FFFFFF" }}>User Profile & Bio</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBioViewModal(false)}
+                style={{
+                  background: "rgba(255, 255, 255, 0.08)",
+                  border: "none",
+                  color: "#94A3B8",
+                  cursor: "pointer",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.1rem"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+              <div style={{
+                padding: "0.95rem",
+                borderRadius: "14px",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.45rem"
+              }}>
+                <span style={{ fontSize: "0.72rem", color: "#94A3B8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Bio Details
+                </span>
+                <p style={{
+                  fontSize: "0.88rem",
+                  color: currentBio ? "#E2E8F0" : "#94A3B8",
+                  margin: 0,
+                  lineHeight: "1.5",
+                  fontStyle: currentBio ? "normal" : "italic"
+                }}>
+                  {currentBio || "No bio added yet. Click the edit button below to add your bio."}
+                </p>
+              </div>
+
+              <div style={{
+                padding: "0.95rem",
+                borderRadius: "14px",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.6rem"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+                  <span style={{ color: "#94A3B8" }}>Designation:</span>
+                  <span style={{ color: "#60A5FA", fontWeight: 700 }}>{getDesignation(user.role)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+                  <span style={{ color: "#94A3B8" }}>Email:</span>
+                  <span style={{ color: "#E2E8F0", fontWeight: 600 }}>{user.email}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+                  <span style={{ color: "#94A3B8" }}>Duty Status:</span>
+                  <span style={{ color: dutyStatus === "ON_DUTY" ? "#10B981" : dutyStatus === "ON_BREAK" ? "#F59E0B" : "#94A3B8", fontWeight: 700 }}>
+                    {dutyStatus === "ON_DUTY" ? "🟢 ON DUTY" : dutyStatus === "ON_BREAK" ? "🟡 ON BREAK" : "⚪ OFF DUTY"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.25rem" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBioViewModal(false);
+                  setShowBioModal(true);
+                }}
+                style={{
+                  flex: 1,
+                  padding: "0.75rem",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
+                  color: "#FFFFFF",
+                  border: "none",
+                  fontWeight: 700,
+                  fontSize: "0.88rem",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.4rem",
+                  boxShadow: "0 4px 14px rgba(59, 130, 246, 0.4)"
+                }}
+              >
+                <Pencil size={15} />
+                <span>Edit Bio</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* IT Configurations Sliding Panel Overlay */}
       {showITConfigOverlay && (
         <div style={{
