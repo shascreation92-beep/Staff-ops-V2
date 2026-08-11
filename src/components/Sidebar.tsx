@@ -681,9 +681,9 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           <div 
             onClick={() => setShowUploadModal(true)}
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "14px",
+              width: "50px",
+              height: "50px",
+              borderRadius: "50%",
               background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
               display: "flex",
               alignItems: "center",
@@ -694,8 +694,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               overflow: "hidden",
               cursor: "pointer",
               flexShrink: 0,
-              boxShadow: "0 4px 14px rgba(59, 130, 246, 0.4)",
-              border: "1.5px solid rgba(255, 255, 255, 0.25)"
+              boxShadow: "0 0 16px rgba(56, 189, 248, 0.5)",
+              border: "2px solid #38BDF8"
             }}
             title="Click to edit Display Picture"
           >
