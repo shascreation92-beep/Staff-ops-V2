@@ -1002,50 +1002,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           })}
         </nav>
 
-        {/* Bottom Quick Action Card ("Add New Account") */}
-        <div 
-          onClick={() => {
-            setIsOpen(false);
-            window.location.href = "/accounts";
-          }}
-          style={{
-            margin: "0.85rem 1rem",
-            padding: "1.25rem 1rem",
-            borderRadius: "16px",
-            border: "1.5px dashed rgba(255, 255, 255, 0.18)",
-            background: "rgba(255, 255, 255, 0.03)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.45rem",
-            cursor: "pointer",
-            transition: "all 0.2s ease"
-          }}
-          title="Click to launch Account Wizard"
-        >
-          <div style={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
-            color: "#FFFFFF",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 0 16px rgba(59, 130, 246, 0.6)",
-            border: "1.5px solid rgba(255, 255, 255, 0.2)"
-          }}>
-            <Plus size={20} />
-          </div>
-          <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.01em" }}>
-            Add new account
-          </div>
-          <div style={{ fontSize: "0.7rem", color: "#94A3B8" }}>
-            Launch 6-Step Wizard
-          </div>
-        </div>
-
         {/* Sidebar Footer Logout Bar */}
         <div style={{
           padding: "0.75rem 1rem 1.25rem 1rem",
