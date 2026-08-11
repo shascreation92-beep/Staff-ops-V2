@@ -2,40 +2,40 @@
 @import "tailwindcss";
 
 :root {
-  /* Colors */
-  --bg-primary: #CAF0F8;
-  --bg-secondary: #FFFFFF;
-  --card-bg: #FFFFFF;
-  --glass-bg: rgba(173, 232, 244, 0.15);
-  --glass-bg-hover: rgba(173, 232, 244, 0.35);
+  /* Deep Cyber Night Theme Colors */
+  --bg-primary: #0B0916;
+  --bg-secondary: #141226;
+  --card-bg: rgba(20, 18, 38, 0.75);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.08);
   
-  --gold-primary: #0077B6;
-  --gold-premium: #023E8A;
-  --gold-glow: #0096C7;
-  --orange-accent: #48CAE4;
+  --gold-primary: #38BDF8;
+  --gold-premium: #0284C7;
+  --gold-glow: #60A5FA;
+  --orange-accent: #F59E0B;
   
-  --color-success: #2EC4B6;
+  --color-success: #10B981;
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
   
-  --text-primary: #03045E;
-  --text-secondary: rgba(3, 4, 94, 0.75);
-  --text-muted: rgba(3, 4, 94, 0.5);
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
   
-  --border-gold: rgba(0, 119, 182, 0.15);
-  --border-gold-hover: rgba(0, 119, 182, 0.3);
-  --border-dim: #ADE8F4;
+  --border-gold: rgba(255, 255, 255, 0.09);
+  --border-gold-hover: rgba(56, 189, 248, 0.35);
+  --border-dim: rgba(255, 255, 255, 0.08);
   
   /* Gradients */
-  --gold-gradient: linear-gradient(135deg, #0077B6 0%, #023E8A 100%);
-  --dark-gradient: linear-gradient(180deg, #CAF0F8 0%, #ADE8F4 100%);
-  --glow-gradient: radial-gradient(circle, rgba(0, 119, 182, 0.08) 0%, transparent 70%);
-  --card-gradient: linear-gradient(135deg, #FFFFFF 0%, #CAF0F8 100%);
+  --gold-gradient: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+  --dark-gradient: linear-gradient(180deg, #141226 0%, #0B0916 100%);
+  --glow-gradient: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 75%);
+  --card-gradient: linear-gradient(180deg, rgba(22, 19, 42, 0.8) 0%, rgba(14, 12, 27, 0.8) 100%);
   
   /* Shadows */
-  --shadow-premium: 0 4px 20px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
-  --shadow-gold-glow: 0 0 20px rgba(0, 176, 116, 0.01);
-  --shadow-gold-glow-hover: 0 0 30px rgba(0, 176, 116, 0.03);
+  --shadow-premium: 0 15px 35px rgba(0, 0, 0, 0.45);
+  --shadow-gold-glow: 0 0 20px rgba(56, 189, 248, 0.15);
+  --shadow-gold-glow-hover: 0 0 30px rgba(56, 189, 248, 0.3);
   
   /* Borders */
   --border-radius-sm: 6px;
@@ -468,10 +468,12 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-dim);
+  border: 1px solid var(--border-dim);
   padding: 0 2rem;
   margin-bottom: 2rem;
-  background: #FFFFFF;
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-premium);
 }
@@ -567,13 +569,13 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-gold:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
   filter: brightness(1.1);
 }
 
@@ -582,7 +584,7 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 }
 
 .btn-glass {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
   border: 1px solid var(--border-gold);
   padding: 0.5rem 1.25rem;
@@ -600,7 +602,7 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 .btn-glass:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--border-gold-hover);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
 }
 
 .btn-danger {
@@ -661,17 +663,19 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   padding: 1rem 1.25rem !important;
   position: relative;
   overflow: hidden;
-  background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  background: rgba(20, 18, 38, 0.75) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
   border-radius: var(--border-radius-md);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02), 0 2px 4px rgba(0, 0, 0, 0.01) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35) !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .kpi-card:hover {
   transform: translateY(-4px) !important;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.2) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
 }
 
 /* Success Card Accent (Green) */
@@ -679,25 +683,25 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   border-left: 4px solid #10B981 !important;
 }
 .kpi-card.kpi-success .kpi-icon-wrapper {
-  background: rgba(16, 185, 129, 0.08) !important;
+  background: rgba(16, 185, 129, 0.12) !important;
   color: #10B981 !important;
-  border: 1px solid rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
 }
 .kpi-card.kpi-success:hover {
-  box-shadow: 0 12px 24px rgba(16, 185, 129, 0.06), 0 4px 8px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 0 15px 30px rgba(16, 185, 129, 0.15) !important;
 }
 
-/* Info Card Accent (Blue) */
+/* Info Card Accent (Cyan/Blue) */
 .kpi-card.kpi-info {
-  border-left: 4px solid #3B82F6 !important;
+  border-left: 4px solid #38BDF8 !important;
 }
 .kpi-card.kpi-info .kpi-icon-wrapper {
-  background: rgba(59, 130, 246, 0.08) !important;
-  color: #3B82F6 !important;
-  border: 1px solid rgba(59, 130, 246, 0.15) !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  color: #38BDF8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
 }
 .kpi-card.kpi-info:hover {
-  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.06), 0 4px 8px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 0 15px 30px rgba(56, 189, 248, 0.15) !important;
 }
 
 /* Warning Card Accent (Orange/Amber) */
@@ -705,12 +709,12 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   border-left: 4px solid #F59E0B !important;
 }
 .kpi-card.kpi-warning .kpi-icon-wrapper {
-  background: rgba(245, 158, 11, 0.08) !important;
+  background: rgba(245, 158, 11, 0.12) !important;
   color: #F59E0B !important;
-  border: 1px solid rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
 }
 .kpi-card.kpi-warning:hover {
-  box-shadow: 0 12px 24px rgba(245, 158, 11, 0.06), 0 4px 8px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 0 15px 30px rgba(245, 158, 11, 0.15) !important;
 }
 
 /* Danger Card Accent (Red) */
@@ -718,34 +722,34 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   border-left: 4px solid #EF4444 !important;
 }
 .kpi-card.kpi-danger .kpi-icon-wrapper {
-  background: rgba(239, 68, 68, 0.08) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
   color: #EF4444 !important;
-  border: 1px solid rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
 }
 .kpi-card.kpi-danger:hover {
-  box-shadow: 0 12px 24px rgba(239, 68, 68, 0.06), 0 4px 8px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 0 15px 30px rgba(239, 68, 68, 0.15) !important;
 }
 
 /* Typography styles */
 .kpi-card .kpi-title {
-  color: var(--text-secondary) !important;
-  font-weight: 600 !important;
+  color: #94A3B8 !important;
+  font-weight: 700 !important;
   font-size: 0.75rem !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
 }
 
 .kpi-card .kpi-value {
-  color: #0F172A !important;
+  color: #FFFFFF !important;
   font-weight: 800 !important;
   font-size: 1.85rem !important;
   margin-top: 0.2rem !important;
-  -webkit-text-fill-color: #0F172A !important;
-  text-shadow: none !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.2) !important;
 }
 
 .kpi-card .kpi-footer {
-  color: var(--text-muted) !important;
+  color: #64748B !important;
   font-size: 0.75rem !important;
   margin-top: 0.2rem !important;
   display: flex !important;
