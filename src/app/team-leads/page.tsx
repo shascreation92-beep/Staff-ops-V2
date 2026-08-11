@@ -7,7 +7,7 @@ import TeamLeadsDirectory from "@/components/TeamLeadsDirectory";
 export const dynamic = "force-dynamic";
 
 export default async function TeamLeadsPage() {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   // Determine Company context
   let companyFilter = {};

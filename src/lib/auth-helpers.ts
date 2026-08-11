@@ -49,6 +49,9 @@ export async function enforceAuth(allowedRoles?: user_role[]) {
     const dbUser = await db.user.findUnique({
       where: { id: session.user.id },
       select: {
+        role: true,
+        status: true,
+        companyId: true,
         image: true,
         bio: true,
         user: {
@@ -63,6 +66,9 @@ export async function enforceAuth(allowedRoles?: user_role[]) {
       }
       return {
         ...session.user,
+        role: dbUser.role,
+        status: dbUser.status,
+        companyId: dbUser.companyId,
         image,
         bio: dbUser.bio || null,
         teamLeadName
@@ -88,6 +94,9 @@ export function getCompanyFilter(user: { role: user_role; companyId?: string | n
   }
   
   if (!user.companyId) {
+    if (user.role === "IT_DEPARTMENT" || user.role === "COMPANY_OWNER") {
+      return {};
+    }
     return { companyId: "unassigned" };
   }
 

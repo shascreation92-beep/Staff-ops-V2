@@ -519,7 +519,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       label: "Team Stats", 
       path: "/team-performance-stats", 
       icon: TrendingUp,
-      roles: ["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"] 
+      roles: ["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
     { 
       id: "download-agent", 
@@ -534,14 +534,14 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
       label: "Team Leads", 
       path: "/team-leads", 
       icon: UserCheck,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
     { 
       id: "it-management", 
       label: "IT Management", 
       path: "/it-management", 
       icon: Shield,
-      roles: ["SUPER_ADMIN", "COMPANY_OWNER"] 
+      roles: ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"] 
     },
     {
       id: "companies",

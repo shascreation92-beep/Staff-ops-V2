@@ -7,7 +7,7 @@ import TeamPerformanceStatsView from "@/components/TeamPerformanceStatsView";
 export const dynamic = "force-dynamic";
 
 export default async function TeamPerformanceStatsPage() {
-  const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"]);
+  const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   const res = await getTeamPerformanceStatsAction();
   const teamStats = res.success ? (res.teamStats || []) : [];
