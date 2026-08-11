@@ -329,22 +329,10 @@ export async function getCompanyScreenshotsAction(params?: {
     companyFilter.userId = params.targetUserId;
   }
 
-  let dateFilter: any = {};
-  if (params?.dateStr) {
-    const startOfDay = new Date(`${params.dateStr}T00:00:00.000Z`);
-    const endOfDay = new Date(`${params.dateStr}T23:59:59.999Z`);
-    dateFilter = {
-      capturedAt: {
-        gte: startOfDay,
-        lte: endOfDay
-      }
-    };
-  }
-
+  // Fetch up to 500 recent snapshots across active 7-day retention period
   const snapshots = await db.screensnapshot.findMany({
     where: {
-      ...companyFilter,
-      ...dateFilter
+      ...companyFilter
     },
     include: {
       user: {
@@ -365,7 +353,7 @@ export async function getCompanyScreenshotsAction(params?: {
     orderBy: {
       capturedAt: "desc"
     },
-    take: 300
+    take: 500
   });
 
   const snapshotsWithMeta = snapshots.map(s => {

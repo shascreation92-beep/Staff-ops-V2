@@ -973,28 +973,37 @@ pause
               gap: "1.25rem"
             }}>
               {filteredStaffList.map(u => {
-            const userSnaps = snapshots.filter(s => s.userId === u.id);
-            const latestSnap = userSnaps[0];
-            const userIdleCount = userSnaps.filter(s => s.isIdle).length;
+            const userAllSnaps = snapshots.filter(s => s.userId === u.id);
+            const userTodaySnaps = userAllSnaps.filter(s => {
+              if (!s.capturedAt) return false;
+              const d = new Date(s.capturedAt).toISOString().split("T")[0];
+              return d === selectedDate;
+            });
+
+            const latestSnap = userTodaySnaps[0] || userAllSnaps[0] || null;
+            const userIdleCount = userTodaySnaps.filter(s => s.isIdle).length;
             const uStatus = statusMap[u.id];
 
             const isPaused = pausedUserIds.includes(u.id);
-            const lastSnapTime = latestSnap ? new Date(latestSnap.capturedAt).getTime() : 0;
-            const isSnapRecent = lastSnapTime > 0 && (Date.now() - lastSnapTime) <= 10 * 60 * 1000;
-            const isAgentActive = !isPaused && (uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE" || isSnapRecent);
+
+            // A snapshot is considered live/desktop-active if captured within the last 15 minutes
+            const lastSnapTime = userAllSnaps[0] ? new Date(userAllSnaps[0].capturedAt).getTime() : 0;
+            const isDesktopCapturing = !isPaused && lastSnapTime > 0 && (Date.now() - lastSnapTime) <= 15 * 60 * 1000;
+            const isWebOnline = !isPaused && (uStatus?.status === "ACTIVE" || uStatus?.status === "IDLE");
+            const isAgentActive = isDesktopCapturing || isWebOnline;
 
             return (
               <div
                 key={u.id}
                 style={{
                   background: "linear-gradient(145deg, #0F172A 0%, #1E1B4B 100%)",
-                  border: isPaused ? "1.5px solid #F59E0B" : (isAgentActive ? "1.5px solid #8B5CF6" : "1.5px solid #EF4444"),
+                  border: isPaused ? "1.5px solid #F59E0B" : (isDesktopCapturing ? "1.5px solid #8B5CF6" : (isWebOnline ? "1.5px solid #F59E0B" : "1.5px solid #EF4444")),
                   borderRadius: "16px",
                   padding: "1.25rem",
                   display: "flex",
                   flexDirection: "column",
                   gap: "1rem",
-                  boxShadow: isPaused ? "0 0 20px rgba(245, 158, 11, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)" : (isAgentActive ? "0 0 20px rgba(139, 92, 246, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)" : "0 0 15px rgba(239, 68, 68, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3)"),
+                  boxShadow: isPaused ? "0 0 20px rgba(245, 158, 11, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)" : (isDesktopCapturing ? "0 0 20px rgba(139, 92, 246, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3)" : "0 0 15px rgba(239, 68, 68, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3)"),
                   color: "#FFFFFF",
                   transition: "transform 0.2s ease, box-shadow 0.2s ease",
                   position: "relative"
@@ -1007,14 +1016,14 @@ pause
                       width: "44px",
                       height: "44px",
                       borderRadius: "12px",
-                      background: isPaused ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" : (isAgentActive ? "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)" : "linear-gradient(135deg, #334155 0%, #1E293B 100%)"),
+                      background: isPaused ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" : (isDesktopCapturing ? "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)" : "linear-gradient(135deg, #334155 0%, #1E293B 100%)"),
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       color: "#FFFFFF",
                       fontSize: "0.9rem",
                       fontWeight: 900,
-                      boxShadow: isAgentActive ? "0 4px 12px rgba(139, 92, 246, 0.4)" : "none"
+                      boxShadow: isDesktopCapturing ? "0 4px 12px rgba(139, 92, 246, 0.4)" : "none"
                     }}>
                       {(u.name || u.email).slice(0, 2).toUpperCase()}
                     </div>
@@ -1088,20 +1097,28 @@ pause
                 <div style={{
                   padding: "0.45rem 0.85rem",
                   borderRadius: "8px",
-                  background: isPaused ? "rgba(245, 158, 11, 0.15)" : (isAgentActive ? "rgba(139, 92, 246, 0.15)" : "rgba(239, 68, 68, 0.15)"),
-                  border: isPaused ? "1px solid rgba(245, 158, 11, 0.35)" : (isAgentActive ? "1px solid rgba(139, 92, 246, 0.35)" : "1px solid rgba(239, 68, 68, 0.35)"),
+                  background: isPaused ? "rgba(245, 158, 11, 0.15)" : (isDesktopCapturing ? "rgba(139, 92, 246, 0.15)" : (isWebOnline ? "rgba(245, 158, 11, 0.15)" : "rgba(239, 68, 68, 0.15)")),
+                  border: isPaused ? "1px solid rgba(245, 158, 11, 0.35)" : (isDesktopCapturing ? "1px solid rgba(139, 92, 246, 0.35)" : (isWebOnline ? "1px solid rgba(245, 158, 11, 0.35)" : "1px solid rgba(239, 68, 68, 0.35)")),
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   fontSize: "0.75rem",
                   fontWeight: 700
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: isPaused ? "#FBBF24" : (isAgentActive ? "#C4B5FD" : "#F87171") }}>
-                    {isPaused ? <Pause size={14} /> : (isAgentActive ? <Wifi size={14} className="animate-pulse" style={{ color: "#A78BFA" }} /> : <WifiOff size={14} />)}
-                    <span>{isPaused ? "Telemetry Suspended by Admin" : (isAgentActive ? "🟣 Agent Active & Capturing (60s)" : "🔴 Agent Offline on PC")}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: isPaused ? "#FBBF24" : (isDesktopCapturing ? "#C4B5FD" : (isWebOnline ? "#FBBF24" : "#F87171")) }}>
+                    {isPaused ? <Pause size={14} /> : (isDesktopCapturing ? <Wifi size={14} className="animate-pulse" style={{ color: "#A78BFA" }} /> : (isWebOnline ? <Monitor size={14} style={{ color: "#FBBF24" }} /> : <WifiOff size={14} />))}
+                    <span>
+                      {isPaused 
+                        ? "Telemetry Suspended by Admin" 
+                        : (isDesktopCapturing 
+                          ? "🟣 Agent Active & Capturing (60s)" 
+                          : (isWebOnline 
+                            ? "🌐 Web Active (Desktop Agent Offline)" 
+                            : "🔴 Desktop Agent Offline"))}
+                    </span>
                   </div>
 
-                  {!isAgentActive && !isPaused && (
+                  {!isDesktopCapturing && !isPaused && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1109,17 +1126,18 @@ pause
                       }}
                       style={{
                         fontSize: "0.65rem",
-                        color: "#F87171",
-                        background: "rgba(239, 68, 68, 0.2)",
-                        border: "1px solid rgba(239, 68, 68, 0.4)",
-                        padding: "0.15rem 0.45rem",
+                        color: "#FFFFFF",
+                        background: "linear-gradient(135deg, #0077B6 0%, #023E8A 100%)",
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
+                        padding: "0.2rem 0.55rem",
                         borderRadius: "5px",
                         cursor: "pointer",
-                        fontWeight: 800
+                        fontWeight: 800,
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
                       }}
-                      title="Click to download and run Desktop Agent installer on this associate's PC"
+                      title="Click to download 1-Click Desktop Agent Installer for this associate's Windows PC"
                     >
-                      ⚡ Launch Agent
+                      ⚡ Install Agent
                     </button>
                   )}
                 </div>
@@ -1157,13 +1175,17 @@ pause
                         fontSize: "0.62rem",
                         fontWeight: 800,
                         border: "1px solid rgba(255, 255, 255, 0.15)",
-                        color: isAgentActive ? "#A855F7" : "#F87171",
+                        color: isDesktopCapturing ? "#A855F7" : "#FBBF24",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.3rem"
                       }}>
-                        <MonitoringStatusDot status={isAgentActive ? "ACTIVE" : "OFF_DUTY"} size={7} />
-                        <span>{isAgentActive ? "LIVE CAPTURE" : "LAST CAPTURE"}</span>
+                        <MonitoringStatusDot status={isDesktopCapturing ? "ACTIVE" : "OFF_DUTY"} size={7} />
+                        <span>
+                          {userTodaySnaps.length > 0 
+                            ? "LIVE TODAY CAPTURE" 
+                            : `LAST CAPTURE (${new Date(latestSnap.capturedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })})`}
+                        </span>
                       </div>
                     </div>
                   ) : (
@@ -1178,8 +1200,13 @@ pause
                     }}>
                       <Monitor size={32} style={{ opacity: 0.4, marginBottom: "0.4rem" }} />
                       <span style={{ fontWeight: 700, color: isPaused ? "#FBBF24" : "#94A3B8" }}>
-                        {isPaused ? "Telemetry Paused" : (isAgentActive ? "No Captures Today" : "Agent Offline")}
+                        {isPaused ? "Telemetry Paused" : (isWebOnline ? "Web Active (Desktop Agent Required)" : "Desktop Agent Offline")}
                       </span>
+                      {!isPaused && (
+                        <span style={{ fontSize: "0.68rem", color: "#64748B", marginTop: "0.25rem" }}>
+                          Run 1-Click Agent installer on PC
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1194,7 +1221,7 @@ pause
                   padding: "0 0.2rem"
                 }}>
                   <div>
-                    Shots Today: <strong style={{ color: "#FFFFFF" }}>{userSnaps.length}</strong>
+                    Shots Today: <strong style={{ color: "#FFFFFF" }}>{userTodaySnaps.length}</strong>
                   </div>
                   <div>
                     Idle: <strong style={{ color: userIdleCount > 0 ? "#F59E0B" : "#FFFFFF" }}>{userIdleCount}</strong>
