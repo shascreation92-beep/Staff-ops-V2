@@ -7,7 +7,7 @@ import ITManagementDirectory from "@/components/ITManagementDirectory";
 export const dynamic = "force-dynamic";
 
 export default async function ITManagementPage() {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER"]);
+  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   // Determine Company context
   let companyFilter = {};

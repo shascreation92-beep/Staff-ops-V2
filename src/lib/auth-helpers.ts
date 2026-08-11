@@ -39,7 +39,7 @@ export async function enforceAuth(allowedRoles?: user_role[]) {
 
   // Enforce role-based access control (RBAC) - Super Admin bypasses role restrictions
   if (allowedRoles && session.user.role !== "SUPER_ADMIN" && !allowedRoles.includes(session.user.role)) {
-    throw new Error("UNAUTHORIZED: Insufficient permissions for this operation.");
+    redirect("/");
   }
 
   // Fetch dynamic fields from DB (including image and team lead details)

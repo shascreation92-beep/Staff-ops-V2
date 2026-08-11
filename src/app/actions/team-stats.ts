@@ -8,13 +8,13 @@ import { enforceAuth } from "@/lib/auth-helpers";
  * Calculates 6 metric block tiles per team member, sorted by LOWEST IDs first.
  */
 export async function getTeamPerformanceStatsAction() {
-  const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"]);
+  const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
   // Determine member filter
   let memberFilter: any = {};
   if (user.role === "TEAM_LEAD") {
     memberFilter = { teamLeadId: user.id, isArchived: false, status: "APPROVED" };
-  } else if (user.role === "COMPANY_OWNER" && user.companyId) {
+  } else if ((user.role === "COMPANY_OWNER" || user.role === "IT_DEPARTMENT") && user.companyId) {
     memberFilter = { companyId: user.companyId, role: "SALES_ASSOCIATE", isArchived: false, status: "APPROVED" };
   } else {
     // Super Admin: all sales associates
