@@ -14,15 +14,11 @@ import {
   ShieldCheck, 
   ShoppingCart, 
   Diamond, 
-  Pencil, 
-  Trash2, 
-  FileText, 
   ArrowUp,
   Monitor,
   UserCheck,
   Award
 } from "lucide-react";
-import Link from "next/link";
 
 interface TeamStatsItem {
   userId: string;
@@ -367,55 +363,6 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
                       Verified Vt
                     </div>
                   </div>
-                </div>
-
-                {/* Right Section: Action Buttons Stack matching Demo */}
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.5rem",
-                  flexShrink: 0,
-                  width: "130px"
-                }}>
-                  <Link
-                    href="/accounts"
-                    style={{
-                      padding: "0.45rem 0.75rem",
-                      borderRadius: "8px",
-                      background: "#0D9488",
-                      color: "#FFFFFF",
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
-                      textDecoration: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "0.3rem",
-                      boxShadow: "0 4px 10px rgba(13, 148, 136, 0.3)"
-                    }}
-                  >
-                    <Pencil size={12} /> Log Update
-                  </Link>
-
-                  <Link
-                    href="/accounts"
-                    style={{
-                      padding: "0.45rem 0.75rem",
-                      borderRadius: "8px",
-                      background: "rgba(13, 148, 136, 0.2)",
-                      border: "1px solid #0D9488",
-                      color: "#2DD4BF",
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
-                      textDecoration: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "0.3rem"
-                    }}
-                  >
-                    <FileText size={12} /> View Accounts
-                  </Link>
                 </div>
               </div>
             );
