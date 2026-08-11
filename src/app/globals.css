@@ -2,6 +2,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
   /* Deep Cyber Night Theme Colors */
   --bg-primary: #0B0916;
   --bg-secondary: #141226;
@@ -877,9 +878,16 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 }
 
 .table-select-filter option {
-  background: #141226;
-  color: #FFFFFF;
+  color-scheme: dark !important;
+  background-color: #141226 !important;
+  color: #FFFFFF !important;
   padding: 0.5rem;
+}
+
+select, option {
+  color-scheme: dark !important;
+  background-color: #141226 !important;
+  color: #FFFFFF !important;
 }
 
 .table-container-outer {

@@ -94,9 +94,9 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
         <div className="kpi-card kpi-info">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Total Team Members</span>
-            <Users size={18} style={{ color: "#3B82F6" }} />
+            <Users size={18} style={{ color: "#38BDF8" }} />
           </div>
-          <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#03045E", marginTop: "0.4rem" }}>{totalMembers}</div>
+          <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#38BDF8", marginTop: "0.4rem" }}>{totalMembers}</div>
         </div>
 
         <div className="kpi-card kpi-success">
@@ -117,7 +117,7 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
       </div>
 
       {/* Filter Bar */}
-      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)" }}>
+      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.09)" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
           {/* Search Box */}
           <div className="table-search-wrapper" style={{ width: "280px" }}>
@@ -182,8 +182,9 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
               <div
                 key={item.userId}
                 style={{
-                  background: "#0D1B2A",
-                  border: item.isLagging ? "1.5px solid rgba(239, 68, 68, 0.4)" : "1px solid rgba(255, 255, 255, 0.1)",
+                  background: "rgba(20, 18, 38, 0.75)",
+                  backdropFilter: "blur(16px)",
+                  border: item.isLagging ? "1.5px solid rgba(239, 68, 68, 0.5)" : "1px solid rgba(255, 255, 255, 0.09)",
                   borderRadius: "14px",
                   padding: "1.25rem 1.5rem",
                   color: "#FFFFFF",
