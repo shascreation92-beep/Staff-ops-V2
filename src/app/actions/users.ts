@@ -611,69 +611,68 @@ const ApproveSalesAssociateSchema = z.object({
 });
 
 export async function approveSalesAssociateAction(formData: z.infer<typeof ApproveSalesAssociateSchema>) {
-  const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+  try {
+    const currentUser = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
 
-  const result = ApproveSalesAssociateSchema.safeParse(formData);
-  if (!result.success) {
-    throw new Error(result.error.issues.map(e => e.message).join(", "));
-  }
+    const result = ApproveSalesAssociateSchema.safeParse(formData);
+    if (!result.success) {
+      return { success: false, error: result.error.issues.map(e => e.message).join(", ") };
+    }
 
-  const { userId, employeeId, password } = result.data;
+    const { userId, employeeId, password } = result.data;
 
-  // Fetch the pending user
-  const pendingUser = await db.user.findUnique({
-    where: { id: userId }
-  });
+    // Fetch the pending user
+    const pendingUser = await db.user.findUnique({
+      where: { id: userId }
+    });
 
-  if (!pendingUser) {
-    throw new Error("User not found.");
-  }
+    if (!pendingUser) {
+      return { success: false, error: "User not found." };
+    }
 
-  if (pendingUser.status !== "PENDING" || pendingUser.role !== "SALES_ASSOCIATE") {
-    throw new Error("Target user is not a pending Sales Representative.");
-  }
+    if (pendingUser.status !== "PENDING" || pendingUser.role !== "SALES_ASSOCIATE") {
+      return { success: false, error: "Target user is not a pending Sales Representative." };
+    }
 
-  // Multi-tenant check
-  if (currentUser.role !== "SUPER_ADMIN" && pendingUser.companyId !== currentUser.companyId) {
-    throw new Error("UNAUTHORIZED: Access to another company's records is forbidden.");
-  }
+    // Multi-tenant check
+    if (currentUser.role !== "SUPER_ADMIN" && pendingUser.companyId !== currentUser.companyId) {
+      return { success: false, error: "UNAUTHORIZED: Access to another company's records is forbidden." };
+    }
 
-  // Check unique email in employee table
-  const existingEmail = await db.employee.findUnique({
-    where: { email: pendingUser.email },
-  });
-  if (existingEmail) {
-    throw new Error("An employee with this email already exists.");
-  }
+    // Check unique email in employee table
+    const existingEmail = await db.employee.findUnique({
+      where: { email: pendingUser.email },
+    });
+    if (existingEmail) {
+      return { success: false, error: "An employee with this email already exists." };
+    }
 
-  // Auto-generate or validate Employee ID
-  let targetEmployeeId: string;
-  if (!employeeId || !employeeId.trim()) {
-    let isUnique = false;
-    let generatedId = "";
-    while (!isUnique) {
-      generatedId = `EMP-${Math.floor(1000 + Math.random() * 9000)}`;
-      const existing = await db.employee.findUnique({
-        where: { employeeId: generatedId }
+    // Auto-generate or validate Employee ID
+    let targetEmployeeId: string;
+    if (!employeeId || !employeeId.trim()) {
+      let isUnique = false;
+      let generatedId = "";
+      while (!isUnique) {
+        generatedId = `EMP-${Math.floor(1000 + Math.random() * 9000)}`;
+        const existing = await db.employee.findUnique({
+          where: { employeeId: generatedId }
+        });
+        if (!existing) {
+          isUnique = true;
+        }
+      }
+      targetEmployeeId = generatedId;
+    } else {
+      targetEmployeeId = employeeId;
+      const existingId = await db.employee.findUnique({
+        where: { employeeId: targetEmployeeId },
       });
-      if (!existing) {
-        isUnique = true;
+      if (existingId) {
+        return { success: false, error: `Employee ID "${targetEmployeeId}" is already in use.` };
       }
     }
-    targetEmployeeId = generatedId;
-  } else {
-    targetEmployeeId = employeeId;
-    const existingId = await db.employee.findUnique({
-      where: { employeeId: targetEmployeeId },
-    });
-    if (existingId) {
-      throw new Error(`Employee ID "${targetEmployeeId}" is already in use.`);
-    }
-  }
 
-  try {
     const newEmployeeId = crypto.randomUUID();
-
     const hashedPassword = await hashPassword(password);
 
     // 1. Update User to APPROVED and set Password
@@ -686,7 +685,14 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
       }
     });
 
-    // 2. Create Employee record
+    // 2. Find valid company ID fallback
+    let validCompanyId: string | null = pendingUser.companyId || currentUser.companyId || null;
+    if (!validCompanyId) {
+      const firstComp = await db.company.findFirst({ select: { id: true } });
+      if (firstComp) validCompanyId = firstComp.id;
+    }
+
+    // 3. Create Employee record
     const newEmp = await db.employee.create({
       data: {
         id: newEmployeeId,
@@ -694,14 +700,14 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
         fullName: pendingUser.name || "Sales Representative",
         email: pendingUser.email,
         status: "ACTIVE",
-        companyId: pendingUser.companyId || currentUser.companyId || "",
+        companyId: validCompanyId || "",
         userId: userId,
         laptopPassword: password?.trim() || null,
         updatedAt: new Date()
       }
     });
 
-    // 3. Notify IT department (IT_READ_ONLY notification)
+    // 4. Notify IT department
     const itMembers = await db.user.findMany({
       where: {
         companyId: pendingUser.companyId,
@@ -724,7 +730,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
       });
     }
 
-    // 4. Log Action
+    // 5. Log Action
     await logAction({
       userId: currentUser.id,
       userEmail: currentUser.email || "",
@@ -738,9 +744,10 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
     revalidatePath("/settings");
     revalidatePath("/employees");
     revalidatePath("/");
-    return { success: true };
+    return { success: true, message: "Sales Representative approved and activated successfully!" };
   } catch (error: any) {
-    throw new Error(error.message || "Failed to approve onboarding request.");
+    console.error("[APPROVE_SALES_ASSOCIATE_ERROR]", error);
+    return { success: false, error: error.message || "Failed to approve onboarding request." };
   }
 }
 

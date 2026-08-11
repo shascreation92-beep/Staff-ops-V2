@@ -660,85 +660,97 @@ export async function approveAndAssignPasswordITAction({
   userId: string;
   password: string;
 }) {
-  const itUser = await enforceAuth(["IT_DEPARTMENT", "SUPER_ADMIN"]);
+  try {
+    const itUser = await enforceAuth(["IT_DEPARTMENT", "SUPER_ADMIN", "COMPANY_OWNER"]);
 
-  if (!password || password.trim().length < 6) {
-    throw new Error("Password must be at least 6 characters.");
-  }
-
-  const targetUser = await db.user.findUnique({
-    where: { id: userId }
-  });
-
-  if (!targetUser) {
-    throw new Error("User not found.");
-  }
-
-  const hashedPassword = await hashPassword(password.trim());
-
-  await db.user.update({
-    where: { id: userId },
-    data: {
-      status: "APPROVED",
-      password: hashedPassword,
-      updatedAt: new Date()
+    if (!password || password.trim().length < 3) {
+      return { success: false, error: "Password must be at least 3 characters." };
     }
-  });
 
-  const existingEmployee = await db.employee.findUnique({
-    where: { userId }
-  });
+    const targetUser = await db.user.findUnique({
+      where: { id: userId }
+    });
 
-  if (existingEmployee) {
-    await db.employee.update({
-      where: { userId },
+    if (!targetUser) {
+      return { success: false, error: "User not found." };
+    }
+
+    const hashedPassword = await hashPassword(password.trim());
+
+    await db.user.update({
+      where: { id: userId },
       data: {
-        laptopPassword: password.trim(),
+        status: "APPROVED",
+        password: hashedPassword,
         updatedAt: new Date()
       }
     });
-  } else {
-    await db.employee.create({
-      data: {
-        id: crypto.randomUUID(),
-        employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
-        fullName: targetUser.name || targetUser.email,
-        email: targetUser.email,
-        companyId: targetUser.companyId || itUser.companyId || "",
-        userId: targetUser.id,
-        laptopPassword: password.trim(),
-        updatedAt: new Date()
-      }
+
+    const existingEmployee = await db.employee.findUnique({
+      where: { userId }
     });
-  }
 
-  if (targetUser.teamLeadId) {
-    await db.notification.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId: targetUser.teamLeadId,
-        title: "Sales Representative Account Approved by IT",
-        message: `IT Department approved account for ${targetUser.name || targetUser.email} and assigned login password.`,
-        type: "ITApprovedNotice",
-        isRead: false
+    if (existingEmployee) {
+      await db.employee.update({
+        where: { userId },
+        data: {
+          laptopPassword: password.trim(),
+          updatedAt: new Date()
+        }
+      });
+    } else {
+      // Find a valid company ID fallback if targetUser or itUser has no companyId
+      let validCompanyId: string | null = targetUser.companyId || itUser.companyId || null;
+      if (!validCompanyId) {
+        const firstComp = await db.company.findFirst({ select: { id: true } });
+        if (firstComp) validCompanyId = firstComp.id;
       }
+
+      await db.employee.create({
+        data: {
+          id: crypto.randomUUID(),
+          employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+          fullName: targetUser.name || targetUser.email,
+          email: targetUser.email,
+          companyId: validCompanyId || "",
+          userId: targetUser.id,
+          laptopPassword: password.trim(),
+          updatedAt: new Date()
+        }
+      });
+    }
+
+    if (targetUser.teamLeadId) {
+      await db.notification.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: targetUser.teamLeadId,
+          title: "Sales Representative Account Approved by IT",
+          message: `IT Department approved account for ${targetUser.name || targetUser.email} and assigned login password.`,
+          type: "ITApprovedNotice",
+          isRead: false
+        }
+      });
+    }
+
+    await logAction({
+      userId: itUser.id,
+      userEmail: itUser.email || "",
+      userRole: itUser.role,
+      action: "IT_APPROVE_USER_SET_PASSWORD",
+      entity: "user",
+      entityId: userId,
+      newValue: `Approved user and assigned password`
     });
+
+    revalidatePath("/my-team");
+    revalidatePath("/user-directory");
+    revalidatePath("/it-management");
+    return { success: true, message: "Password assigned and user approved successfully!" };
+  } catch (error: any) {
+    console.error("[IT_ASSIGN_PASSWORD_ERROR]", error);
+    return { success: false, error: error.message || "Failed to assign password." };
   }
-
-  await logAction({
-    userId: itUser.id,
-    userEmail: itUser.email || "",
-    userRole: itUser.role,
-    action: "IT_APPROVE_USER_SET_PASSWORD",
-    entity: "user",
-    entityId: userId,
-    newValue: `Approved user and assigned password`
-  });
-
-  revalidatePath("/my-team");
-  revalidatePath("/user-directory");
-  revalidatePath("/it-management");
-  return { success: true };
 }
 
 export async function getPendingTLRequestsAction() {
