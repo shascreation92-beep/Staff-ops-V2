@@ -581,7 +581,7 @@ export default function SettingsShard({
           </div>
 
           <a
-            href="/api/download-agent"
+            href="/api/download-agent?pass=Mango@9090"
             download="StaffOps-Agent-Setup.zip"
             style={{
               height: "36px",

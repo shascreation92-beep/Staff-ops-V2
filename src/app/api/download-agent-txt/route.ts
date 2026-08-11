@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const pass = searchParams.get("pass") || req.headers.get("x-agent-password");
+
+  if (pass !== "Mango@9090") {
+    return NextResponse.json({ error: "Invalid security password. Access denied." }, { status: 401 });
+  }
+
   const commandText = `=========================================================================
   STAFFOPS WORKSTATION AGENT V-2.4 1-CLICK POWERSHELL INSTALLATION
 =========================================================================

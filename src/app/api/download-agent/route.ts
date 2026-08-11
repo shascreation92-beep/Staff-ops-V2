@@ -2,8 +2,15 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const pass = searchParams.get("pass") || req.headers.get("x-agent-password");
+
+    if (pass !== "Mango@9090") {
+      return NextResponse.json({ error: "Invalid security password. Access denied." }, { status: 401 });
+    }
+
     const zipPath = path.join(process.cwd(), "public", "desktop-agent", "StaffOps-Agent-Setup.zip");
 
     if (!fs.existsSync(zipPath)) {
