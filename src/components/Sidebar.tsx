@@ -33,7 +33,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Bell,
-  Sparkles
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Plus
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { user_role } from "@prisma/client";
@@ -648,33 +651,80 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
   return (
     <>
-      <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
-      {/* Omagie/Boltz Logo Container */}
-      <div className="sidebar-logo-container">
-        <div className="sidebar-logo-brand">
-          <img src="/logo.png" alt="Worknode Logo" style={{ width: "28px", height: "28px", borderRadius: "6px", objectFit: "cover", marginRight: "0.4rem" }} />
-          <span className="sidebar-logo-text">Worknode</span>
-        </div>
-      </div>
-
-      {/* User Profile Header (Top-ish, below Logo) */}
-      <div className="sidebar-profile">
-
-        <div 
-          className="profile-avatar-container"
-          style={{ position: "relative" }}
-        >
-          <div className="profile-avatar-circle" style={{
-            overflow: "hidden", 
-            position: "relative",
+      <aside 
+        className={`sidebar ${isOpen ? 'mobile-open' : ''}`}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: "var(--sidebar-width)",
+          background: "linear-gradient(180deg, #141226 0%, #0E0C1B 100%)",
+          borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+          display: "flex",
+          flexDirection: "column",
+          zIndex: 100,
+          color: "#FFFFFF",
+          boxShadow: "10px 0 35px rgba(0, 0, 0, 0.45)"
+        }}
+      >
+        {/* Floating Circular Blue Sidebar Toggle Arrow Button */}
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            position: "absolute",
+            top: "28px",
+            right: "-14px",
+            width: "28px",
+            height: "28px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
+            color: "#FFFFFF",
+            border: "2.5px solid #0E0C1B",
+            boxShadow: "0 4px 14px rgba(59, 130, 246, 0.6)",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "linear-gradient(135deg, #0077B6 0%, #00B4D8 100%)",
-            color: "#FFFFFF",
-            fontWeight: 800,
-            fontSize: "1.1rem"
-          }}>
+            zIndex: 110,
+            transition: "transform 0.2s ease"
+          }}
+          title="Toggle Sidebar"
+        >
+          {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+        </button>
+
+        {/* User Profile Header ("Hello 👋 Kafka") */}
+        <div style={{
+          padding: "1.75rem 1.25rem 1.25rem 1.25rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.85rem",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)"
+        }}>
+          {/* User DP Circle Avatar */}
+          <div 
+            onClick={() => setShowUploadModal(true)}
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "14px",
+              background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#FFFFFF",
+              fontWeight: 900,
+              fontSize: "1.15rem",
+              overflow: "hidden",
+              cursor: "pointer",
+              flexShrink: 0,
+              boxShadow: "0 4px 14px rgba(59, 130, 246, 0.4)",
+              border: "1.5px solid rgba(255, 255, 255, 0.25)"
+            }}
+            title="Click to edit Display Picture"
+          >
             {user.image && !imgError ? (
               <img 
                 src={user.image} 
@@ -686,309 +736,347 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               <span>{userInitials}</span>
             )}
           </div>
-        </div>
 
-        {/* Profile Action Toolbar */}
-        <div className="profile-action-toolbar">
-          {/* Edit DP Button */}
-          <button 
-            type="button"
-            onClick={() => setShowUploadModal(true)}
-            className="profile-action-btn"
-            title="Upload Display Picture"
-          >
-            <Pencil size={12} />
-          </button>
-
-          {/* Change Password Button */}
-          {["SUPER_ADMIN", "COMPANY_OWNER"].includes(user.role) && (
-            <button
-              type="button"
-              onClick={() => {
-                setNewPassword("");
-                setChangePassError(null);
-                setChangePassSuccess(false);
-                setShowChangePassModal(true);
-              }}
-              className="profile-action-btn"
-              title="Change Password"
-            >
-              <Key size={12} />
-            </button>
-          )}
-
-          {/* Edit Bio Button */}
-          <button 
-            type="button"
-            onClick={() => setShowBioModal(true)} 
-            className="profile-action-btn"
-            title="Edit Bio"
-          >
-            <FileText size={12} />
-          </button>
-        </div>
-
-        <div className="profile-info" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem" }}>
-          <span className="profile-name" title={user.name || "Operator"} style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", textAlign: "center" }}>
-            {user.name || "Operator"}
-          </span>
-          <span 
-            className="profile-designation-badge" 
-            title={getDesignation(user.role)} 
-            style={{ 
-              fontSize: "0.68rem", 
-              fontWeight: 700, 
-              color: "var(--gold-premium)", 
-              background: "rgba(173, 232, 244, 0.4)", 
-              border: "1px solid rgba(0, 119, 182, 0.15)",
-              borderRadius: "12px",
-              padding: "0.15rem 0.6rem",
-              textAlign: "center",
-              display: "inline-block",
-              letterSpacing: "0.02em"
-            }}
-          >
-            {getDesignation(user.role)}
-          </span>
-          <span className="profile-email" title={user.email || ""} style={{ fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center", marginTop: "0.05rem" }}>
-            {user.email || ""}
-          </span>
-          <div style={{ 
-            marginTop: "0.4rem", 
-            padding: "0.4rem 0.5rem", 
-            background: "rgba(2, 80, 161, 0.04)", 
-            borderRadius: "6px", 
-            border: "1px dashed rgba(2, 80, 161, 0.15)",
-            display: "flex", 
-            flexDirection: "column",
-            gap: "0.2rem",
-            position: "relative"
-          }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.05em" }}>User Bio</span>
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: "0.78rem", color: "#94A3B8", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.3rem" }}>
+              Hello 👋
             </div>
-            <p style={{ 
-              fontSize: "0.68rem", 
-              color: currentBio ? "var(--text-secondary)" : "var(--text-muted)", 
-              margin: 0, 
-              lineHeight: "1.3",
-              wordBreak: "break-word",
-              fontStyle: currentBio ? "normal" : "italic"
-            }}>
-              {currentBio || "No bio added yet. Click the edit bio icon above to add a bio."}
-            </p>
-          </div>
-        </div>
-      </div>
+            <div style={{ 
+              fontSize: "1.1rem", 
+              fontWeight: 800, 
+              color: "#FFFFFF", 
+              letterSpacing: "-0.01em",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
+            }} title={user.name || "Operator"}>
+              {user.name || "Operator"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.15rem" }}>
+              <span style={{ 
+                fontSize: "0.68rem", 
+                fontWeight: 700, 
+                color: "#60A5FA", 
+                background: "rgba(59, 130, 246, 0.15)",
+                borderRadius: "6px",
+                padding: "0.1rem 0.45rem",
+                display: "inline-block"
+              }}>
+                {getDesignation(user.role)}
+              </span>
 
-
-      <nav className="sidebar-menu" ref={navRef} onScroll={handleNavScroll}>
-        {filteredItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.path;
-
-          if (item.id === "it-config") {
-            return (
+              {/* Edit Bio Trigger Icon */}
               <button
-                key={item.id}
-                onClick={() => {
-                  setIsOpen(false);
-                  setShowITConfigOverlay(true);
-                }}
-                className="sidebar-item"
+                type="button"
+                onClick={() => setShowBioModal(true)}
                 style={{
                   background: "none",
                   border: "none",
-                  width: "100%",
-                  textAlign: "left",
+                  color: "#94A3B8",
                   cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center"
+                }}
+                title="Edit User Bio"
+              >
+                <Pencil size={12} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Links Menu */}
+        <nav 
+          ref={navRef} 
+          onScroll={handleNavScroll}
+          style={{
+            flex: 1,
+            padding: "1rem 0.85rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.4rem",
+            overflowY: "auto"
+          }}
+        >
+          {filteredItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.path;
+
+            if (item.id === "it-config") {
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setShowITConfigOverlay(true);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    width: "100%",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0.75rem 1rem",
+                    color: "#94A3B8",
+                    borderRadius: "12px",
+                    fontSize: "0.88rem",
+                    fontWeight: 500,
+                    gap: "0.85rem",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  <Icon size={19} style={{ color: "#64748B" }} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            }
+
+            if ((item as any).isDownload) {
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setShowAgentInstallModal(true);
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0.75rem 1rem",
+                    color: "#94A3B8",
+                    borderRadius: "12px",
+                    fontSize: "0.88rem",
+                    fontWeight: 500,
+                    gap: "0.85rem",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  <Icon size={19} style={{ color: "#64748B" }} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            }
+
+            return (
+              <Link
+                key={item.id}
+                href={item.path}
+                scroll={false}
+                prefetch={true}
+                onClick={() => setIsOpen(false)}
+                style={{
                   display: "flex",
                   alignItems: "center",
+                  gap: "0.85rem",
                   padding: "0.75rem 1rem",
-                  color: "var(--text-secondary)",
-                  borderRadius: "8px",
+                  color: isActive ? "#FFFFFF" : "#94A3B8",
+                  fontWeight: isActive ? 800 : 500,
                   fontSize: "0.88rem",
-                  fontWeight: 500,
-                  gap: "0.75rem"
+                  textDecoration: "none",
+                  borderRadius: "12px",
+                  background: isActive ? "rgba(255, 255, 255, 0.09)" : "transparent",
+                  position: "relative",
+                  transition: "all 0.2s ease",
+                  boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.1)" : "none"
                 }}
               >
-                <Icon className="sidebar-icon" size={20} />
-                <span>{item.label}</span>
-              </button>
-            );
-          }
-
-          if ((item as any).isDownload) {
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setIsOpen(false);
-                  setShowAgentInstallModal(true);
-                }}
-                className="sidebar-item"
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer"
-                }}
-              >
-                <Icon className="sidebar-icon" size={20} />
-                <span>{item.label}</span>
-              </button>
-            );
-          }
-
-          return (
-            <Link
-              key={item.id}
-              href={item.path}
-              scroll={false}
-              prefetch={true}
-              className={`sidebar-item ${isActive ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
-              <Icon className="sidebar-icon" size={20} />
-              <span>{item.label}</span>
-              {item.id === "associates-requests" && pendingRequestsCount > 0 && (
-                <span 
-                  style={{
-                    marginLeft: "auto",
-                    background: "rgba(239, 68, 68, 0.12)",
-                    color: "#EF4444",
-                    border: "1px solid rgba(239, 68, 68, 0.35)",
-                    backdropFilter: "blur(4px)",
-                    borderRadius: "9999px",
-                    padding: "0.15rem 0.55rem",
-                    fontSize: "0.72rem",
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 0 10px rgba(239, 68, 68, 0.15)"
-                  }}
-                >
-                  {pendingRequestsCount}
-                </span>
-              )}
-              {item.id === "chat-space" && (chatStatus.hasUnread || chatStatus.hasJoinRequests) && (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
-                  {chatStatus.hasJoinRequests && (
-                    <span 
-                      style={{
-                        width: "8px",
-                        height: "8px",
-                        borderRadius: "50%",
-                        background: "#0250A1",
-                        boxShadow: "0 0 6px #0250A1",
-                        display: "inline-block"
-                      }}
-                      title="Pending Join Requests"
-                    />
-                  )}
-                  {chatStatus.hasUnread && (
-                    <span 
-                      style={{
-                        width: "8px",
-                        height: "8px",
-                        borderRadius: "50%",
-                        background: "#10B981",
-                        boxShadow: "0 0 6px #10B981",
-                        display: "inline-block"
-                      }}
-                      title="Unread Messages"
-                    />
-                  )}
-                </div>
-              )}
-              {item.id === "special-requests" && specialRequestStatus.hasUnread && (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+                {/* Glowing Neon Green Indicator Notch for Active Item */}
+                {isActive && (
                   <span 
                     style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: specialRequestStatus.dotColor === "red" 
-                        ? "#EF4444" 
-                        : specialRequestStatus.dotColor === "orange" 
-                          ? "#F59E0B" 
-                          : "#10B981",
-                      boxShadow: specialRequestStatus.dotColor === "red" 
-                        ? "0 0 8px #EF4444" 
-                        : specialRequestStatus.dotColor === "orange" 
-                          ? "0 0 8px #F59E0B" 
-                          : "0 0 8px #10B981",
-                      display: "inline-block",
-                      animation: specialRequestStatus.dotColor === "red" ? "pulse 1.5s infinite" : "none"
+                      position: "absolute",
+                      left: "-0.85rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: "5px",
+                      height: "65%",
+                      borderRadius: "0 6px 6px 0",
+                      background: "#10B981",
+                      boxShadow: "0 0 14px #10B981, 0 0 24px rgba(16, 185, 129, 0.9)"
                     }}
-                    title={`${specialRequestStatus.dotColor === "red" ? "Urgent" : specialRequestStatus.dotColor === "orange" ? "Pending" : "Normal"} Support Request`}
                   />
-                </div>
-              )}
-              {item.id === "leave-requests" && pendingLeavesCount > 0 && (
-                <span 
-                  style={{
-                    marginLeft: "auto",
-                    background: "linear-gradient(135deg, #0284C7, #0077B6)",
-                    color: "white",
-                    borderRadius: "9999px",
-                    padding: "0.15rem 0.5rem",
-                    fontSize: "0.7rem",
-                    fontWeight: "bold",
-                    lineHeight: 1,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 0 8px rgba(2, 132, 199, 0.4)"
-                  }}
-                >
-                  {pendingLeavesCount}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+                )}
 
+                <Icon size={19} style={{ color: isActive ? "#38BDF8" : "#64748B", transition: "color 0.2s ease" }} />
+                <span>{item.label}</span>
 
+                {/* Badge Indicator Pills */}
+                {item.id === "associates-requests" && pendingRequestsCount > 0 && (
+                  <span 
+                    style={{
+                      marginLeft: "auto",
+                      background: "#F59E0B",
+                      color: "#000000",
+                      borderRadius: "6px",
+                      padding: "0.15rem 0.55rem",
+                      fontSize: "0.75rem",
+                      fontWeight: 900,
+                      lineHeight: 1,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 0 10px rgba(245, 158, 11, 0.5)"
+                    }}
+                  >
+                    {pendingRequestsCount}
+                  </span>
+                )}
+                {item.id === "chat-space" && (chatStatus.hasUnread || chatStatus.hasJoinRequests) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+                    {chatStatus.hasJoinRequests && (
+                      <span 
+                        style={{
+                          width: "9px",
+                          height: "9px",
+                          borderRadius: "50%",
+                          background: "#3B82F6",
+                          boxShadow: "0 0 8px #3B82F6",
+                          display: "inline-block"
+                        }}
+                        title="Pending Join Requests"
+                      />
+                    )}
+                    {chatStatus.hasUnread && (
+                      <span 
+                        style={{
+                          width: "9px",
+                          height: "9px",
+                          borderRadius: "50%",
+                          background: "#10B981",
+                          boxShadow: "0 0 8px #10B981",
+                          display: "inline-block"
+                        }}
+                        title="Unread Messages"
+                      />
+                    )}
+                  </div>
+                )}
+                {item.id === "special-requests" && specialRequestStatus.hasUnread && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+                    <span 
+                      style={{
+                        width: "9px",
+                        height: "9px",
+                        borderRadius: "50%",
+                        background: specialRequestStatus.dotColor === "red" 
+                          ? "#EF4444" 
+                          : specialRequestStatus.dotColor === "orange" 
+                            ? "#F59E0B" 
+                            : "#10B981",
+                        boxShadow: specialRequestStatus.dotColor === "red" 
+                          ? "0 0 10px #EF4444" 
+                          : specialRequestStatus.dotColor === "orange" 
+                            ? "0 0 10px #F59E0B" 
+                            : "0 0 10px #10B981",
+                        display: "inline-block"
+                      }}
+                      title="Support Request Alert"
+                    />
+                  </div>
+                )}
+                {item.id === "leave-requests" && pendingLeavesCount > 0 && (
+                  <span 
+                    style={{
+                      marginLeft: "auto",
+                      background: "#F59E0B",
+                      color: "#000000",
+                      borderRadius: "6px",
+                      padding: "0.15rem 0.55rem",
+                      fontSize: "0.75rem",
+                      fontWeight: 900
+                    }}
+                  >
+                    {pendingLeavesCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
 
-      <div className="sidebar-footer-wrap">
-        <Link
-          href="/feedback"
-          onClick={() => setIsOpen(false)}
+        {/* Bottom Quick Action Card ("Add New Account") */}
+        <div 
+          onClick={() => {
+            setIsOpen(false);
+            window.location.href = "/accounts";
+          }}
           style={{
-            width: "100%",
-            marginBottom: "0.5rem",
-            padding: "0.6rem 0.85rem",
-            borderRadius: "8px",
-            border: "1px solid rgba(0, 119, 182, 0.25)",
-            background: "linear-gradient(135deg, rgba(0, 119, 182, 0.08) 0%, rgba(2, 62, 138, 0.08) 100%)",
-            color: "#0077B6",
-            fontWeight: 700,
-            fontSize: "0.82rem",
+            margin: "0.85rem 1rem",
+            padding: "1.25rem 1rem",
+            borderRadius: "16px",
+            border: "1.5px dashed rgba(255, 255, 255, 0.18)",
+            background: "rgba(255, 255, 255, 0.03)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.45rem",
+            cursor: "pointer",
+            transition: "all 0.2s ease"
+          }}
+          title="Click to launch Account Wizard"
+        >
+          <div style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
+            color: "#FFFFFF",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "0.5rem",
-            textDecoration: "none",
-            transition: "all 0.2s ease"
-          }}
-        >
-          <Sparkles size={16} />
-          <span>💡 Submit Feedback</span>
-        </Link>
+            boxShadow: "0 0 16px rgba(59, 130, 246, 0.6)",
+            border: "1.5px solid rgba(255, 255, 255, 0.2)"
+          }}>
+            <Plus size={20} />
+          </div>
+          <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.01em" }}>
+            Add new account
+          </div>
+          <div style={{ fontSize: "0.7rem", color: "#94A3B8" }}>
+            Launch 6-Step Wizard
+          </div>
+        </div>
 
-        <button
-          onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-          className="sidebar-logout-btn"
-        >
-          <LogOut size={18} />
-          <span>Logout</span>
-        </button>
-      </div>
+        {/* Sidebar Footer Logout Bar */}
+        <div style={{
+          padding: "0.75rem 1rem 1.25rem 1rem",
+          borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.4rem"
+        }}>
+          <button
+            onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.85rem",
+              padding: "0.65rem 1rem",
+              width: "100%",
+              background: "rgba(239, 68, 68, 0.12)",
+              border: "1px solid rgba(239, 68, 68, 0.25)",
+              color: "#F87171",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              cursor: "pointer",
+              borderRadius: "10px",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <LogOut size={17} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
 
 
       {/* Change Password Modal */}
@@ -1875,7 +1963,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           </div>
         </div>
       )}
-    </aside>
 
     {/* Workstation Agent 1-Click Installation Modal - Rendered globally over workspace */}
     {showAgentInstallModal && (
