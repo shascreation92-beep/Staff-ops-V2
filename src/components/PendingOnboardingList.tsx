@@ -47,15 +47,21 @@ export default function PendingOnboardingList({ pendingUsers }: PendingOnboardin
           employeeId: employeeId.trim() || undefined,
         });
 
-        if (res.success) {
-          toast.success("Sales Representative approved and activated successfully!");
+        if (res?.success) {
+          toast.success(res.message || "Sales Representative approved and activated successfully!");
           setActiveUserId(null);
           setPassword("");
           setEmployeeId("");
           router.refresh();
+        } else {
+          const errText = res?.error || "Failed to approve onboarding.";
+          setErrorMsg(errText);
+          toast.error(errText);
         }
       } catch (err: any) {
-        setErrorMsg(err.message || "Failed to approve onboarding.");
+        const errText = err.message || "Failed to approve onboarding.";
+        setErrorMsg(errText);
+        toast.error(errText);
       }
     });
   };

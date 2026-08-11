@@ -630,21 +630,13 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
       return { success: false, error: "User not found." };
     }
 
-    if (pendingUser.status !== "PENDING" || pendingUser.role !== "SALES_ASSOCIATE") {
-      return { success: false, error: "Target user is not a pending Sales Representative." };
+    if (pendingUser.status !== "PENDING") {
+      return { success: false, error: "Target user is not in PENDING status." };
     }
 
     // Multi-tenant check
-    if (currentUser.role !== "SUPER_ADMIN" && pendingUser.companyId !== currentUser.companyId) {
+    if (currentUser.role !== "SUPER_ADMIN" && pendingUser.companyId && currentUser.companyId && pendingUser.companyId !== currentUser.companyId) {
       return { success: false, error: "UNAUTHORIZED: Access to another company's records is forbidden." };
-    }
-
-    // Check unique email in employee table
-    const existingEmail = await db.employee.findUnique({
-      where: { email: pendingUser.email },
-    });
-    if (existingEmail) {
-      return { success: false, error: "An employee with this email already exists." };
     }
 
     // Auto-generate or validate Employee ID
@@ -664,12 +656,6 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
       targetEmployeeId = generatedId;
     } else {
       targetEmployeeId = employeeId;
-      const existingId = await db.employee.findUnique({
-        where: { employeeId: targetEmployeeId },
-      });
-      if (existingId) {
-        return { success: false, error: `Employee ID "${targetEmployeeId}" is already in use.` };
-      }
     }
 
     const newEmployeeId = crypto.randomUUID();
@@ -692,20 +678,37 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
       if (firstComp) validCompanyId = firstComp.id;
     }
 
-    // 3. Create Employee record
-    const newEmp = await db.employee.create({
-      data: {
-        id: newEmployeeId,
-        employeeId: targetEmployeeId,
-        fullName: pendingUser.name || "Sales Representative",
-        email: pendingUser.email,
-        status: "ACTIVE",
-        companyId: validCompanyId || "",
-        userId: userId,
-        laptopPassword: password?.trim() || null,
-        updatedAt: new Date()
-      }
+    // 3. Update or Create Employee record
+    const existingEmail = await db.employee.findUnique({
+      where: { email: pendingUser.email },
     });
+
+    let newEmp: any;
+    if (existingEmail) {
+      newEmp = await db.employee.update({
+        where: { email: pendingUser.email },
+        data: {
+          userId: userId,
+          status: "ACTIVE",
+          laptopPassword: password?.trim() || null,
+          updatedAt: new Date()
+        }
+      });
+    } else {
+      newEmp = await db.employee.create({
+        data: {
+          id: newEmployeeId,
+          employeeId: targetEmployeeId,
+          fullName: pendingUser.name || "Sales Representative",
+          email: pendingUser.email,
+          status: "ACTIVE",
+          companyId: validCompanyId || "",
+          userId: userId,
+          laptopPassword: password?.trim() || null,
+          updatedAt: new Date()
+        }
+      });
+    }
 
     // 4. Notify IT department
     const itMembers = await db.user.findMany({
