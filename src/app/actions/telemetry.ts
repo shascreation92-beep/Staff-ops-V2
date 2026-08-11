@@ -442,6 +442,27 @@ export async function manualCleanOldScreenshotsAction() {
 }
 
 /**
+ * Server action for web browser heartbeat ping (updates lastActiveAt)
+ */
+export async function webHeartbeatAction() {
+  const user = await enforceAuth().catch(() => null);
+  if (!user) return { success: false };
+
+  try {
+    await db.user.update({
+      where: { id: user.id },
+      data: {
+        lastActiveAt: new Date(),
+        dutyStatus: "ON_DUTY"
+      }
+    });
+    return { success: true };
+  } catch (err) {
+    return { success: false };
+  }
+}
+
+/**
  * Get live monitoring status (ACTIVE, IDLE, INTERRUPTED, OFF_DUTY) for company users
  */
 export async function getUsersMonitoringStatusAction() {
@@ -452,9 +473,11 @@ export async function getUsersMonitoringStatusAction() {
     companyFilter = { companyId: currentUser.companyId };
   }
 
-  const tenMinutesAgo = new Date(Date.now() - 600 * 1000); // 10-minute active window for desktop agent telemetry
+  const fiveMinutesMs = 5 * 60 * 1000; // 5-minute online threshold
+  const fifteenMinutesMs = 15 * 60 * 1000; // 15-minute idle threshold
+  const now = Date.now();
 
-  // Fetch all active users in company
+  // Fetch all active users in company including lastActiveAt
   const users = await db.user.findMany({
     where: {
       ...companyFilter,
@@ -465,7 +488,8 @@ export async function getUsersMonitoringStatusAction() {
       id: true,
       dutyStatus: true,
       name: true,
-      email: true
+      email: true,
+      lastActiveAt: true
     }
   });
 
@@ -495,9 +519,14 @@ export async function getUsersMonitoringStatusAction() {
     const agentVer = snap?.agentVersion || null;
     const isOutdated = Boolean(agentVer && agentVer !== CURRENT_AGENT_VERSION);
 
-    if (!snap) {
+    // Calculate maximum activity timestamp between web session (lastActiveAt) and desktop snapshot (snap.capturedAt)
+    let lastActiveTs = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : 0;
+    let snapTs = snap ? new Date(snap.capturedAt).getTime() : 0;
+    let maxTs = Math.max(lastActiveTs, snapTs);
+
+    if (maxTs === 0) {
       userStatusMap[u.id] = {
-        status: u.dutyStatus === "ON_DUTY" ? "INTERRUPTED" : "OFF_DUTY",
+        status: "OFF_DUTY",
         lastCapturedAt: null,
         agentVersion: null,
         isOutdated: false
@@ -505,27 +534,34 @@ export async function getUsersMonitoringStatusAction() {
       continue;
     }
 
-    const capturedDate = new Date(snap.capturedAt);
-    const isRecent = capturedDate >= tenMinutesAgo;
+    const elapsed = now - maxTs;
+    const lastActiveIso = new Date(maxTs).toISOString();
 
-    if (isRecent) {
+    if (elapsed <= fiveMinutesMs) {
       userStatusMap[u.id] = {
-        status: snap.isIdle ? "IDLE" : "ACTIVE",
-        lastCapturedAt: capturedDate.toISOString(),
+        status: snap?.isIdle ? "IDLE" : "ACTIVE",
+        lastCapturedAt: lastActiveIso,
+        agentVersion: agentVer,
+        isOutdated
+      };
+    } else if (elapsed <= fifteenMinutesMs) {
+      userStatusMap[u.id] = {
+        status: "IDLE",
+        lastCapturedAt: lastActiveIso,
         agentVersion: agentVer,
         isOutdated
       };
     } else if (u.dutyStatus === "ON_DUTY") {
       userStatusMap[u.id] = {
         status: "INTERRUPTED",
-        lastCapturedAt: capturedDate.toISOString(),
+        lastCapturedAt: lastActiveIso,
         agentVersion: agentVer,
         isOutdated
       };
     } else {
       userStatusMap[u.id] = {
         status: "OFF_DUTY",
-        lastCapturedAt: capturedDate.toISOString(),
+        lastCapturedAt: lastActiveIso,
         agentVersion: agentVer,
         isOutdated
       };

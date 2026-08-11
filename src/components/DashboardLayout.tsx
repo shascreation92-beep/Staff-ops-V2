@@ -12,6 +12,7 @@ import {
   acceptUpgradeAction, 
   declineInvitationAction 
 } from "@/app/actions/users";
+import { webHeartbeatAction } from "@/app/actions/telemetry";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -62,6 +63,15 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
       window.removeEventListener("error", handleChunkError as any);
       window.removeEventListener("unhandledrejection", handleChunkError as any);
     };
+  }, []);
+
+  // Web Browser presence heartbeat (pings every 30 seconds)
+  useEffect(() => {
+    webHeartbeatAction().catch(() => {});
+    const interval = setInterval(() => {
+      webHeartbeatAction().catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

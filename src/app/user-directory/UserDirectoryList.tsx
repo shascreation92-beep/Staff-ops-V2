@@ -155,22 +155,22 @@ export default function UserDirectoryList({ initialUsers, currentUserRole }: Use
       bg = "rgba(16, 185, 129, 0.08)";
       color = "#10B981";
       border = "rgba(16, 185, 129, 0.2)";
-      label = "AGENT ACTIVE";
+      label = "ONLINE";
       dotColor = "#10B981";
       pulse = true;
     } else if (status === "IDLE") {
       bg = "rgba(245, 158, 11, 0.08)";
       color = "#D97706";
       border = "rgba(245, 158, 11, 0.2)";
-      label = "AGENT IDLE";
+      label = "IDLE";
       dotColor = "#F59E0B";
     } else if (status === "INTERRUPTED") {
       bg = "rgba(239, 68, 68, 0.08)";
       color = "#EF4444";
       border = "rgba(239, 68, 68, 0.25)";
-      label = "INTERRUPTED";
+      label = "OFFLINE";
       dotColor = "#EF4444";
-      pulse = true;
+      pulse = false;
     }
 
     return (
