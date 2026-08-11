@@ -748,6 +748,8 @@ export default function AccountsList({
             setLocalAccounts(prev => [res.account, ...prev]);
           }
           router.refresh();
+        } else {
+          setWizardErrorMsg(res.error || "Failed to create account.");
         }
       } catch (err: any) {
         setWizardErrorMsg(err.message || "Failed to create account.");

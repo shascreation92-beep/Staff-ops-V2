@@ -20,45 +20,45 @@ const CreateAccountSchema = z.object({
 });
 
 export async function createAccountAction(formData: z.infer<typeof CreateAccountSchema>) {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE"]);
-
-  // Validation
-  const result = CreateAccountSchema.safeParse(formData);
-  if (!result.success) {
-    throw new Error(result.error.issues.map(e => e.message).join(", "));
-  }
-
-  const platformId = sanitizeInput(result.data.platformId);
-  const serialCode = sanitizeInput(result.data.serialCode);
-  const idName = sanitizeInput(result.data.idName);
-  const comment = result.data.comment ? sanitizeInput(result.data.comment) : undefined;
-  const { adsPublished, verificationStatus, targetCompanyId, submissionDate } = result.data;
-
-  // Determine Company ID based on role
-  let companyId = user.companyId;
-  if (user.role === "SUPER_ADMIN") {
-    if (!targetCompanyId) {
-      throw new Error("Target company is required for Super Admin.");
-    }
-    companyId = targetCompanyId;
-  }
-
-  if (!companyId) {
-    throw new Error("No company context found.");
-  }
-
-  // Check global uniqueness of serial code
-  const existingSerial = await db.account.findUnique({
-    where: { serialCode },
-  });
-
-  if (existingSerial) {
-    throw new Error(`Serial Code "${serialCode}" is already in use globally. It must be unique.`);
-  }
-
-  const accountId = crypto.randomUUID();
-
   try {
+    const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE"]);
+
+    // Validation
+    const result = CreateAccountSchema.safeParse(formData);
+    if (!result.success) {
+      return { success: false, error: result.error.issues.map(e => e.message).join(", ") };
+    }
+
+    const platformId = sanitizeInput(result.data.platformId);
+    const serialCode = sanitizeInput(result.data.serialCode);
+    const idName = sanitizeInput(result.data.idName);
+    const comment = result.data.comment ? sanitizeInput(result.data.comment) : undefined;
+    const { adsPublished, verificationStatus, targetCompanyId, submissionDate } = result.data;
+
+    // Determine Company ID based on role
+    let companyId = user.companyId;
+    if (user.role === "SUPER_ADMIN") {
+      if (!targetCompanyId) {
+        return { success: false, error: "Target company is required for Super Admin." };
+      }
+      companyId = targetCompanyId;
+    }
+
+    if (!companyId) {
+      return { success: false, error: "No company context found." };
+    }
+
+    // Check global uniqueness of serial code
+    const existingSerial = await db.account.findUnique({
+      where: { serialCode },
+    });
+
+    if (existingSerial) {
+      return { success: false, error: `Serial Code "${serialCode}" is already in use globally. It must be unique.` };
+    }
+
+    const accountId = crypto.randomUUID();
+
     const newAccount = await db.account.create({
       data: {
         id: accountId,
@@ -120,7 +120,8 @@ export async function createAccountAction(formData: z.infer<typeof CreateAccount
     revalidatePath("/accounts");
     return { success: true, accountId, account: createdAccount };
   } catch (error: any) {
-    throw new Error(error.message || "Failed to create account.");
+    console.error("[CREATE_ACCOUNT_ACTION_ERROR]", error);
+    return { success: false, error: error.message || "Failed to create account." };
   }
 }
 
