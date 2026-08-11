@@ -62,8 +62,9 @@ export default function ITTelemetryWidget({ data }: ITTelemetryWidgetProps) {
       style={{
         padding: "1.75rem",
         marginBottom: "2.25rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
+        background: "rgba(20, 18, 38, 0.75)",
+        backdropFilter: "blur(16px)",
+        border: "1px solid rgba(255, 255, 255, 0.09)",
         borderRadius: "14px",
         boxShadow: "var(--shadow-premium)",
         position: "relative"
@@ -145,8 +146,8 @@ export default function ITTelemetryWidget({ data }: ITTelemetryWidgetProps) {
         {/* Column 1: Live Associate Activity Ratio */}
         <div
           style={{
-            background: "rgba(2, 80, 161, 0.02)",
-            border: "1px solid rgba(2, 80, 161, 0.08)",
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: "10px",
             padding: "1.25rem",
             display: "flex",
@@ -172,7 +173,7 @@ export default function ITTelemetryWidget({ data }: ITTelemetryWidgetProps) {
 
           {/* Progress Bar */}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-            <div style={{ width: "100%", height: "8px", background: "rgba(0, 0, 0, 0.06)", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
+            <div style={{ width: "100%", height: "8px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
               <div style={{ width: `${onlinePercent}%`, background: "#10B981", height: "100%", transition: "width 0.4s ease" }} />
               <div style={{ width: `${100 - onlinePercent}%`, background: "#9CA3AF", height: "100%", opacity: 0.3 }} />
             </div>
@@ -186,8 +187,8 @@ export default function ITTelemetryWidget({ data }: ITTelemetryWidgetProps) {
         {/* Column 2: Hardware Brands & Windows OS Distribution */}
         <div
           style={{
-            background: "rgba(2, 80, 161, 0.02)",
-            border: "1px solid rgba(2, 80, 161, 0.08)",
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: "10px",
             padding: "1.25rem",
             display: "flex",
@@ -209,8 +210,8 @@ export default function ITTelemetryWidget({ data }: ITTelemetryWidgetProps) {
                 <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>Windows 11</span>
                 <span style={{ color: "var(--text-muted)" }}>{osCounts.Windows_11} Units</span>
               </div>
-              <div style={{ width: "100%", height: "5px", background: "rgba(0, 0, 0, 0.06)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${totalEmployeesCount > 0 ? (osCounts.Windows_11 / totalEmployeesCount) * 100 : 0}%`, background: "#0077B6", height: "100%" }} />
+              <div style={{ width: "100%", height: "5px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "3px", overflow: "hidden" }}>
+                <div style={{ width: `${totalEmployeesCount > 0 ? (osCounts.Windows_11 / totalEmployeesCount) * 100 : 0}%`, background: "#38BDF8", height: "100%" }} />
               </div>
             </div>
 
@@ -220,20 +221,20 @@ export default function ITTelemetryWidget({ data }: ITTelemetryWidgetProps) {
                 <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>Windows 10</span>
                 <span style={{ color: "var(--text-muted)" }}>{osCounts.Windows_10} Units</span>
               </div>
-              <div style={{ width: "100%", height: "5px", background: "rgba(0, 0, 0, 0.06)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${totalEmployeesCount > 0 ? (osCounts.Windows_10 / totalEmployeesCount) * 100 : 0}%`, background: "#0250A1", height: "100%" }} />
+              <div style={{ width: "100%", height: "5px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "3px", overflow: "hidden" }}>
+                <div style={{ width: `${totalEmployeesCount > 0 ? (osCounts.Windows_10 / totalEmployeesCount) * 100 : 0}%`, background: "#0284C7", height: "100%" }} />
               </div>
             </div>
 
             {/* Hardware Brands Breakdown */}
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.2rem" }}>
-              <span style={{ fontSize: "0.68rem", padding: "0.15rem 0.4rem", background: "rgba(0,119,182,0.1)", color: "#0077B6", borderRadius: "4px", fontWeight: 700 }}>
+              <span style={{ fontSize: "0.68rem", padding: "0.15rem 0.4rem", background: "rgba(56, 189, 248, 0.15)", color: "#38BDF8", borderRadius: "4px", fontWeight: 700, border: "1px solid rgba(56, 189, 248, 0.3)" }}>
                 HP: {brandCounts.HP}
               </span>
-              <span style={{ fontSize: "0.68rem", padding: "0.15rem 0.4rem", background: "rgba(2,80,161,0.1)", color: "#0250A1", borderRadius: "4px", fontWeight: 700 }}>
+              <span style={{ fontSize: "0.68rem", padding: "0.15rem 0.4rem", background: "rgba(2, 132, 199, 0.15)", color: "#38BDF8", borderRadius: "4px", fontWeight: 700, border: "1px solid rgba(2, 132, 199, 0.3)" }}>
                 Dell: {brandCounts.Dell}
               </span>
-              <span style={{ fontSize: "0.68rem", padding: "0.15rem 0.4rem", background: "rgba(212,175,55,0.1)", color: "#B8860B", borderRadius: "4px", fontWeight: 700 }}>
+              <span style={{ fontSize: "0.68rem", padding: "0.15rem 0.4rem", background: "rgba(245, 158, 11, 0.15)", color: "#F59E0B", borderRadius: "4px", fontWeight: 700, border: "1px solid rgba(245, 158, 11, 0.3)" }}>
                 ThinkPad: {brandCounts.ThinkPad}
               </span>
             </div>
@@ -243,8 +244,8 @@ export default function ITTelemetryWidget({ data }: ITTelemetryWidgetProps) {
         {/* Column 3: VPN Networks & Credential Compliance */}
         <div
           style={{
-            background: "rgba(2, 80, 161, 0.02)",
-            border: "1px solid rgba(2, 80, 161, 0.08)",
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: "10px",
             padding: "1.25rem",
             display: "flex",

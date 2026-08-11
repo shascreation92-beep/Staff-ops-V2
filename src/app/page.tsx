@@ -795,8 +795,9 @@ export default async function DashboardPage() {
           {/* Row 2: Facebook Dedicated Operations */}
           <div className="glass-panel" style={{
             padding: "1.5rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "rgba(20, 18, 38, 0.75)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(255, 255, 255, 0.09)",
             borderRadius: "12px",
             boxShadow: "var(--shadow-premium)",
             marginBottom: "2.25rem"
@@ -952,8 +953,9 @@ export default async function DashboardPage() {
           {/* Row 3: Vinted Dedicated Operations */}
           <div className="glass-panel" style={{
             padding: "1.5rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "rgba(20, 18, 38, 0.75)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(255, 255, 255, 0.09)",
             borderRadius: "12px",
             boxShadow: "var(--shadow-premium)",
             marginBottom: "2.25rem"

@@ -102,8 +102,9 @@ export default function TeamWiseBreakdown({
                   padding: "1.5rem",
                   borderRadius: "12px",
                   boxShadow: isCritical ? "0 0 15px rgba(239, 68, 68, 0.12)" : "var(--shadow-premium)",
-                  background: "#FFFFFF",
-                  border: isCritical ? "1px solid rgba(239, 68, 68, 0.8)" : "1px solid var(--border-dim)",
+                  background: "rgba(20, 18, 38, 0.75)",
+                  backdropFilter: "blur(16px)",
+                  border: isCritical ? "1px solid rgba(239, 68, 68, 0.8)" : "1px solid rgba(255, 255, 255, 0.09)",
                   transition: "all 0.3s ease"
                 }}
               >
@@ -203,7 +204,7 @@ export default function TeamWiseBreakdown({
                   gap: "1rem"
                 }}>
                   {/* Stat 1: Total accounts */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Total IDs
                     </span>
@@ -213,7 +214,7 @@ export default function TeamWiseBreakdown({
                   </div>
 
                   {/* Stat 2: Verified */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Verified IDs
                     </span>
@@ -223,7 +224,7 @@ export default function TeamWiseBreakdown({
                   </div>
 
                   {/* Stat 3: Unverified */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Unverified IDs
                     </span>
@@ -233,7 +234,7 @@ export default function TeamWiseBreakdown({
                   </div>
 
                   {/* Stat 4: Marketplace Issue */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       MP Issues
                     </span>
@@ -243,7 +244,7 @@ export default function TeamWiseBreakdown({
                   </div>
 
                   {/* Stat 5: Identity Issue */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Identity Issues
                     </span>
@@ -253,7 +254,7 @@ export default function TeamWiseBreakdown({
                   </div>
 
                   {/* Stat 6: Suspended */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Suspended
                     </span>
@@ -290,7 +291,7 @@ export default function TeamWiseBreakdown({
                   gap: "1rem"
                 }}>
                   {/* Stat 1: Total Vinted */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Total Vinted
                     </span>
@@ -300,7 +301,7 @@ export default function TeamWiseBreakdown({
                   </div>
 
                   {/* Stat 2: Verified Vinted */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Verified
                     </span>
@@ -310,7 +311,7 @@ export default function TeamWiseBreakdown({
                   </div>
 
                   {/* Stat 3: Unverified Vinted */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Unverified
                     </span>
@@ -320,7 +321,7 @@ export default function TeamWiseBreakdown({
                   </div>
 
                   {/* Stat 4: Suspended Vinted */}
-                  <div style={{ background: "#F9FAFB", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Suspended
                     </span>
