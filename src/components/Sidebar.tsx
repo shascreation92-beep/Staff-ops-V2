@@ -668,32 +668,6 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           boxShadow: "10px 0 35px rgba(0, 0, 0, 0.45)"
         }}
       >
-        {/* Floating Circular Blue Sidebar Toggle Arrow Button */}
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          style={{
-            position: "absolute",
-            top: "28px",
-            right: "-14px",
-            width: "28px",
-            height: "28px",
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
-            color: "#FFFFFF",
-            border: "2.5px solid #0E0C1B",
-            boxShadow: "0 4px 14px rgba(59, 130, 246, 0.6)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 110,
-            transition: "transform 0.2s ease"
-          }}
-          title="Toggle Sidebar"
-        >
-          {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-        </button>
 
         {/* User Profile Header ("Hello 👋 Kafka") */}
         <div style={{
