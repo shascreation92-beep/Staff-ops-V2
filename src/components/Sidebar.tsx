@@ -1931,21 +1931,32 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               <p style={{ fontSize: "0.78rem", color: "#94A3B8", marginBottom: "0.75rem" }}>
                 Open PowerShell on your Windows laptop, paste this command, and press Enter. It automatically bypasses Smart App Control and installs in 3 seconds.
               </p>
-              <div style={{ background: "#020617", padding: "0.75rem", borderRadius: "6px", border: "1px solid #334155", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#E2E8F0", wordBreak: "break-all", userSelect: "all" }}>
+              <div style={{ background: "#020617", padding: "0.75rem", borderRadius: "6px", border: "1px solid #334155", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#E2E8F0", overflowX: "auto", whiteSpace: "pre", wordBreak: "normal", userSelect: "all", maxWidth: "100%" }}>
                 powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; iwr -useb &apos;https://51-38-71-134.sslip.io/desktop-agent/Install-StaffOps-Workstation.bat&apos; -OutFile &apos;$env:TEMP\Install-StaffOps.bat&apos;; Unblock-File &apos;$env:TEMP\Install-StaffOps.bat&apos;; &amp; &apos;$env:TEMP\Install-StaffOps.bat&apos;&quot;
               </div>
-              <button
-                onClick={() => {
-                  const cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; iwr -useb 'https://51-38-71-134.sslip.io/desktop-agent/Install-StaffOps-Workstation.bat' -OutFile '$env:TEMP\\Install-StaffOps.bat'; Unblock-File '$env:TEMP\\Install-StaffOps.bat'; & '$env:TEMP\\Install-StaffOps.bat'"`;
-                  navigator.clipboard.writeText(cmd);
-                  setCopiedCommand(true);
-                  setTimeout(() => setCopiedCommand(false), 2500);
-                }}
-                className="btn-gold"
-                style={{ width: "100%", marginTop: "0.75rem", padding: "0.6rem", justifyContent: "center" }}
-              >
-                {copiedCommand ? "✓ Copied Command to Clipboard!" : "📋 Copy 1-Click Command"}
-              </button>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+                <button
+                  onClick={() => {
+                    const cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; iwr -useb 'https://51-38-71-134.sslip.io/desktop-agent/Install-StaffOps-Workstation.bat' -OutFile '$env:TEMP\\Install-StaffOps.bat'; Unblock-File '$env:TEMP\\Install-StaffOps.bat'; & '$env:TEMP\\Install-StaffOps.bat'"`;
+                    navigator.clipboard.writeText(cmd);
+                    setCopiedCommand(true);
+                    setTimeout(() => setCopiedCommand(false), 2500);
+                  }}
+                  className="btn-gold"
+                  style={{ flex: 1, minWidth: "140px", padding: "0.6rem", justifyContent: "center" }}
+                >
+                  {copiedCommand ? "✓ Copied!" : "📋 Copy Command"}
+                </button>
+                <a
+                  href="/api/download-agent-txt"
+                  download="Install-StaffOps-Command.txt"
+                  className="btn-glass"
+                  style={{ flex: 1, minWidth: "180px", padding: "0.6rem", justifyContent: "center", textDecoration: "none", color: "#38BDF8", borderColor: "#0284C7", display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", fontWeight: 700 }}
+                >
+                  <FileText size={15} />
+                  <span>📄 Download Command .TXT</span>
+                </a>
+              </div>
             </div>
 
             {/* Option 2: Download .ZIP Setup Archive */}
