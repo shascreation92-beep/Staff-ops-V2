@@ -11,9 +11,24 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const isChunkError = Boolean(
+    error?.message?.includes("Failed to load chunk") ||
+    error?.message?.includes("Loading chunk") ||
+    error?.name === "ChunkLoadError"
+  );
+
   useEffect(() => {
     console.error("Uncaught Runtime System Error:", error);
-  }, [error]);
+    if (isChunkError) {
+      console.warn("Auto-reloading page due to stale deployment chunk error...");
+      const lastReload = sessionStorage.getItem("chunk_reload_ts");
+      const now = Date.now();
+      if (!lastReload || now - parseInt(lastReload, 10) > 8000) {
+        sessionStorage.setItem("chunk_reload_ts", now.toString());
+        window.location.reload();
+      }
+    }
+  }, [error, isChunkError]);
 
   return (
     <div style={{
@@ -94,7 +109,13 @@ export default function GlobalError({
 
         <div style={{ display: "flex", gap: "0.75rem", width: "100%", marginTop: "0.5rem" }}>
           <button
-            onClick={() => reset()}
+            onClick={() => {
+              if (isChunkError) {
+                window.location.reload();
+              } else {
+                reset();
+              }
+            }}
             style={{
               flex: 1,
               height: "42px",
