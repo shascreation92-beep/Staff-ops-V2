@@ -798,7 +798,7 @@ export default function UKMarketTrendsList({
       {ukNews.length > 0 && (
         <div className="glass-panel" style={{
           padding: "0.65rem 1rem",
-          background: "#FFFFFF",
+          background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)",
           borderLeft: "4px solid var(--gold-primary)",
           display: "flex",
           alignItems: "center",
@@ -888,7 +888,7 @@ export default function UKMarketTrendsList({
       </div>
 
       {/* 🛡️ ANTI-FLAGGING BANNED KEYWORD SCANNER (FB MARKETPLACE / EBAY) */}
-      <div className="glass-panel" style={{ padding: "0.85rem 1.1rem", borderRadius: "12px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <div className="glass-panel" style={{ padding: "0.85rem 1.1rem", borderRadius: "12px", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
             <Sparkles style={{ color: getScanResults(adScannerText).isSafe ? "#10B981" : "#EF4444" }} size={16} />
@@ -926,7 +926,7 @@ export default function UKMarketTrendsList({
       </div>
 
       {/* 🇬🇧 INTERACTIVE UK LOCATION MAP & RADIUS EXTRACTOR FOR FB MARKETPLACE */}
-      <div className="glass-panel" style={{ padding: "1.1rem", borderRadius: "14px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <div className="glass-panel" style={{ padding: "1.1rem", borderRadius: "14px", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "1rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <MapPin style={{ color: "var(--gold-premium)" }} size={20} />
@@ -1356,7 +1356,7 @@ export default function UKMarketTrendsList({
                   gap: "0.75rem", 
                   padding: "1.1rem", 
                   borderRadius: "16px", 
-                  background: "#FFFFFF", 
+                  background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", 
                   border: "1px solid var(--border-dim)",
                   transition: "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease-in-out",
                   position: "relative",
@@ -1380,7 +1380,7 @@ export default function UKMarketTrendsList({
                 </div>
 
                 {/* 1-Click Buyer Objection Replier */}
-                <div className="glass-panel" style={{ padding: "0.85rem", borderRadius: "10px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <div className="glass-panel" style={{ padding: "0.85rem", borderRadius: "10px", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", color: "var(--gold-premium)" }}>
                       💰 1-Click Buyer Objection Replier
@@ -1685,7 +1685,7 @@ export default function UKMarketTrendsList({
                   <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "rgb(239, 68, 68)", background: "rgba(254, 226, 226, 0.7)", padding: "0.15rem 0.4rem", borderRadius: "6px" }}>
                     +{normalizeNumber(activeDrawerTrend.spikePercent)}% Spike Today
                   </span>
-                  <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", background: "#FFFFFF", padding: "0.15rem 0.4rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+                  <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", padding: "0.15rem 0.4rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
                     {activeDrawerTrend.traffic}
                   </span>
                   {activeDrawerTrend.postcode && (
@@ -1702,7 +1702,7 @@ export default function UKMarketTrendsList({
                   <label style={{ fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)" }}>
                     Competitor Audit Target
                   </label>
-                  <div className="glass-panel" style={{ padding: "0.85rem", borderRadius: "10px", background: "#FFFFFF", border: "1px solid var(--border-dim)" }}>
+                  <div className="glass-panel" style={{ padding: "0.85rem", borderRadius: "10px", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid var(--border-dim)" }}>
                     <p style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 500, lineHeight: "1.4" }}>
                       {activeDrawerTrend.newsTitle}
                     </p>
@@ -1828,7 +1828,7 @@ export default function UKMarketTrendsList({
                       fontSize: "0.75rem", 
                       fontFamily: "monospace", 
                       lineHeight: "1.45", 
-                      background: "#FFFFFF",
+                      background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)",
                       padding: "0.6rem",
                       borderRadius: "8px",
                       resize: "none"
@@ -1893,7 +1893,7 @@ export default function UKMarketTrendsList({
                     fontSize: "0.75rem", 
                     fontFamily: "monospace", 
                     lineHeight: "1.4", 
-                    background: "#FFFFFF",
+                    background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)",
                     padding: "0.5rem",
                     borderRadius: "8px",
                     resize: "none"
@@ -1964,7 +1964,7 @@ export default function UKMarketTrendsList({
           <div className="glass-panel" style={{
             width: "100%",
             maxWidth: "560px",
-            background: "#FFFFFF",
+            background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)",
             padding: "1.75rem",
             borderRadius: "16px",
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",

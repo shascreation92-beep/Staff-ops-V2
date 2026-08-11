@@ -117,7 +117,7 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
       </div>
 
       {/* Filter Bar */}
-      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "#FFFFFF" }}>
+      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
           {/* Search Box */}
           <div className="table-search-wrapper" style={{ width: "280px" }}>
@@ -159,7 +159,7 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
 
       {/* Roster Cards List matching Demo Screenshot */}
       {filteredStats.length === 0 ? (
-        <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", background: "#FFFFFF" }}>
+        <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)" }}>
           <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600 }}>No team members found matching search criteria.</p>
         </div>
       ) : (

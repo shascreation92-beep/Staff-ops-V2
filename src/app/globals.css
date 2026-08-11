@@ -848,10 +848,10 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 }
 
 .table-select-filter {
-  background: #FFFFFF;
-  border: 1px solid var(--border-dim);
+  background: rgba(20, 18, 38, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--border-radius-sm);
-  color: var(--text-primary);
+  color: #FFFFFF;
   padding: 0.45rem 2.2rem 0.45rem 0.75rem;
   outline: none;
   cursor: pointer;
@@ -860,7 +860,7 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   letter-spacing: 0.03em;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230077B6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2338BDF8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
   background-repeat: no-repeat;
   background-position: right 8px center;
   background-size: 14px;
@@ -869,16 +869,16 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 }
 
 .table-select-filter:hover {
-  border-color: var(--gold-premium);
+  border-color: #38BDF8;
 }
 
 .table-select-filter:focus {
-  border-color: var(--gold-premium);
+  border-color: #38BDF8;
 }
 
 .table-select-filter option {
-  background: #FFFFFF;
-  color: var(--text-primary);
+  background: #141226;
+  color: #FFFFFF;
   padding: 0.5rem;
 }
 
@@ -886,8 +886,8 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   overflow-x: auto;
   overflow-y: hidden;
   border-radius: var(--border-radius-md);
-  border: 1px solid var(--border-dim);
-  background: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(20, 18, 38, 0.75);
 }
 
 .premium-table {
@@ -898,11 +898,11 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 }
 
 .premium-table th {
-  background: #0250A1 !important;
+  background: #0284C7 !important;
   padding: 0.65rem 0.8rem !important;
   font-weight: 700;
   color: #FFFFFF !important;
-  border-bottom: 1px solid var(--border-dim);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   letter-spacing: 0.03em;
   font-size: 0.76rem;
   text-transform: uppercase;
@@ -911,8 +911,8 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 
 .premium-table td {
   padding: 0.65rem 0.8rem !important;
-  border-bottom: 1px solid var(--border-dim);
-  color: var(--text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #FFFFFF !important;
   white-space: nowrap;
 }
 
@@ -921,16 +921,16 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 }
 
 .premium-table tbody tr {
-  background: #FFFFFF;
+  background: rgba(20, 18, 38, 0.6);
 }
 
 .premium-table tbody tr:nth-child(even) {
-  background: #CAF0F8;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .premium-table tbody tr:hover {
-  background: #ADE8F4 !important;
-  box-shadow: inset 3px 0 0 var(--gold-primary) !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  box-shadow: inset 3px 0 0 #38BDF8 !important;
 }
 
 /* Badges */
@@ -946,21 +946,21 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 }
 
 .badge.verified {
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   color: #10B981;
 }
 
 .badge.pending {
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: #D97706;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #F59E0B;
 }
 
 .badge.suspended, .badge.rejected {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #DC2626;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #EF4444;
 }
 
 /* Forms & Inputs */
@@ -974,16 +974,16 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
 .form-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--gold-premium);
+  color: #38BDF8;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.input-gold, .select-gold {
-  background: #FFFFFF;
-  border: 1px solid var(--border-dim);
+.input-gold {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--border-radius-sm);
-  color: var(--text-primary);
+  color: #FFFFFF;
   padding: 0.6rem 0.85rem;
   font-size: 0.9rem;
   outline: none;
@@ -995,41 +995,42 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   appearance: none;
   -webkit-appearance: none;
   padding-right: 2.4rem;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2310B981' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2338BDF8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 15px;
-  color: var(--text-primary);
+  color: #FFFFFF;
+  background-color: rgba(20, 18, 38, 0.95);
   cursor: pointer;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .select-gold:hover {
-  border-color: var(--gold-premium);
+  border-color: #38BDF8;
 }
 
 .input-gold:focus, .select-gold:focus {
-  border-color: var(--gold-premium);
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.15);
+  border-color: #38BDF8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
 }
 
 .input-gold::placeholder {
-  color: var(--text-muted);
+  color: #64748B;
   font-weight: 400;
 }
 
 .select-gold option {
-  background: #FFFFFF;
-  color: var(--text-primary);
+  background: #141226;
+  color: #FFFFFF;
   padding: 0.5rem;
   font-weight: 600;
 }
 
 .select-gold option:checked,
 .select-gold option:hover {
-  background: rgba(0, 176, 116, 0.08);
-  color: var(--gold-primary);
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
 }
 
 /* Notification panel / Toast list */

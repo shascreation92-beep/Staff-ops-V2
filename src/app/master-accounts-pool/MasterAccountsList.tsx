@@ -208,16 +208,17 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
         flexWrap: "wrap",
         justifyContent: "space-between",
         gap: "1.5rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
+        background: "rgba(20, 18, 38, 0.75)",
+        backdropFilter: "blur(16px)",
+        border: "1px solid rgba(255, 255, 255, 0.09)",
         position: "relative",
         zIndex: 40
       }}>
         {/* Left Filters Group */}
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "1rem", flex: 1, minWidth: "280px" }}>
           {/* Search */}
-          <div style={{ flex: "1 1 250px", display: "flex", alignItems: "center", gap: "0.5rem", background: "#F9FAFB", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-            <Search size={16} style={{ color: "var(--text-muted)" }} />
+          <div style={{ flex: "1 1 250px", display: "flex", alignItems: "center", gap: "0.5rem", background: "rgba(255, 255, 255, 0.04)", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid rgba(255, 255, 255, 0.12)" }}>
+            <Search size={16} style={{ color: "#94A3B8" }} />
             <input
               type="text"
               placeholder="Search serial, name, or creator..."
@@ -229,7 +230,7 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
                 outline: "none",
                 fontSize: "0.82rem",
                 background: "transparent",
-                color: "var(--text-primary)"
+                color: "#FFFFFF"
               }}
             />
           </div>
@@ -242,12 +243,12 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
             style={{
               flex: "0 1 180px",
               height: "36px",
-              background: "#FFFFFF",
-              border: "1px solid var(--border-dim)",
+              background: "rgba(20, 18, 38, 0.95)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
               borderRadius: "6px",
               padding: "0 0.5rem",
               fontSize: "0.82rem",
-              color: "var(--text-primary)",
+              color: "#FFFFFF",
               outline: "none",
               cursor: "pointer",
               position: "relative",
@@ -268,12 +269,12 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
             style={{
               flex: "0 1 180px",
               height: "36px",
-              background: "#FFFFFF",
-              border: "1px solid var(--border-dim)",
+              background: "rgba(20, 18, 38, 0.95)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
               borderRadius: "6px",
               padding: "0 0.5rem",
               fontSize: "0.82rem",
-              color: "var(--text-primary)",
+              color: "#FFFFFF",
               outline: "none",
               cursor: "pointer",
               position: "relative",
@@ -297,7 +298,7 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
       </div>
 
       {/* Unified Accounts Sheet Table */}
-      <div className="glass-panel" style={{ padding: "0", background: "#FFFFFF", overflowX: "auto", border: "1px solid var(--border-dim)" }}>
+      <div className="glass-panel" style={{ padding: "0", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", overflowX: "auto", border: "1px solid rgba(255, 255, 255, 0.09)" }}>
         {filteredAccounts.length === 0 ? (
           <div style={{ padding: "3rem 1.5rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.85rem" }}>
             No accounts found matching the current search filters.

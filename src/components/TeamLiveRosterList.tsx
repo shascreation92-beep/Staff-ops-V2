@@ -187,8 +187,9 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
         alignItems: "center",
         flexWrap: "wrap",
         gap: "1.5rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
+        background: "rgba(20, 18, 38, 0.75)",
+        backdropFilter: "blur(16px)",
+        border: "1px solid rgba(255, 255, 255, 0.09)",
         position: "relative",
         zIndex: 50
       }}>
@@ -224,7 +225,7 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
       </div>
 
       {/* 2. Filters & Toolbar */}
-      <div className="glass-panel" style={{ padding: "1.25rem", background: "#FFFFFF", border: "1px solid var(--border-dim)" }}>
+      <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.09)" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.5rem" }}>
@@ -419,8 +420,9 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
             justifyContent: "space-between",
             alignItems: "center",
             padding: "1rem 1.5rem",
-            borderTop: "1px solid var(--border-dim)",
-            background: "#FFFFFF",
+            borderTop: "1px solid rgba(255, 255, 255, 0.09)",
+            background: "rgba(20, 18, 38, 0.75)",
+            backdropFilter: "blur(16px)",
             flexWrap: "wrap",
             gap: "1rem"
           }}>
@@ -525,8 +527,9 @@ export default function TeamLiveRosterList({ initialAccounts, user, activeAssoci
             maxWidth: "500px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "rgba(20, 18, 38, 0.95)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
             boxShadow: "var(--shadow-premium)",
             position: "relative",
             display: "flex",

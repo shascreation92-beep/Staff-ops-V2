@@ -222,7 +222,9 @@ export default function TeamLeadDashboard({
         gap: "1.5rem",
         position: "relative",
         zIndex: 50,
-        background: "#FFFFFF"
+        background: "rgba(20, 18, 38, 0.75)",
+        backdropFilter: "blur(16px)",
+        border: "1px solid rgba(255, 255, 255, 0.09)"
       }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
           <h1 className="text-gold-gradient" style={{ fontSize: "1.5rem", fontWeight: 800, margin: 0 }}>

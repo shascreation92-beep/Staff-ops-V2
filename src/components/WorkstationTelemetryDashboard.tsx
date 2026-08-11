@@ -281,7 +281,7 @@ export default function WorkstationTelemetryDashboard() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.25rem" }}>
         
         {/* Total Connected Workstations */}
-        <div className="glass-panel" style={{ padding: "1.25rem", background: "#FFFFFF", borderLeft: "4px solid #3B82F6" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", borderLeft: "4px solid #3B82F6" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Connected PCs</span>
             <Monitor size={18} style={{ color: "#3B82F6" }} />
@@ -295,7 +295,7 @@ export default function WorkstationTelemetryDashboard() {
         </div>
 
         {/* Avg Company RAM Usage */}
-        <div className="glass-panel" style={{ padding: "1.25rem", background: "#FFFFFF", borderLeft: "4px solid #10B981" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", borderLeft: "4px solid #10B981" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Avg RAM Usage</span>
             <MemoryStick size={18} style={{ color: "#10B981" }} />
@@ -309,7 +309,7 @@ export default function WorkstationTelemetryDashboard() {
         </div>
 
         {/* VPN Security Active */}
-        <div className="glass-panel" style={{ padding: "1.25rem", background: "#FFFFFF", borderLeft: "4px solid #8B5CF6" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", borderLeft: "4px solid #8B5CF6" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>VPN Security</span>
             <ShieldCheck size={18} style={{ color: "#8B5CF6" }} />
@@ -323,7 +323,7 @@ export default function WorkstationTelemetryDashboard() {
         </div>
 
         {/* High Resource Load Warnings */}
-        <div className="glass-panel" style={{ padding: "1.25rem", background: "#FFFFFF", borderLeft: "4px solid #F59E0B" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", borderLeft: "4px solid #F59E0B" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>High Load Alerts</span>
             <AlertTriangle size={18} style={{ color: "#F59E0B" }} />
@@ -339,7 +339,7 @@ export default function WorkstationTelemetryDashboard() {
       </div>
 
       {/* 3. Search & Filter Bar */}
-      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "#FFFFFF", position: "relative", zIndex: 40 }}>
+      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", position: "relative", zIndex: 40 }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
           
           <div className="table-search-wrapper" style={{ width: "240px" }}>
@@ -391,7 +391,7 @@ export default function WorkstationTelemetryDashboard() {
       {/* 4. Employee Workstation Cards Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem" }}>
         {filteredWorkstations.length === 0 ? (
-          <div className="glass-panel" style={{ gridColumn: "1 / -1", padding: "4rem 2rem", textAlign: "center", background: "#FFFFFF" }}>
+          <div className="glass-panel" style={{ gridColumn: "1 / -1", padding: "4rem 2rem", textAlign: "center", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)" }}>
             <Monitor size={36} style={{ color: "var(--text-muted)", margin: "0 auto 0.75rem auto" }} />
             <h3 style={{ fontSize: "1rem", fontWeight: 700 }}>No employee workstations matching filter.</h3>
             <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Try adjusting your search query or filters above.</p>
@@ -403,7 +403,7 @@ export default function WorkstationTelemetryDashboard() {
               className="glass-panel" 
               style={{
                 padding: "1.25rem",
-                background: "#FFFFFF",
+                background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)",
                 display: "flex",
                 flexDirection: "column",
                 gap: "1rem",
