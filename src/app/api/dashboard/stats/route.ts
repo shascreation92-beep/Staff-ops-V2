@@ -20,7 +20,7 @@ export async function GET() {
 
     const targetRuleFB = rulesList.find(r => r.key === "targetToMaintainFB");
     const targetRuleGlobal = rulesList.find(r => r.key === "targetToMaintain");
-    const fbTarget = targetRuleFB ? (parseInt(targetRuleFB.value, 10) || 15) : (targetRuleGlobal ? (parseInt(targetRuleGlobal.value, 10) || 15) : 15);
+    const fbTarget = targetRuleFB ? (parseInt(targetRuleFB.value, 10) || 40) : (targetRuleGlobal ? (parseInt(targetRuleGlobal.value, 10) || 40) : 40);
 
     const fbPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("facebook"));
     const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));

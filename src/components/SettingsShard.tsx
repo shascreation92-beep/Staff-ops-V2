@@ -79,10 +79,10 @@ export default function SettingsShard({
     rules["requireVerification"] !== "false" ? "true" : "false"
   );
   const [targetToMaintain, setTargetToMaintain] = useState(
-    parseInt(rules["targetToMaintain"] || "15", 10)
+    parseInt(rules["targetToMaintain"] || "40", 10)
   );
   const [targetToMaintainFB, setTargetToMaintainFB] = useState(
-    parseInt(rules["targetToMaintainFB"] || "15", 10)
+    parseInt(rules["targetToMaintainFB"] || "40", 10)
   );
   // Removed rule success message state (handled within RuleForm)
 

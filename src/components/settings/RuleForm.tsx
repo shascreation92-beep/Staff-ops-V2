@@ -129,8 +129,8 @@ export const RuleForm: React.FC<{
           <button
             type="button"
             className="btn-gold w-10 h-10"
-            disabled={isPending || form.targetToMaintain >= 50}
-            onClick={() => setForm(prev => ({ ...prev, targetToMaintain: Math.min(50, prev.targetToMaintain + 1) }))}
+            disabled={isPending || form.targetToMaintain >= 100}
+            onClick={() => setForm(prev => ({ ...prev, targetToMaintain: Math.min(100, prev.targetToMaintain + 1) }))}
           >
             +
           </button>
@@ -157,8 +157,8 @@ export const RuleForm: React.FC<{
           <button
             type="button"
             className="btn-gold w-10 h-10"
-            disabled={isPending || form.targetToMaintainFB >= 50}
-            onClick={() => setForm(prev => ({ ...prev, targetToMaintainFB: Math.min(50, prev.targetToMaintainFB + 1) }))}
+            disabled={isPending || form.targetToMaintainFB >= 100}
+            onClick={() => setForm(prev => ({ ...prev, targetToMaintainFB: Math.min(100, prev.targetToMaintainFB + 1) }))}
           >
             +
           </button>

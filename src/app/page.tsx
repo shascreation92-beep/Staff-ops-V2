@@ -175,7 +175,7 @@ export default async function DashboardPage() {
       key: { in: ["targetToMaintainFB", "targetToMaintain"] }
     }
   });
-  const targetValuePerTL = targetRule ? (parseInt(targetRule.value, 10) || 15) : 15;
+  const targetValuePerTL = targetRule ? (parseInt(targetRule.value, 10) || 40) : 40;
   const totalOfficeTarget = targetValuePerTL * companyTeamLeadsCount;
 
   // Fetch verification cost rules
