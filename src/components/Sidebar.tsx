@@ -138,6 +138,10 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
   // Attendance Telemetry for Company Owner & TL
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [attendanceTab, setAttendanceTab] = useState<"NOT_SIGNED_IN" | "ON_DUTY" | "ON_BREAK">("NOT_SIGNED_IN");
+
+  // Workstation Agent 1-Click Installation Modal
+  const [showAgentInstallModal, setShowAgentInstallModal] = useState(false);
+  const [copiedCommand, setCopiedCommand] = useState(false);
   const [attendanceData, setAttendanceData] = useState<{
     totalCount: number;
     onDutyCount: number;
@@ -815,16 +819,24 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
 
           if ((item as any).isDownload) {
             return (
-              <a
+              <button
                 key={item.id}
-                href={item.path}
-                download
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowAgentInstallModal(true);
+                }}
                 className="sidebar-item"
-                onClick={() => setIsOpen(false)}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer"
+                }}
               >
                 <Icon className="sidebar-icon" size={20} />
                 <span>{item.label}</span>
-              </a>
+              </button>
             );
           }
 
@@ -1858,6 +1870,103 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                   ))
                 )
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Workstation Agent 1-Click Installation Modal */}
+      {showAgentInstallModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(15, 23, 42, 0.4)",
+          backdropFilter: "blur(6px)",
+          zIndex: 2000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: "580px",
+            width: "100%",
+            padding: "2rem",
+            background: "#FFFFFF",
+            border: "1px solid var(--border-dim)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            boxShadow: "var(--shadow-premium)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>
+                WORKSTATION AGENT V-{CURRENT_AGENT_VERSION} SETUP
+              </h2>
+              <button
+                onClick={() => setShowAgentInstallModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.25rem" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "-0.5rem" }}>
+              Select your preferred installation method below to enable desktop monitoring on your Windows laptop.
+            </p>
+
+            {/* Option 1: 1-Click PowerShell Command */}
+            <div style={{ background: "#0F172A", padding: "1.25rem", borderRadius: "10px", border: "1px solid #1E293B" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#38BDF8" }}>
+                  ⚡ METHOD 1: 1-CLICK POWERSHELL COMMAND (NO WARNINGS)
+                </span>
+                <span style={{ fontSize: "0.72rem", background: "rgba(16, 185, 129, 0.2)", color: "#10B981", padding: "0.15rem 0.5rem", borderRadius: "4px", fontWeight: 700 }}>
+                  RECOMMENDED
+                </span>
+              </div>
+              <p style={{ fontSize: "0.78rem", color: "#94A3B8", marginBottom: "0.75rem" }}>
+                Open PowerShell on your Windows laptop, paste this command, and press Enter. It automatically bypasses Smart App Control and installs in 3 seconds.
+              </p>
+              <div style={{ background: "#020617", padding: "0.75rem", borderRadius: "6px", border: "1px solid #334155", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#E2E8F0", wordBreak: "break-all", userSelect: "all" }}>
+                powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; iwr -useb &apos;https://51-38-71-134.sslip.io/desktop-agent/Install-StaffOps-Workstation.bat&apos; -OutFile &apos;$env:TEMP\Install-StaffOps.bat&apos;; Unblock-File &apos;$env:TEMP\Install-StaffOps.bat&apos;; &amp; &apos;$env:TEMP\Install-StaffOps.bat&apos;&quot;
+              </div>
+              <button
+                onClick={() => {
+                  const cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; iwr -useb 'https://51-38-71-134.sslip.io/desktop-agent/Install-StaffOps-Workstation.bat' -OutFile '$env:TEMP\\Install-StaffOps.bat'; Unblock-File '$env:TEMP\\Install-StaffOps.bat'; & '$env:TEMP\\Install-StaffOps.bat'"`;
+                  navigator.clipboard.writeText(cmd);
+                  setCopiedCommand(true);
+                  setTimeout(() => setCopiedCommand(false), 2500);
+                }}
+                className="btn-gold"
+                style={{ width: "100%", marginTop: "0.75rem", padding: "0.6rem", justifyContent: "center" }}
+              >
+                {copiedCommand ? "✓ Copied Command to Clipboard!" : "📋 Copy 1-Click Command"}
+              </button>
+            </div>
+
+            {/* Option 2: Download .ZIP Setup Archive */}
+            <div style={{ padding: "1rem", borderRadius: "8px", border: "1px solid var(--border-dim)", background: "rgba(248, 250, 252, 0.8)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                  📦 METHOD 2: DOWNLOAD SETUP .ZIP ARCHIVE
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                  Download setup files to extract and run manually.
+                </div>
+              </div>
+              <a href="/api/download-agent" download className="btn-glass" style={{ padding: "0.5rem 1rem", fontSize: "0.8rem" }}>
+                Download .ZIP
+              </a>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+              <button onClick={() => setShowAgentInstallModal(false)} className="btn-glass" style={{ padding: "0.5rem 1.25rem" }}>
+                Close
+              </button>
             </div>
           </div>
         </div>

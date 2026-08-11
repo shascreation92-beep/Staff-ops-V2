@@ -23,7 +23,7 @@ echo Target Engine Path: %AGENT_PS1%
 echo.
 
 echo [1/4] Downloading Latest Worknode Agent Engine (v2.4) from Server...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; (New-Object System.Net.WebClient).DownloadFile('%SERVER_URL%/desktop-agent/StaffOps-Agent.ps1', '%AGENT_PS1%')"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; (New-Object System.Net.WebClient).DownloadFile('%SERVER_URL%/desktop-agent/StaffOps-Agent.ps1', '%AGENT_PS1%'); Unblock-File '%AGENT_PS1%'"
 
 echo [2/4] Creating Silent Background Execution Wrapper...
 echo Set WshShell = CreateObject("WScript.Shell") > "%VBS_LAUNCHER%"
