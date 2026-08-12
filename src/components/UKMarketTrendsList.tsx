@@ -1326,27 +1326,27 @@ export default function UKMarketTrendsList({
           padding: "0.25rem"
         }}>
           {paginatedTrends.map((trend) => {
-            const spikeColor = trend.spikePercent >= 300 ? "rgb(239, 68, 68)" : (trend.spikePercent >= 180 ? "rgb(245, 158, 11)" : "rgb(34, 197, 94)");
-            const spikeBg = trend.spikePercent >= 300 ? "rgba(254, 226, 226, 0.65)" : (trend.spikePercent >= 180 ? "rgba(254, 243, 199, 0.65)" : "rgba(220, 252, 231, 0.65)");
+            const spikeColor = trend.spikePercent >= 300 ? "#EF4444" : (trend.spikePercent >= 180 ? "#F59E0B" : "#10B981");
+            const spikeBg = trend.spikePercent >= 300 ? "rgba(239, 68, 68, 0.15)" : (trend.spikePercent >= 180 ? "rgba(245, 158, 11, 0.15)" : "rgba(16, 185, 129, 0.15)");
             const seo = getSEOMetrics(trend);
 
             // Brand badges
             let brandText = "Google Shopping";
-            let brandColor = "rgb(66, 133, 244)";
-            let brandBg = "rgba(219, 234, 254, 0.7)";
+            let brandColor = "#38BDF8";
+            let brandBg = "rgba(56, 189, 248, 0.12)";
 
             if (trend.source === "FACEBOOK") {
               brandText = "Marketplace";
-              brandColor = "rgb(79, 70, 229)";
-              brandBg = "rgba(224, 231, 255, 0.7)";
+              brandColor = "#818CF8";
+              brandBg = "rgba(129, 140, 248, 0.12)";
             } else if (trend.source === "VINTED") {
               brandText = "Vinted UK";
-              brandColor = "rgb(13, 148, 136)";
-              brandBg = "rgba(204, 251, 241, 0.7)";
+              brandColor = "#2DD4BF";
+              brandBg = "rgba(45, 212, 191, 0.12)";
             } else if (trend.source === "EBAY") {
               brandText = "eBay UK";
-              brandColor = "rgb(220, 38, 38)";
-              brandBg = "rgba(254, 226, 226, 0.7)";
+              brandColor = "#F87171";
+              brandBg = "rgba(248, 113, 113, 0.12)";
             }
 
             return (
@@ -1485,36 +1485,37 @@ export default function UKMarketTrendsList({
                   {/* SEO Metrics directly below the keyword */}
                   <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.35rem", alignItems: "center" }}>
                     <span style={{ 
-                      fontSize: "0.58rem", 
+                      fontSize: "0.62rem", 
                       fontWeight: 700, 
-                      color: "var(--text-secondary)", 
-                      background: "rgba(15, 23, 42, 0.04)", 
-                      padding: "0.1rem 0.3rem", 
+                      color: "#94A3B8", 
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      padding: "0.15rem 0.4rem", 
                       borderRadius: "4px" 
                     }}>
                       Demand: {seo.demand}
                     </span>
                     <span style={{ 
-                      fontSize: "0.58rem", 
+                      fontSize: "0.62rem", 
                       fontWeight: 700, 
                       color: seo.color, 
-                      background: "rgba(15, 23, 42, 0.02)", 
-                      border: seo.border, 
-                      padding: "0.1rem 0.3rem", 
+                      background: "rgba(16, 185, 129, 0.12)", 
+                      border: "1px solid rgba(16, 185, 129, 0.3)", 
+                      padding: "0.15rem 0.4rem", 
                       borderRadius: "4px",
                       display: "flex",
                       alignItems: "center",
-                      gap: "0.15rem"
+                      gap: "0.2rem"
                     }}>
-                      <Tags size={8} />
+                      <Tags size={9} />
                       Diff: {seo.difficulty}
                     </span>
                   </div>
                 </div>
 
                 {/* Trajectory / Valuation/ Liquidity Score indicators on cards */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", padding: "0.4rem", borderRadius: "6px", background: "rgba(15, 23, 42, 0.015)", border: "1px solid var(--border-dim)" }}>
-                  <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", padding: "0.45rem 0.65rem", borderRadius: "6px", background: "rgba(20, 18, 38, 0.95)", border: "1px solid rgba(255, 255, 255, 0.09)" }}>
+                  <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#FFFFFF" }}>
                     {trend.source === "GOOGLE" && getGoogleTrajectory(trend)}
                     {(trend.source === "FACEBOOK" || trend.source === "EBAY") && calculateValuation(trend.keyword)}
                     {trend.source === "VINTED" && getVintedDemand(trend)}
@@ -1574,21 +1575,26 @@ export default function UKMarketTrendsList({
 
                   <button
                     onClick={() => handleOpenOutreach(trend)}
-                    className="btn-gold"
                     style={{ 
                       flex: 1, 
-                      fontSize: "0.72rem", 
+                      fontSize: "0.75rem", 
                       fontWeight: 800, 
-                      padding: "0.45rem 0.75rem", 
+                      padding: "0.55rem 0.85rem", 
                       borderRadius: "8px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0.25rem"
+                      gap: "0.35rem",
+                      background: "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)",
+                      color: "#FFFFFF",
+                      border: "1px solid #38BDF8",
+                      boxShadow: "0 0 12px rgba(56, 189, 248, 0.25)",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
                     }}
                   >
-                    Outreach Assistant
-                    <ArrowRight size={12} />
+                    <span>Outreach Assistant</span>
+                    <ArrowRight size={13} style={{ color: "#FFFFFF" }} />
                   </button>
                 </div>
 
