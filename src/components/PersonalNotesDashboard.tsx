@@ -428,7 +428,8 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
             router.refresh();
           }}
           onSave={async (id, data) => {
-            setNotes(prev => prev.map(n => n.id === id ? { ...n, ...data } : n));
+            const updated = { ...expandedNote, ...data, updatedAt: new Date() };
+            setNotes(prev => prev.map(n => n.id === id ? updated : n));
             await updatePersonalNoteAction(id, data);
             router.refresh();
           }}
@@ -593,6 +594,14 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
   const [localColor, setLocalColor] = useState(note.color);
   const [localCategory] = useState(note.category || "Work");
   const [localIsPinned, setLocalIsPinned] = useState(note.isPinned);
+
+  // Sync props to local state whenever note prop updates from parent (e.g. from FullscreenModal Save Remarks)
+  useEffect(() => {
+    setLocalTitle(note.title === "Untitled Note" ? "" : note.title);
+    setLocalContent(note.content);
+    setLocalColor(note.color);
+    setLocalIsPinned(note.isPinned);
+  }, [note.title, note.content, note.color, note.isPinned, note.updatedAt]);
   const [itPinType, setItPinType] = useState<"ALL_IT" | "SPECIFIC_MEMBER">("ALL_IT");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [isCopied, setIsCopied] = useState(false);
