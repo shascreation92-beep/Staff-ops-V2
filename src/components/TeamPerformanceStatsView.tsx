@@ -137,6 +137,7 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
               value={shiftFilter}
               onChange={(e) => setShiftFilter(e.target.value)}
               className="table-select-filter"
+              style={{ background: "rgba(20, 18, 38, 0.95)", color: "#FFFFFF", border: "1px solid rgba(255, 255, 255, 0.15)" }}
             >
               <option value="ALL">ALL SHIFT DUTIES</option>
               <option value="ON_DUTY">🟢 ON DUTY</option>
@@ -148,6 +149,7 @@ export default function TeamPerformanceStatsView({ initialStats, currentUserRole
               value={laggingFilter}
               onChange={(e) => setLaggingFilter(e.target.value)}
               className="table-select-filter"
+              style={{ background: "rgba(20, 18, 38, 0.95)", color: "#FFFFFF", border: "1px solid rgba(255, 255, 255, 0.15)" }}
             >
               <option value="ALL">ALL PERFORMANCE</option>
               <option value="LAGGING">⚠️ ATTENTION NEEDED (&lt;5 IDs)</option>

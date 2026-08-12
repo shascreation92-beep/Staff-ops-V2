@@ -1777,22 +1777,36 @@ textarea::placeholder {
 }
 
 .table-select-filter {
-  background: #FFFFFF !important;
-  border: 1px solid var(--border-gold) !important;
+  color-scheme: dark !important;
+  background-color: rgba(20, 18, 38, 0.95) !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2338BDF8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: var(--border-radius-sm) !important;
-  color: var(--text-primary) !important;
-  padding: 0.45rem 0.75rem !important;
+  color: #FFFFFF !important;
+  padding: 0.45rem 2.2rem 0.45rem 0.75rem !important;
   font-size: 0.82rem !important;
   font-weight: 600 !important;
   outline: none !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   max-width: 100% !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: none !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
 }
 
-.table-select-filter:hover {
-  border-color: var(--gold-premium) !important;
+.table-select-filter:hover, .table-select-filter:focus {
+  border-color: #38BDF8 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25) !important;
+}
+
+.table-select-filter option {
+  color-scheme: dark !important;
+  background-color: #141226 !important;
+  color: #FFFFFF !important;
 }
 
 
