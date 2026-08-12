@@ -256,6 +256,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
           category: "Work"
         });
         if (res.success && res.note) {
+          setNotes(prev => [res.note, ...prev]);
           toast.success(type === "poll" ? "New Team Poll created!" : "New Standard Note created!");
           router.refresh();
         }
@@ -272,6 +273,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
       try {
         const res = await deletePersonalNoteAction(id);
         if (res.success) {
+          setNotes(prev => prev.filter(n => n.id !== id));
           toast.success("Note deleted successfully.");
           router.refresh();
         }
@@ -426,7 +428,9 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
             router.refresh();
           }}
           onSave={async (id, data) => {
+            setNotes(prev => prev.map(n => n.id === id ? { ...n, ...data } : n));
             await updatePersonalNoteAction(id, data);
+            router.refresh();
           }}
         />
       )}
