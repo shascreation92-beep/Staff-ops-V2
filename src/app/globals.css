@@ -1809,5 +1809,31 @@ textarea::placeholder {
   color: #FFFFFF !important;
 }
 
+.input-gold {
+  color-scheme: dark !important;
+  background-color: rgba(20, 18, 38, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--border-radius-sm) !important;
+  color: #FFFFFF !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.input-gold::placeholder {
+  color: #94A3B8 !important;
+  opacity: 0.8 !important;
+}
+
+.input-gold:focus, .input-gold:hover {
+  border-color: #38BDF8 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25) !important;
+}
+
+.input-gold option {
+  color-scheme: dark !important;
+  background-color: #141226 !important;
+  color: #FFFFFF !important;
+}
+
 
 

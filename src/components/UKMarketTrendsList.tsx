@@ -1161,7 +1161,7 @@ export default function UKMarketTrendsList({
       </div>
 
       {/* 2. Visual Platform Workspaces Tabs Array (Clean, no Tab A/B/C/D labels) */}
-      <div style={{ display: "flex", gap: "0.4rem", borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.5rem", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "0.4rem", borderBottom: "1px solid rgba(255, 255, 255, 0.09)", paddingBottom: "0.5rem", flexWrap: "wrap" }}>
         <button
           onClick={() => { setActiveTab("GOOGLE"); setSelectedCategory("ALL"); setSearchQuery(""); }}
           className={`btn-glass ${activeTab === "GOOGLE" ? "active" : ""}`}
@@ -1170,9 +1170,10 @@ export default function UKMarketTrendsList({
             borderRadius: "8px", 
             fontSize: "0.8rem", 
             fontWeight: 800,
-            background: activeTab === "GOOGLE" ? "var(--gold-premium)" : "rgba(255,255,255,0.45)",
-            color: activeTab === "GOOGLE" ? "#FFFFFF" : "var(--text-primary)",
-            border: "1px solid var(--border-dim)"
+            background: activeTab === "GOOGLE" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "rgba(20, 18, 38, 0.85)",
+            color: "#FFFFFF",
+            border: activeTab === "GOOGLE" ? "1px solid #38BDF8" : "1px solid rgba(255, 255, 255, 0.12)",
+            boxShadow: activeTab === "GOOGLE" ? "0 0 12px rgba(56, 189, 248, 0.3)" : "none"
           }}
         >
           📈 Google & Retail Trends
@@ -1185,9 +1186,10 @@ export default function UKMarketTrendsList({
             borderRadius: "8px", 
             fontSize: "0.8rem", 
             fontWeight: 800,
-            background: activeTab === "FACEBOOK" ? "var(--gold-premium)" : "rgba(255,255,255,0.45)",
-            color: activeTab === "FACEBOOK" ? "#FFFFFF" : "var(--text-primary)",
-            border: "1px solid var(--border-dim)"
+            background: activeTab === "FACEBOOK" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "rgba(20, 18, 38, 0.85)",
+            color: "#FFFFFF",
+            border: activeTab === "FACEBOOK" ? "1px solid #38BDF8" : "1px solid rgba(255, 255, 255, 0.12)",
+            boxShadow: activeTab === "FACEBOOK" ? "0 0 12px rgba(56, 189, 248, 0.3)" : "none"
           }}
         >
           🏪 Facebook Marketplace
@@ -1200,9 +1202,10 @@ export default function UKMarketTrendsList({
             borderRadius: "8px", 
             fontSize: "0.8rem", 
             fontWeight: 800,
-            background: activeTab === "VINTED" ? "var(--gold-premium)" : "rgba(255,255,255,0.45)",
-            color: activeTab === "VINTED" ? "#FFFFFF" : "var(--text-primary)",
-            border: "1px solid var(--border-dim)"
+            background: activeTab === "VINTED" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "rgba(20, 18, 38, 0.85)",
+            color: "#FFFFFF",
+            border: activeTab === "VINTED" ? "1px solid #38BDF8" : "1px solid rgba(255, 255, 255, 0.12)",
+            boxShadow: activeTab === "VINTED" ? "0 0 12px rgba(56, 189, 248, 0.3)" : "none"
           }}
         >
           👗 Vinted Apparel
@@ -1215,9 +1218,10 @@ export default function UKMarketTrendsList({
             borderRadius: "8px", 
             fontSize: "0.8rem", 
             fontWeight: 800,
-            background: activeTab === "EBAY" ? "var(--gold-premium)" : "rgba(255,255,255,0.45)",
-            color: activeTab === "EBAY" ? "#FFFFFF" : "var(--text-primary)",
-            border: "1px solid var(--border-dim)"
+            background: activeTab === "EBAY" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "rgba(20, 18, 38, 0.85)",
+            color: "#FFFFFF",
+            border: activeTab === "EBAY" ? "1px solid #38BDF8" : "1px solid rgba(255, 255, 255, 0.12)",
+            boxShadow: activeTab === "EBAY" ? "0 0 12px rgba(56, 189, 248, 0.3)" : "none"
           }}
         >
           🔨 eBay UK Trends
@@ -1225,7 +1229,7 @@ export default function UKMarketTrendsList({
       </div>
 
       {/* 3. Search & Filter Bar */}
-      <div className="glass-panel" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", padding: "1rem", borderRadius: "12px", background: "rgba(255, 255, 255, 0.3)", border: "1px solid var(--border-dim)" }}>
+      <div className="glass-panel" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", padding: "1rem", borderRadius: "12px", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.09)" }}>
         
         {activeTab === "GOOGLE" && (
           <>
@@ -1412,12 +1416,12 @@ export default function UKMarketTrendsList({
                     <option value="COD">💵 "Do you accept Cash on Delivery?"</option>
                   </select>
 
-                  <textarea
-                    readOnly
-                    value={getObjectionReplyText(selectedObjectionType, activeDrawerTrend)}
-                    className="input-gold"
-                    style={{ width: "100%", height: "75px", fontSize: "0.72rem", background: "#F8FAFC", padding: "0.5rem", resize: "none" }}
-                  />
+                    <textarea
+                      readOnly
+                      value={getObjectionReplyText(selectedObjectionType, activeDrawerTrend)}
+                      className="input-gold"
+                      style={{ width: "100%", height: "75px", fontSize: "0.72rem", background: "rgba(20, 18, 38, 0.95)", color: "#FFFFFF", border: "1px solid rgba(255, 255, 255, 0.12)", padding: "0.5rem", resize: "none" }}
+                    />
                 </div>
 
                 {/* Hashtag Generator */}
