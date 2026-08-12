@@ -1157,8 +1157,9 @@ export default function ITManagementDirectory({
             justifyContent: "space-between",
             alignItems: "center",
             padding: "1rem 1.5rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "rgba(20, 18, 38, 0.75)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(255, 255, 255, 0.09)",
             borderRadius: "var(--border-radius-md)",
             flexWrap: "wrap",
             gap: "1rem"

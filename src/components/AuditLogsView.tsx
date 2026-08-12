@@ -330,8 +330,9 @@ export default function AuditLogsView({
               justifyContent: "space-between",
               alignItems: "center",
               padding: "1rem 1.5rem",
-              borderTop: "1px solid var(--border-dim)",
-              background: "#FFFFFF",
+              borderTop: "1px solid rgba(255, 255, 255, 0.09)",
+              background: "rgba(20, 18, 38, 0.75)",
+              backdropFilter: "blur(16px)",
               flexWrap: "wrap",
               gap: "1rem"
             }}>
