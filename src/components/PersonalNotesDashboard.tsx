@@ -449,26 +449,26 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.12)",
             borderRadius: "16px",
-            boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
-            padding: "2rem",
-            width: "500px",
-            maxWidth: "90%",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+            padding: "1.75rem 1.5rem",
+            width: "480px",
+            maxWidth: "92%",
             display: "flex",
             flexDirection: "column",
-            gap: "1.5rem",
+            gap: "1.25rem",
             position: "relative"
           }}>
             <button
               onClick={() => setShowCreationWizard(false)}
               style={{
                 position: "absolute",
-                top: "1.25rem",
-                right: "1.25rem",
+                top: "1rem",
+                right: "1rem",
                 background: "none",
                 border: "none",
                 cursor: "pointer",
                 fontSize: "1.1rem",
-                color: "var(--text-muted)",
+                color: "#94A3B8",
                 padding: 0
               }}
             >
@@ -476,10 +476,10 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
             </button>
 
             <div style={{ textAlign: "center" }}>
-              <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--gold-primary)", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <h3 style={{ fontSize: "1.15rem", fontWeight: 800, color: "#38BDF8", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Select Workspace Type
               </h3>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem", marginBottom: 0 }}>
+              <p style={{ fontSize: "0.82rem", color: "#94A3B8", marginTop: "0.25rem", marginBottom: 0 }}>
                 Choose the operational block format to provision.
               </p>
             </div>
@@ -489,7 +489,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
               <div 
                 onClick={() => handleAddNewNote("note")}
                 style={{
-                  border: "1px solid var(--border-dim)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
                   borderRadius: "12px",
                   padding: "1.25rem 1rem",
                   cursor: "pointer",
@@ -497,27 +497,28 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "0.75rem",
+                  gap: "0.6rem",
                   transition: "all 0.2s ease",
-                  background: "#F9FAFB"
+                  background: "rgba(255, 255, 255, 0.04)"
                 }}
-                className="hover:scale-102 hover:border-gold hover:bg-white"
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--gold-premium)";
-                  e.currentTarget.style.background = "#FFFFFF";
-                  e.currentTarget.style.transform = "scale(1.02)";
+                  e.currentTarget.style.borderColor = "#38BDF8";
+                  e.currentTarget.style.background = "rgba(56, 189, 248, 0.12)";
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = "0 0 15px rgba(56, 189, 248, 0.25)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-dim)";
-                  e.currentTarget.style.background = "#F9FAFB";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
                   e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "none";
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "40px" }}>
-                  <FileText size={32} className="text-gold-primary" />
+                  <FileText size={32} style={{ color: "#38BDF8" }} />
                 </div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Standard Note</div>
-                <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
+                <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#FFFFFF" }}>Standard Note</div>
+                <p style={{ fontSize: "0.72rem", color: "#94A3B8", margin: 0, lineHeight: "1.35" }}>
                   Create text documents, lists, or mathematical worksheets.
                 </p>
               </div>
@@ -526,7 +527,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
               <div 
                 onClick={() => handleAddNewNote("poll")}
                 style={{
-                  border: "1px solid var(--border-dim)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
                   borderRadius: "12px",
                   padding: "1.25rem 1rem",
                   cursor: "pointer",
@@ -534,27 +535,28 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "0.75rem",
+                  gap: "0.6rem",
                   transition: "all 0.2s ease",
-                  background: "#F9FAFB"
+                  background: "rgba(255, 255, 255, 0.04)"
                 }}
-                className="hover:scale-102 hover:border-gold hover:bg-white"
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--gold-premium)";
-                  e.currentTarget.style.background = "#FFFFFF";
-                  e.currentTarget.style.transform = "scale(1.02)";
+                  e.currentTarget.style.borderColor = "#38BDF8";
+                  e.currentTarget.style.background = "rgba(56, 189, 248, 0.12)";
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = "0 0 15px rgba(56, 189, 248, 0.25)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-dim)";
-                  e.currentTarget.style.background = "#F9FAFB";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
                   e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "none";
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "40px" }}>
-                  <CheckSquare size={32} className="text-gold-primary" />
+                  <CheckSquare size={32} style={{ color: "#38BDF8" }} />
                 </div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Team Live Poll</div>
-                <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
+                <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#FFFFFF" }}>Team Live Poll</div>
+                <p style={{ fontSize: "0.72rem", color: "#94A3B8", margin: 0, lineHeight: "1.35" }}>
                   Create a live voting question with custom options.
                 </p>
               </div>
