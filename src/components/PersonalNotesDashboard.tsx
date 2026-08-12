@@ -75,34 +75,34 @@ interface PersonalNotesDashboardProps {
 
 const colorThemes: Record<string, { bg: string, border: string, headerBorder: string, glow: string }> = {
   default: { 
-    bg: "#FFFFFF", 
-    border: "var(--border-gold)", 
-    headerBorder: "rgba(0, 119, 182, 0.1)", 
-    glow: "rgba(0, 0, 0, 0.02)" 
+    bg: "rgba(20, 18, 38, 0.85)", 
+    border: "rgba(255, 255, 255, 0.12)", 
+    headerBorder: "rgba(255, 255, 255, 0.08)", 
+    glow: "rgba(56, 189, 248, 0.15)" 
   },
   yellow: { 
-    bg: "#FFFDF2", 
-    border: "rgba(245, 158, 11, 0.3)", 
-    headerBorder: "rgba(245, 158, 11, 0.15)", 
-    glow: "rgba(245, 158, 11, 0.05)" 
+    bg: "rgba(35, 30, 15, 0.85)", 
+    border: "rgba(245, 158, 11, 0.4)", 
+    headerBorder: "rgba(245, 158, 11, 0.2)", 
+    glow: "rgba(245, 158, 11, 0.2)" 
   },
   blue: { 
-    bg: "#F4F9FF", 
-    border: "rgba(59, 130, 246, 0.3)", 
-    headerBorder: "rgba(59, 130, 246, 0.15)", 
-    glow: "rgba(59, 130, 246, 0.05)" 
+    bg: "rgba(15, 28, 48, 0.85)", 
+    border: "rgba(59, 130, 246, 0.4)", 
+    headerBorder: "rgba(59, 130, 246, 0.2)", 
+    glow: "rgba(59, 130, 246, 0.2)" 
   },
   green: { 
-    bg: "#F5FFF7", 
-    border: "rgba(34, 197, 94, 0.3)", 
-    headerBorder: "rgba(34, 197, 94, 0.15)", 
-    glow: "rgba(34, 197, 94, 0.05)" 
+    bg: "rgba(15, 38, 28, 0.85)", 
+    border: "rgba(34, 197, 94, 0.4)", 
+    headerBorder: "rgba(34, 197, 94, 0.2)", 
+    glow: "rgba(34, 197, 94, 0.2)" 
   },
   red: { 
-    bg: "#FFF5F5", 
-    border: "rgba(239, 68, 68, 0.3)", 
-    headerBorder: "rgba(239, 68, 68, 0.15)", 
-    glow: "rgba(239, 68, 68, 0.05)" 
+    bg: "rgba(40, 18, 25, 0.85)", 
+    border: "rgba(239, 68, 68, 0.4)", 
+    headerBorder: "rgba(239, 68, 68, 0.2)", 
+    glow: "rgba(239, 68, 68, 0.2)" 
   }
 };
 
@@ -1091,8 +1091,9 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
         flexDirection: "column",
         minHeight: "340px",
         background: activeTheme.bg,
-        border: isExpired ? "1.5px solid rgba(239, 68, 68, 0.45)" : note.isGlobalPinned ? "2px solid #0250A1" : `1px solid ${activeTheme.border}`,
-        boxShadow: note.isGlobalPinned ? "0 4px 20px rgba(2, 80, 161, 0.25)" : `0 4px 20px ${activeTheme.glow}`,
+        backdropFilter: "blur(16px)",
+        border: isExpired ? "1.5px solid rgba(239, 68, 68, 0.45)" : note.isGlobalPinned ? "2px solid #0284C7" : `1px solid ${activeTheme.border}`,
+        boxShadow: note.isGlobalPinned ? "0 4px 20px rgba(2, 132, 199, 0.3)" : `0 4px 20px ${activeTheme.glow}`,
         opacity: isExpired ? 0.82 : 1,
         padding: "1.25rem",
         position: "relative",
@@ -1148,7 +1149,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
               border: "none",
               fontWeight: 800,
               fontSize: "0.95rem",
-              color: "var(--text-primary)",
+              color: "#FFFFFF",
               outline: "none",
               flex: 1,
               minWidth: 0
@@ -1444,10 +1445,10 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                           flex: 1,
                           fontSize: "0.8rem",
                           padding: "0.35rem 0.5rem",
-                          background: "rgba(0, 0, 0, 0.02)",
-                          border: "1px solid var(--border-dim)",
+                          background: "rgba(255, 255, 255, 0.05)",
+                          border: "1px solid rgba(255, 255, 255, 0.12)",
                           borderRadius: "4px",
-                          color: "var(--text-primary)"
+                          color: "#FFFFFF"
                         }}
                       />
                       {pollData.options.length > 2 && !isLocked && (
@@ -1586,9 +1587,9 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                             fontWeight: 700,
                             textAlign: "left",
                             justifyContent: "flex-start",
-                            background: isSelected ? "rgba(2, 80, 161, 0.05)" : "none",
-                            border: isSelected ? "2px solid #0250A1" : "1px solid var(--border-dim)",
-                            color: "var(--text-primary)",
+                            background: isSelected ? "rgba(2, 132, 199, 0.25)" : "rgba(255, 255, 255, 0.04)",
+                            border: isSelected ? "2px solid #38BDF8" : "1px solid rgba(255, 255, 255, 0.12)",
+                            color: "#FFFFFF",
                             height: "auto",
                             transition: "all 0.2s",
                             opacity: isDimmed ? 0.4 : 1,
@@ -1742,7 +1743,7 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                 outline: "none",
                 fontSize: "0.82rem",
                 lineHeight: "1.4",
-                color: "var(--text-primary)",
+                color: "#FFFFFF",
                 fontFamily: "inherit"
               }}
             />
@@ -2391,8 +2392,8 @@ export function FullscreenModal({ note, userRole, onClose, onSave }: FullscreenM
       left: 0,
       right: 0,
       bottom: 0,
-      background: "rgba(255, 255, 255, 0.75)",
-      backdropFilter: "blur(8px)",
+      background: "rgba(0, 0, 0, 0.75)",
+      backdropFilter: "blur(12px)",
       zIndex: 2000,
       display: "flex",
       alignItems: "center",
