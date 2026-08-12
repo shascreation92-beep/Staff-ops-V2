@@ -328,8 +328,9 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
         alignItems: "center",
         flexWrap: "wrap",
         gap: "1.5rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
+        background: "rgba(20, 18, 38, 0.75)",
+        backdropFilter: "blur(16px)",
+        border: "1px solid rgba(255, 255, 255, 0.09)",
         position: "relative",
         zIndex: 50
       }}>
@@ -348,7 +349,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
       </div>
 
       {/* Toolbar & Filters */}
-      <div className="glass-panel" style={{ padding: "1rem 1.5rem", background: "#FFFFFF", border: "1px solid var(--border-dim)" }}>
+      <div className="glass-panel" style={{ padding: "1rem 1.5rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.09)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
           
           {/* Search bar */}
@@ -387,7 +388,7 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
 
       {/* Notes Grid */}
       {filteredNotes.length === 0 ? (
-        <div className="glass-panel" style={{ padding: "4rem", textAlign: "center", background: "#FFFFFF" }}>
+        <div className="glass-panel" style={{ padding: "4rem", textAlign: "center", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.09)" }}>
           <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>No Notes Found</h3>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
             {searchTerm ? "No notes matched your search query." : "Click '+ Add New Note' above to create your first personal note card."}
@@ -444,8 +445,9 @@ export default function PersonalNotesDashboard({ initialNotes, user }: PersonalN
           zIndex: 99999
         }}>
           <div style={{
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "rgba(20, 18, 38, 0.95)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
             borderRadius: "16px",
             boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
             padding: "2rem",
@@ -1890,8 +1892,9 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                   right: 0,
                   marginBottom: "0.5rem",
                   padding: "0.75rem",
-                  background: "#FFFFFF",
-                  border: "1px solid var(--border-dim)",
+                  background: "rgba(20, 18, 38, 0.95)",
+                  backdropFilter: "blur(16px)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
                   borderRadius: "8px",
                   boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
                   zIndex: 100,
@@ -2041,8 +2044,9 @@ function NoteCard({ note, userRole, currentUserId, onDelete, onShare, onClone, o
                   bottom: "100%",
                   right: 0,
                   marginBottom: "0.5rem",
-                  background: "#FFFFFF",
-                  border: "1px solid var(--border-dim)",
+                  background: "rgba(20, 18, 38, 0.95)",
+                  backdropFilter: "blur(16px)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
                   borderRadius: "8px",
                   boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
                   padding: "0.75rem",
