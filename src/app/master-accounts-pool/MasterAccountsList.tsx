@@ -496,8 +496,8 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -508,12 +508,13 @@ export default function MasterAccountsList({ initialAccounts, platforms, current
             maxWidth: "420px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem" }}>

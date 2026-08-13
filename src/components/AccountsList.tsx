@@ -1390,8 +1390,8 @@ export default function AccountsList({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1402,9 +1402,10 @@ export default function AccountsList({
             maxWidth: "500px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            boxShadow: "var(--shadow-premium)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem"
@@ -1529,8 +1530,8 @@ export default function AccountsList({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1541,12 +1542,13 @@ export default function AccountsList({
             maxWidth: "460px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             display: "flex",
             flexDirection: "column",
-            gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            gap: "1.25rem"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>WORKFLOW PIPELINE TRANSITION</h2>
             
@@ -1607,8 +1609,8 @@ export default function AccountsList({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(255, 255, 255, 0.7)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1619,9 +1621,10 @@ export default function AccountsList({
             maxWidth: "500px",
             width: "100%",
             padding: "2.5rem 2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            boxShadow: "var(--shadow-premium)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "20px",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",
@@ -2008,8 +2011,8 @@ export default function AccountsList({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(255, 255, 255, 0.7)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -2020,9 +2023,10 @@ export default function AccountsList({
             maxWidth: "450px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            boxShadow: "var(--shadow-premium)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "20px",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
@@ -2030,9 +2034,9 @@ export default function AccountsList({
           }}>
             <div className="kpi-card-glow"></div>
             
-            <div className="kpi-header" style={{ borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem" }}>
+            <div className="kpi-header" style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.1)", paddingBottom: "0.75rem" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+                <span style={{ fontSize: "0.75rem", color: "#38BDF8", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
                   ACCOUNT COMMENTS
                 </span>
                 <h2 className="text-gold-gradient" style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0 }}>
@@ -2046,11 +2050,11 @@ export default function AccountsList({
               {isCommentReadOnly ? (
                 <div style={{
                   padding: "1rem",
-                  background: "var(--bg-primary)",
-                  border: "1px solid var(--border-dim)",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
                   borderRadius: "8px",
                   fontSize: "0.9rem",
-                  color: "var(--text-primary)",
+                  color: "#FFFFFF",
                   minHeight: "80px",
                   fontStyle: commentText ? "normal" : "italic",
                   whiteSpace: "pre-wrap"
@@ -2105,8 +2109,8 @@ export default function AccountsList({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(255, 255, 255, 0.7)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -2117,9 +2121,10 @@ export default function AccountsList({
             maxWidth: "500px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            boxShadow: "var(--shadow-premium)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "20px",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             position: "relative",
             display: "flex",
             flexDirection: "column",
