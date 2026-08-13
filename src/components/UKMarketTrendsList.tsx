@@ -1688,22 +1688,22 @@ export default function UKMarketTrendsList({
             <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               
               {/* Trend Summary */}
-              <div className="glass-panel" style={{ padding: "1rem", borderRadius: "12px", background: "rgba(15, 23, 42, 0.02)", border: "1px solid var(--border-dim)" }}>
-                <span style={{ fontSize: "0.62rem", fontWeight: 800, textTransform: "uppercase", color: "var(--gold-premium)", letterSpacing: "0.04em" }}>
+              <div className="glass-panel" style={{ padding: "1rem", borderRadius: "12px", background: "rgba(20, 18, 38, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                <span style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", color: "#38BDF8", letterSpacing: "0.04em" }}>
                   {getCategoryLabel(activeDrawerTrend.category)} Indicator ({activeDrawerTrend.source})
                 </span>
-                <h4 style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--text-primary)", margin: "0.2rem 0" }}>
+                <h4 style={{ fontSize: "1.25rem", fontWeight: 900, color: "#FFFFFF", margin: "0.25rem 0" }}>
                   {activeDrawerTrend.keyword}
                 </h4>
                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
-                  <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "rgb(239, 68, 68)", background: "rgba(254, 226, 226, 0.7)", padding: "0.15rem 0.4rem", borderRadius: "6px" }}>
+                  <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#EF4444", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "0.15rem 0.5rem", borderRadius: "6px" }}>
                     +{normalizeNumber(activeDrawerTrend.spikePercent)}% Spike Today
                   </span>
-                  <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", padding: "0.15rem 0.4rem", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+                  <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#94A3B8", background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.15rem 0.5rem", borderRadius: "6px" }}>
                     {activeDrawerTrend.traffic}
                   </span>
                   {activeDrawerTrend.postcode && (
-                    <span style={{ fontSize: "0.68rem", color: "rgb(59, 130, 246)", background: "rgba(219, 234, 254, 0.8)", padding: "0.15rem 0.4rem", borderRadius: "6px" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#3B82F6", background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.3)", padding: "0.15rem 0.5rem", borderRadius: "6px" }}>
                       📍 {activeDrawerTrend.postcode}
                     </span>
                   )}
