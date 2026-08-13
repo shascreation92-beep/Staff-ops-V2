@@ -16,7 +16,11 @@ import {
   ShieldCheck, 
   X, 
   HelpCircle,
-  AlertCircle
+  AlertCircle,
+  Lightbulb,
+  Rocket,
+  Bug,
+  Zap
 } from "lucide-react";
 import { submitFeedbackAction, updateFeedbackStatusAction, deleteFeedbackAction } from "@/app/actions/feedback";
 import { toast } from "react-hot-toast";
@@ -192,13 +196,13 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
   const getCategoryBadge = (cat: string) => {
     switch (cat) {
       case "FEATURE_REQUEST":
-        return { label: "🚀 Feature Request", bg: "rgba(14, 165, 233, 0.1)", color: "#0284C7", border: "rgba(14, 165, 233, 0.25)" };
+        return { label: "Feature Request", bg: "rgba(14, 165, 233, 0.12)", color: "#38BDF8", border: "rgba(14, 165, 233, 0.3)" };
       case "BUG_REPORT":
-        return { label: "🐞 Bug Report", bg: "rgba(239, 68, 68, 0.1)", color: "#EF4444", border: "rgba(239, 68, 68, 0.25)" };
+        return { label: "Bug Report", bg: "rgba(239, 68, 68, 0.12)", color: "#EF4444", border: "rgba(239, 68, 68, 0.3)" };
       case "SYSTEM_SPEED":
-        return { label: "⚡ System Speed", bg: "rgba(245, 158, 11, 0.1)", color: "#D97706", border: "rgba(245, 158, 11, 0.25)" };
+        return { label: "System Speed", bg: "rgba(245, 158, 11, 0.12)", color: "#F59E0B", border: "rgba(245, 158, 11, 0.3)" };
       default:
-        return { label: "💡 Suggestion", bg: "rgba(16, 185, 129, 0.1)", color: "#10B981", border: "rgba(16, 185, 129, 0.25)" };
+        return { label: "Suggestion", bg: "rgba(16, 185, 129, 0.12)", color: "#10B981", border: "rgba(16, 185, 129, 0.3)" };
     }
   };
 
@@ -237,14 +241,14 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       
       {/* Header Banner */}
-      <div className="glass-panel" style={{ padding: "1.5rem 1.75rem", background: "linear-gradient(135deg, #03045E 0%, #023E8A 100%)", color: "#FFFFFF" }}>
+      <div className="glass-panel" style={{ padding: "1.5rem 1.75rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)", borderRadius: "16px", color: "#FFFFFF" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Sparkles size={24} style={{ color: "#48CAE4" }} />
-              <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>STAFF FEEDBACK &amp; SUGGESTION HUB</h1>
+              <Sparkles size={24} style={{ color: "#38BDF8" }} />
+              <h1 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 800 }} className="text-gold-gradient">STAFF FEEDBACK &amp; SUGGESTION HUB</h1>
             </div>
-            <p style={{ margin: "0.3rem 0 0 0", fontSize: "0.85rem", color: "rgba(255, 255, 255, 0.75)" }}>
+            <p style={{ margin: "0.3rem 0 0 0", fontSize: "0.82rem", color: "#94A3B8" }}>
               Submit ideas, request features, report issues, and track status updates from Super Admin in real time.
             </p>
           </div>
@@ -252,7 +256,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
       </div>
 
       {/* Navigation Tab Bar */}
-      <div className="glass-panel" style={{ padding: "0.5rem", background: "#FFFFFF" }}>
+      <div className="glass-panel" style={{ padding: "0.5rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.09)", borderRadius: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
           <button
             onClick={() => setActiveTab("SUBMIT")}
@@ -262,9 +266,10 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
               fontSize: "0.85rem",
               fontWeight: 700,
               cursor: "pointer",
-              border: activeTab === "SUBMIT" ? "1.5px solid #0077B6" : "1px solid transparent",
-              background: activeTab === "SUBMIT" ? "rgba(0, 119, 182, 0.08)" : "transparent",
-              color: activeTab === "SUBMIT" ? "#0077B6" : "#4B5563",
+              border: activeTab === "SUBMIT" ? "1px solid rgba(56, 189, 248, 0.3)" : "1px solid transparent",
+              background: activeTab === "SUBMIT" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "transparent",
+              color: activeTab === "SUBMIT" ? "#FFFFFF" : "#94A3B8",
+              boxShadow: activeTab === "SUBMIT" ? "0 0 12px rgba(56, 189, 248, 0.2)" : "none",
               display: "inline-flex",
               alignItems: "center",
               gap: "0.4rem",
@@ -272,7 +277,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
             }}
           >
             <Send size={16} />
-            <span>🚀 Submit Suggestion</span>
+            <span>Submit Suggestion</span>
           </button>
 
           <button
@@ -283,9 +288,10 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
               fontSize: "0.85rem",
               fontWeight: 700,
               cursor: "pointer",
-              border: activeTab === "HISTORY" ? "1.5px solid #0077B6" : "1px solid transparent",
-              background: activeTab === "HISTORY" ? "rgba(0, 119, 182, 0.08)" : "transparent",
-              color: activeTab === "HISTORY" ? "#0077B6" : "#4B5563",
+              border: activeTab === "HISTORY" ? "1px solid rgba(56, 189, 248, 0.3)" : "1px solid transparent",
+              background: activeTab === "HISTORY" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "transparent",
+              color: activeTab === "HISTORY" ? "#FFFFFF" : "#94A3B8",
+              boxShadow: activeTab === "HISTORY" ? "0 0 12px rgba(56, 189, 248, 0.2)" : "none",
               display: "inline-flex",
               alignItems: "center",
               gap: "0.4rem",
@@ -293,7 +299,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
             }}
           >
             <Clock size={16} />
-            <span>📋 My Feedback History ({historyList.length})</span>
+            <span>My Feedback History ({historyList.length})</span>
           </button>
 
           {isAdmin && (
@@ -305,9 +311,10 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                 fontSize: "0.85rem",
                 fontWeight: 700,
                 cursor: "pointer",
-                border: activeTab === "ADMIN" ? "1.5px solid #0077B6" : "1px solid transparent",
-                background: activeTab === "ADMIN" ? "rgba(0, 119, 182, 0.08)" : "transparent",
-                color: activeTab === "ADMIN" ? "#0077B6" : "#4B5563",
+                border: activeTab === "ADMIN" ? "1px solid rgba(56, 189, 248, 0.3)" : "1px solid transparent",
+                background: activeTab === "ADMIN" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "transparent",
+                color: activeTab === "ADMIN" ? "#FFFFFF" : "#94A3B8",
+                boxShadow: activeTab === "ADMIN" ? "0 0 12px rgba(56, 189, 248, 0.2)" : "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.4rem",
@@ -316,7 +323,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
               }}
             >
               <ShieldCheck size={16} />
-              <span>🛡️ Admin Portal ({adminFeedbackList.length})</span>
+              <span>Admin Portal ({adminFeedbackList.length})</span>
             </button>
           )}
         </div>
@@ -324,10 +331,10 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
 
       {/* TAB 1: SUBMIT FEEDBACK FORM */}
       {activeTab === "SUBMIT" && (
-        <div className="glass-panel" style={{ padding: "2rem", background: "#FFFFFF", maxWidth: "800px", margin: "0 auto", width: "100%" }}>
+        <div className="glass-panel" style={{ padding: "2rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)", borderRadius: "16px", maxWidth: "800px", margin: "0 auto", width: "100%" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
-            <Sparkles size={22} style={{ color: "#0077B6" }} />
-            <h2 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "#03045E" }}>
+            <Sparkles size={22} style={{ color: "#38BDF8" }} />
+            <h2 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "#FFFFFF" }}>
               SUBMIT NEW FEEDBACK OR FEATURE IDEA
             </h2>
           </div>
@@ -335,15 +342,15 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
           <form onSubmit={handleSubmitForm} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             {/* Category */}
             <div>
-              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#03045E", display: "block", marginBottom: "0.4rem" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#FFFFFF", display: "block", marginBottom: "0.4rem" }}>
                 Select Category *
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.6rem" }}>
                 {[
-                  { id: "SUGGESTION", label: "💡 Suggestion" },
-                  { id: "FEATURE_REQUEST", label: "🚀 New Feature" },
-                  { id: "BUG_REPORT", label: "🐞 Bug Report" },
-                  { id: "SYSTEM_SPEED", label: "⚡ System Speed" }
+                  { id: "SUGGESTION", label: "Suggestion", icon: <Lightbulb size={15} /> },
+                  { id: "FEATURE_REQUEST", label: "New Feature", icon: <Rocket size={15} /> },
+                  { id: "BUG_REPORT", label: "Bug Report", icon: <Bug size={15} /> },
+                  { id: "SYSTEM_SPEED", label: "System Speed", icon: <Zap size={15} /> }
                 ].map(cat => (
                   <button
                     type="button"
@@ -355,13 +362,19 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                       fontSize: "0.82rem",
                       fontWeight: 700,
                       cursor: "pointer",
-                      border: category === cat.id ? "2px solid #0077B6" : "1px solid #E5E7EB",
-                      background: category === cat.id ? "rgba(0, 119, 182, 0.08)" : "#F9FAFB",
-                      color: category === cat.id ? "#0077B6" : "#4B5563",
+                      border: category === cat.id ? "1px solid rgba(56, 189, 248, 0.3)" : "1px solid rgba(255, 255, 255, 0.08)",
+                      background: category === cat.id ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "rgba(255, 255, 255, 0.04)",
+                      color: category === cat.id ? "#FFFFFF" : "#94A3B8",
+                      boxShadow: category === cat.id ? "0 0 10px rgba(56, 189, 248, 0.2)" : "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.4rem",
                       transition: "all 0.2s ease"
                     }}
                   >
-                    {cat.label}
+                    {cat.icon}
+                    <span>{cat.label}</span>
                   </button>
                 ))}
               </div>
@@ -369,7 +382,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
 
             {/* Star Rating */}
             <div>
-              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#03045E", display: "block", marginBottom: "0.3rem" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#FFFFFF", display: "block", marginBottom: "0.3rem" }}>
                 Rate Your Platform Experience *
               </label>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
@@ -385,7 +398,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                     <Star
                       size={28}
                       style={{
-                        color: (hoverRating || rating) >= star ? "#F59E0B" : "#D1D5DB",
+                        color: (hoverRating || rating) >= star ? "#F59E0B" : "rgba(255, 255, 255, 0.2)",
                         fill: (hoverRating || rating) >= star ? "#F59E0B" : "none"
                       }}
                     />
@@ -399,7 +412,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
 
             {/* Subject */}
             <div>
-              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#03045E", display: "block", marginBottom: "0.3rem" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#FFFFFF", display: "block", marginBottom: "0.3rem" }}>
                 Title / Subject *
               </label>
               <input
@@ -410,9 +423,11 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                 onChange={(e) => setSubject(e.target.value)}
                 style={{
                   width: "100%",
-                  padding: "0.6rem 0.85rem",
+                  padding: "0.65rem 0.85rem",
                   borderRadius: "8px",
-                  border: "1px solid #D1D5DB",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "rgba(20, 18, 38, 0.95)",
+                  color: "#FFFFFF",
                   fontSize: "0.88rem"
                 }}
               />
@@ -420,7 +435,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
 
             {/* Detailed Description */}
             <div>
-              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#03045E", display: "block", marginBottom: "0.3rem" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#FFFFFF", display: "block", marginBottom: "0.3rem" }}>
                 Detailed Description *
               </label>
               <textarea
@@ -433,7 +448,9 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   width: "100%",
                   padding: "0.65rem 0.85rem",
                   borderRadius: "8px",
-                  border: "1px solid #D1D5DB",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "rgba(20, 18, 38, 0.95)",
+                  color: "#FFFFFF",
                   fontSize: "0.88rem",
                   resize: "vertical"
                 }}
@@ -442,18 +459,18 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
 
             {/* Screenshot Attachment */}
             <div>
-              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#03045E", display: "block", marginBottom: "0.3rem" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#FFFFFF", display: "block", marginBottom: "0.3rem" }}>
                 Attach Screenshot or File (Optional)
               </label>
               <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
                 <label style={{
                   padding: "0.55rem 1rem",
-                  background: "#F3F4F6",
-                  border: "1px solid #D1D5DB",
+                  background: "rgba(255, 255, 255, 0.08)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
                   borderRadius: "8px",
                   fontSize: "0.82rem",
                   fontWeight: 700,
-                  color: "#374151",
+                  color: "#FFFFFF",
                   cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
@@ -504,8 +521,8 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
       {activeTab === "HISTORY" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {historyList.length === 0 ? (
-            <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", background: "#FFFFFF" }}>
-              <MessageSquare size={36} style={{ margin: "0 auto 0.75rem auto", opacity: 0.4 }} />
+            <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "#94A3B8", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "16px" }}>
+              <MessageSquare size={36} style={{ margin: "0 auto 0.75rem auto", opacity: 0.4, color: "#38BDF8" }} />
               <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600 }}>You haven't submitted any feedback yet.</p>
             </div>
           ) : (
@@ -525,9 +542,12 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   key={item.id}
                   className="glass-panel"
                   style={{
-                    background: "#FFFFFF",
+                    background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
                     padding: "1.25rem 1.5rem",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderLeft: `4px solid ${statBadge.color}`,
+                    borderRadius: "16px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
                     display: "flex",
                     flexDirection: "column",
                     gap: "0.85rem"
@@ -553,7 +573,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                             key={s}
                             size={14}
                             style={{
-                              color: s <= (item.rating || 5) ? "#F59E0B" : "#E5E7EB",
+                              color: s <= (item.rating || 5) ? "#F59E0B" : "rgba(255, 255, 255, 0.2)",
                               fill: s <= (item.rating || 5) ? "#F59E0B" : "none"
                             }}
                           />
@@ -573,13 +593,13 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                       }}>
                         {statBadge.label}
                       </span>
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{formattedDate}</span>
+                      <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>{formattedDate}</span>
                     </div>
                   </div>
 
                   <div>
-                    <h3 style={{ margin: "0 0 0.35rem 0", fontSize: "1rem", fontWeight: 800, color: "#03045E" }}>{item.subject}</h3>
-                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#374151", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{item.message}</p>
+                    <h3 style={{ margin: "0 0 0.35rem 0", fontSize: "1rem", fontWeight: 800, color: "#FFFFFF" }}>{item.subject}</h3>
+                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#CBD5E1", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{item.message}</p>
                   </div>
 
                   {item.attachmentUrl && (
@@ -589,12 +609,12 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                         onClick={() => setPreviewImage(item.attachmentUrl)}
                         style={{
                           padding: "0.35rem 0.65rem",
-                          background: "rgba(0, 119, 182, 0.08)",
-                          border: "1px solid rgba(0, 119, 182, 0.2)",
+                          background: "rgba(56, 189, 248, 0.12)",
+                          border: "1px solid rgba(56, 189, 248, 0.3)",
                           borderRadius: "6px",
                           fontSize: "0.75rem",
                           fontWeight: 700,
-                          color: "#0077B6",
+                          color: "#38BDF8",
                           cursor: "pointer",
                           display: "inline-flex",
                           alignItems: "center",
@@ -609,20 +629,20 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   {/* Super Admin Official Reply Box */}
                   {item.adminReply && (
                     <div style={{
-                      background: "#F8FAFC",
-                      border: "1px solid #E2E8F0",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
                       borderRadius: "8px",
                       padding: "0.75rem 1rem",
                       display: "flex",
                       flexDirection: "column",
                       gap: "0.25rem"
                     }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 700, color: "#0284C7" }}>
-                        <span>💬 Super Admin Reply ({item.repliedBy || "Admin"})</span>
-                        <span>{item.repliedAt ? new Date(item.repliedAt).toLocaleDateString("en-GB") : ""}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 700, color: "#38BDF8" }}>
+                        <span>Super Admin Reply ({item.repliedBy || "Admin"})</span>
+                        <span style={{ color: "#94A3B8" }}>{item.repliedAt ? new Date(item.repliedAt).toLocaleDateString("en-GB") : ""}</span>
                       </div>
-                      <p style={{ margin: 0, fontSize: "0.82rem", color: "#334155", fontStyle: "italic" }}>
-                        "{item.adminReply}"
+                      <p style={{ margin: 0, fontSize: "0.82rem", color: "#E2E8F0", fontStyle: "italic" }}>
+                        &quot;{item.adminReply}&quot;
                       </p>
                     </div>
                   )}
@@ -638,7 +658,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           
           {/* Filter Bar */}
-          <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "#FFFFFF" }}>
+          <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.09)", borderRadius: "12px" }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
               <div className="table-search-wrapper" style={{ width: "260px" }}>
                 <Search className="header-search-icon" />
@@ -656,6 +676,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="table-select-filter"
+                  style={{ background: "rgba(20, 18, 38, 0.95)", color: "#FFFFFF", border: "1px solid rgba(255, 255, 255, 0.12)" }}
                 >
                   <option value="ALL">ALL STATUSES</option>
                   <option value="NEW">NEW</option>
@@ -669,12 +690,13 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="table-select-filter"
+                  style={{ background: "rgba(20, 18, 38, 0.95)", color: "#FFFFFF", border: "1px solid rgba(255, 255, 255, 0.12)" }}
                 >
                   <option value="ALL">ALL CATEGORIES</option>
-                  <option value="SUGGESTION">💡 SUGGESTION</option>
-                  <option value="FEATURE_REQUEST">🚀 FEATURE REQUEST</option>
-                  <option value="BUG_REPORT">🐞 BUG REPORT</option>
-                  <option value="SYSTEM_SPEED">⚡ SYSTEM SPEED</option>
+                  <option value="SUGGESTION">SUGGESTION</option>
+                  <option value="FEATURE_REQUEST">FEATURE REQUEST</option>
+                  <option value="BUG_REPORT">BUG REPORT</option>
+                  <option value="SYSTEM_SPEED">SYSTEM SPEED</option>
                 </select>
               </div>
             </div>
@@ -682,7 +704,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
 
           {/* Feed List */}
           {filteredAdminList.length === 0 ? (
-            <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)", background: "#FFFFFF" }}>
+            <div className="glass-panel" style={{ padding: "3rem", textAlign: "center", color: "#94A3B8", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "16px" }}>
               <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600 }}>No feedback submissions found.</p>
             </div>
           ) : (
@@ -705,9 +727,12 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   key={item.id}
                   className="glass-panel"
                   style={{
-                    background: "#FFFFFF",
+                    background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
                     padding: "1.25rem 1.5rem",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderLeft: `4px solid ${statBadge.color}`,
+                    borderRadius: "16px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
                     display: "flex",
                     flexDirection: "column",
                     gap: "0.85rem"
@@ -733,7 +758,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                             key={s}
                             size={14}
                             style={{
-                              color: s <= (item.rating || 5) ? "#F59E0B" : "#E5E7EB",
+                              color: s <= (item.rating || 5) ? "#F59E0B" : "rgba(255, 255, 255, 0.2)",
                               fill: s <= (item.rating || 5) ? "#F59E0B" : "none"
                             }}
                           />
@@ -753,13 +778,13 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                       }}>
                         {statBadge.label}
                       </span>
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{formattedDate}</span>
+                      <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>{formattedDate}</span>
                     </div>
                   </div>
 
                   <div>
-                    <h3 style={{ margin: "0 0 0.35rem 0", fontSize: "1rem", fontWeight: 800, color: "#03045E" }}>{item.subject}</h3>
-                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#374151", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{item.message}</p>
+                    <h3 style={{ margin: "0 0 0.35rem 0", fontSize: "1rem", fontWeight: 800, color: "#FFFFFF" }}>{item.subject}</h3>
+                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#CBD5E1", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{item.message}</p>
                   </div>
 
                   {item.attachmentUrl && (
@@ -769,12 +794,12 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                         onClick={() => setPreviewImage(item.attachmentUrl)}
                         style={{
                           padding: "0.35rem 0.65rem",
-                          background: "rgba(0, 119, 182, 0.08)",
-                          border: "1px solid rgba(0, 119, 182, 0.2)",
+                          background: "rgba(56, 189, 248, 0.12)",
+                          border: "1px solid rgba(56, 189, 248, 0.3)",
                           borderRadius: "6px",
                           fontSize: "0.75rem",
                           fontWeight: 700,
-                          color: "#0077B6",
+                          color: "#38BDF8",
                           cursor: "pointer",
                           display: "inline-flex",
                           alignItems: "center",
@@ -788,20 +813,20 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
 
                   {item.adminReply && (
                     <div style={{
-                      background: "#F8FAFC",
-                      border: "1px solid #E2E8F0",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
                       borderRadius: "8px",
                       padding: "0.75rem 1rem",
                       display: "flex",
                       flexDirection: "column",
                       gap: "0.25rem"
                     }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 700, color: "#0284C7" }}>
-                        <span>💬 Super Admin Reply ({item.repliedBy || "Admin"})</span>
-                        <span>{item.repliedAt ? new Date(item.repliedAt).toLocaleDateString("en-GB") : ""}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 700, color: "#38BDF8" }}>
+                        <span>Super Admin Reply ({item.repliedBy || "Admin"})</span>
+                        <span style={{ color: "#94A3B8" }}>{item.repliedAt ? new Date(item.repliedAt).toLocaleDateString("en-GB") : ""}</span>
                       </div>
-                      <p style={{ margin: 0, fontSize: "0.82rem", color: "#334155", fontStyle: "italic" }}>
-                        "{item.adminReply}"
+                      <p style={{ margin: 0, fontSize: "0.82rem", color: "#E2E8F0", fontStyle: "italic" }}>
+                        &quot;{item.adminReply}&quot;
                       </p>
                     </div>
                   )}
@@ -814,14 +839,14 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                     flexWrap: "wrap",
                     gap: "0.75rem",
                     paddingTop: "0.6rem",
-                    borderTop: "1px solid #F1F5F9"
+                    borderTop: "1px solid rgba(255, 255, 255, 0.08)"
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <div style={{
                         width: "28px",
                         height: "28px",
                         borderRadius: "50%",
-                        background: "linear-gradient(135deg, #0077B6, #023E8A)",
+                        background: "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)",
                         color: "#FFFFFF",
                         display: "flex",
                         alignItems: "center",
@@ -832,8 +857,8 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                         {userName.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#03045E" }}>{userName}</span>
-                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginLeft: "0.5rem" }}>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#FFFFFF" }}>{userName}</span>
+                        <span style={{ fontSize: "0.72rem", color: "#94A3B8", marginLeft: "0.5rem" }}>
                           ({userRoleText} • {companyName})
                         </span>
                       </div>
@@ -874,8 +899,8 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
         <div style={{
           position: "fixed",
           top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(3, 4, 94, 0.45)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -883,34 +908,36 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
           padding: "1rem"
         }}>
           <div className="glass-panel" style={{
-            background: "#FFFFFF",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             width: "100%",
             maxWidth: "500px",
             padding: "1.75rem",
-            borderRadius: "12px",
+            borderRadius: "20px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#03045E" }}>
+              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#FFFFFF" }}>
                 RESPOND &amp; UPDATE FEEDBACK STATUS
               </h3>
-              <button onClick={() => setSelectedFeedback(null)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+              <button onClick={() => setSelectedFeedback(null)} style={{ background: "none", border: "none", color: "#94A3B8", cursor: "pointer" }}>
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ background: "#F8FAFC", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
-              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#03045E" }}>{selectedFeedback.subject}</div>
-              <div style={{ fontSize: "0.78rem", color: "#64748B", marginTop: "0.2rem" }}>
+            <div style={{ background: "rgba(255, 255, 255, 0.04)", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#FFFFFF" }}>{selectedFeedback.subject}</div>
+              <div style={{ fontSize: "0.78rem", color: "#94A3B8", marginTop: "0.2rem" }}>
                 Submitted by {selectedFeedback.user?.name || selectedFeedback.user?.email}
               </div>
             </div>
 
             <form onSubmit={handleUpdateStatus} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
-                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "#03045E", display: "block", marginBottom: "0.4rem" }}>
+                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "#FFFFFF", display: "block", marginBottom: "0.4rem" }}>
                   Update Status
                 </label>
                 <select
@@ -918,23 +945,25 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   onChange={(e) => setReplyStatus(e.target.value as any)}
                   style={{
                     width: "100%",
-                    padding: "0.5rem 0.75rem",
+                    padding: "0.55rem 0.75rem",
                     borderRadius: "6px",
-                    border: "1px solid #D1D5DB",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "rgba(20, 18, 38, 0.95)",
+                    color: "#FFFFFF",
                     fontSize: "0.82rem",
                     fontWeight: 600
                   }}
                 >
-                  <option value="NEW">🔵 NEW (Unreviewed)</option>
-                  <option value="IN_REVIEW">🟡 IN REVIEW (Evaluating)</option>
-                  <option value="PLANNED">🟣 PLANNED (Added to Roadmap)</option>
-                  <option value="COMPLETED">🟢 COMPLETED (Delivered)</option>
-                  <option value="DISMISSED">⚪ DISMISSED (Closed)</option>
+                  <option value="NEW">NEW (Unreviewed)</option>
+                  <option value="IN_REVIEW">IN REVIEW (Evaluating)</option>
+                  <option value="PLANNED">PLANNED (Added to Roadmap)</option>
+                  <option value="COMPLETED">COMPLETED (Delivered)</option>
+                  <option value="DISMISSED">DISMISSED (Closed)</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "#03045E", display: "block", marginBottom: "0.4rem" }}>
+                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "#FFFFFF", display: "block", marginBottom: "0.4rem" }}>
                   Super Admin Official Reply (Optional)
                 </label>
                 <textarea
@@ -944,9 +973,11 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   onChange={(e) => setAdminReplyInput(e.target.value)}
                   style={{
                     width: "100%",
-                    padding: "0.5rem 0.75rem",
+                    padding: "0.55rem 0.75rem",
                     borderRadius: "6px",
-                    border: "1px solid #D1D5DB",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "rgba(20, 18, 38, 0.95)",
+                    color: "#FFFFFF",
                     fontSize: "0.82rem"
                   }}
                 />
@@ -956,7 +987,8 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                 <button
                   type="button"
                   onClick={() => setSelectedFeedback(null)}
-                  style={{ flex: 1, padding: "0.6rem", borderRadius: "6px", border: "1px solid #D1D5DB", background: "#F3F4F6", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}
+                  className="btn-glass"
+                  style={{ flex: 1, padding: "0.6rem", fontSize: "0.82rem" }}
                 >
                   Cancel
                 </button>
@@ -964,7 +996,7 @@ export default function FeedbackHub({ userRole, initialHistory, initialAdminFeed
                   type="submit"
                   disabled={isPending}
                   className="btn-gold"
-                  style={{ flex: 1, padding: "0.6rem", borderRadius: "6px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}
+                  style={{ flex: 1, padding: "0.6rem", fontSize: "0.82rem" }}
                 >
                   {isPending ? "Saving..." : "Save Status & Reply"}
                 </button>
