@@ -181,12 +181,12 @@ export default function SpecialRequestsList({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       {/* 1. Header Card */}
-      <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+      <div className="glass-panel" style={{ padding: "1.25rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", borderRadius: "16px", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
         <div>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">
             SPECIAL SUPPORT TICKETS
           </h2>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+          <p style={{ fontSize: "0.82rem", color: "#94A3B8", marginTop: "0.2rem" }}>
             Submit and manage administrative or technical requests routed directly to IT Operations or the Company Owner.
           </p>
         </div>
@@ -207,16 +207,16 @@ export default function SpecialRequestsList({
       {/* 2. Filter Bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
         {/* Status Tabs */}
-        <div style={{ display: "flex", gap: "0.35rem", background: "rgba(15, 23, 42, 0.03)", border: "1px solid var(--border-dim)", borderRadius: "8px", padding: "0.25rem" }}>
+        <div style={{ display: "flex", gap: "0.35rem", background: "rgba(0, 0, 0, 0.4)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", padding: "0.25rem" }}>
           {(["ALL", "PENDING", "IN_PROGRESS", "COMPLETED"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                background: activeTab === tab ? "#FFFFFF" : "transparent",
-                color: activeTab === tab ? "var(--text-primary)" : "var(--text-secondary)",
+                background: activeTab === tab ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "transparent",
+                color: activeTab === tab ? "#FFFFFF" : "#94A3B8",
                 border: "none",
-                boxShadow: activeTab === tab ? "0 2px 6px rgba(0,0,0,0.06)" : "none",
+                boxShadow: activeTab === tab ? "0 0 10px rgba(56, 189, 248, 0.3)" : "none",
                 padding: "0.45rem 1rem",
                 borderRadius: "6px",
                 fontSize: "0.75rem",
@@ -231,16 +231,16 @@ export default function SpecialRequestsList({
         </div>
 
         {/* Category Filters */}
-        <div style={{ display: "flex", gap: "0.35rem", background: "rgba(15, 23, 42, 0.03)", border: "1px solid var(--border-dim)", borderRadius: "8px", padding: "0.25rem" }}>
+        <div style={{ display: "flex", gap: "0.35rem", background: "rgba(0, 0, 0, 0.4)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", padding: "0.25rem" }}>
           {(["ALL", "IT", "COMPANY"] as const).map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               style={{
-                background: selectedCategory === cat ? "#FFFFFF" : "transparent",
-                color: selectedCategory === cat ? "var(--text-primary)" : "var(--text-secondary)",
+                background: selectedCategory === cat ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "transparent",
+                color: selectedCategory === cat ? "#FFFFFF" : "#94A3B8",
                 border: "none",
-                boxShadow: selectedCategory === cat ? "0 2px 6px rgba(0,0,0,0.06)" : "none",
+                boxShadow: selectedCategory === cat ? "0 0 10px rgba(56, 189, 248, 0.3)" : "none",
                 padding: "0.45rem 0.85rem",
                 borderRadius: "6px",
                 fontSize: "0.75rem",
@@ -257,12 +257,12 @@ export default function SpecialRequestsList({
 
       {/* 3. Ticket List Grid */}
       {filteredRequests.length === 0 ? (
-        <div className="glass-panel" style={{ padding: "3rem 1.5rem", textAlign: "center", background: "#FFFFFF", border: "1px solid var(--border-dim)", borderRadius: "12px" }}>
-          <div style={{ display: "inline-flex", padding: "0.75rem", background: "rgba(218, 165, 32, 0.08)", borderRadius: "50%", color: "var(--gold-premium)", marginBottom: "1rem" }}>
+        <div className="glass-panel" style={{ padding: "3.5rem 1.5rem", textAlign: "center", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "16px", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
+          <div style={{ display: "inline-flex", padding: "0.85rem", background: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.3)", borderRadius: "50%", color: "#38BDF8", marginBottom: "1rem", boxShadow: "0 0 15px rgba(56, 189, 248, 0.2)" }}>
             <Ticket size={24} />
           </div>
-          <h4 style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)" }}>No Tickets Found</h4>
-          <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+          <h4 style={{ fontSize: "1rem", fontWeight: 800, color: "#FFFFFF" }}>No Tickets Found</h4>
+          <p style={{ fontSize: "0.8rem", color: "#94A3B8", marginTop: "0.3rem" }}>
             There are no support request tickets matching the selected status and target filter categories.
           </p>
         </div>
@@ -338,10 +338,10 @@ export default function SpecialRequestsList({
 
                 {/* Subject & Description Content */}
                 <div>
-                  <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                  <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
                     {req.title}
                   </h3>
-                  <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginTop: "0.4rem", lineHeight: "1.4", whiteSpace: "pre-wrap" }}>
+                  <p style={{ fontSize: "0.82rem", color: "#CBD5E1", marginTop: "0.4rem", lineHeight: "1.4", whiteSpace: "pre-wrap" }}>
                     {req.description}
                   </p>
 
@@ -352,18 +352,18 @@ export default function SpecialRequestsList({
                       if (ccIds.length === 0) return null;
                       return (
                         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
-                          <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.02em" }}>CC&apos;d:</span>
+                          <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.02em" }}>CC&apos;d:</span>
                           {ccIds.map(id => {
                             const found = companyUsers?.find(cu => cu.id === id);
                             const displayName = found ? (found.name || found.email) : "Colleague";
                             return (
                               <span key={id} style={{ 
                                 fontSize: "0.65rem", 
-                                color: "var(--text-secondary)", 
-                                background: "rgba(15, 23, 42, 0.04)", 
-                                padding: "0.1rem 0.4rem", 
+                                color: "#E2E8F0", 
+                                background: "rgba(255, 255, 255, 0.05)", 
+                                padding: "0.15rem 0.45rem", 
                                 borderRadius: "4px",
-                                border: "1px solid var(--border-dim)"
+                                border: "1px solid rgba(255, 255, 255, 0.08)"
                               }}>
                                 {displayName}
                               </span>
@@ -382,14 +382,14 @@ export default function SpecialRequestsList({
                   display: "flex", 
                   justifyContent: "space-between", 
                   alignItems: "center", 
-                  borderTop: "1px solid rgba(15, 23, 42, 0.04)", 
+                  borderTop: "1px solid rgba(255, 255, 255, 0.08)", 
                   paddingTop: "0.75rem",
                   marginTop: "0.25rem",
                   flexWrap: "wrap",
                   gap: "0.5rem"
                 }}>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                    Submitted by <strong style={{ color: "var(--text-primary)" }}>{req.requester?.name || "Unknown"}</strong> on {new Date(req.createdAt).toLocaleDateString()} at {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div style={{ fontSize: "0.72rem", color: "#94A3B8" }}>
+                    Submitted by <strong style={{ color: "#FFFFFF" }}>{req.requester?.name || "Unknown"}</strong> on {new Date(req.createdAt).toLocaleDateString()} at {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
 
                   {req.title.includes("[IT MEMBER DELETION REQUEST]") && req.status === "PENDING" && isHandler ? (
