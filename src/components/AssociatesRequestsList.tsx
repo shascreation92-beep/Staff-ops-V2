@@ -211,12 +211,12 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       {/* Header Banner */}
-      <div className="glass-panel" style={{ padding: "1.5rem", position: "relative", zIndex: 100, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+      <div className="glass-panel" style={{ padding: "1.25rem 1.5rem", position: "relative", zIndex: 100, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap", borderRadius: "16px", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
         <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }} className="text-gold-gradient">
             REPRESENTATIVES ACCOUNT REQUESTS
           </h2>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+          <p style={{ fontSize: "0.82rem", color: "#94A3B8", marginTop: "0.2rem" }}>
             Review, edit, and bulk approve or reject incoming account requests forwarded by your Sales Representatives.
           </p>
         </div>
@@ -317,7 +317,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
       )}
 
       {/* Main Requests Table */}
-      <div className="glass-panel" style={{ padding: "0", background: "#FFFFFF", border: "1px solid var(--border-dim)", overflow: "hidden" }}>
+      <div className="glass-panel" style={{ padding: "0", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "16px", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)", overflow: "hidden" }}>
         <div className="table-container-outer" style={{ width: "100%" }}>
           <table className="premium-table">
             <thead>
@@ -339,8 +339,8 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                   paginatedBatch.every((r) => selectedIds.includes(r.id));
 
                 return (
-                  <tr>
-                    <th style={{ width: "40px", textAlign: "center" }}>
+                  <tr style={{ background: "linear-gradient(90deg, #141226 0%, #1E1B3A 100%)", borderBottom: "1px solid rgba(255, 255, 255, 0.12)" }}>
+                    <th style={{ width: "40px", textAlign: "center", color: "#FFFFFF" }}>
                       <input
                         type="checkbox"
                         checked={isAllBatchSelected}
@@ -349,17 +349,17 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                         title="Select All Current Page Requests"
                       />
                     </th>
-                    <th style={{ textAlign: "center" }}>Associate Name</th>
-                    <th style={{ textAlign: "center" }}>Platform</th>
-                    <th style={{ textAlign: "center" }}>Serial Code</th>
-                    <th style={{ textAlign: "center" }}>ID Name</th>
-                    <th style={{ textAlign: "center" }}>Ads Published</th>
-                    <th style={{ textAlign: "center" }}>Verification</th>
-                    <th onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")} style={{ textAlign: "center", cursor: "pointer", userSelect: "none" }}>
+                    <th style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em" }}>Associate Name</th>
+                    <th style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em" }}>Platform</th>
+                    <th style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em" }}>Serial Code</th>
+                    <th style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em" }}>ID Name</th>
+                    <th style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em" }}>Ads Published</th>
+                    <th style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em" }}>Verification</th>
+                    <th onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")} style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em", cursor: "pointer", userSelect: "none" }}>
                       Submitted Date {sortOrder === "desc" ? "↓" : "↑"}
                     </th>
-                    <th style={{ textAlign: "center" }}>Comments</th>
-                    <th style={{ textAlign: "center" }}>Actions</th>
+                    <th style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em" }}>Comments</th>
+                    <th style={{ textAlign: "center", color: "#FFFFFF", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.04em" }}>Actions</th>
                   </tr>
                 );
               })()}
@@ -408,7 +408,8 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                           <tr 
                             key={req.id}
                             style={{
-                              background: isSelected ? "rgba(139, 92, 246, 0.05)" : "transparent",
+                              background: isSelected ? "rgba(139, 92, 246, 0.15)" : "rgba(20, 18, 38, 0.4)",
+                              borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
                               transition: "background 0.2s ease"
                             }}
                           >
@@ -423,7 +424,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                             </td>
 
                             {/* Associate Name with Glowing Updated Dot Indicator */}
-                            <td style={{ textAlign: "center", fontWeight: 700, color: "var(--text-primary)" }}>
+                            <td style={{ textAlign: "center", fontWeight: 700, color: "#FFFFFF" }}>
                               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
                                 {isEditedByTL && (
                                   <span
@@ -437,7 +438,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                                       flexShrink: 0,
                                       cursor: "help"
                                     }}
-                                    title={`🔵 Updated by Team Lead (${editorName}) at ${updatedTimeStr}`}
+                                    title={`Updated by Team Lead (${editorName}) at ${updatedTimeStr}`}
                                   />
                                 )}
                                 <span>{associateName}</span>
@@ -445,66 +446,73 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                             </td>
 
                             <td style={{ textAlign: "center" }}>
-                              <span className="badge developer" style={{ fontSize: "0.75rem" }}>
-                                {req.platform?.name || "N/A"}
+                              <span style={{ fontSize: "0.72rem", fontWeight: 800, padding: "0.2rem 0.55rem", borderRadius: "6px", background: "rgba(56, 189, 248, 0.12)", color: "#38BDF8", border: "1px solid rgba(56, 189, 248, 0.3)" }}>
+                                {req.platform?.name?.toUpperCase() || "N/A"}
                               </span>
                             </td>
-                            <td style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
+                            <td style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.85rem", color: "#E2E8F0" }}>
                               {req.serialCode}
                             </td>
                             <td style={{ textAlign: "center" }}>
-                               <span style={{ fontWeight: 600 }}>{req.idName}</span>
+                               <span style={{ fontWeight: 600, color: "#FFFFFF" }}>{req.idName}</span>
                             </td>
-                            <td style={{ textAlign: "center", fontWeight: 600 }}>{req.adsPublished.toString()}</td>
+                            <td style={{ textAlign: "center", fontWeight: 700, color: "#FFFFFF" }}>{req.adsPublished.toString()}</td>
                             <td style={{ textAlign: "center" }}>
                               <span
-                                className={`badge ${req.verificationStatus === "Yes" ? "verified" : "danger"}`}
-                                style={{ fontSize: "0.7rem" }}
+                                style={{ 
+                                  fontSize: "0.7rem", 
+                                  fontWeight: 800, 
+                                  padding: "0.2rem 0.6rem", 
+                                  borderRadius: "20px",
+                                  background: req.verificationStatus === "Yes" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                                  color: req.verificationStatus === "Yes" ? "#10B981" : "#EF4444",
+                                  border: req.verificationStatus === "Yes" ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)"
+                                }}
                               >
-                                {req.verificationStatus === "Yes" ? "Verified" : "Unverified"}
+                                {req.verificationStatus === "Yes" ? "VERIFIED" : "UNVERIFIED"}
                               </span>
                             </td>
-                             <td style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: "1.2" }}>
-                               <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem", alignItems: "center" }}>
-                                 <span style={{ fontWeight: 600 }}>{datePart}</span>
-                                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{timePart}</span>
-                               </div>
+                             <td style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: "0.78rem", lineHeight: "1.2" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem", alignItems: "center" }}>
+                                  <span style={{ fontWeight: 700, color: "#E2E8F0" }}>{datePart}</span>
+                                  <span style={{ fontSize: "0.72rem", color: "#94A3B8" }}>{timePart}</span>
+                                </div>
                              </td>
                              <td style={{ textAlign: "center" }}>
-                               <button
-                                 onClick={() => handleOpenCommentModal(req.comment || "")}
-                                 style={{
-                                   background: "none",
-                                   border: "none",
-                                   cursor: "pointer",
-                                   padding: "0.25rem",
-                                   display: "inline-flex",
-                                   alignItems: "center",
-                                   justifyContent: "center",
-                                   margin: "0 auto",
-                                   transition: "transform 0.2s ease"
-                                 }}
-                                 title={req.comment ? `Comment: "${req.comment}"` : "No comment"}
-                               >
-                                 {req.comment ? (
-                                   <MessageSquare 
-                                     size={18} 
-                                     style={{ 
-                                       fill: "#10B981", 
-                                       color: "#10B981",
-                                       filter: "drop-shadow(0 0 2px rgba(16, 185, 129, 0.3))" 
-                                     }} 
-                                   />
-                                 ) : (
-                                   <MessageSquare 
-                                     size={18} 
-                                     style={{ 
-                                       color: "var(--text-muted)", 
-                                       opacity: 0.5 
-                                     }} 
-                                   />
-                                 )}
-                               </button>
+                                <button
+                                  onClick={() => handleOpenCommentModal(req.comment || "")}
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    padding: "0.25rem",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    margin: "0 auto",
+                                    transition: "transform 0.2s ease"
+                                  }}
+                                  title={req.comment ? `Comment: "${req.comment}"` : "No comment"}
+                                >
+                                  {req.comment ? (
+                                    <MessageSquare 
+                                      size={18} 
+                                      style={{ 
+                                        fill: "#10B981", 
+                                        color: "#10B981",
+                                        filter: "drop-shadow(0 0 2px rgba(16, 185, 129, 0.3))" 
+                                      }} 
+                                    />
+                                  ) : (
+                                    <MessageSquare 
+                                      size={18} 
+                                      style={{ 
+                                        color: "#64748B", 
+                                        opacity: 0.5 
+                                      }} 
+                                    />
+                                  )}
+                                </button>
                              </td>
 
                             {/* Actions Column: Edit Details + Approve + Reject */}
@@ -514,12 +522,12 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                                 <button
                                   onClick={() => handleOpenEditModal(req)}
                                   style={{
-                                    padding: "0.3rem 0.55rem",
+                                    padding: "0.3rem 0.6rem",
                                     fontSize: "0.75rem",
                                     height: "auto",
-                                    background: "#F1F5F9",
-                                    color: "#334155",
-                                    border: "1px solid #CBD5E1",
+                                    background: "rgba(255, 255, 255, 0.08)",
+                                    color: "#FFFFFF",
+                                    border: "1px solid rgba(255, 255, 255, 0.12)",
                                     borderRadius: "6px",
                                     cursor: "pointer",
                                     fontWeight: 700,
@@ -530,7 +538,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                                   title="Edit account details as Team Lead"
                                   disabled={isPending}
                                 >
-                                  <Edit3 size={12} style={{ color: "#0EA5E9" }} />
+                                  <Edit3 size={12} style={{ color: "#38BDF8" }} />
                                   <span>Edit</span>
                                 </button>
 
@@ -622,7 +630,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
               flexWrap: "wrap",
               gap: "1rem"
             }}>
-              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>
+              <span style={{ fontSize: "0.78rem", color: "#94A3B8", fontWeight: 500 }}>
                 Showing {totalRecords === 0 ? 0 : startIndex + 1}-{endIndex} of {totalRecords} entries
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
@@ -631,12 +639,12 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   style={{
                     background: "transparent",
-                    border: "1px solid var(--border-dim)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "6px",
                     padding: "0.35rem 0.75rem",
                     fontSize: "0.78rem",
                     fontWeight: 600,
-                    color: currentPage === 1 ? "var(--text-muted)" : "var(--text-primary)",
+                    color: currentPage === 1 ? "#64748B" : "#FFFFFF",
                     cursor: currentPage === 1 ? "default" : "pointer",
                     opacity: currentPage === 1 ? 0.5 : 1,
                     transition: "all 0.2s ease"
@@ -648,7 +656,7 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                 {getPageNumbers().map((pageNum, idx) => {
                   if (pageNum === '...') {
                     return (
-                      <span key={`dots-${idx}`} style={{ padding: "0 0.5rem", color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                      <span key={`dots-${idx}`} style={{ padding: "0 0.5rem", color: "#94A3B8", fontSize: "0.78rem" }}>
                         ...
                       </span>
                     );
@@ -659,8 +667,8 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum as number)}
                       style={{
-                        background: isSelected ? "var(--gold-primary)" : "transparent",
-                        border: isSelected ? "1px solid var(--gold-primary)" : "1px solid var(--border-dim)",
+                        background: isSelected ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "rgba(255, 255, 255, 0.04)",
+                        border: isSelected ? "1px solid rgba(56, 189, 248, 0.3)" : "1px solid rgba(255, 255, 255, 0.08)",
                         borderRadius: "6px",
                         width: "32px",
                         height: "32px",
@@ -669,7 +677,8 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                         justifyContent: "center",
                         fontSize: "0.78rem",
                         fontWeight: 700,
-                        color: isSelected ? "#FFFFFF" : "var(--text-secondary)",
+                        color: isSelected ? "#FFFFFF" : "#94A3B8",
+                        boxShadow: isSelected ? "0 0 10px rgba(56, 189, 248, 0.2)" : "none",
                         cursor: "pointer",
                         transition: "all 0.2s ease"
                       }}
@@ -684,12 +693,12 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   style={{
                     background: "transparent",
-                    border: "1px solid var(--border-dim)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "6px",
                     padding: "0.35rem 0.75rem",
                     fontSize: "0.78rem",
                     fontWeight: 600,
-                    color: currentPage === totalPages ? "var(--text-muted)" : "var(--text-primary)",
+                    color: currentPage === totalPages ? "#64748B" : "#FFFFFF",
                     cursor: currentPage === totalPages ? "default" : "pointer",
                     opacity: currentPage === totalPages ? 0.5 : 1,
                     transition: "all 0.2s ease"
@@ -743,9 +752,9 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
           }}>
             <div className="kpi-card-glow"></div>
             
-            <div className="kpi-header" style={{ borderBottom: "1px solid var(--border-dim)", paddingBottom: "0.75rem" }}>
+            <div className="kpi-header" style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.1)", paddingBottom: "0.75rem" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--gold-premium)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+                <span style={{ fontSize: "0.75rem", color: "#38BDF8", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
                   ACCOUNT COMMENTS
                 </span>
                 <h2 className="text-gold-gradient" style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0 }}>
@@ -758,11 +767,11 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
               <label className="form-label">Submission Notes / Comments</label>
               <div style={{
                 padding: "1rem",
-                background: "var(--bg-primary)",
-                border: "1px solid var(--border-dim)",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
                 borderRadius: "8px",
                 fontSize: "0.9rem",
-                color: "var(--text-primary)",
+                color: "#FFFFFF",
                 minHeight: "80px",
                 fontStyle: commentText ? "normal" : "italic",
                 whiteSpace: "pre-wrap"
@@ -793,8 +802,8 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.75)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -805,9 +814,10 @@ export default function AssociatesRequestsList({ requests }: AssociatesRequestsL
             maxWidth: "520px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "20px",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
