@@ -736,8 +736,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                     {isExpanded ? "−" : "+"}
                   </span>
 
-                  <GroupIcon size={17} style={{ color: isExpanded ? "#38BDF8" : "#64748B" }} />
-                  <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <GroupIcon size={17} style={{ color: isExpanded ? "#38BDF8" : "#64748B", flexShrink: 0 }} />
+                  <span style={{ flex: 1, whiteSpace: "nowrap" }}>
                     {group.title}
                   </span>
                 </button>
@@ -746,11 +746,11 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                 {isExpanded && (
                   <div style={{
                     position: "relative",
-                    marginLeft: "0.75rem",
-                    paddingLeft: "1.1rem",
+                    marginLeft: "0.5rem",
+                    paddingLeft: "0.85rem",
                     display: "flex",
                     flexDirection: "column",
-                    gap: "0.3rem",
+                    gap: "0.25rem",
                     marginTop: "0.2rem"
                   }}>
                     {visibleItems.map((item, index) => {
@@ -765,10 +765,10 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                             {/* Curved Branch Connecting Line */}
                             <span style={{
                               position: "absolute",
-                              left: "-1.1rem",
+                              left: "-0.85rem",
                               top: 0,
                               height: isLast ? "50%" : "100%",
-                              width: "1.1rem",
+                              width: "0.85rem",
                               borderLeft: "2px solid rgba(56, 189, 248, 0.35)",
                               borderBottom: "2px solid rgba(56, 189, 248, 0.35)",
                               borderBottomLeftRadius: "8px",
@@ -788,17 +788,17 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
-                                padding: "0.55rem 0.75rem",
+                                padding: "0.5rem 0.6rem",
                                 color: "#94A3B8",
                                 borderRadius: "10px",
                                 fontSize: "0.83rem",
                                 fontWeight: 500,
-                                gap: "0.65rem",
+                                gap: "0.55rem",
                                 transition: "all 0.2s ease"
                               }}
                             >
-                              <Icon size={17} style={{ color: "#64748B" }} />
-                              <span>{item.label}</span>
+                              <Icon size={17} style={{ color: "#64748B", flexShrink: 0 }} />
+                              <span style={{ whiteSpace: "nowrap" }}>{item.label}</span>
                             </button>
                           </div>
                         );
@@ -811,10 +811,10 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                             {/* Curved Branch Connecting Line */}
                             <span style={{
                               position: "absolute",
-                              left: "-1.1rem",
+                              left: "-0.85rem",
                               top: 0,
                               height: isLast ? "50%" : "100%",
-                              width: "1.1rem",
+                              width: "0.85rem",
                               borderLeft: "2px solid rgba(56, 189, 248, 0.35)",
                               borderBottom: "2px solid rgba(56, 189, 248, 0.35)",
                               borderBottomLeftRadius: "8px",
@@ -834,17 +834,17 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
-                                padding: "0.55rem 0.75rem",
+                                padding: "0.5rem 0.6rem",
                                 color: "#94A3B8",
                                 borderRadius: "10px",
                                 fontSize: "0.83rem",
                                 fontWeight: 500,
-                                gap: "0.65rem",
+                                gap: "0.55rem",
                                 transition: "all 0.2s ease"
                               }}
                             >
-                              <Icon size={17} style={{ color: "#64748B" }} />
-                              <span>{item.label}</span>
+                              <Icon size={17} style={{ color: "#64748B", flexShrink: 0 }} />
+                              <span style={{ whiteSpace: "nowrap" }}>{item.label}</span>
                             </button>
                           </div>
                         );
@@ -856,10 +856,10 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                           {/* Curved Branch Connecting Line */}
                           <span style={{
                             position: "absolute",
-                            left: "-1.1rem",
+                            left: "-0.85rem",
                             top: 0,
                             height: isLast ? "50%" : "100%",
-                            width: "1.1rem",
+                            width: "0.85rem",
                             borderLeft: "2px solid rgba(56, 189, 248, 0.35)",
                             borderBottom: "2px solid rgba(56, 189, 248, 0.35)",
                             borderBottomLeftRadius: "8px",
@@ -874,8 +874,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              gap: "0.65rem",
-                              padding: "0.55rem 0.75rem",
+                              gap: "0.55rem",
+                              padding: "0.5rem 0.6rem",
                               color: isActive ? "#FFFFFF" : "#94A3B8",
                               fontWeight: isActive ? 800 : 500,
                               fontSize: "0.83rem",
@@ -892,7 +892,7 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                               <span 
                                 style={{
                                   position: "absolute",
-                                  left: "-0.65rem",
+                                  left: "-0.55rem",
                                   top: "50%",
                                   transform: "translateY(-50%)",
                                   width: "4px",
@@ -904,8 +904,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                               />
                             )}
 
-                            <Icon size={17} style={{ color: isActive ? "#38BDF8" : "#64748B", transition: "color 0.2s ease" }} />
-                            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+                            <Icon size={17} style={{ color: isActive ? "#38BDF8" : "#64748B", transition: "color 0.2s ease", flexShrink: 0 }} />
+                            <span style={{ whiteSpace: "nowrap" }}>{item.label}</span>
 
                             {/* Badge Indicator Pills */}
                             {item.id === "associates-requests" && pendingRequestsCount > 0 && (
