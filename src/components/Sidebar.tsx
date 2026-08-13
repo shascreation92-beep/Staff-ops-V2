@@ -1048,8 +1048,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1060,14 +1060,15 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             maxWidth: "400px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)"
           }}>
-            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>CHANGE PASSWORD</h2>
+            <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0 }}>CHANGE PASSWORD</h2>
 
             {changePassError && (
               <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
@@ -1273,8 +1274,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           justifyContent: "flex-end",
@@ -1293,9 +1294,9 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               width: "360px",
               height: "100%",
               padding: "2rem",
-              background: "#FFFFFF",
-              borderLeft: "1px solid var(--border-dim)",
-              boxShadow: "var(--shadow-premium)",
+              background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+              borderLeft: "1px solid rgba(255, 255, 255, 0.12)",
+              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
               display: "flex",
               flexDirection: "column",
               gap: "1.5rem",
@@ -1309,13 +1310,25 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
               </h2>
               <button 
                 onClick={() => setShowITConfigOverlay(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "1.2rem" }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.08)",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#94A3B8",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.1rem"
+                }}
               >
                 ✕
               </button>
             </div>
 
-            <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: "1.4", margin: 0 }}>
+            <p style={{ fontSize: "0.82rem", color: "#94A3B8", lineHeight: "1.4", margin: 0 }}>
               Adjust operational cost configurations for unverified account verification tracking.
             </p>
                         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", margin: "1rem 0" }}>
@@ -1426,8 +1439,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(3, 4, 94, 0.45)",
-          backdropFilter: "blur(8px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1438,13 +1451,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             maxWidth: "480px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
             borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "0 20px 40px rgba(0, 119, 182, 0.15)",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             boxSizing: "border-box"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1637,8 +1650,8 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1649,26 +1662,39 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             maxWidth: "400px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Update User Bio</h3>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#FFFFFF", margin: 0 }}>Update User Bio</h3>
               <button 
                 type="button" 
                 onClick={() => setShowBioModal(false)} 
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.08)",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#94A3B8",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.1rem"
+                }}
               >
                 ✕
               </button>
             </div>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: "0.7rem", fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Brief Biography (Max 200 chars)
               </label>
               <textarea
@@ -1681,12 +1707,13 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
                   width: "100%",
                   padding: "0.6rem 0.75rem",
                   borderRadius: "8px",
-                  border: "1px solid var(--border-dim)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
                   fontSize: "0.82rem",
                   outline: "none",
                   resize: "none",
                   fontFamily: "inherit",
-                  background: "#F9FAFB"
+                  background: "rgba(255, 255, 255, 0.05)",
+                  color: "#FFFFFF"
                 }}
               />
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
