@@ -281,57 +281,57 @@ export default function WorkstationTelemetryDashboard() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.25rem" }}>
         
         {/* Total Connected Workstations */}
-        <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", borderLeft: "4px solid #3B82F6" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.08)", borderLeft: "4px solid #3B82F6", borderRadius: "16px", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Connected PCs</span>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>Connected PCs</span>
             <Monitor size={18} style={{ color: "#3B82F6" }} />
           </div>
-          <div style={{ fontSize: "1.85rem", fontWeight: 800, color: "#0F172A", marginTop: "0.3rem" }}>
+          <div style={{ fontSize: "1.85rem", fontWeight: 800, color: "#FFFFFF", marginTop: "0.3rem", fontFamily: "var(--font-mono)" }}>
             {data?.totalConnected ?? 0}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+          <div style={{ fontSize: "0.75rem", color: "#64748B", marginTop: "0.2rem" }}>
             Active company workstation telemetry agents
           </div>
         </div>
 
         {/* Avg Company RAM Usage */}
-        <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", borderLeft: "4px solid #10B981" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.08)", borderLeft: "4px solid #10B981", borderRadius: "16px", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Avg RAM Usage</span>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>Avg RAM Usage</span>
             <MemoryStick size={18} style={{ color: "#10B981" }} />
           </div>
-          <div style={{ fontSize: "1.85rem", fontWeight: 800, color: getStatusColor(data?.avgRamPercent || 0), marginTop: "0.3rem" }}>
+          <div style={{ fontSize: "1.85rem", fontWeight: 800, color: getStatusColor(data?.avgRamPercent || 0), marginTop: "0.3rem", fontFamily: "var(--font-mono)" }}>
             {data?.avgRamPercent ?? 0}%
           </div>
-          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+          <div style={{ fontSize: "0.75rem", color: "#64748B", marginTop: "0.2rem" }}>
             Company-wide average memory utilization
           </div>
         </div>
 
         {/* VPN Security Active */}
-        <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", borderLeft: "4px solid #8B5CF6" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.08)", borderLeft: "4px solid #8B5CF6", borderRadius: "16px", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>VPN Security</span>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>VPN Security</span>
             <ShieldCheck size={18} style={{ color: "#8B5CF6" }} />
           </div>
-          <div style={{ fontSize: "1.85rem", fontWeight: 800, color: "#8B5CF6", marginTop: "0.3rem" }}>
+          <div style={{ fontSize: "1.85rem", fontWeight: 800, color: "#A855F7", marginTop: "0.3rem", fontFamily: "var(--font-mono)" }}>
             {data?.vpnConnectedCount ?? 0} / {data?.totalConnected ?? 0}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+          <div style={{ fontSize: "0.75rem", color: "#64748B", marginTop: "0.2rem" }}>
             Workstations connected via encrypted VPN
           </div>
         </div>
 
         {/* High Resource Load Warnings */}
-        <div className="glass-panel" style={{ padding: "1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", borderLeft: "4px solid #F59E0B" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", backdropFilter: "blur(16px)", border: "1px solid rgba(255, 255, 255, 0.08)", borderLeft: "4px solid #F59E0B", borderRadius: "16px", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>High Load Alerts</span>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>High Load Alerts</span>
             <AlertTriangle size={18} style={{ color: "#F59E0B" }} />
           </div>
-          <div style={{ fontSize: "1.85rem", fontWeight: 800, color: (data?.highLoadCount || 0) > 0 ? "#EF4444" : "#10B981", marginTop: "0.3rem" }}>
+          <div style={{ fontSize: "1.85rem", fontWeight: 800, color: (data?.highLoadCount || 0) > 0 ? "#EF4444" : "#10B981", marginTop: "0.3rem", fontFamily: "var(--font-mono)" }}>
             {data?.highLoadCount ?? 0}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+          <div style={{ fontSize: "0.75rem", color: "#64748B", marginTop: "0.2rem" }}>
             PCs with RAM or CPU utilization exceeding 80%
           </div>
         </div>
@@ -339,7 +339,7 @@ export default function WorkstationTelemetryDashboard() {
       </div>
 
       {/* 3. Search & Filter Bar */}
-      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)", position: "relative", zIndex: 40 }}>
+      <div className="glass-panel" style={{ padding: "0.85rem 1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", backdropFilter: "blur(16px)", position: "relative", zIndex: 40, border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "14px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
           
           <div className="table-search-wrapper" style={{ width: "240px" }}>
@@ -359,10 +359,12 @@ export default function WorkstationTelemetryDashboard() {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="table-select-filter"
             >
-              <option value="ALL">ALL ROLES</option>
-              <option value="SALES_ASSOCIATE">SALES ASSOCIATE</option>
-              <option value="TEAM_LEAD">TEAM LEAD</option>
-              <option value="IT_DEPARTMENT">IT DEPARTMENT</option>
+              <option value="ALL">All Roles</option>
+              <option value="SUPER_ADMIN">Super Admin</option>
+              <option value="COMPANY_OWNER">Company Owner</option>
+              <option value="IT_DEPARTMENT">IT Department</option>
+              <option value="MANAGER">Manager</option>
+              <option value="EMPLOYEE">Employee</option>
             </select>
 
             <select
@@ -389,12 +391,14 @@ export default function WorkstationTelemetryDashboard() {
       </div>
 
       {/* 4. Employee Workstation Cards Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem" }}>
         {filteredWorkstations.length === 0 ? (
-          <div className="glass-panel" style={{ gridColumn: "1 / -1", padding: "4rem 2rem", textAlign: "center", background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)" }}>
-            <Monitor size={36} style={{ color: "var(--text-muted)", margin: "0 auto 0.75rem auto" }} />
-            <h3 style={{ fontSize: "1rem", fontWeight: 700 }}>No employee workstations matching filter.</h3>
-            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>Try adjusting your search query or filters above.</p>
+          <div className="glass-panel" style={{ gridColumn: "1 / -1", padding: "4rem 2rem", textAlign: "center", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "16px" }}>
+            <Monitor size={48} style={{ color: "var(--text-muted)", margin: "0 auto 1rem auto", opacity: 0.5 }} />
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)" }}>No Workstations Found</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+              No active workstation telemetry reporting matching your filters.
+            </p>
           </div>
         ) : (
           filteredWorkstations.map((w) => (
@@ -403,12 +407,13 @@ export default function WorkstationTelemetryDashboard() {
               className="glass-panel" 
               style={{
                 padding: "1.25rem",
-                background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)",
+                background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", backdropFilter: "blur(16px)",
                 display: "flex",
                 flexDirection: "column",
                 gap: "1rem",
-                border: w.hardware.ramPercent > 85 ? "2px solid rgba(239, 68, 68, 0.4)" : "1px solid var(--border-dim)",
-                boxShadow: w.hardware.ramPercent > 85 ? "0 0 15px rgba(239, 68, 68, 0.15)" : "0 2px 8px rgba(0, 0, 0, 0.04)"
+                borderRadius: "16px",
+                border: w.hardware.ramPercent > 85 ? "2px solid rgba(239, 68, 68, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
+                boxShadow: w.hardware.ramPercent > 85 ? "0 0 15px rgba(239, 68, 68, 0.15)" : "0 10px 30px rgba(0, 0, 0, 0.5)"
               }}
             >
               {/* Employee Top Bar */}
@@ -430,12 +435,12 @@ export default function WorkstationTelemetryDashboard() {
                   </div>
 
                   <div>
-                    <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>{w.name}</h4>
+                    <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "#FFFFFF" }}>{w.name}</h4>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.1rem" }}>
-                      <span className="badge" style={{ fontSize: "0.65rem", padding: "0.05rem 0.4rem", background: "rgba(0, 119, 182, 0.08)", color: "#0077B6", border: "1px solid rgba(0, 119, 182, 0.2)" }}>
+                      <span className="badge" style={{ fontSize: "0.65rem", padding: "0.05rem 0.4rem", background: "rgba(56, 189, 248, 0.12)", color: "#38BDF8", border: "1px solid rgba(56, 189, 248, 0.3)" }}>
                         {w.designation}
                       </span>
-                      <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+                      <span style={{ fontSize: "0.7rem", color: "#94A3B8", fontFamily: "var(--font-mono)" }}>
                         {w.employeeId}
                       </span>
                     </div>
@@ -456,7 +461,7 @@ export default function WorkstationTelemetryDashboard() {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "0.3rem",
-                    background: w.isPaused ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
+                    background: w.isPaused ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
                     border: w.isPaused ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
                     color: w.isPaused ? "#10B981" : "#EF4444"
                   }}
@@ -472,14 +477,14 @@ export default function WorkstationTelemetryDashboard() {
                 {/* RAM Progress */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: "0.25rem" }}>
-                    <span style={{ fontWeight: 600, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <span style={{ fontWeight: 600, color: "#94A3B8", display: "flex", alignItems: "center", gap: "0.3rem" }}>
                       <MemoryStick size={13} style={{ color: "#10B981" }} /> RAM Memory
                     </span>
-                    <span style={{ fontWeight: 700, color: getStatusColor(w.hardware.ramPercent) }}>
+                    <span style={{ fontWeight: 700, color: getStatusColor(w.hardware.ramPercent), fontFamily: "var(--font-mono)" }}>
                       {w.hardware.ramUsedGb} / {w.hardware.ramTotalGb} GB ({w.hardware.ramPercent}%)
                     </span>
                   </div>
-                  <div style={{ height: "6px", width: "100%", background: "#E2E8F0", borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ height: "6px", width: "100%", background: "rgba(255, 255, 255, 0.08)", borderRadius: "3px", overflow: "hidden" }}>
                     <div style={{
                       height: "100%",
                       width: `${w.hardware.ramPercent}%`,
@@ -492,14 +497,14 @@ export default function WorkstationTelemetryDashboard() {
                 {/* Disk Progress */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: "0.25rem" }}>
-                    <span style={{ fontWeight: 600, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <span style={{ fontWeight: 600, color: "#94A3B8", display: "flex", alignItems: "center", gap: "0.3rem" }}>
                       <HardDrive size={13} style={{ color: "#A855F7" }} /> SSD Storage
                     </span>
-                    <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                    <span style={{ fontWeight: 700, color: "#FFFFFF", fontFamily: "var(--font-mono)" }}>
                       {w.hardware.diskUsedGb} / {w.hardware.diskTotalGb} GB ({w.hardware.diskPercent}%)
                     </span>
                   </div>
-                  <div style={{ height: "6px", width: "100%", background: "#E2E8F0", borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ height: "6px", width: "100%", background: "rgba(255, 255, 255, 0.08)", borderRadius: "3px", overflow: "hidden" }}>
                     <div style={{
                       height: "100%",
                       width: `${w.hardware.diskPercent}%`,
@@ -512,14 +517,14 @@ export default function WorkstationTelemetryDashboard() {
                 {/* CPU Load Progress */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: "0.25rem" }}>
-                    <span style={{ fontWeight: 600, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <span style={{ fontWeight: 600, color: "#94A3B8", display: "flex", alignItems: "center", gap: "0.3rem" }}>
                       <Cpu size={13} style={{ color: "#3B82F6" }} /> CPU Processing Load
                     </span>
-                    <span style={{ fontWeight: 700, color: getStatusColor(w.hardware.cpuPercent) }}>
+                    <span style={{ fontWeight: 700, color: getStatusColor(w.hardware.cpuPercent), fontFamily: "var(--font-mono)" }}>
                       {w.hardware.cpuPercent}% ({w.hardware.cpuCores} Cores)
                     </span>
                   </div>
-                  <div style={{ height: "6px", width: "100%", background: "#E2E8F0", borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ height: "6px", width: "100%", background: "rgba(255, 255, 255, 0.08)", borderRadius: "3px", overflow: "hidden" }}>
                     <div style={{
                       height: "100%",
                       width: `${w.hardware.cpuPercent}%`,
@@ -532,12 +537,12 @@ export default function WorkstationTelemetryDashboard() {
               </div>
 
               {/* Bandwidth & Network Speeds */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F8FAFC", padding: "0.55rem 0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: "#10B981", fontWeight: 700 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255, 255, 255, 0.03)", padding: "0.55rem 0.75rem", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: "#10B981", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
                   <Download size={13} />
                   <span>⬇ {w.hardware.downloadMbps} MB/s</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: "#3B82F6", fontWeight: 700 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: "#3B82F6", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
                   <Upload size={13} />
                   <span>⬆ {w.hardware.uploadMbps} MB/s</span>
                 </div>
@@ -547,8 +552,8 @@ export default function WorkstationTelemetryDashboard() {
               <div style={{
                 padding: "0.55rem 0.75rem",
                 borderRadius: "8px",
-                background: w.network.isVpnActive ? "rgba(139, 92, 246, 0.06)" : "rgba(15, 23, 42, 0.03)",
-                border: w.network.isVpnActive ? "1px solid rgba(139, 92, 246, 0.2)" : "1px solid var(--border-dim)",
+                background: w.network.isVpnActive ? "rgba(139, 92, 246, 0.12)" : "rgba(255, 255, 255, 0.03)",
+                border: w.network.isVpnActive ? "1px solid rgba(139, 92, 246, 0.3)" : "1px solid rgba(255, 255, 255, 0.06)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between"
@@ -556,10 +561,10 @@ export default function WorkstationTelemetryDashboard() {
                 <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", overflow: "hidden" }}>
                   <span style={{ fontSize: "1rem" }}>{getCountryFlag(w.network.countryCode)}</span>
                   <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: w.network.isVpnActive ? "#7C3AED" : "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: w.network.isVpnActive ? "#A855F7" : "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {w.network.isVpnActive ? "🔒 VPN CONNECTED" : "🌐 DIRECT CONNECTION"} ({w.network.city})
                     </span>
-                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+                    <span style={{ fontSize: "0.68rem", color: "#94A3B8", fontFamily: "var(--font-mono)" }}>
                       IP: {w.network.ipAddress} ({w.network.country})
                     </span>
                   </div>

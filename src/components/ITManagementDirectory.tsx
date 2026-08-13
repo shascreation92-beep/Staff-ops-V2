@@ -382,16 +382,18 @@ export default function ITManagementDirectory({
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       {/* Title Card (Two-Row Header Config: Row 1) */}
       <div className="glass-panel mx-6 mt-6 mb-5" style={{
-        padding: "1rem 1.5rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
+        padding: "1.25rem 1.5rem",
+        background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        borderRadius: "16px",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
         display: "flex",
         flexDirection: "column",
         position: "relative",
         zIndex: 40
       }}>
         <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0, lineHeight: "1.2" }}>IT MANAGEMENT & WORKSTATION CONTROL CENTER</h2>
-        <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, marginTop: "0.25rem" }}>
+        <p style={{ fontSize: "0.82rem", color: "#94A3B8", margin: 0, marginTop: "0.25rem" }}>
           Manage IT personnel, laptop hardware assets, remote workstation commands, and system anti-tamper alerts.
         </p>
 
@@ -483,8 +485,10 @@ export default function ITManagementDirectory({
         flexWrap: "wrap",
         justifyContent: "space-between",
         gap: "1.5rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
+        background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        borderRadius: "16px",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
         position: "relative",
         zIndex: 40
       }}>
@@ -629,7 +633,7 @@ export default function ITManagementDirectory({
 
       {/* Tab 2: Security Anti-Tamper Alerts View */}
       {activeTab === "SECURITY_ALERTS" && (
-        <div className="glass-panel" style={{ padding: "1.5rem", background: "#FFFFFF", borderRadius: "8px", border: "1px solid var(--border-dim)" }}>
+        <div className="glass-panel mx-6 mb-6" style={{ padding: "1.5rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "16px", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#EF4444", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <ShieldAlert size={20} /> 🛡️ SYSTEM ANTI-TAMPER & VIOLATION LOGS
@@ -727,7 +731,7 @@ export default function ITManagementDirectory({
 
       {/* Tab 3: Laptop Equipment & Asset Inventory View */}
       {activeTab === "LAPTOP_ASSETS" && (
-        <div className="glass-panel" style={{ padding: "1.5rem", background: "#FFFFFF", borderRadius: "8px", border: "1px solid var(--border-dim)" }}>
+        <div className="glass-panel mx-6 mb-6" style={{ padding: "1.5rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "16px", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "1rem" }}>
             <div>
               <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#10B981", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -868,7 +872,7 @@ export default function ITManagementDirectory({
 
       {/* Tab 4: Remote Workstation Command Maintenance Hub */}
       {activeTab === "REMOTE_COMMANDS" && (
-        <div className="glass-panel" style={{ padding: "1.5rem", background: "#FFFFFF", borderRadius: "8px", border: "1px solid var(--border-dim)" }}>
+        <div className="glass-panel mx-6 mb-6" style={{ padding: "1.5rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "16px", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
           <div style={{ marginBottom: "1.5rem" }}>
             <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#8B5CF6", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <Terminal size={20} /> 💻 REMOTE WORKSTATION MAINTENANCE HUB

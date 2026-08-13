@@ -467,16 +467,18 @@ export default function SettingsShard({
     <>
       {/* Title Card */}
       <div className="glass-panel mx-6 mt-6 mb-5" style={{
-        padding: "1rem 1.5rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
+        padding: "1.25rem 1.5rem",
+        background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        borderRadius: "16px",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
         display: "flex",
         flexDirection: "column",
         position: "relative",
         zIndex: 40
       }}>
         <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0, lineHeight: "1.2" }}>USER DIRECTORY</h2>
-        <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, marginTop: "0.25rem" }}>
+        <p style={{ fontSize: "0.82rem", color: "#94A3B8", margin: 0, marginTop: "0.25rem" }}>
           Manage employee profiles, override passwords, set roles, and control active dashboard access.
         </p>
       </div>
@@ -489,8 +491,10 @@ export default function SettingsShard({
         flexWrap: "wrap",
         justifyContent: "space-between",
         gap: "1.5rem",
-        background: "#FFFFFF",
-        border: "1px solid var(--border-dim)",
+        background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        borderRadius: "16px",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
         position: "relative",
         zIndex: 40
       }}>
@@ -501,13 +505,13 @@ export default function SettingsShard({
           display: "flex",
           alignItems: "center",
           gap: "0.5rem",
-          background: "#F9FAFB",
+          background: "rgba(255, 255, 255, 0.04)",
           padding: "0.5rem 0.75rem",
           height: "36px",
-          borderRadius: "6px",
-          border: "1px solid var(--border-dim)"
+          borderRadius: "8px",
+          border: "1px solid rgba(255, 255, 255, 0.12)"
         }}>
-          <Search size={16} style={{ color: "var(--text-muted)" }} />
+          <Search size={16} style={{ color: "#94A3B8" }} />
           <input
             type="text"
             placeholder="Search by name or email..."
@@ -519,7 +523,7 @@ export default function SettingsShard({
               outline: "none",
               fontSize: "0.82rem",
               background: "transparent",
-              color: "var(--text-primary)"
+              color: "#FFFFFF"
             }}
           />
           {searchQuery && (
@@ -529,7 +533,7 @@ export default function SettingsShard({
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                color: "var(--text-muted)",
+                color: "#94A3B8",
                 fontSize: "1.2rem",
                 display: "flex",
                 alignItems: "center",
@@ -544,28 +548,27 @@ export default function SettingsShard({
         </div>
 
         {/* Counter Metrics Pills */}
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
           <div style={{
             height: "36px",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            borderRadius: "6px",
+            background: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "8px",
             padding: "0 0.75rem",
             fontSize: "0.82rem",
-            color: "var(--text-primary)",
+            color: "#FFFFFF",
             fontWeight: 700,
             display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+            justifyContent: "center"
           }}>
             TOTAL STAFF: {totalStaff}
           </div>
           <div style={{
             height: "36px",
-            background: "#FFFFFF",
-            border: "1px solid rgba(16, 185, 129, 0.25)",
-            borderRadius: "6px",
+            background: "rgba(16, 185, 129, 0.12)",
+            border: "1px solid rgba(16, 185, 129, 0.3)",
+            borderRadius: "8px",
             padding: "0 0.75rem",
             fontSize: "0.82rem",
             color: "#10B981",
@@ -573,8 +576,7 @@ export default function SettingsShard({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "0.35rem",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+            gap: "0.35rem"
           }}>
             <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" style={{ display: "inline-block" }} />
             ACTIVE: {activeStaff}
@@ -587,7 +589,7 @@ export default function SettingsShard({
               height: "36px",
               background: "linear-gradient(135deg, #0077B6, #023E8A)",
               color: "#FFFFFF",
-              borderRadius: "6px",
+              borderRadius: "8px",
               padding: "0 0.85rem",
               fontSize: "0.8rem",
               fontWeight: 700,
@@ -595,7 +597,7 @@ export default function SettingsShard({
               alignItems: "center",
               gap: "0.4rem",
               textDecoration: "none",
-              boxShadow: "0 2px 6px rgba(2, 62, 138, 0.25)"
+              boxShadow: "0 2px 6px rgba(2, 62, 138, 0.3)"
             }}
           >
             <Download size={15} />
@@ -608,18 +610,17 @@ export default function SettingsShard({
             title="Download 1-Click Uninstaller script"
             style={{
               height: "36px",
-              background: "#FFFFFF",
-              border: "1px solid #CBD5E1",
-              color: "#64748B",
-              borderRadius: "6px",
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              color: "#94A3B8",
+              borderRadius: "8px",
               padding: "0 0.85rem",
               fontSize: "0.8rem",
               fontWeight: 600,
               display: "inline-flex",
               alignItems: "center",
               gap: "0.4rem",
-              textDecoration: "none",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+              textDecoration: "none"
             }}
           >
             <Trash2 size={15} />
@@ -627,17 +628,16 @@ export default function SettingsShard({
           </a>
           <div style={{
             height: "36px",
-            background: "#FFFFFF",
-            border: "1px solid rgba(239, 68, 68, 0.25)",
-            borderRadius: "6px",
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "8px",
             padding: "0 0.75rem",
             fontSize: "0.82rem",
             color: "#EF4444",
             fontWeight: 700,
             display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+            justifyContent: "center"
           }}>
             DISABLED: {disabledStaff}
           </div>
@@ -645,7 +645,16 @@ export default function SettingsShard({
       </div>
 
       {/* Main Table Container Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mx-6 mb-6" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+      <div className="glass-panel mx-6 mb-6" style={{
+        padding: "1.5rem",
+        background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        borderRadius: "16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "1.5rem",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)"
+      }}>
         <div className="table-container-outer" style={{ width: "100%" }}>
           <table className="premium-table" style={{ width: "100%" }}>
             <thead>
@@ -886,8 +895,8 @@ export default function SettingsShard({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(10, 8, 22, 0.75)",
+          backdropFilter: "blur(8px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -898,24 +907,25 @@ export default function SettingsShard({
             maxWidth: "420px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>EDIT TEAM LEAD PROFILE</h2>
 
             {editTLError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+              <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "0.6rem 1rem", borderRadius: "8px", color: "#FCA5A5", fontSize: "0.8rem" }}>
                 {editTLError}
               </div>
             )}
 
             <form onSubmit={handleEditTLNameSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="form-group">
-                <label className="form-label">Team Lead Name</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Team Lead Name</label>
                 <input
                   type="text"
                   required
@@ -959,8 +969,8 @@ export default function SettingsShard({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(10, 8, 22, 0.75)",
+          backdropFilter: "blur(8px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -971,27 +981,28 @@ export default function SettingsShard({
             maxWidth: "450px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>APPROVE ONBOARDING REQUEST</h2>
-            <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-              Assigning credentials to: <strong style={{ color: "var(--text-primary)" }}>{approveUserName}</strong>
+            <div style={{ fontSize: "0.85rem", color: "#94A3B8" }}>
+              Assigning credentials to: <strong style={{ color: "#FFFFFF" }}>{approveUserName}</strong>
             </div>
 
             {approveError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+              <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "0.6rem 1rem", borderRadius: "8px", color: "#FCA5A5", fontSize: "0.8rem" }}>
                 {approveError}
               </div>
             )}
 
             <form onSubmit={handleApproveSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="form-group">
-                <label className="form-label">Employee ID (Globally Unique)</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Employee ID (Globally Unique)</label>
                 <input
                   type="text"
                   required
@@ -1004,7 +1015,7 @@ export default function SettingsShard({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Assign Password</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Assign Password</label>
                 <input
                   type="text"
                   required
@@ -1048,8 +1059,8 @@ export default function SettingsShard({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(10, 8, 22, 0.75)",
+          backdropFilter: "blur(8px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1060,27 +1071,28 @@ export default function SettingsShard({
             maxWidth: "420px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>RESET USER PASSWORD</h2>
-            <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-              User: <strong style={{ color: "var(--text-primary)" }}>{resetPassUserName || resetPassUserEmail}</strong>
+            <div style={{ fontSize: "0.85rem", color: "#94A3B8" }}>
+              User: <strong style={{ color: "#FFFFFF" }}>{resetPassUserName || resetPassUserEmail}</strong>
             </div>
 
             {resetPassError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+              <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "0.6rem 1rem", borderRadius: "8px", color: "#FCA5A5", fontSize: "0.8rem" }}>
                 {resetPassError}
               </div>
             )}
 
             <form onSubmit={handleResetPassSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="form-group">
-                <label className="form-label">New Password</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>New Password</label>
                 <input
                   type="text"
                   required
@@ -1128,8 +1140,8 @@ export default function SettingsShard({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(10, 8, 22, 0.75)",
+          backdropFilter: "blur(8px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1140,24 +1152,25 @@ export default function SettingsShard({
             maxWidth: "460px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>EDIT EMPLOYEE ACCOUNT</h2>
 
             {editAccountError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+              <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "0.6rem 1rem", borderRadius: "8px", color: "#FCA5A5", fontSize: "0.8rem" }}>
                 {editAccountError}
               </div>
             )}
 
             <form onSubmit={handleEditAccountSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="form-group">
-                <label className="form-label">Full Name</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Full Name</label>
                 <input
                   type="text"
                   required
@@ -1170,7 +1183,7 @@ export default function SettingsShard({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Password Override</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Password Override</label>
                 <input
                   type="text"
                   placeholder="Enter new password override"
@@ -1182,7 +1195,7 @@ export default function SettingsShard({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Role Designation</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Role Designation</label>
                 <select
                   value={editAccountRole}
                   onChange={(e) => setEditAccountRole(e.target.value as any)}
@@ -1196,7 +1209,7 @@ export default function SettingsShard({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Account Status</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Account Status</label>
                 <select
                   value={editAccountStatus}
                   onChange={(e) => setEditAccountStatus(e.target.value as any)}
@@ -1210,7 +1223,7 @@ export default function SettingsShard({
 
               {editAccountRole === "SALES_ASSOCIATE" && (
                 <div className="form-group">
-                  <label className="form-label">Assign Team Lead</label>
+                  <label className="form-label" style={{ color: "#94A3B8" }}>Assign Team Lead</label>
                   <select
                     value={editAccountTeamLeadId || ""}
                     onChange={(e) => setEditAccountTeamLeadId(e.target.value ? e.target.value : null)}
@@ -1264,8 +1277,8 @@ export default function SettingsShard({
           left: 0,
           right: 0,
           bottom: 0,
-          background: "rgba(15, 23, 42, 0.3)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(10, 8, 22, 0.75)",
+          backdropFilter: "blur(8px)",
           zIndex: 1000,
           display: "flex",
           alignItems: "center",
@@ -1276,35 +1289,36 @@ export default function SettingsShard({
             maxWidth: "460px",
             width: "100%",
             padding: "2rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
+            background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             display: "flex",
             flexDirection: "column",
             gap: "1.25rem",
-            boxShadow: "var(--shadow-premium)"
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)"
           }}>
             <h2 className="text-gold-gradient" style={{ fontSize: "1.25rem", fontWeight: 800 }}>REASSIGN SALES REPRESENTATIVE</h2>
 
             {reassignError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "0.6rem 1rem", borderRadius: "4px", color: "var(--color-danger)", fontSize: "0.8rem" }}>
+              <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "0.6rem 1rem", borderRadius: "8px", color: "#FCA5A5", fontSize: "0.8rem" }}>
                 {reassignError}
               </div>
             )}
 
             <form onSubmit={handleReassignSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="form-group">
-                <label className="form-label">Representative Name</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Representative Name</label>
                 <input
                   type="text"
                   readOnly
                   value={reassignAssociateName}
                   className="input-gold"
-                  style={{ background: "#F3F4F6", cursor: "not-allowed" }}
+                  style={{ background: "rgba(255, 255, 255, 0.04)", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#FFFFFF", cursor: "not-allowed" }}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Assign Team Lead</label>
+                <label className="form-label" style={{ color: "#94A3B8" }}>Assign Team Lead</label>
                 <select
                   value={reassignTeamLeadId || ""}
                   onChange={(e) => setReassignTeamLeadId(e.target.value ? e.target.value : null)}

@@ -278,7 +278,7 @@ export default function UserDirectoryList({ initialUsers, currentUserRole }: Use
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
       {/* Search Header card */}
-      <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem", position: "relative", zIndex: 40, background: "#FFFFFF" }}>
+      <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem", position: "relative", zIndex: 40, background: "var(--card-bg)" }}>
         <div style={{ flex: 1, minWidth: "280px" }}>
           <h1 className="text-gold-gradient" style={{ fontSize: "1.5rem", fontWeight: 800 }}>👥 SYSTEM USER DIRECTORY</h1>
           <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
@@ -291,7 +291,7 @@ export default function UserDirectoryList({ initialUsers, currentUserRole }: Use
       </div>
 
       {/* Search Input Bar */}
-      <div className="glass-panel" style={{ padding: "1.25rem", display: "flex", alignItems: "center", gap: "0.75rem", background: "#FFFFFF", border: "1px solid var(--border-dim)" }}>
+      <div className="glass-panel" style={{ padding: "1.25rem", display: "flex", alignItems: "center", gap: "0.75rem", background: "var(--card-bg)", border: "1px solid var(--border-dim)" }}>
         <Search size={18} style={{ color: "var(--text-muted)", marginLeft: "0.25rem" }} />
         <input
           type="text"
@@ -311,7 +311,7 @@ export default function UserDirectoryList({ initialUsers, currentUserRole }: Use
 
       {/* Grid of Users */}
       {filteredUsers.length === 0 ? (
-        <div className="glass-panel" style={{ padding: "3rem 1.5rem", textAlign: "center", background: "#FFFFFF" }}>
+        <div className="glass-panel" style={{ padding: "3rem 1.5rem", textAlign: "center", background: "var(--card-bg)" }}>
           <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
             No registered users found matching "{searchTerm}" in this business unit.
           </span>
@@ -331,7 +331,7 @@ export default function UserDirectoryList({ initialUsers, currentUserRole }: Use
                   className="glass-panel"
                   style={{
                     padding: "1.5rem",
-                    background: "#FFFFFF",
+                    background: "var(--card-bg)",
                     border: "1px solid var(--border-dim)",
                     borderRadius: "var(--border-radius)",
                     display: "flex",

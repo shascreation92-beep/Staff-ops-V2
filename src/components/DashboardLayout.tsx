@@ -311,8 +311,8 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                     width: "100%",
                     maxWidth: "896px", // max-w-4xl is 56rem (896px)
                     margin: "1rem auto 0 auto",
-                    background: "#FFFFFF",
-                    border: "1.5px solid rgba(2, 80, 161, 0.18)",
+                    background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "9999px",
                     height: "38px",
                     display: "flex",
@@ -324,8 +324,8 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                   }}
                 >
                   {/* Fixed left badges (scrolling text slides out from underneath) */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", zIndex: 10, background: "#FFFFFF", paddingRight: "0.85rem", boxShadow: "6px 0 10px 4px #FFFFFF", height: "100%", flexShrink: 0 }}>
-                    <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontWeight: 800, whiteSpace: "nowrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", zIndex: 10, background: "transparent", paddingRight: "0.85rem", height: "100%", flexShrink: 0 }}>
+                    <span style={{ fontSize: "0.72rem", color: "#38BDF8", fontWeight: 800, whiteSpace: "nowrap" }}>
                       {labelText}
                     </span>
                   </div>
@@ -333,19 +333,19 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                   {/* Right-to-Left Animated Text Area */}
                   <div className="marquee-container" onClick={() => openGlobalAnnDetails(activeStripAnn)}>
                     <div className="marquee-text-scroll" style={{ paddingLeft: "10%" }}>
-                      <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.78rem" }}>
+                      <span style={{ fontWeight: 700, color: "#FFFFFF", fontSize: "0.78rem" }}>
                         {parsed.text}:
                       </span>
-                      <span style={{ marginLeft: "0.25rem", color: "var(--text-secondary)", fontSize: "0.78rem" }}>
+                      <span style={{ marginLeft: "0.25rem", color: "#94A3B8", fontSize: "0.78rem" }}>
                         {activeStripAnn.content}
                       </span>
                     </div>
                   </div>
 
-                  {/* Close button with left white fade shadow */}
+                  {/* Close button with left dark fade */}
                   <button
                     onClick={() => dismissStrip(activeStripAnn.id)}
-                    style={{ border: "none", cursor: "pointer", zIndex: 10, paddingLeft: "0.5rem", background: "#FFFFFF", boxShadow: "-6px 0 10px 4px #FFFFFF", height: "100%", display: "flex", alignItems: "center", color: "var(--text-muted)", opacity: 0.6, flexShrink: 0, fontSize: "0.78rem", fontWeight: 700 }}
+                    style={{ border: "none", cursor: "pointer", zIndex: 10, paddingLeft: "0.5rem", background: "transparent", height: "100%", display: "flex", alignItems: "center", color: "#94A3B8", opacity: 0.8, flexShrink: 0, fontSize: "0.78rem", fontWeight: 700 }}
                     title="Dismiss Announcement"
                   >
                     ✕

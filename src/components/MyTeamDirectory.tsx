@@ -212,10 +212,11 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
           <div className="glass-panel" style={{
             width: "100%",
             maxWidth: "480px",
-            background: "#FFFFFF",
+            background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
             borderRadius: "16px",
             padding: "2rem",
-            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.3)",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)",
             position: "relative"
           }}>
             <button
@@ -568,9 +569,10 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
         gap: "1rem",
         position: "relative",
         transition: "all 0.3s ease",
-        border: isPendingDeletion ? "1.5px solid #F59E0B" : "1px solid var(--border-dim)",
-        background: "#FFFFFF",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.03)"
+        border: isPendingDeletion ? "1.5px solid #F59E0B" : "1px solid rgba(255, 255, 255, 0.08)",
+        background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+        borderRadius: "16px",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
       }}
     >
       {/* Pending Deletion Warning Badge */}
@@ -1069,10 +1071,11 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
           <div className="glass-panel" style={{
             width: "100%",
             maxWidth: "460px",
-            background: "#FFFFFF",
+            background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
             borderRadius: "16px",
             padding: "2rem",
-            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.3)",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)",
             position: "relative"
           }}>
             <button

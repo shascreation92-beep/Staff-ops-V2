@@ -278,7 +278,7 @@ export default function ITAccountsParserClient({
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", height: "100%", width: "100%", overflowY: "auto", paddingBottom: "3rem" }}>
       
       {/* Page Header */}
-      <div className="glass-panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem", borderRadius: "12px", background: "rgba(255, 255, 255, 0.45)", border: "1px solid var(--border-dim)" }}>
+      <div className="glass-panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem", borderRadius: "12px", background: "var(--card-bg)", border: "1px solid var(--border-gold)" }}>
         <div>
           <h1 style={{ fontSize: "1.55rem", fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Database style={{ color: "var(--gold-premium)" }} size={26} />
@@ -298,7 +298,7 @@ export default function ITAccountsParserClient({
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem", alignItems: "start" }}>
         
         {/* Left Side: Paste Workspace */}
-        <div className="glass-panel" style={{ padding: "1.25rem", borderRadius: "16px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", borderRadius: "16px", background: "var(--card-bg)", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div>
             <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>
               Sheets Ingestion Paste Zone
@@ -357,7 +357,7 @@ export default function ITAccountsParserClient({
         </div>
 
         {/* Right Side: Validation checklist and row preview */}
-        <div className="glass-panel" style={{ padding: "1.25rem", borderRadius: "16px", background: "#FFFFFF", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div className="glass-panel" style={{ padding: "1.25rem", borderRadius: "16px", background: "var(--card-bg)", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div>
             <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>
               Data Validator & Real-Time Grid
@@ -436,7 +436,7 @@ export default function ITAccountsParserClient({
       </div>
 
       {/* Ledger Table Panel (History List) */}
-      <div className="glass-panel" style={{ padding: "1.25rem", borderRadius: "16px", background: "#FFFFFF", border: "1px solid var(--border-dim)" }}>
+      <div className="glass-panel" style={{ padding: "1.25rem", borderRadius: "16px", background: "var(--card-bg)", border: "1px solid var(--border-gold)" }}>
         
         {/* Table Title and Color Filter Options */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.75rem" }}>
@@ -673,7 +673,7 @@ export default function ITAccountsParserClient({
                                 width: "100%",
                                 maxWidth: "250px",
                                 height: "26px",
-                                background: "#FFFFFF",
+                                background: "var(--bg-secondary)",
                                 border: "1.5px solid var(--gold-primary)",
                                 borderRadius: "4px",
                                 padding: "0 0.5rem",

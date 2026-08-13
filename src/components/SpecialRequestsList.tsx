@@ -278,12 +278,13 @@ export default function SpecialRequestsList({
                 className="glass-panel"
                 style={{ 
                   padding: "1.25rem", 
-                  background: "#FFFFFF", 
-                  border: `1px solid ${req.priority === "URGENT" && req.status === "PENDING" ? "rgba(239, 68, 68, 0.4)" : "var(--border-dim)"}`, 
-                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", 
+                  border: `1px solid ${req.priority === "URGENT" && req.status === "PENDING" ? "rgba(239, 68, 68, 0.4)" : "rgba(255, 255, 255, 0.08)"}`, 
+                  borderRadius: "16px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "0.85rem"
+                  gap: "0.85rem",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)"
                 }}
               >
                 {/* Upper Metadata Row */}
@@ -515,11 +516,11 @@ export default function SpecialRequestsList({
 
       {/* 4. Create Ticket Modal Overlay */}
       {showCreateModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.3)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100, padding: "1rem" }}>
-          <div className="glass-panel" style={{ width: "100%", maxWidth: "480px", background: "#FFFFFF", border: "1px solid var(--border-dim)", padding: "1.5rem", borderRadius: "12px", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(10, 8, 22, 0.75)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100, padding: "1rem" }}>
+          <div className="glass-panel" style={{ width: "100%", maxWidth: "480px", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.12)", padding: "1.5rem", borderRadius: "16px", display: "flex", flexDirection: "column", gap: "1.25rem", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
             <div>
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>Submit Support Request</h3>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>Fill in the details below to open a special support ticket.</p>
+              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#FFFFFF" }}>Submit Support Request</h3>
+              <p style={{ fontSize: "0.78rem", color: "#94A3B8", marginTop: "0.15rem" }}>Fill in the details below to open a special support ticket.</p>
             </div>
 
             <form onSubmit={handleCreateTicket} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -679,11 +680,11 @@ export default function SpecialRequestsList({
 
       {/* 5. Update Status Modal Overlay */}
       {showActionModal && selectedTicket && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.3)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100, padding: "1rem" }}>
-          <div className="glass-panel" style={{ width: "100%", maxWidth: "460px", background: "#FFFFFF", border: "1px solid var(--border-dim)", padding: "1.5rem", borderRadius: "12px", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(10, 8, 22, 0.75)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100, padding: "1rem" }}>
+          <div className="glass-panel" style={{ width: "100%", maxWidth: "460px", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.12)", padding: "1.5rem", borderRadius: "16px", display: "flex", flexDirection: "column", gap: "1.25rem", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
             <div>
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>Manage Request: &quot;{selectedTicket.title}&quot;</h3>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>Update the ticket&apos;s status and add resolution remarks.</p>
+              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#FFFFFF" }}>Manage Request: &quot;{selectedTicket.title}&quot;</h3>
+              <p style={{ fontSize: "0.78rem", color: "#94A3B8", marginTop: "0.15rem" }}>Update the ticket&apos;s status and add resolution remarks.</p>
             </div>
 
             <form onSubmit={handleUpdateStatus} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>

@@ -738,35 +738,35 @@ pause
 
       {/* Metrics Bar */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-        <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "#FFFFFF", borderRadius: "12px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+        <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>
             Total 1m Shots Today
           </div>
-          <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "var(--text-primary)", marginTop: "0.2rem" }}>
+          <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "#FFFFFF", marginTop: "0.2rem", fontFamily: "var(--font-mono)" }}>
             {activeSnapshotsCount}
           </div>
         </div>
 
-        <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "#FFFFFF", borderRadius: "12px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+        <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>
             Idle Captures (&gt;2m)
           </div>
-          <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "#F59E0B", marginTop: "0.2rem" }}>
+          <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "#F59E0B", marginTop: "0.2rem", fontFamily: "var(--font-mono)" }}>
             {idleCount}
           </div>
         </div>
 
-        <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "#FFFFFF", borderRadius: "12px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+        <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>
             Tamper Violations
           </div>
-          <div style={{ fontSize: "1.6rem", fontWeight: 900, color: unresolvedTamperCount > 0 ? "#EF4444" : "#10B981", marginTop: "0.2rem" }}>
+          <div style={{ fontSize: "1.6rem", fontWeight: 900, color: unresolvedTamperCount > 0 ? "#EF4444" : "#10B981", marginTop: "0.2rem", fontFamily: "var(--font-mono)" }}>
             {unresolvedTamperCount}
           </div>
         </div>
 
-        <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "#FFFFFF", borderRadius: "12px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+        <div className="card-stat" style={{ padding: "1.1rem 1.25rem", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>
             Live Sync Status
           </div>
           <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#10B981", marginTop: "0.35rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -780,65 +780,46 @@ pause
       {activeFolderUser && (
         <div style={{
           padding: "0.85rem 1.25rem",
-          background: "#FFFFFF",
-          border: "1px solid var(--border-dim)",
-          borderRadius: "12px",
+          background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: "14px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: "1rem"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.9rem", fontWeight: 700 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.9rem", fontWeight: 700, color: "#FFFFFF" }}>
             <button
               onClick={() => handleSelectUserFolder(null)}
               style={{
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                color: "var(--text-muted)",
+                color: "#94A3B8",
                 display: "flex",
                 alignItems: "center",
-                gap: "0.4rem",
-                fontWeight: 800
+                gap: "0.3rem",
+                fontWeight: 600
               }}
             >
-              <Folder size={18} />
-              <span>All Staff User Folders</span>
+              <ArrowLeft size={16} />
+              <span>Back to Staff Folders</span>
             </button>
-
-            <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
-            <span style={{ color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <FolderOpen size={18} style={{ color: "#8B5CF6" }} />
-              <span>{activeFolderUser.name || activeFolderUser.email}</span>
-              <span className="badge active" style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", marginLeft: "0.2rem" }}>
-                {activeFolderUser.employee?.employeeId || "N/A"}
-              </span>
-            </span>
+            <span style={{ color: "#64748B" }}>/</span>
+            <span style={{ color: "#38BDF8" }}>{activeFolderUser.name || activeFolderUser.email}</span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-            {/* Date Selector */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <Calendar size={15} style={{ color: "var(--text-muted)" }} />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={e => setSelectedDate(e.target.value)}
-                className="input-gold"
-                style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}
-              />
-            </div>
-
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <button
               onClick={() => handleDownloadUserFolderZip(activeFolderUser)}
               style={{
-                padding: "0.4rem 0.9rem",
+                padding: "0.45rem 0.85rem",
                 fontSize: "0.78rem",
                 fontWeight: 700,
-                color: "#1E293B",
-                background: "#F1F5F9",
-                border: "1px solid #CBD5E1",
+                color: "#FFFFFF",
+                background: "linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)",
+                border: "none",
                 borderRadius: "8px",
                 cursor: "pointer",
                 display: "flex",
@@ -846,7 +827,7 @@ pause
                 gap: "0.4rem"
               }}
             >
-              <FileArchive size={15} style={{ color: "#8B5CF6" }} />
+              <Download size={14} />
               <span>Download User ZIP</span>
             </button>
           </div>
@@ -859,9 +840,9 @@ pause
           {/* Instant Search Bar & Live Status Filter Pills */}
           <div style={{
             padding: "0.85rem 1.25rem",
-            background: "#FFFFFF",
-            border: "1px solid var(--border-dim)",
-            borderRadius: "12px",
+            background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "14px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -870,7 +851,7 @@ pause
           }}>
             {/* Search Input */}
             <div style={{ position: "relative", minWidth: "240px", flex: 1 }}>
-              <Search size={16} style={{ position: "absolute", left: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+              <Search size={16} style={{ position: "absolute", left: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "#94A3B8" }} />
               <input
                 type="text"
                 placeholder="Search staff member by name or email..."
@@ -883,14 +864,14 @@ pause
                 <X
                   size={15}
                   onClick={() => setSearchTerm("")}
-                  style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", cursor: "pointer" }}
+                  style={{ position: "absolute", right: "0.85rem", top: "50%", transform: "translateY(-50%)", color: "#94A3B8", cursor: "pointer" }}
                 />
               )}
             </div>
 
             {/* Date Calendar Picker */}
             <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <Calendar size={15} style={{ color: "var(--text-muted)" }} />
+              <Calendar size={15} style={{ color: "#94A3B8" }} />
               <input
                 type="date"
                 value={selectedDate}
@@ -901,7 +882,7 @@ pause
             </div>
 
             {/* Quick Filter Pills */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "#F1F5F9", padding: "0.25rem", borderRadius: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "rgba(255, 255, 255, 0.04)", padding: "0.25rem", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
               <button
                 onClick={() => setStatusFilter("ALL")}
                 style={{
@@ -911,9 +892,9 @@ pause
                   borderRadius: "8px",
                   border: "none",
                   cursor: "pointer",
-                  background: statusFilter === "ALL" ? "#FFFFFF" : "transparent",
-                  color: statusFilter === "ALL" ? "#1E293B" : "#64748B",
-                  boxShadow: statusFilter === "ALL" ? "0 2px 6px rgba(0,0,0,0.06)" : "none"
+                  background: statusFilter === "ALL" ? "rgba(56, 189, 248, 0.2)" : "transparent",
+                  color: statusFilter === "ALL" ? "#38BDF8" : "#94A3B8",
+                  boxShadow: statusFilter === "ALL" ? "0 0 10px rgba(56, 189, 248, 0.2)" : "none"
                 }}
               >
                 All Staff ({staffList.length})
@@ -928,15 +909,15 @@ pause
                   borderRadius: "8px",
                   border: "none",
                   cursor: "pointer",
-                  background: statusFilter === "ONLINE" ? "#10B981" : "transparent",
-                  color: statusFilter === "ONLINE" ? "#FFFFFF" : "#059669",
-                  boxShadow: statusFilter === "ONLINE" ? "0 2px 6px rgba(16,185,129,0.3)" : "none",
+                  background: statusFilter === "ONLINE" ? "rgba(16, 185, 129, 0.2)" : "transparent",
+                  color: statusFilter === "ONLINE" ? "#10B981" : "#059669",
+                  boxShadow: statusFilter === "ONLINE" ? "0 0 10px rgba(16, 185, 129, 0.2)" : "none",
                   display: "flex",
                   alignItems: "center",
                   gap: "0.35rem"
                 }}
               >
-                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: statusFilter === "ONLINE" ? "#FFFFFF" : "#10B981" }} />
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10B981" }} />
                 <span>Working Now ({onlineCount})</span>
               </button>
 
@@ -949,9 +930,9 @@ pause
                   borderRadius: "8px",
                   border: "none",
                   cursor: "pointer",
-                  background: statusFilter === "OFFLINE" ? "#64748B" : "transparent",
+                  background: statusFilter === "OFFLINE" ? "rgba(255, 255, 255, 0.1)" : "transparent",
                   color: statusFilter === "OFFLINE" ? "#FFFFFF" : "#64748B",
-                  boxShadow: statusFilter === "OFFLINE" ? "0 2px 6px rgba(100,116,139,0.3)" : "none"
+                  boxShadow: statusFilter === "OFFLINE" ? "0 0 10px rgba(255, 255, 255, 0.1)" : "none"
                 }}
               >
                 Offline ({staffList.length - onlineCount})
@@ -960,9 +941,9 @@ pause
           </div>
 
           {filteredStaffList.length === 0 ? (
-            <div style={{ padding: "3rem", textAlign: "center", background: "#FFFFFF", borderRadius: "12px", border: "1px dashed var(--border-dim)" }}>
-              <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>No staff members match your filter</h3>
-              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+            <div style={{ padding: "3rem", textAlign: "center", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", borderRadius: "16px", border: "1px dashed rgba(255, 255, 255, 0.15)" }}>
+              <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0, color: "#FFFFFF" }}>No staff members match your filter</h3>
+              <p style={{ fontSize: "0.82rem", color: "#94A3B8", marginTop: "0.25rem" }}>
                 Try clearing your search keyword or switching status filter to "All Staff".
               </p>
             </div>
