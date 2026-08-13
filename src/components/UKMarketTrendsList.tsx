@@ -862,13 +862,13 @@ export default function UKMarketTrendsList({
       )}
 
       {/* 1. Page Header Block */}
-      <div className="glass-panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem", borderRadius: "12px", background: "rgba(255, 255, 255, 0.45)", border: "1px solid var(--border-dim)" }}>
+      <div className="glass-panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem 1.5rem", borderRadius: "16px", background: "linear-gradient(135deg, #141226 0%, #0E0C1B 100%)", border: "1px solid rgba(255, 255, 255, 0.08)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)" }}>
         <div>
-          <h1 style={{ fontSize: "1.55rem", fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <TrendingUp style={{ color: "var(--gold-premium)" }} size={26} />
+          <h1 style={{ fontSize: "1.55rem", fontWeight: 900, letterSpacing: "-0.02em", color: "#FFFFFF", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <TrendingUp style={{ color: "#38BDF8" }} size={26} />
             UK Commerce Intelligence Hub
           </h1>
-          <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+          <p style={{ fontSize: "0.8rem", color: "#94A3B8", marginTop: "0.2rem" }}>
             Multichannel search analysis across Google Shopping, Facebook Marketplace, Vinted UK & eBay.
           </p>
         </div>
@@ -877,8 +877,7 @@ export default function UKMarketTrendsList({
           <button
             onClick={handleSyncTrends}
             disabled={isPending}
-            className="btn-glass"
-            style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 0.8rem", borderRadius: "8px", fontSize: "0.75rem", fontWeight: 700 }}
+            style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.55rem 0.95rem", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 800, background: "rgba(56, 189, 248, 0.12)", border: "1px solid rgba(56, 189, 248, 0.3)", color: "#38BDF8", boxShadow: "0 0 15px rgba(56, 189, 248, 0.15)", cursor: "pointer" }}
             title="Force Live Update Scraper"
           >
             <RotateCw size={14} className={isPending ? "animate-spin" : ""} />
@@ -976,25 +975,26 @@ export default function UKMarketTrendsList({
           position: "relative",
           width: "100%",
           height: "180px",
-          background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
-          borderRadius: "10px",
+          background: "linear-gradient(135deg, #141226 0%, #080612 100%)",
+          borderRadius: "12px",
           overflow: "hidden",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          border: "1px solid rgba(212, 175, 55, 0.3)"
+          border: "1px solid rgba(56, 189, 248, 0.25)",
+          boxShadow: "inset 0 0 30px rgba(0, 0, 0, 0.8)"
         }}>
           {/* Map Grid Background Graphic */}
           <div style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: "radial-gradient(rgba(212, 175, 55, 0.15) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(rgba(56, 189, 248, 0.18) 1px, transparent 1px)",
             backgroundSize: "20px 20px"
           }} />
 
           {/* Interactive Region Hotspot Pins */}
           <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", padding: "1rem", textAlign: "center" }}>
-            <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-primary)", textTransform: "uppercase", letterSpacing: "0.05em", background: "rgba(212, 175, 55, 0.12)", padding: "0.2rem 0.6rem", borderRadius: "20px", border: "1px solid rgba(212, 175, 55, 0.3)" }}>
+            <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#38BDF8", textTransform: "uppercase", letterSpacing: "0.05em", background: "rgba(56, 189, 248, 0.12)", padding: "0.25rem 0.7rem", borderRadius: "20px", border: "1px solid rgba(56, 189, 248, 0.3)", boxShadow: "0 0 12px rgba(56, 189, 248, 0.2)" }}>
               🎯 ACTIVE REGIONAL HUB: {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.center}
             </span>
 
@@ -1004,13 +1004,14 @@ export default function UKMarketTrendsList({
                   key={key}
                   onClick={() => setSelectedClusterKey(key)}
                   style={{
-                    padding: "0.35rem 0.65rem",
-                    fontSize: "0.7rem",
+                    padding: "0.35rem 0.7rem",
+                    fontSize: "0.72rem",
                     fontWeight: selectedClusterKey === key ? 800 : 600,
-                    background: selectedClusterKey === key ? "var(--gold-premium)" : "rgba(255, 255, 255, 0.1)",
-                    color: selectedClusterKey === key ? "#FFFFFF" : "#CBD5E1",
-                    border: selectedClusterKey === key ? "none" : "1px solid rgba(255, 255, 255, 0.15)",
+                    background: selectedClusterKey === key ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "rgba(255, 255, 255, 0.05)",
+                    color: selectedClusterKey === key ? "#FFFFFF" : "#94A3B8",
+                    border: selectedClusterKey === key ? "1px solid #38BDF8" : "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "6px",
+                    boxShadow: selectedClusterKey === key ? "0 0 12px rgba(56, 189, 248, 0.3)" : "none",
                     cursor: "pointer",
                     transition: "all 0.2s"
                   }}
@@ -1021,7 +1022,7 @@ export default function UKMarketTrendsList({
             </div>
 
             <span style={{ fontSize: "0.72rem", color: "#94A3B8" }}>
-              Extracted <strong>{UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.length} Surrounding Towns</strong> within {selectedRadiusMiles}-mile delivery radius around {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.postcode}.
+              Extracted <strong style={{ color: "#FFFFFF" }}>{UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.towns.length} Surrounding Towns</strong> within {selectedRadiusMiles}-mile delivery radius around {UK_REGIONAL_TOWN_CLUSTERS[selectedClusterKey]?.postcode}.
             </span>
           </div>
         </div>
@@ -1037,19 +1038,20 @@ export default function UKMarketTrendsList({
             </div>
 
             {/* FB Format Mode Selector */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "#F1F5F9", padding: "0.2rem", borderRadius: "8px" }}>
-              <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "var(--text-muted)", padding: "0 0.4rem" }}>FB Tag Format:</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "rgba(0, 0, 0, 0.4)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.2rem", borderRadius: "8px" }}>
+              <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94A3B8", padding: "0 0.4rem" }}>FB Tag Format:</span>
               <button
                 onClick={() => setFbFormatMode("STANDARD_FB")}
                 style={{
-                  fontSize: "0.65rem",
+                  fontSize: "0.68rem",
                   fontWeight: fbFormatMode === "STANDARD_FB" ? 800 : 600,
-                  padding: "0.25rem 0.5rem",
+                  padding: "0.25rem 0.55rem",
                   borderRadius: "6px",
                   border: "none",
                   cursor: "pointer",
-                  background: fbFormatMode === "STANDARD_FB" ? "var(--gold-premium)" : "transparent",
-                  color: fbFormatMode === "STANDARD_FB" ? "#FFFFFF" : "var(--text-secondary)"
+                  background: fbFormatMode === "STANDARD_FB" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "transparent",
+                  color: fbFormatMode === "STANDARD_FB" ? "#FFFFFF" : "#94A3B8",
+                  boxShadow: fbFormatMode === "STANDARD_FB" ? "0 0 10px rgba(56, 189, 248, 0.3)" : "none"
                 }}
               >
                 Town, United Kingdom
@@ -1057,14 +1059,15 @@ export default function UKMarketTrendsList({
               <button
                 onClick={() => setFbFormatMode("HYPER_LOCAL")}
                 style={{
-                  fontSize: "0.65rem",
+                  fontSize: "0.68rem",
                   fontWeight: fbFormatMode === "HYPER_LOCAL" ? 800 : 600,
-                  padding: "0.25rem 0.5rem",
+                  padding: "0.25rem 0.55rem",
                   borderRadius: "6px",
                   border: "none",
                   cursor: "pointer",
-                  background: fbFormatMode === "HYPER_LOCAL" ? "var(--gold-premium)" : "transparent",
-                  color: fbFormatMode === "HYPER_LOCAL" ? "#FFFFFF" : "var(--text-secondary)"
+                  background: fbFormatMode === "HYPER_LOCAL" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "transparent",
+                  color: fbFormatMode === "HYPER_LOCAL" ? "#FFFFFF" : "#94A3B8",
+                  boxShadow: fbFormatMode === "HYPER_LOCAL" ? "0 0 10px rgba(56, 189, 248, 0.3)" : "none"
                 }}
               >
                 Neighborhood, City, UK
@@ -1072,14 +1075,15 @@ export default function UKMarketTrendsList({
               <button
                 onClick={() => setFbFormatMode("POSTCODE_CITY")}
                 style={{
-                  fontSize: "0.65rem",
+                  fontSize: "0.68rem",
                   fontWeight: fbFormatMode === "POSTCODE_CITY" ? 800 : 600,
-                  padding: "0.25rem 0.5rem",
+                  padding: "0.25rem 0.55rem",
                   borderRadius: "6px",
                   border: "none",
                   cursor: "pointer",
-                  background: fbFormatMode === "POSTCODE_CITY" ? "var(--gold-premium)" : "transparent",
-                  color: fbFormatMode === "POSTCODE_CITY" ? "#FFFFFF" : "var(--text-secondary)"
+                  background: fbFormatMode === "POSTCODE_CITY" ? "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)" : "transparent",
+                  color: fbFormatMode === "POSTCODE_CITY" ? "#FFFFFF" : "#94A3B8",
+                  boxShadow: fbFormatMode === "POSTCODE_CITY" ? "0 0 10px rgba(56, 189, 248, 0.3)" : "none"
                 }}
               >
                 Postcode Area
@@ -1107,12 +1111,12 @@ export default function UKMarketTrendsList({
           <div style={{ maxHeight: "220px", overflowY: "auto", border: "1px solid rgba(255, 255, 255, 0.09)", borderRadius: "8px", background: "rgba(20, 18, 38, 0.75)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.72rem", textAlign: "left" }}>
               <thead>
-                <tr style={{ background: "#0284C7", color: "#FFFFFF", borderBottom: "1px solid rgba(255, 255, 255, 0.1)" }}>
-                  <th style={{ padding: "0.45rem 0.75rem", color: "#FFFFFF" }}>Neighborhood / District</th>
-                  <th style={{ padding: "0.45rem 0.75rem", color: "#FFFFFF" }}>Postcode</th>
-                  <th style={{ padding: "0.45rem 0.75rem", color: "#FFFFFF" }}>Exact FB Marketplace Tag</th>
-                  <th style={{ padding: "0.45rem 0.75rem", color: "#FFFFFF" }}>Buyer Density</th>
-                  <th style={{ padding: "0.45rem 0.75rem", textAlign: "right", color: "#FFFFFF" }}>Action</th>
+                <tr style={{ background: "linear-gradient(90deg, #141226 0%, #1E1B3A 100%)", color: "#FFFFFF", borderBottom: "1px solid rgba(255, 255, 255, 0.12)" }}>
+                  <th style={{ padding: "0.55rem 0.75rem", color: "#FFFFFF", fontWeight: 800 }}>Neighborhood / District</th>
+                  <th style={{ padding: "0.55rem 0.75rem", color: "#38BDF8", fontWeight: 800 }}>Postcode</th>
+                  <th style={{ padding: "0.55rem 0.75rem", color: "#38BDF8", fontWeight: 800 }}>Exact FB Marketplace Tag</th>
+                  <th style={{ padding: "0.55rem 0.75rem", color: "#FFFFFF", fontWeight: 800 }}>Buyer Density</th>
+                  <th style={{ padding: "0.55rem 0.75rem", textAlign: "right", color: "#FFFFFF", fontWeight: 800 }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -1626,14 +1630,13 @@ export default function UKMarketTrendsList({
               left: 0, 
               right: 0, 
               bottom: 0, 
-              background: "rgba(15, 23, 42, 0.25)", 
-              backdropFilter: "blur(4px)",
+              background: "rgba(11, 9, 22, 0.75)", 
+              backdropFilter: "blur(10px)",
               zIndex: 999 
             }}
           />
 
           <div 
-            className="bg-white"
             style={{ 
               position: "fixed", 
               top: 0, 
@@ -1641,8 +1644,9 @@ export default function UKMarketTrendsList({
               width: "100%", 
               maxWidth: "460px", 
               height: "100%", 
-              boxShadow: "-10px 0 30px rgba(15, 23, 42, 0.08)",
-              borderLeft: "1px solid var(--border-dim)",
+              background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+              boxShadow: "-10px 0 40px rgba(0, 0, 0, 0.6)",
+              borderLeft: "1px solid rgba(255, 255, 255, 0.12)",
               display: "flex",
               flexDirection: "column",
               animation: "slideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards",
@@ -1662,8 +1666,8 @@ export default function UKMarketTrendsList({
               justifyContent: "space-between", 
               alignItems: "center", 
               padding: "1.25rem", 
-              borderBottom: "1px solid var(--border-dim)",
-              background: "rgba(255, 255, 255, 0.95)"
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              background: "rgba(20, 18, 38, 0.95)"
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                 <MessageSquareCode size={20} style={{ color: "var(--gold-premium)" }} />
