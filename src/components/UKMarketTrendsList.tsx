@@ -1944,15 +1944,15 @@ export default function UKMarketTrendsList({
             {/* Footer */}
             <div style={{ 
               padding: "1rem 1.25rem", 
-              borderTop: "1px solid var(--border-dim)", 
-              background: "rgba(255, 255, 255, 0.95)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.1)", 
+              background: "rgba(20, 18, 38, 0.95)",
               display: "flex",
               justifyContent: "flex-end"
             }}>
               <button 
                 onClick={() => setActiveDrawerTrend(null)}
                 className="btn-glass"
-                style={{ fontSize: "0.75rem", padding: "0.5rem 1rem", borderRadius: "8px" }}
+                style={{ fontSize: "0.75rem", padding: "0.5rem 1.1rem", borderRadius: "8px", color: "#FFFFFF", background: "rgba(255, 255, 255, 0.08)", border: "1px solid rgba(255, 255, 255, 0.12)", fontWeight: 700, cursor: "pointer" }}
               >
                 Close Assistant
               </button>
@@ -1967,8 +1967,8 @@ export default function UKMarketTrendsList({
         <div style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(15, 23, 42, 0.6)",
-          backdropFilter: "blur(6px)",
+          background: "rgba(11, 9, 22, 0.75)",
+          backdropFilter: "blur(10px)",
           zIndex: 999999,
           display: "flex",
           alignItems: "center",
@@ -1978,10 +1978,11 @@ export default function UKMarketTrendsList({
           <div className="glass-panel" style={{
             width: "100%",
             maxWidth: "560px",
-            background: "rgba(20, 18, 38, 0.75)", backdropFilter: "blur(16px)",
+            background: "linear-gradient(180deg, #1A1733 0%, #100E24 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
             padding: "1.75rem",
             borderRadius: "16px",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.6)",
             display: "flex",
             flexDirection: "column",
             gap: "1.2rem"
@@ -1989,29 +1990,29 @@ export default function UKMarketTrendsList({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <span className="badge" style={{
-                  background: "rgba(212, 175, 55, 0.12)",
-                  color: "var(--gold-primary)",
-                  border: "1px solid rgba(212, 175, 55, 0.3)",
+                  background: "rgba(56, 189, 248, 0.15)",
+                  color: "#38BDF8",
+                  border: "1px solid rgba(56, 189, 248, 0.3)",
                   fontSize: "0.7rem",
                   fontWeight: 700
                 }}>
                   {activeNewsModal.category}
                 </span>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{activeNewsModal.source} • {activeNewsModal.pubDate}</span>
+                <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>{activeNewsModal.source} • {activeNewsModal.pubDate}</span>
               </div>
               <button
                 onClick={() => setActiveNewsModal(null)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}
+                style={{ background: "rgba(255, 255, 255, 0.08)", border: "none", cursor: "pointer", color: "#94A3B8", borderRadius: "50%", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
-            <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.35 }}>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1.35 }}>
               {activeNewsModal.title}
             </h3>
 
-            <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.6, background: "#F8FAFC", padding: "1rem", borderRadius: "10px", border: "1px solid var(--border-dim)" }}>
+            <p style={{ fontSize: "0.88rem", color: "#E2E8F0", lineHeight: 1.6, background: "rgba(255, 255, 255, 0.04)", padding: "1rem", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
               {activeNewsModal.summary}
             </p>
 
