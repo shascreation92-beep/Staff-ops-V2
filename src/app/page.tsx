@@ -16,11 +16,18 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
+import nextDynamic from "next/dynamic";
 import DashboardLayout from "@/components/DashboardLayout";
-import SalesAssociateDashboard from "@/components/SalesAssociateDashboard";
-import TeamLeadDashboard from "@/components/TeamLeadDashboard";
 import WelcomeLandingPage from "@/components/WelcomeLandingPage";
-import ITTelemetryWidget, { TelemetryData } from "@/components/ITTelemetryWidget";
+import { TelemetryData } from "@/components/ITTelemetryWidget";
+
+// Code-split role-specific dashboard views to shrink bundle size
+const SalesAssociateDashboard = nextDynamic(() => import("@/components/SalesAssociateDashboard"));
+const TeamLeadDashboard = nextDynamic(() => import("@/components/TeamLeadDashboard"));
+const ITTelemetryWidget = nextDynamic(() => import("@/components/ITTelemetryWidget"));
+const PendingOnboardingList = nextDynamic(() => import("@/components/PendingOnboardingList"));
+const TeamWiseBreakdown = nextDynamic(() => import("@/components/TeamWiseBreakdown"));
+
 import { 
   Database, 
   ShieldCheck, 
@@ -39,8 +46,6 @@ import {
   Coins
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
-import PendingOnboardingList from "@/components/PendingOnboardingList";
-import TeamWiseBreakdown from "@/components/TeamWiseBreakdown";
 
 
 export default async function DashboardPage() {
@@ -57,156 +62,85 @@ export default async function DashboardPage() {
     // Get scoped company filter
     const companyFilter = getCompanyFilter(user);
 
-  // Fetch company details if not Super Admin
-  let companyName = null;
-  if (user.companyId) {
-    const company = await db.company.findUnique({
-      where: { id: user.companyId },
-      select: { name: true }
-    });
-    companyName = company?.name;
-  }
+    // Parallelize all root stats, rules, and platform queries
+    const [
+      companyObj,
+      dashboardPinnedNotes,
+      totalAccounts,
+      verifiedAccounts,
+      pendingReviews,
+      activeEmployees,
+      companyCount,
+      totalSystemUsers,
+      pendingUsers,
+      companyTeamLeadsList,
+      targetRule,
+      costRules,
+      dbPlatforms
+    ] = await Promise.all([
+      user.companyId ? db.company.findUnique({ where: { id: user.companyId }, select: { name: true } }) : null,
+      db.personalnote.findMany({ where: { userId: user.id, isPinned: true }, orderBy: { updatedAt: "desc" } }),
+      db.account.count({ where: { ...companyFilter, isArchived: false } }),
+      db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "Yes" } }),
+      db.account.count({ where: { ...companyFilter, isArchived: false, status: "UNDER_REVIEW" } }),
+      db.employee.count({ where: { ...companyFilter, isArchived: false, status: "ACTIVE" } }),
+      user.role === "SUPER_ADMIN" ? db.company.count({ where: { isArchived: false } }) : 0,
+      user.role === "SUPER_ADMIN" 
+        ? db.user.count({ where: { isArchived: false } })
+        : db.user.count({ where: { isArchived: false, companyId: user.companyId } }),
+      ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"].includes(user.role)
+        ? db.user.findMany({
+            where: {
+              status: "PENDING",
+              role: "SALES_ASSOCIATE",
+              companyId: user.role === "SUPER_ADMIN" ? undefined : (user.companyId || "")
+            },
+            include: {
+              company: { select: { name: true } },
+              user: { select: { name: true } }
+            },
+            orderBy: { createdAt: "desc" }
+          })
+        : [],
+      db.user.findMany({
+        where: { ...companyFilter, role: "TEAM_LEAD", isArchived: false },
+        select: { id: true, name: true, email: true },
+        orderBy: { name: "asc" }
+      }),
+      db.rule.findFirst({
+        where: { companyId: user.companyId || undefined, key: { in: ["targetToMaintainFB", "targetToMaintain"] } }
+      }),
+      db.rule.findMany({
+        where: { companyId: user.companyId || undefined, key: { in: ["facebook_verification_cost", "vinted_verification_cost", "verification_cost"] } }
+      }),
+      db.platform.findMany({ where: { isArchived: false } })
+    ]);
 
-  const dashboardPinnedNotes = await db.personalnote.findMany({
-    where: {
-      userId: user.id,
-      isPinned: true
-    },
-    orderBy: { updatedAt: "desc" }
-  });
+    const companyName = companyObj?.name || null;
+    const companyTeamLeadsCount = companyTeamLeadsList.length;
+    const targetValuePerTL = targetRule ? (parseInt(targetRule.value, 10) || 40) : 40;
+    const totalOfficeTarget = targetValuePerTL * companyTeamLeadsCount;
 
-  // Fetch standard dashboard stats
-  const totalAccounts = await db.account.count({
-    where: {
-      ...companyFilter,
-      isArchived: false
-    }
-  });
+    const fbCostRule = costRules.find(r => r.key === "facebook_verification_cost");
+    const vintedCostRule = costRules.find(r => r.key === "vinted_verification_cost");
+    const fallbackCostRule = costRules.find(r => r.key === "verification_cost");
 
-  const verifiedAccounts = await db.account.count({
-    where: {
-      ...companyFilter,
-      isArchived: false,
-      verificationStatus: "Yes"
-    }
-  });
+    const facebookCost = fbCostRule 
+      ? (parseFloat(fbCostRule.value) || 300) 
+      : fallbackCostRule 
+        ? (parseFloat(fallbackCostRule.value) || 300) 
+        : 300;
 
-  const pendingReviews = await db.account.count({
-    where: {
-      ...companyFilter,
-      isArchived: false,
-      status: "UNDER_REVIEW"
-    }
-  });
-
-  const activeEmployees = await db.employee.count({
-    where: {
-      ...companyFilter,
-      isArchived: false,
-      status: "ACTIVE"
-    }
-  });
-
-  // Role-specific stats
-  let companyCount = 0;
-  let totalSystemUsers = 0;
-  
-  if (user.role === "SUPER_ADMIN") {
-    companyCount = await db.company.count({
-      where: { isArchived: false }
-    });
-    totalSystemUsers = await db.user.count({
-      where: { isArchived: false }
-    });
-  } else {
-    totalSystemUsers = await db.user.count({
-      where: { 
-        isArchived: false,
-        companyId: user.companyId 
-      }
-    });
-  }
-
-  // Fetch pending onboarding requests (status is PENDING, role is SALES_ASSOCIATE)
-  let pendingUsers: any[] = [];
-  if (["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"].includes(user.role)) {
-    pendingUsers = await db.user.findMany({
-      where: {
-        status: "PENDING",
-        role: "SALES_ASSOCIATE",
-        companyId: user.role === "SUPER_ADMIN" ? undefined : (user.companyId || "")
-      },
-      include: {
-        company: {
-          select: { name: true }
-        },
-        user: { // team lead relation
-          select: { name: true }
-        }
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    });
-  }
-
-  // Fetch active team leads in active company context
-  const companyTeamLeadsList = await db.user.findMany({
-    where: {
-      ...companyFilter,
-      role: "TEAM_LEAD",
-      isArchived: false
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true
-    },
-    orderBy: {
-      name: "asc"
-    }
-  });
-  const companyTeamLeadsCount = companyTeamLeadsList.length;
-
-  // Fetch the target rule value
-  const targetRule = await db.rule.findFirst({
-    where: {
-      companyId: user.companyId || undefined,
-      key: { in: ["targetToMaintainFB", "targetToMaintain"] }
-    }
-  });
-  const targetValuePerTL = targetRule ? (parseInt(targetRule.value, 10) || 40) : 40;
-  const totalOfficeTarget = targetValuePerTL * companyTeamLeadsCount;
-
-  // Fetch verification cost rules
-  const costRules = await db.rule.findMany({
-    where: {
-      companyId: user.companyId || undefined,
-      key: { in: ["facebook_verification_cost", "vinted_verification_cost", "verification_cost"] }
-    }
-  });
-
-  const fbCostRule = costRules.find(r => r.key === "facebook_verification_cost");
-  const vintedCostRule = costRules.find(r => r.key === "vinted_verification_cost");
-  const fallbackCostRule = costRules.find(r => r.key === "verification_cost");
-
-  const facebookCost = fbCostRule 
-    ? (parseFloat(fbCostRule.value) || 300) 
-    : fallbackCostRule 
-      ? (parseFloat(fallbackCostRule.value) || 300) 
+    const vintedCost = vintedCostRule 
+      ? (parseFloat(vintedCostRule.value) || 300) 
       : 300;
 
-  const vintedCost = vintedCostRule 
-    ? (parseFloat(vintedCostRule.value) || 300) 
-    : 300;
+    // Find FB and Vinted platforms
+    const fbPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("facebook"));
+    const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
 
-  // Find FB and Vinted platforms
-  const dbPlatforms = await db.platform.findMany({ where: { isArchived: false } });
-  const fbPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("facebook"));
-  const vintedPlatform = dbPlatforms.find(p => p.name.toLowerCase().includes("vinted"));
-
-  const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook" } } };
-  const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted" } } };
+    const fbWhere = fbPlatform ? { platformId: fbPlatform.id } : { platform: { name: { contains: "facebook" } } };
+    const vintedWhere = vintedPlatform ? { platformId: vintedPlatform.id } : { platform: { name: { contains: "vinted" } } };
 
   // Fetch team-wise metrics
   const teamLeadsStats = await Promise.all(

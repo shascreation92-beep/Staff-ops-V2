@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server";
+import { getServerAuthSession } from "@/lib/auth-helpers";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const pass = searchParams.get("pass") || req.headers.get("x-agent-password");
 
-  if (pass !== "Mango@9090") {
-    return NextResponse.json({ error: "Invalid security password. Access denied." }, { status: 401 });
+  const expectedPass = process.env.STAFFOPS_AGENT_PASSWORD || process.env.STAFFOPS_SECRET_TOKEN || "Mango@9090";
+
+  let isAuthorized = false;
+  if (pass && pass === expectedPass) {
+    isAuthorized = true;
+  } else {
+    const session = await getServerAuthSession();
+    if (session?.user && ["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT", "TEAM_LEAD"].includes(session.user.role)) {
+      isAuthorized = true;
+    }
+  }
+
+  if (!isAuthorized) {
+    return NextResponse.json({ error: "Invalid security credentials. Access denied." }, { status: 401 });
   }
 
   const commandText = `=========================================================================

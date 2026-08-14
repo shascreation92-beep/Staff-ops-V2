@@ -7,6 +7,7 @@ import Header from "./Header";
 import { user_role } from "@prisma/client";
 import { Shield, Check, X, Loader2, Megaphone } from "lucide-react";
 import { useAnnouncements } from "./AnnouncementProvider";
+import CommandPalette from "./CommandPalette";
 import { 
   getUpgradeInvitationAction, 
   acceptUpgradeAction, 
@@ -32,8 +33,21 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
   const pathname = usePathname();
   const hideHeader = pathname === "/" || pathname === "/accounts";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [invitation, setInvitation] = useState<{ id: string; title: string; message: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Read Announcements context
   const { activeStripAnn, dismissStrip, openGlobalAnnDetails } = useAnnouncements();
@@ -358,6 +372,12 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           </div>
         </main>
       </div>
+
+      {/* Global Quick-Jump Command Palette (Ctrl+K) */}
+      <CommandPalette 
+        isOpen={commandPaletteOpen} 
+        onClose={() => setCommandPaletteOpen(false)} 
+      />
     </div>
   );
 }

@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, LogIn } from "lucide-react";
+import { ArrowRight, LogIn, Sparkles } from "lucide-react";
 import { submitContactForm } from "@/app/actions/contact";
+import DemoSandboxDashboard from "./demo/DemoSandboxDashboard";
 
 export default function WelcomeLandingPage() {
+  const [isDemoActive, setIsDemoActive] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
@@ -194,6 +196,10 @@ export default function WelcomeLandingPage() {
     };
   }, []);
 
+  if (isDemoActive) {
+    return <DemoSandboxDashboard onExit={() => setIsDemoActive(false)} />;
+  }
+
   return (
     <div style={{
       display: "flex",
@@ -314,6 +320,30 @@ export default function WelcomeLandingPage() {
             <span>Systems Live</span>
           </div>
 
+          {/* Live Interactive Demo Trigger */}
+          <button
+            onClick={() => setIsDemoActive(true)}
+            style={{
+              textDecoration: "none",
+              fontSize: "0.82rem",
+              fontWeight: 800,
+              color: "#38BDF8",
+              backgroundColor: "rgba(56, 189, 248, 0.12)",
+              border: "1px solid rgba(56, 189, 248, 0.35)",
+              borderRadius: "8px",
+              padding: "0.45rem 1rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              cursor: "pointer",
+              boxShadow: "0 0 15px rgba(56, 189, 248, 0.15)",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <Sparkles size={14} className="text-[#38BDF8]" />
+            <span>⚡ Try Live Demo</span>
+          </button>
+
           {/* CTA Sign In Button */}
           <Link href="/auth/signin" style={{
             textDecoration: "none",
@@ -408,35 +438,47 @@ export default function WelcomeLandingPage() {
           </p>
 
           {/* CTAs */}
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1rem", marginTop: "1.5rem" }}>
+            <button
+              onClick={() => setIsDemoActive(true)}
+              style={{
+                fontSize: "0.95rem",
+                fontWeight: 800,
+                color: "#0B0916",
+                backgroundColor: "#38BDF8",
+                border: "none",
+                borderRadius: "8px",
+                padding: "0.8rem 1.6rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                cursor: "pointer",
+                boxShadow: "0 8px 25px rgba(56, 189, 248, 0.35)",
+                transition: "all 0.2s ease"
+              }}
+            >
+              <Sparkles size={16} />
+              <span>Launch Live Interactive Demo</span>
+            </button>
+
             <Link href="/auth/signin" style={{
               textDecoration: "none",
               fontSize: "0.95rem",
               fontWeight: 700,
               color: "#FFFFFF",
-              backgroundColor: "#0077B6",
-              border: "none",
+              backgroundColor: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
               borderRadius: "8px",
               padding: "0.8rem 1.6rem",
               display: "flex",
               alignItems: "center",
               gap: "0.5rem",
-              boxShadow: "0 8px 20px rgba(0, 119, 182, 0.3)",
+              boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
               transition: "all 0.2s ease"
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#0096C7";
-              e.currentTarget.style.boxShadow = "0 8px 25px rgba(0, 150, 199, 0.4)";
-              e.currentTarget.style.transform = "translateY(-1px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#0077B6";
-              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0, 119, 182, 0.3)";
-              e.currentTarget.style.transform = "none";
-            }}
             >
-              <span>Get Started Now</span>
-              <ArrowRight size={16} />
+              <span>Sign In</span>
+              <LogIn size={16} />
             </Link>
           </div>
         </div>

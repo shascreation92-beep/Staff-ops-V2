@@ -30,7 +30,7 @@ export async function getCompaniesAction() {
       include: {
         user: {
           where: { role: "COMPANY_OWNER", isArchived: false },
-          select: { id: true, name: true, email: true, password: true, status: true, createdAt: true }
+          select: { id: true, name: true, email: true, status: true, createdAt: true }
         }
       },
       orderBy: { createdAt: "desc" }

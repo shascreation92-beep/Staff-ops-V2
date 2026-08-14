@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, logAction, getServerAuthSession } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
-import { hashPassword, sanitizeInput } from "@/lib/security";
+import { hashPassword, sanitizeInput, encryptCredential } from "@/lib/security";
 import { user_role, user_status } from "@prisma/client";
 import { z } from "zod";
 
@@ -321,6 +321,7 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
 
   try {
     const newUserId = crypto.randomUUID();
+    const hashedPassword = (password && password.trim()) ? await hashPassword(password.trim()) : null;
 
     // Create User (Pending) - STRICTLY set to 'PENDING'
     const newUser = await db.user.create({
@@ -332,7 +333,7 @@ export async function onboardSalesAssociateAction(formData: z.infer<typeof Onboa
         status: "PENDING", // STRICTLY FORCE PENDING STATUS
         companyId,
         teamLeadId: targetTeamLeadId,
-        password: (password && password.trim()) ? password.trim() : null,
+        password: hashedPassword,
         updatedAt: new Date(),
       }
     });
@@ -490,7 +491,7 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
               status: "ACTIVE",
               companyId: companyIdValue,
               userId: existingUser.id,
-              laptopPassword: password?.trim() || null,
+              laptopPassword: encryptCredential(password?.trim()) || null,
               updatedAt: new Date()
             }
           });
@@ -559,7 +560,7 @@ export async function onboardTeamLeadAction(formData: z.infer<typeof OnboardTeam
         status: "ACTIVE",
         companyId: companyIdValue,
         userId: newUserId,
-        laptopPassword: password?.trim() || null,
+        laptopPassword: encryptCredential(password?.trim()) || null,
         updatedAt: new Date(),
       }
     });
@@ -697,7 +698,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
         data: {
           userId: userId,
           status: "ACTIVE",
-          laptopPassword: password?.trim() || null,
+          laptopPassword: encryptCredential(password?.trim()) || null,
           updatedAt: new Date()
         }
       });
@@ -711,7 +712,7 @@ export async function approveSalesAssociateAction(formData: z.infer<typeof Appro
           status: "ACTIVE",
           companyId: validCompanyId || "",
           userId: userId,
-          laptopPassword: password?.trim() || null,
+          laptopPassword: encryptCredential(password?.trim()) || null,
           updatedAt: new Date()
         }
       });
@@ -768,10 +769,11 @@ export async function updateUserPasswordAction(newPassword: string) {
   }
 
   try {
+    const hashedPassword = await hashPassword(newPassword.trim());
     await db.user.update({
       where: { id: currentUser.id },
       data: {
-        password: newPassword,
+        password: hashedPassword,
         updatedAt: new Date(),
       }
     });
@@ -835,10 +837,11 @@ export async function adminResetUserPasswordAction(formData: z.infer<typeof Admi
     });
 
     const existingEmp = await db.employee.findUnique({ where: { userId } });
+    const encryptedLaptopPass = encryptCredential(newPassword.trim());
     if (existingEmp) {
       await db.employee.update({
         where: { userId },
-        data: { laptopPassword: newPassword.trim(), updatedAt: new Date() }
+        data: { laptopPassword: encryptedLaptopPass, updatedAt: new Date() }
       });
     } else {
       await db.employee.create({
@@ -849,7 +852,7 @@ export async function adminResetUserPasswordAction(formData: z.infer<typeof Admi
           email: targetUser.email,
           companyId: targetUser.companyId || currentUser.companyId || "",
           userId: targetUser.id,
-          laptopPassword: newPassword.trim(),
+          laptopPassword: encryptedLaptopPass,
           updatedAt: new Date()
         }
       });
@@ -1135,13 +1138,15 @@ export async function editUserAccountAction(formData: {
       where: { userId: formData.userId }
     });
 
+    const encryptedLaptopPassword = formData.password ? (encryptCredential(formData.password) || null) : undefined;
+
     if (emp) {
       await db.employee.update({
         where: { id: emp.id },
         data: {
           fullName: formData.name,
           status: formData.status === "APPROVED" ? "ACTIVE" : "INACTIVE",
-          ...(formData.password ? { laptopPassword: formData.password } : {}),
+          ...(encryptedLaptopPassword !== undefined ? { laptopPassword: encryptedLaptopPassword } : {}),
           updatedAt: new Date()
         }
       });
@@ -1155,7 +1160,7 @@ export async function editUserAccountAction(formData: {
           status: formData.status === "APPROVED" ? "ACTIVE" : "INACTIVE",
           companyId: targetUser.companyId || currentUser.companyId || "",
           userId: formData.userId,
-          ...(formData.password ? { laptopPassword: formData.password } : {}),
+          ...(encryptedLaptopPassword !== undefined ? { laptopPassword: encryptedLaptopPassword } : {}),
           updatedAt: new Date()
         }
       });

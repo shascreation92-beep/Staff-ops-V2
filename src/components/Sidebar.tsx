@@ -4,6 +4,7 @@ import React, { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
+  Search,
   LayoutDashboard, 
   Users, 
   MessageSquare, 
@@ -687,6 +688,45 @@ export default function Sidebar({ user, isOpen, setIsOpen }: SidebarProps) {
             overflowY: "auto"
           }}
         >
+          {/* Quick Command Palette Trigger (Ctrl + K) */}
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+            }}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0.55rem 0.75rem",
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "10px",
+              color: "#94A3B8",
+              fontSize: "0.78rem",
+              cursor: "pointer",
+              marginBottom: "0.6rem",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+              <Search size={14} style={{ color: "#38BDF8" }} />
+              <span>Quick Jump</span>
+            </div>
+            <kbd style={{
+              fontSize: "0.68rem",
+              fontFamily: "monospace",
+              background: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              borderRadius: "4px",
+              padding: "0.1rem 0.35rem",
+              color: "#CBD5E1"
+            }}>
+              Ctrl K
+            </kbd>
+          </button>
+
           {categoryGroups.map((group) => {
             const visibleItems = group.items.filter(item => item.roles.includes(user.role));
             if (visibleItems.length === 0) return null;

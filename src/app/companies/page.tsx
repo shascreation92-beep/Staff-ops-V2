@@ -22,7 +22,6 @@ export default async function CompaniesPage() {
           id: true,
           name: true,
           email: true,
-          password: true,
           status: true,
           createdAt: true
         }
@@ -39,8 +38,7 @@ export default async function CompaniesPage() {
     ownerName: c.ownerName || (c.user[0]?.name ?? "N/A"),
     ownerEmail: c.ownerEmail || (c.user[0]?.email ?? "N/A"),
     status: c.status,
-    createdAt: c.createdAt.toISOString(),
-    ownerPassword: c.user[0]?.password || ""
+    createdAt: c.createdAt.toISOString()
   }));
 
   return (

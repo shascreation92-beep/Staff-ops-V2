@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, getCompanyFilter, logAction } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
-import { sanitizeInput, hashPassword } from "@/lib/security";
+import { sanitizeInput, hashPassword, encryptCredential } from "@/lib/security";
 import { account_status, user_role } from "@prisma/client";
 import { z } from "zod";
 
@@ -695,7 +695,7 @@ export async function approveAndAssignPasswordITAction({
       await db.employee.update({
         where: { userId },
         data: {
-          laptopPassword: password.trim(),
+          laptopPassword: encryptCredential(password.trim()) || null,
           updatedAt: new Date()
         }
       });
@@ -715,7 +715,7 @@ export async function approveAndAssignPasswordITAction({
           email: targetUser.email,
           companyId: validCompanyId || "",
           userId: targetUser.id,
-          laptopPassword: password.trim(),
+          laptopPassword: encryptCredential(password.trim()) || null,
           updatedAt: new Date()
         }
       });

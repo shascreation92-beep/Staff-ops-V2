@@ -31,7 +31,6 @@ interface CompanyItem {
   ownerEmail: string;
   status: string;
   createdAt: string;
-  ownerPassword?: string;
 }
 
 interface CompaniesClientProps {
@@ -91,8 +90,7 @@ export default function CompaniesClient({ initialCompanies }: CompaniesClientPro
         ownerName: c.ownerName || (c.user[0]?.name ?? "N/A"),
         ownerEmail: c.ownerEmail || (c.user[0]?.email ?? "N/A"),
         status: c.status,
-        createdAt: new Date(c.createdAt).toISOString(),
-        ownerPassword: c.user[0]?.password || ""
+        createdAt: new Date(c.createdAt).toISOString()
       }));
       setCompanies(formatted);
     }
@@ -336,8 +334,12 @@ export default function CompaniesClient({ initialCompanies }: CompaniesClientPro
                   <td style={{ padding: "0.75rem", textAlign: "right" }}>
                     <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end" }}>
                       <button
-                        onClick={() => handleCopyCredentials(c.ownerEmail, c.ownerPassword || "••••••••")}
-                        title="Copy Credentials"
+                        onClick={() => {
+                          const text = `StaffOps SaaS Login Portal\n-------------------------------\nCompany: ${c.name}\nOwner: ${c.ownerName}\nEmail: ${c.ownerEmail}\nLogin URL: ${window.location.origin}/auth/signin`;
+                          navigator.clipboard.writeText(text);
+                          toast.success("Login details copied to clipboard!");
+                        }}
+                        title="Copy Company Portal Details"
                         style={{ padding: "0.45rem", borderRadius: "6px", background: "rgba(0, 119, 182, 0.08)", border: "1px solid rgba(0, 119, 182, 0.2)", color: "#0077B6", cursor: "pointer" }}
                       >
                         <Copy size={14} />

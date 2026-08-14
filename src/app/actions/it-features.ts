@@ -2,6 +2,7 @@
 import { db } from "@/lib/db";
 import { enforceAuth } from "@/lib/auth-helpers";
 import { revalidatePath } from "next/cache";
+import { encryptCredential } from "@/lib/security";
 
 /**
  * 1. Issue a Remote IT Command (Restart Agent, Clear Cache, Flush DNS, Force Sync)
@@ -218,8 +219,8 @@ export async function createLaptopAssetAction(data: {
       windowsVersion: data.windowsVersion?.trim() || null,
       assigneeUserId: data.assigneeUserId || null,
       companyId: assignedCompanyId,
-      laptopPassword: data.laptopPassword?.trim() || null,
-      vpnCredentials: data.vpnCredentials?.trim() || null,
+      laptopPassword: data.laptopPassword ? (encryptCredential(data.laptopPassword.trim()) || data.laptopPassword.trim()) : null,
+      vpnCredentials: data.vpnCredentials ? (encryptCredential(data.vpnCredentials.trim()) || data.vpnCredentials.trim()) : null,
       conditionStatus: data.conditionStatus || "EXCELLENT",
       repairNotes: data.repairNotes?.trim() || null
     }
@@ -248,12 +249,16 @@ export async function updateLaptopAssetAction(id: string, data: Partial<{
   await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
   if (!id) return { success: false, error: "Asset ID is required." };
 
+  const updatePayload = {
+    ...data,
+    ...(data.laptopPassword ? { laptopPassword: encryptCredential(data.laptopPassword.trim()) || data.laptopPassword.trim() } : {}),
+    ...(data.vpnCredentials ? { vpnCredentials: encryptCredential(data.vpnCredentials.trim()) || data.vpnCredentials.trim() } : {}),
+    updatedAt: new Date()
+  };
+
   await db.laptopasset.update({
     where: { id },
-    data: {
-      ...data,
-      updatedAt: new Date()
-    }
+    data: updatePayload
   });
 
   revalidatePath("/it-management");
