@@ -353,7 +353,8 @@ export default function AccountsList({
       acc.idName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (acc.company?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "ALL" || acc.status === statusFilter;
+    const matchesStatus = statusFilter === "ALL" 
+      || (statusFilter === "CODE_ISSUE" ? (acc.issueType === "Code Issue") : acc.status === statusFilter);
     const matchesPlatform = platformFilter === "ALL" || acc.platformId === platformFilter;
 
     const matchesTeamLead = teamLeadFilter === "ALL" ||
@@ -525,9 +526,28 @@ export default function AccountsList({
             glow: "none"
           };
         }
+        if (issue === "Code Issue") {
+          return {
+            color: "#8B5CF6",
+            text: "CODE ISSUE",
+            bg: "rgba(139, 92, 246, 0.1)",
+            border: "rgba(139, 92, 246, 0.3)",
+            glow: "0 0 10px rgba(139, 92, 246, 0.2)"
+          };
+        }
       }
 
-      const isIssue = ["Marketplace Issue", "Identity Issue", "Suspended"].includes(acc.issueType);
+      if (acc.issueType === "Code Issue") {
+        return {
+          color: "#8B5CF6",
+          text: "CODE ISSUE",
+          bg: "rgba(139, 92, 246, 0.1)",
+          border: "rgba(139, 92, 246, 0.3)",
+          glow: "0 0 10px rgba(139, 92, 246, 0.2)"
+        };
+      }
+
+      const isIssue = ["Marketplace Issue", "Identity Issue", "Suspended", "Code Issue"].includes(acc.issueType);
       return {
         color: isIssue ? "var(--color-danger)" : "#22C55E",
         text: (acc.issueType || "ACTIVE").toUpperCase(),
@@ -829,6 +849,7 @@ export default function AccountsList({
               <option value="IN_PROGRESS">IN PROGRESS</option>
               <option value="COMPLETED">COMPLETED</option>
               <option value="ACTIVE">ACTIVE</option>
+              <option value="CODE_ISSUE">CODE ISSUE</option>
               <option value="REJECTED">REJECTED</option>
             </select>
 
@@ -1214,6 +1235,7 @@ export default function AccountsList({
                               <option value="Marketplace Issue" style={{ color: "var(--color-warning)", background: "#FFFFFF" }}>Marketplace Issue</option>
                               <option value="Identity Issue" style={{ color: "#0250A1", background: "#FFFFFF" }}>Identity Issue</option>
                               <option value="Suspended" style={{ color: "var(--color-danger)", background: "#FFFFFF" }}>Suspension Issue</option>
+                              <option value="Code Issue" style={{ color: "#8B5CF6", background: "#FFFFFF" }}>Code Issue</option>
                             </select>
                           ) : (
                             <span className="badge" style={{

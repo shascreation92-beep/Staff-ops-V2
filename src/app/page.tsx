@@ -344,7 +344,7 @@ export default async function DashboardPage() {
     ] = await Promise.all([
       db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...fbWhere } }),
-      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended"] }, isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended", "Code Issue"] }, isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
@@ -356,7 +356,7 @@ export default async function DashboardPage() {
 
       db.account.count({ where: { createdById: user.id, isArchived: false } }),
       db.account.count({ where: { createdById: user.id, isArchived: false, ...fbWhere } }),
-      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended"] }, isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended", "Code Issue"] }, isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),

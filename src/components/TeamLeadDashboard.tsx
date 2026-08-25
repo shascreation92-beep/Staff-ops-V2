@@ -171,6 +171,14 @@ export default function TeamLeadDashboard({
           border: "rgba(2, 80, 161, 0.25)"
         };
       }
+      if (issue === "Code Issue") {
+        return {
+          color: "#8B5CF6",
+          text: "Code Issue",
+          bg: "rgba(139, 92, 246, 0.1)",
+          border: "rgba(139, 92, 246, 0.3)"
+        };
+      }
     }
     if (acc.status === "REJECTED") {
       return {

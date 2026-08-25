@@ -38,7 +38,7 @@ export async function GET() {
     ] = await Promise.all([
       db.account.count({ where: { createdById: userId, isArchived: false } }),
       db.account.count({ where: { createdById: userId, isArchived: false, ...fbWhere } }),
-      db.account.count({ where: { createdById: userId, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended"] }, isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: userId, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended", "Code Issue"] }, isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: userId, verificationStatus: "Yes", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: userId, verificationStatus: "No", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: userId, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
