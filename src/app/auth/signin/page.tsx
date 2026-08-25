@@ -263,21 +263,23 @@ export default function SignInPage() {
         .login-card-container {
           display: flex;
           flex-direction: row;
-          max-width: 840px;
+          max-width: 860px;
           width: 100%;
-          border: 1px solid var(--border-dim);
-          box-shadow: 0 10px 30px rgba(0, 119, 182, 0.08), 0 1px 3px rgba(0, 119, 182, 0.04);
-          background: #FFFFFF;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 35px rgba(56, 189, 248, 0.12);
+          background: linear-gradient(135deg, rgba(20, 18, 38, 0.9) 0%, rgba(11, 9, 22, 0.95) 100%);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
           position: relative;
           z-index: 1;
-          border-radius: 16px;
+          border-radius: 20px;
           overflow: hidden;
           transition: all 0.3s ease;
         }
 
         .login-brand-panel {
           flex: 1;
-          background: linear-gradient(135deg, #0077B6 0%, #023E8A 100%);
+          background: linear-gradient(135deg, #0284C7 0%, #03045E 100%);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -287,6 +289,7 @@ export default function SignInPage() {
           position: relative;
           text-align: center;
           gap: 0.8rem;
+          border-right: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .login-form-panel {
@@ -296,7 +299,7 @@ export default function SignInPage() {
           flex-direction: column;
           justify-content: center;
           gap: 1.25rem;
-          background: #FFFFFF;
+          background: transparent;
         }
 
         @media (max-width: 768px) {
@@ -307,17 +310,25 @@ export default function SignInPage() {
           }
           .login-brand-panel {
             padding: 2.5rem 1.5rem;
+            border-right: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           }
           .login-form-panel {
             padding: 2rem 1.5rem;
           }
         }
 
+        .btn-signin-enter:hover {
+          background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%) !important;
+          box-shadow: 0 6px 25px rgba(56, 189, 248, 0.4) !important;
+          transform: translateY(-1px);
+        }
+
         .back-btn-hover:hover {
-          color: #48CAE4 !important;
+          color: #38BDF8 !important;
           background: rgba(255, 255, 255, 0.08) !important;
-          border-color: rgba(72, 202, 228, 0.35) !important;
-          box-shadow: 0 4px 15px rgba(72, 202, 228, 0.1);
+          border-color: rgba(56, 189, 248, 0.35) !important;
+          box-shadow: 0 4px 15px rgba(56, 189, 248, 0.15);
         }
       `}} />
 
@@ -564,12 +575,12 @@ export default function SignInPage() {
                     style={{
                       width: "16px",
                       height: "16px",
-                      accentColor: "#0077B6",
+                      accentColor: "#38BDF8",
                       cursor: "pointer",
                       borderRadius: "4px"
                     }}
                   />
-                  <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)", fontWeight: 600 }}>
+                  <span style={{ fontSize: "0.82rem", color: "#CBD5E1", fontWeight: 600 }}>
                     Remember me on this browser
                   </span>
                 </label>
@@ -586,11 +597,11 @@ export default function SignInPage() {
                 fontSize: "0.95rem",
                 fontWeight: 800,
                 color: "#FFFFFF",
-                background: "linear-gradient(135deg, #0077B6 0%, #0250A1 100%)",
+                background: "linear-gradient(135deg, #0284C7 0%, #0369A1 100%)",
                 border: "none",
                 borderRadius: "8px",
                 cursor: isLoading ? "not-allowed" : "pointer",
-                boxShadow: "0 4px 15px rgba(0, 119, 182, 0.25)",
+                boxShadow: "0 4px 15px rgba(2, 132, 199, 0.35)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -609,7 +620,7 @@ export default function SignInPage() {
           <div style={{
             textAlign: "center",
             fontSize: "0.7rem",
-            color: "#555555",
+            color: "#94A3B8",
             marginTop: "0.25rem"
           }}>
             Worknode V2.0 © 2026. Data strictly isolated under SOC2 guidelines.

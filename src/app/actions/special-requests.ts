@@ -14,31 +14,31 @@ const CreateTicketSchema = z.object({
 });
 
 export async function createSpecialRequestAction(formData: z.infer<typeof CreateTicketSchema>) {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]);
-
-  // Validation
-  const result = CreateTicketSchema.safeParse(formData);
-  if (!result.success) {
-    throw new Error(result.error.issues.map(e => e.message).join(", "));
-  }
-
-  const { category, priority, title, description, ccUserIds } = result.data;
-  let companyId = user.companyId;
-
-  if (!companyId && user.role === "SUPER_ADMIN") {
-    const defaultCompany = await db.company.findFirst({
-      where: { isArchived: false }
-    });
-    companyId = defaultCompany?.id || "";
-  }
-
-  if (!companyId) {
-    throw new Error("No company context found.");
-  }
-
-  const ticketId = crypto.randomUUID();
-
   try {
+    const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD", "SALES_ASSOCIATE", "IT_DEPARTMENT"]);
+
+    // Validation
+    const result = CreateTicketSchema.safeParse(formData);
+    if (!result.success) {
+      return { success: false, error: result.error.issues.map(e => e.message).join(", ") };
+    }
+
+    const { category, priority, title, description, ccUserIds } = result.data;
+    let companyId = user.companyId;
+
+    if (!companyId && user.role === "SUPER_ADMIN") {
+      const defaultCompany = await db.company.findFirst({
+        where: { isArchived: false }
+      });
+      companyId = defaultCompany?.id || "";
+    }
+
+    if (!companyId) {
+      return { success: false, error: "No company context found." };
+    }
+
+    const ticketId = crypto.randomUUID();
+
     const newRequest = await db.specialrequest.create({
       data: {
         id: ticketId,
@@ -54,60 +54,72 @@ export async function createSpecialRequestAction(formData: z.infer<typeof Create
     });
 
     // Audit log
-    await logAction({
-      userId: user.id,
-      userEmail: user.email,
-      userRole: user.role,
-      action: "CREATE_SPECIAL_REQUEST",
-      entity: "specialrequest",
-      entityId: ticketId,
-      newValue: `Created ticket: "${title}" (Priority: ${priority}, Category: ${category})`
-    });
+    try {
+      await logAction({
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        action: "CREATE_SPECIAL_REQUEST",
+        entity: "specialrequest",
+        entityId: ticketId,
+        newValue: `Created ticket: "${title}" (Priority: ${priority}, Category: ${category})`
+      });
+    } catch (e) {
+      console.warn("Failed to write audit log for special request:", e);
+    }
 
     // Create notifications for the recipient group in the company
-    const recipientRole = category === "IT" ? "IT_DEPARTMENT" : "COMPANY_OWNER";
-    const managers = await db.user.findMany({
-      where: {
-        companyId,
-        role: recipientRole,
-        isArchived: false
-      }
-    });
-
-    if (managers.length > 0) {
-      await db.notification.createMany({
-        data: managers.map(mgr => ({
-          id: crypto.randomUUID(),
-          userId: mgr.id,
-          title: `New Special Request: ${title}`,
-          message: `${user.name || "An employee"} submitted a ${priority} ticket under ${category}.`,
-          type: "SPECIAL_REQUEST",
-          isRead: false,
+    try {
+      const recipientRole = category === "IT" ? "IT_DEPARTMENT" : "COMPANY_OWNER";
+      const managers = await db.user.findMany({
+        where: {
+          companyId,
+          role: recipientRole,
           isArchived: false
-        }))
+        }
       });
+
+      if (managers.length > 0) {
+        await db.notification.createMany({
+          data: managers.map(mgr => ({
+            id: crypto.randomUUID(),
+            userId: mgr.id,
+            title: `New Special Request: ${title}`,
+            message: `${user.name || "An employee"} submitted a ${priority} ticket under ${category}.`,
+            type: "SPECIAL_REQUEST",
+            isRead: false,
+            isArchived: false
+          }))
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to create manager notifications:", e);
     }
 
     // Create notifications for CC'd users
     if (ccUserIds && ccUserIds.length > 0) {
-      await db.notification.createMany({
-        data: ccUserIds.map(uid => ({
-          id: crypto.randomUUID(),
-          userId: uid,
-          title: `CC'd on Support Request: ${title}`,
-          message: `${user.name || "A colleague"} looped you into a ticket under ${category}.`,
-          type: "SPECIAL_REQUEST",
-          isRead: false,
-          isArchived: false
-        }))
-      });
+      try {
+        await db.notification.createMany({
+          data: ccUserIds.map(uid => ({
+            id: crypto.randomUUID(),
+            userId: uid,
+            title: `CC'd on Support Request: ${title}`,
+            message: `${user.name || "A colleague"} looped you into a ticket under ${category}.`,
+            type: "SPECIAL_REQUEST",
+            isRead: false,
+            isArchived: false
+          }))
+        });
+      } catch (e) {
+        console.warn("Failed to create CC notifications:", e);
+      }
     }
 
     revalidatePath("/special-requests");
     return { success: true, ticket: newRequest };
   } catch (error: any) {
     console.error("Failed to create special request:", error);
-    throw new Error(error.message || "Failed to create special request.");
+    return { success: false, error: error.message || "Failed to create special request." };
   }
 }
 
@@ -116,59 +128,77 @@ export async function updateSpecialRequestStatusAction(
   status: "PENDING" | "IN_PROGRESS" | "RESOLVED" | "REJECTED",
   notes?: string
 ) {
-  const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
-
   try {
+    const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "IT_DEPARTMENT"]);
+
     const ticket = await db.specialrequest.findUnique({
       where: { id: requestId },
       include: { requester: true }
     });
 
     if (!ticket) {
-      throw new Error("Ticket not found.");
+      return { success: false, error: "Ticket not found." };
     }
 
-    // Role protection - IT Dept can only manage IT tickets, Company Owner can only manage Company tickets
-    if (user.role === "IT_DEPARTMENT" && ticket.category !== "IT") {
-      throw new Error("IT Department can only update IT tickets.");
-    }
-    if (user.role === "COMPANY_OWNER" && ticket.category !== "COMPANY") {
-      throw new Error("Company Owner can only update Company administrative tickets.");
+    // Role protection - Super Admin can manage all tickets.
+    // Company Owner can manage all tickets within their company.
+    // IT Department can manage IT tickets within their company.
+    if (user.role === "IT_DEPARTMENT") {
+      if (ticket.category !== "IT") {
+        return { success: false, error: "IT Department can only update IT tickets." };
+      }
+      if (user.companyId && ticket.companyId !== user.companyId) {
+        return { success: false, error: "Unauthorized: Ticket belongs to another organization." };
+      }
+    } else if (user.role === "COMPANY_OWNER") {
+      if (user.companyId && ticket.companyId !== user.companyId) {
+        return { success: false, error: "Unauthorized: Ticket belongs to another organization." };
+      }
     }
 
     const updatedRequest = await db.specialrequest.update({
       where: { id: requestId },
       data: {
         status,
-        notes: notes || undefined
+        notes: notes !== undefined ? notes : undefined
       }
     });
 
     // Log update
-    await logAction({
-      userId: user.id,
-      userEmail: user.email,
-      userRole: user.role,
-      action: "UPDATE_SPECIAL_REQUEST",
-      entity: "specialrequest",
-      entityId: requestId,
-      newValue: `Updated ticket "${ticket.title}" status to ${status}`
-    });
+    try {
+      await logAction({
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        action: "UPDATE_SPECIAL_REQUEST",
+        entity: "specialrequest",
+        entityId: requestId,
+        newValue: `Updated ticket "${ticket.title}" status to ${status}`
+      });
+    } catch (e) {
+      console.warn("Failed to write audit log for ticket update:", e);
+    }
 
-    // Notify requester
-    await db.notification.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId: ticket.requesterId,
-        title: `Ticket Status Update: ${status}`,
-        message: `Your ticket "${ticket.title}" status has been set to ${status} by ${user.name || "admin"}.`,
-        type: "SPECIAL_REQUEST",
-        isRead: false,
-        isArchived: false
+    // Notify requester safely
+    if (ticket.requesterId) {
+      try {
+        await db.notification.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: ticket.requesterId,
+            title: `Ticket Status Update: ${status}`,
+            message: `Your ticket "${ticket.title}" status has been set to ${status} by ${user.name || "admin"}.`,
+            type: "SPECIAL_REQUEST",
+            isRead: false,
+            isArchived: false
+          }
+        });
+      } catch (err) {
+        console.warn("Failed to notify requester:", err);
       }
-    });
+    }
 
-    // Notify CC'd users if any
+    // Notify CC'd users safely if any
     if (ticket.ccUserIds) {
       try {
         const ccIds: string[] = JSON.parse(ticket.ccUserIds);
@@ -186,7 +216,7 @@ export async function updateSpecialRequestStatusAction(
           });
         }
       } catch (err) {
-        console.error("Failed to parse ccUserIds for notifications", err);
+        console.warn("Failed to parse or notify CC users:", err);
       }
     }
 
@@ -194,7 +224,7 @@ export async function updateSpecialRequestStatusAction(
     return { success: true, ticket: updatedRequest };
   } catch (error: any) {
     console.error("Failed to update ticket status:", error);
-    throw new Error(error.message || "Failed to update ticket status.");
+    return { success: false, error: error.message || "Failed to update ticket status." };
   }
 }
 

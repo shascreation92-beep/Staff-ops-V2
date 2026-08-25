@@ -127,6 +127,8 @@ export default function SpecialRequestsList({
           };
           setRequests(prev => [ticketWithRequester, ...prev]);
           router.refresh();
+        } else {
+          toast.error(res.error || "Failed to submit ticket.");
         }
       } catch (err: any) {
         toast.error(err.message || "Failed to submit ticket.");
@@ -153,6 +155,8 @@ export default function SpecialRequestsList({
           // Update local list
           setRequests(prev => prev.map(r => r.id === selectedTicket.id ? { ...r, status: actionStatus, notes: adminNotes } : r));
           router.refresh();
+        } else {
+          toast.error(res.error || "Failed to update ticket status.");
         }
       } catch (err: any) {
         toast.error(err.message || "Failed to update ticket status.");
