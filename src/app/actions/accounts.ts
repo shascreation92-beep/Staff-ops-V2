@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { enforceAuth, getCompanyFilter, logAction } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
-import { sanitizeInput, hashPassword, encryptCredential } from "@/lib/security";
+import { sanitizeInput, hashPassword, encryptCredential, decryptCredential } from "@/lib/security";
 import { account_status, user_role } from "@prisma/client";
 import { z } from "zod";
 
@@ -566,7 +566,14 @@ export async function getTLTeamMembersAction() {
       name: "asc"
     }
   });
-  return members;
+  return members.map(m => ({
+    ...m,
+    employee: m.employee ? {
+      ...m.employee,
+      laptopPassword: decryptCredential(m.employee.laptopPassword),
+      vpnCredentials: decryptCredential(m.employee.vpnCredentials)
+    } : null
+  }));
 }
 
 export async function addSalesAssociateAction({

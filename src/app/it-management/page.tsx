@@ -3,6 +3,7 @@ import { enforceAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import DashboardLayout from "@/components/DashboardLayout";
 import ITManagementDirectory from "@/components/ITManagementDirectory";
+import { decryptCredential } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export default async function ITManagementPage() {
   }
 
   // Fetch IT Personnel
-  const itPersonnel = await db.user.findMany({
+  const rawItPersonnel = await db.user.findMany({
     where: {
       ...companyFilter,
       role: "IT_DEPARTMENT",
@@ -42,6 +43,15 @@ export default async function ITManagementPage() {
       name: "asc"
     }
   });
+
+  const itPersonnel = rawItPersonnel.map(it => ({
+    ...it,
+    password: decryptCredential(it.password),
+    employee: it.employee ? {
+      ...it.employee,
+      laptopPassword: decryptCredential(it.employee.laptopPassword)
+    } : null
+  }));
 
   // Fetch all staff users for Remote IT Commands & Asset Assignments
   const allStaff = await db.user.findMany({
@@ -66,7 +76,7 @@ export default async function ITManagementPage() {
   });
 
   // Fetch Laptop Assets Inventory
-  const laptopAssets = await db.laptopasset.findMany({
+  const rawLaptopAssets = await db.laptopasset.findMany({
     where: {
       ...companyFilter
     },
@@ -94,6 +104,12 @@ export default async function ITManagementPage() {
       createdAt: "desc"
     }
   });
+
+  const laptopAssets = rawLaptopAssets.map(a => ({
+    ...a,
+    laptopPassword: decryptCredential(a.laptopPassword),
+    vpnCredentials: decryptCredential(a.vpnCredentials)
+  }));
 
   // Fetch Anti-Tamper Security Logs
   const tamperLogs = await db.tamperlog.findMany({

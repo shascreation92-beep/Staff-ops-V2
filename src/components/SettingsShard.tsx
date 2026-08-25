@@ -685,11 +685,11 @@ export default function SettingsShard({
                           {!u.password && !u.employee?.laptopPassword ? (
                             <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>No Password</span>
                           ) : visiblePasswords[u.id] ? (
-                            u.employee?.laptopPassword || (
-                              u.password && (u.password.startsWith("$2b$") || u.password.startsWith("$2a$") || u.password.startsWith("$2y$"))
-                                ? "[Click Edit to Set Password]"
-                                : (u.password || "••••••••")
-                            )
+                            (u.employee?.laptopPassword && !u.employee.laptopPassword.startsWith("enc:"))
+                              ? u.employee.laptopPassword
+                              : (u.password && !u.password.startsWith("$2") && !u.password.startsWith("enc:"))
+                                ? u.password
+                                : "[Click Edit to Set Password]"
                           ) : "••••••••"}
                         </span>
                         {(u.password || u.employee?.laptopPassword) && (
@@ -747,7 +747,13 @@ export default function SettingsShard({
                           onClick={() => {
                             setEditAccountUserId(u.id);
                             setEditAccountName(u.name || "");
-                            setEditAccountPassword(u.password || "");
+                            setEditAccountPassword(
+                              (u.employee?.laptopPassword && !u.employee.laptopPassword.startsWith("enc:"))
+                                ? u.employee.laptopPassword
+                                : (u.password && !u.password.startsWith("$2") && !u.password.startsWith("enc:"))
+                                  ? u.password
+                                  : ""
+                            );
                             setEditAccountRole(u.role === "TEAM_LEAD" ? "TEAM_LEAD" : "SALES_ASSOCIATE");
                             setEditAccountStatus(u.status === "BLOCKED" ? "BLOCKED" : "APPROVED");
                             setEditAccountTeamLeadId(u.teamLeadId);

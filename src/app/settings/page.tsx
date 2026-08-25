@@ -3,6 +3,7 @@ import { enforceAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import DashboardLayout from "@/components/DashboardLayout";
 import SettingsShard from "@/components/SettingsShard";
+import { decryptCredential } from "@/lib/security";
 
 export default async function SettingsPage() {
   // Restrict access: Allow Super Admin, Company Owner, IT, Team Lead, and Sales Associate
@@ -89,7 +90,7 @@ export default async function SettingsPage() {
   });
 
   // Fetch active users in the same company context
-  const users = await db.user.findMany({
+  const rawUsers = await db.user.findMany({
     where: {
       isArchived: false,
       companyId: user.role === "SUPER_ADMIN" ? undefined : (user.companyId || "")
@@ -109,6 +110,15 @@ export default async function SettingsPage() {
       createdAt: "desc"
     }
   });
+
+  const users = rawUsers.map(u => ({
+    ...u,
+    password: decryptCredential(u.password),
+    employee: u.employee ? {
+      ...u.employee,
+      laptopPassword: decryptCredential(u.employee.laptopPassword)
+    } : null
+  }));
 
   return (
     <DashboardLayout user={{ ...user, companyName }}>
