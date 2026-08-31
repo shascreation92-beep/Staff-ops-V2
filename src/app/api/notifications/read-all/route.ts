@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerAuthSession } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 
-export async function GET() {
+export async function POST() {
   const session = await getServerAuthSession();
   
   if (!session?.user?.id) {
@@ -10,19 +10,19 @@ export async function GET() {
   }
 
   try {
-    const notifications = await db.notification.findMany({
+    const result = await db.notification.updateMany({
       where: {
         userId: session.user.id,
+        isRead: false,
         isArchived: false,
       },
-      orderBy: {
-        createdAt: "desc",
+      data: {
+        isRead: true,
       },
-      take: 50,
     });
     
-    return NextResponse.json(notifications);
+    return NextResponse.json({ success: true, updatedCount: result.count });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to fetch notifications" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to mark all as read" }, { status: 500 });
   }
 }
