@@ -1221,3 +1221,64 @@ export async function createPlatformAction(name: string) {
   return { success: true, platform: newPlatform };
 }
 
+/**
+ * Soft-delete / archive an account (Allows Team Leads, Company Owners, Super Admins)
+ */
+export async function deleteAccountAction(accountId: string) {
+  try {
+    const user = await enforceAuth(["SUPER_ADMIN", "COMPANY_OWNER", "TEAM_LEAD"]);
+
+    if (!accountId) {
+      return { success: false, error: "Account ID is required." };
+    }
+
+    const account = await db.account.findUnique({
+      where: { id: accountId },
+      include: {
+        company: { select: { name: true } }
+      }
+    });
+
+    if (!account) {
+      return { success: false, error: "Account not found or already deleted." };
+    }
+
+    // Role-based authorization check
+    if (user.role !== "SUPER_ADMIN") {
+      if (account.companyId !== user.companyId) {
+        return { success: false, error: "Unauthorized: You can only delete accounts within your company." };
+      }
+    }
+
+    // Soft delete / archive
+    await db.account.update({
+      where: { id: accountId },
+      data: {
+        isArchived: true,
+        archivedAt: new Date(),
+        archivedBy: user.id,
+      }
+    });
+
+    // Record in audit log
+    await logAction({
+      userId: user.id,
+      userEmail: user.email || "Unknown",
+      userRole: user.role,
+      action: "DELETE_ACCOUNT",
+      entity: "account",
+      entityId: account.id,
+      oldValue: JSON.stringify({ serialCode: account.serialCode, idName: account.idName }),
+      newValue: "ARCHIVED"
+    });
+
+    revalidatePath("/accounts");
+    revalidatePath("/master-accounts-pool");
+
+    return { success: true, message: `Account ${account.serialCode} (${account.idName}) successfully deleted.` };
+  } catch (error: any) {
+    console.error("deleteAccountAction error:", error);
+    return { success: false, error: error.message || "Failed to delete account." };
+  }
+}
+

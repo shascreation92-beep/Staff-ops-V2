@@ -10,7 +10,8 @@ import {
   updateAccountIssueAction,
   updateAccountCommentAction,
   updateAccountITNotesAction,
-  createPlatformAction
+  createPlatformAction,
+  deleteAccountAction
 } from "@/app/actions/accounts";
 import { 
   Search, 
@@ -30,7 +31,10 @@ import {
   Eye,
   MessageSquare,
   X,
-  Download
+  Download,
+  Trash2,
+  Copy,
+  AlertTriangle
 } from "lucide-react";
 import { account_status, user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
@@ -103,6 +107,58 @@ export default function AccountsList({
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [platformFilter, setPlatformFilter] = useState("ALL");
   const [teamLeadFilter, setTeamLeadFilter] = useState("ALL");
+  const [duplicateModalIdName, setDuplicateModalIdName] = useState<string | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [filterDuplicatesOnly, setFilterDuplicatesOnly] = useState(false);
+
+  // Dynamically compute duplicate counts based on active accounts
+  const dynamicDuplicateMap = React.useMemo(() => {
+    const map: Record<string, number> = {};
+    localAccounts.forEach(acc => {
+      if (!acc.isArchived && acc.idName) {
+        const key = acc.idName.trim().toLowerCase();
+        map[key] = (map[key] || 0) + 1;
+      }
+    });
+    return map;
+  }, [localAccounts]);
+
+  const getDuplicateCount = (idName: string) => {
+    if (!idName) return 1;
+    const key = idName.trim().toLowerCase();
+    return dynamicDuplicateMap[key] || duplicateMap[idName] || 1;
+  };
+
+  const totalDuplicateRows = React.useMemo(() => {
+    return localAccounts.filter(acc => !acc.isArchived && getDuplicateCount(acc.idName) > 1).length;
+  }, [localAccounts, dynamicDuplicateMap]);
+
+  const handleDeleteAccount = async (account: any) => {
+    if (!account?.id) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteAccountAction(account.id);
+      if (res.success) {
+        toast.success(res.message || "Account removed successfully.");
+        setLocalAccounts(prev => prev.filter(a => a.id !== account.id));
+        setAccountToDelete(null);
+        if (duplicateModalIdName) {
+          const remaining = localAccounts.filter(a => a.id !== account.id && a.idName?.trim().toLowerCase() === duplicateModalIdName.trim().toLowerCase());
+          if (remaining.length <= 1) {
+            setDuplicateModalIdName(null);
+          }
+        }
+        router.refresh();
+      } else {
+        toast.error(res.error || "Failed to delete account.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error deleting account.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Provision modal state
   const [showModal, setShowModal] = useState(false);
@@ -349,6 +405,8 @@ export default function AccountsList({
 
   // Filter accounts
   const filteredAccounts = localAccounts.filter(acc => {
+    if (acc.isArchived) return false;
+
     const matchesSearch = 
       acc.serialCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       acc.idName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -362,7 +420,9 @@ export default function AccountsList({
       acc.teamLeadId === teamLeadFilter ||
       acc.createdById === teamLeadFilter;
 
-    return matchesSearch && matchesStatus && matchesPlatform && matchesTeamLead;
+    const matchesDuplicates = !filterDuplicatesOnly || getDuplicateCount(acc.idName) > 1;
+
+    return matchesSearch && matchesStatus && matchesPlatform && matchesTeamLead && matchesDuplicates;
   });
 
   const sortedAccounts = [...filteredAccounts].sort((a, b) => {
@@ -409,7 +469,7 @@ export default function AccountsList({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, platformFilter, teamLeadFilter, sortOrder]);
+  }, [searchTerm, statusFilter, platformFilter, teamLeadFilter, sortOrder, filterDuplicatesOnly]);
 
   const ITEMS_PER_PAGE = 50;
   const totalRecords = sortedAccounts.length;
@@ -830,6 +890,32 @@ export default function AccountsList({
 
           {/* Search, Filters & Notification Bell Group */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", flex: "1 1 auto", justifyContent: "flex-end" }}>
+            {totalDuplicateRows > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilterDuplicatesOnly(!filterDuplicatesOnly)}
+                style={{
+                  background: filterDuplicatesOnly ? "rgba(245, 158, 11, 0.22)" : "rgba(245, 158, 11, 0.08)",
+                  border: filterDuplicatesOnly ? "1px solid rgba(245, 158, 11, 0.5)" : "1px solid rgba(245, 158, 11, 0.25)",
+                  color: "#FBBF24",
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  padding: "0.35rem 0.65rem",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.2s ease"
+                }}
+                title={filterDuplicatesOnly ? "Showing duplicates only (Click to show all)" : "Filter to show only duplicate ID names"}
+              >
+                <Copy size={12} />
+                <span>Duplicates ({totalDuplicateRows})</span>
+              </button>
+            )}
+
             <div className="table-search-wrapper" style={{ width: "180px", flexShrink: 0 }}>
               <Search className="header-search-icon" />
               <input
@@ -926,7 +1012,7 @@ export default function AccountsList({
               ) : (
                 paginatedAccounts.map((acc) => {
                   const rule = getStatusStyle(acc);
-                  const duplicates = duplicateMap[acc.idName] || 1;
+                  const duplicates = getDuplicateCount(acc.idName);
 
                   return (
                     <tr key={acc.id}>
@@ -941,25 +1027,78 @@ export default function AccountsList({
                         </span>
                       </td>
                       <td className="col-serial" style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 500 }}>
-                        {acc.serialCode}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.3rem" }}>
+                          <span>{acc.serialCode}</span>
+                          {(isTeamLead || isCompanyOwner || isSuperAdmin) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAccountToDelete(acc);
+                              }}
+                              title={`Delete account ${acc.serialCode} (${acc.idName})`}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "var(--text-muted)",
+                                cursor: "pointer",
+                                padding: "0.15rem",
+                                borderRadius: "4px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                opacity: 0.4,
+                                transition: "all 0.15s ease"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = "#EF4444";
+                                e.currentTarget.style.opacity = "1";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = "var(--text-muted)";
+                                e.currentTarget.style.opacity = "0.4";
+                              }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="col-id-name">
                         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap", overflow: "hidden" }}>
                           <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={acc.idName}>{acc.idName}</span>
                           {duplicates > 1 && (
-                            <span 
-                              title={`${duplicates} duplicate records use this ID name`}
-                              className="badge" 
+                            <button 
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDuplicateModalIdName(acc.idName);
+                              }}
+                              title={`${duplicates} duplicate records found for "${acc.idName}". Click to compare and resolve.`}
                               style={{ 
-                                padding: "0.05rem 0.4rem", 
-                                background: "rgba(245, 158, 11, 0.08)", 
-                                border: "1px solid rgba(245, 158, 11, 0.2)", 
-                                color: "var(--color-warning)", 
-                                fontSize: "0.65rem" 
+                                padding: "0.1rem 0.45rem", 
+                                background: "rgba(245, 158, 11, 0.15)", 
+                                border: "1px solid rgba(245, 158, 11, 0.4)", 
+                                color: "#FBBF24", 
+                                fontSize: "0.68rem",
+                                fontWeight: 800,
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                                transition: "all 0.2s ease"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "rgba(245, 158, 11, 0.25)";
+                                e.currentTarget.style.transform = "scale(1.05)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "rgba(245, 158, 11, 0.15)";
+                                e.currentTarget.style.transform = "scale(1)";
                               }}
                             >
-                              x{duplicates}
-                            </span>
+                              <span>x{duplicates}</span>
+                            </button>
                           )}
                           {acc.user_account_createdByIdTouser?.role === "TEAM_LEAD" && (
                             <span 
@@ -1936,6 +2075,35 @@ export default function AccountsList({
                       style={{ width: "100%" }}
                     />
                   </div>
+
+                  {(() => {
+                    const typedFullName = `${wizardFirstName.trim()} ${wizardSecondName.trim()}`.toLowerCase();
+                    if (typedFullName.length > 2) {
+                      const match = localAccounts.find(a => !a.isArchived && a.idName?.trim().toLowerCase() === typedFullName);
+                      if (match) {
+                        return (
+                          <div style={{
+                            padding: "0.55rem 0.75rem",
+                            background: "rgba(245, 158, 11, 0.12)",
+                            border: "1px solid rgba(245, 158, 11, 0.35)",
+                            borderRadius: "8px",
+                            color: "#FBBF24",
+                            fontSize: "0.75rem",
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "0.45rem",
+                            lineHeight: "1.4"
+                          }}>
+                            <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: "2px" }} />
+                            <span>
+                              <strong>Duplicate Notice:</strong> An active account with ID Name &quot;{wizardFirstName.trim()} {wizardSecondName.trim()}&quot; already exists ({match.serialCode} on {match.platform?.name || 'this platform'}). You may still proceed if this is intentional.
+                            </span>
+                          </div>
+                        );
+                      }
+                    }
+                    return null;
+                  })()}
                 </div>
               )}
 
@@ -2322,6 +2490,227 @@ export default function AccountsList({
           </div>
         </div>
       )}
+
+      {/* Duplicate ID Resolver Modal */}
+      {duplicateModalIdName && (
+        <div 
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(5, 4, 12, 0.8)",
+            backdropFilter: "blur(16px)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1.5rem"
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isDeleting) {
+              setDuplicateModalIdName(null);
+            }
+          }}
+        >
+          <div style={{
+            maxWidth: "650px",
+            width: "100%",
+            maxHeight: "85vh",
+            background: "linear-gradient(180deg, rgba(20, 17, 38, 0.98) 0%, rgba(10, 8, 22, 0.99) 100%)",
+            border: "1px solid rgba(245, 158, 11, 0.35)",
+            borderRadius: "18px",
+            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(245, 158, 11, 0.1)",
+            padding: "1.5rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1.25rem",
+            position: "relative"
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "0.85rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <div style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "8px",
+                  background: "rgba(245, 158, 11, 0.15)",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                  color: "#FBBF24",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <Copy size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "0.72rem", color: "#FBBF24", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
+                    DUPLICATE ACCOUNTS RESOLVER
+                  </div>
+                  <h2 style={{ fontSize: "1.15rem", fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
+                    &quot;{duplicateModalIdName}&quot;
+                  </h2>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDuplicateModalIdName(null)}
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  color: "var(--text-muted)",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+              Review the active account entries cataloged with ID Name <strong style={{ color: "#FFFFFF" }}>&quot;{duplicateModalIdName}&quot;</strong> below. You can safely remove accidental duplicates while keeping the original copy.
+            </div>
+
+            {/* Duplicate Cards Stream */}
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.75rem",
+              overflowY: "auto",
+              maxHeight: "380px",
+              paddingRight: "0.25rem"
+            }}>
+              {localAccounts
+                .filter(a => !a.isArchived && a.idName?.trim().toLowerCase() === duplicateModalIdName.trim().toLowerCase())
+                .map((dupAcc) => {
+                  const rule = getStatusStyle(dupAcc);
+                  const canDelete = isTeamLead || isCompanyOwner || isSuperAdmin;
+
+                  return (
+                    <div
+                      key={dupAcc.id}
+                      style={{
+                        padding: "0.95rem 1.1rem",
+                        borderRadius: "12px",
+                        background: "rgba(255, 255, 255, 0.03)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.65rem",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <span style={{
+                            fontSize: "0.7rem",
+                            fontWeight: 800,
+                            padding: "0.15rem 0.5rem",
+                            borderRadius: "6px",
+                            background: "rgba(56, 189, 248, 0.12)",
+                            border: "1px solid rgba(56, 189, 248, 0.3)",
+                            color: "#38BDF8"
+                          }}>
+                            {dupAcc.platform?.name || "Platform"}
+                          </span>
+                          <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#FFFFFF", fontFamily: "var(--font-mono)" }}>
+                            {dupAcc.serialCode}
+                          </span>
+                          <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                            ({dupAcc.adsPublished} ads)
+                          </span>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <span className="badge" style={{
+                            background: rule.bg,
+                            border: `1px solid ${rule.border}`,
+                            color: rule.color,
+                            fontSize: "0.68rem"
+                          }}>
+                            {rule.text}
+                          </span>
+
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => setAccountToDelete(dupAcc)}
+                              disabled={isDeleting}
+                              style={{
+                                background: "rgba(239, 68, 68, 0.12)",
+                                border: "1px solid rgba(239, 68, 68, 0.35)",
+                                color: "#EF4444",
+                                padding: "0.3rem 0.65rem",
+                                borderRadius: "6px",
+                                fontSize: "0.72rem",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.3rem",
+                                transition: "all 0.2s ease"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "rgba(239, 68, 68, 0.12)";
+                              }}
+                            >
+                              <Trash2 size={12} />
+                              <span>Delete Duplicate</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "var(--text-muted)", borderTop: "1px solid rgba(255, 255, 255, 0.04)", paddingTop: "0.4rem" }}>
+                        <span>
+                          Cataloged by: <strong style={{ color: "var(--text-secondary)" }}>{dupAcc.user_account_createdByIdTouser?.name || dupAcc.user_account_createdByIdTouser?.email || 'N/A'}</strong> ({dupAcc.user_account_createdByIdTouser?.role || 'Associate'})
+                        </span>
+                        <span>
+                          Entry Date: {new Date(dupAcc.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={() => setDuplicateModalIdName(null)}
+                className="btn-glass"
+                style={{ padding: "0.4rem 1.25rem", fontSize: "0.8rem" }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!accountToDelete}
+        title="Delete Account Entry?"
+        message={`Are you sure you want to delete account "${accountToDelete?.serialCode}" (${accountToDelete?.idName})? This will archive the entry and remove it from active records and duplicate counts.`}
+        confirmText="Delete Account"
+        variant="danger"
+        isPending={isDeleting}
+        onConfirm={() => handleDeleteAccount(accountToDelete)}
+        onCancel={() => setAccountToDelete(null)}
+      />
     </div>
   );
 }
+
