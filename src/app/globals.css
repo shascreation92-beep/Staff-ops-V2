@@ -1550,14 +1550,15 @@ textarea::placeholder {
 }
 
 .col-comments {
-  width: 85px !important;
-  max-width: 100px !important;
+  width: 75px !important;
+  min-width: 75px !important;
   text-align: center !important;
 }
 
 .col-requested-by {
-  width: 125px !important;
-  max-width: 150px !important;
+  width: 130px !important;
+  min-width: 120px !important;
+  max-width: 160px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
@@ -1565,15 +1566,17 @@ textarea::placeholder {
 }
 
 .col-it-comments {
-  width: 95px !important;
-  max-width: 110px !important;
+  width: 85px !important;
+  min-width: 85px !important;
   text-align: center !important;
 }
 
 .col-status {
-  width: 135px !important;
-  max-width: 150px !important;
+  min-width: 250px !important;
+  width: auto !important;
+  max-width: none !important;
   text-align: center !important;
+  white-space: nowrap !important;
 }
 
 /* Symmetric Operations Dashboard Grid Overhauls */

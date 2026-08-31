@@ -24,6 +24,7 @@ import {
   HelpCircle,
   Database,
   Building,
+  Check,
   CheckCircle,
   XCircle,
   Eye,
@@ -453,6 +454,8 @@ export default function AccountsList({
         return {
           color: "#A78BFA",
           text: "DIRECT TO IT",
+          subtext: null,
+          fullTitle: "Direct to IT (Team Lead Submission)",
           bg: "rgba(167, 139, 250, 0.08)",
           border: "rgba(167, 139, 250, 0.25)",
           glow: "none"
@@ -462,16 +465,21 @@ export default function AccountsList({
       const approverName = approver?.name || "TL";
       const approverRole = approver?.role;
       
-      let labelText = `APPROVED BY TL (${approverName.toUpperCase()})`;
+      let labelText = "TL Approved";
+      let fullTitle = `Approved by Team Lead (${approverName})`;
       if (approverRole === "IT_DEPARTMENT") {
-        labelText = `FORWARDED BY IT (${approverName.toUpperCase()})`;
+        labelText = "IT Forwarded";
+        fullTitle = `Forwarded by IT (${approverName})`;
       } else if (approverRole === "SUPER_ADMIN" || approverRole === "COMPANY_OWNER") {
-        labelText = `APPROVED BY ADMIN (${approverName.toUpperCase()})`;
+        labelText = "Admin Approved";
+        fullTitle = `Approved by Admin (${approverName})`;
       }
 
       return {
         color: "#A78BFA",
         text: labelText,
+        subtext: approverName,
+        fullTitle: fullTitle,
         bg: "rgba(167, 139, 250, 0.08)",
         border: "rgba(167, 139, 250, 0.25)",
         glow: "none"
@@ -1209,7 +1217,7 @@ export default function AccountsList({
                         </button>
                       </td>
                       <td className="col-status">
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.45rem", flexWrap: "nowrap" }}>
                           {/* Dropdown select for Sales Associate (own account), Team Lead (own account), or IT (on TL personal accounts) */}
                           {(acc.status === "SORTED" && (isSalesAssociate || (isTeamLead && acc.createdById === currentUser.id))) ||
                            ((acc.status === "FORWARDED_TO_IT" || acc.status === "SORTED") && (isIT || isSuperAdmin) && acc.user_account_createdByIdTouser?.role === "TEAM_LEAD") ? (
@@ -1238,36 +1246,86 @@ export default function AccountsList({
                               <option value="Code Issue" style={{ color: "#8B5CF6", background: "#FFFFFF" }}>Code Issue</option>
                             </select>
                           ) : (
-                            <span className="badge" style={{
-                              background: rule.bg,
-                              border: `1px solid ${rule.border}`,
-                              color: rule.color,
-                              boxShadow: rule.glow,
-                              fontSize: "0.7rem",
-                              letterSpacing: "0.02em"
-                            }}>
-                              {rule.text}
+                            <span 
+                              className="badge" 
+                              title={rule.fullTitle || rule.text}
+                              style={{
+                                background: rule.bg,
+                                border: `1px solid ${rule.border}`,
+                                color: rule.color,
+                                boxShadow: rule.glow,
+                                fontSize: "0.7rem",
+                                letterSpacing: "0.02em",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.35rem",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              <span>{rule.text}</span>
+                              {rule.subtext && (
+                                <span style={{
+                                  fontSize: "0.62rem",
+                                  padding: "0.08rem 0.35rem",
+                                  background: "rgba(167, 139, 250, 0.2)",
+                                  border: "1px solid rgba(167, 139, 250, 0.35)",
+                                  borderRadius: "4px",
+                                  fontWeight: 700,
+                                  color: "#DDD6FE",
+                                  textTransform: "uppercase"
+                                }}>
+                                  {rule.subtext}
+                                </span>
+                              )}
                             </span>
                           )}
 
-                          {/* Normal IT Accept / Sort buttons (only for Associates, meaning NOT TL Personal accounts) */}
+                          {/* Cyber IT Accept / Sort buttons (only for Associates, meaning NOT TL Personal accounts) */}
                           {(acc.status === "FORWARDED_TO_IT" && (isIT || isSuperAdmin) && acc.user_account_createdByIdTouser?.role !== "TEAM_LEAD") && (
-                            <div style={{ display: "flex", gap: "0.35rem" }}>
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", flexShrink: 0 }}>
                               <button
                                 onClick={() => handleITAccept(acc.id)}
-                                className="btn-gold"
-                                style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
+                                style={{
+                                  background: "rgba(56, 189, 248, 0.12)",
+                                  border: "1px solid rgba(56, 189, 248, 0.35)",
+                                  color: "#38BDF8",
+                                  padding: "0.2rem 0.5rem",
+                                  fontSize: "0.7rem",
+                                  fontWeight: 700,
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                  transition: "all 0.2s ease"
+                                }}
                                 disabled={isPending}
+                                title="Accept account into IT queue"
                               >
-                                Accept
+                                <Check size={11} />
+                                <span>Accept</span>
                               </button>
                               <button
                                 onClick={() => handleITSort(acc.id)}
-                                className="btn-success"
-                                style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
+                                style={{
+                                  background: "rgba(16, 185, 129, 0.12)",
+                                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                                  color: "#34D399",
+                                  padding: "0.2rem 0.5rem",
+                                  fontSize: "0.7rem",
+                                  fontWeight: 700,
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.25rem",
+                                  transition: "all 0.2s ease"
+                                }}
                                 disabled={isPending}
+                                title="Sort and resolve account"
                               >
-                                Sort
+                                <ArrowRight size={11} />
+                                <span>Sort</span>
                               </button>
                             </div>
                           )}
@@ -1276,11 +1334,26 @@ export default function AccountsList({
                           {(acc.status === "IT_PENDING" && (isIT || isSuperAdmin) && acc.user_account_createdByIdTouser?.role !== "TEAM_LEAD") && (
                             <button
                               onClick={() => handleITSort(acc.id)}
-                              className="btn-success"
-                              style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem", height: "auto" }}
+                              style={{
+                                background: "rgba(16, 185, 129, 0.12)",
+                                border: "1px solid rgba(16, 185, 129, 0.35)",
+                                color: "#34D399",
+                                padding: "0.2rem 0.5rem",
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                                transition: "all 0.2s ease",
+                                flexShrink: 0
+                              }}
                               disabled={isPending}
+                              title="Sort and resolve account"
                             >
-                              Sort
+                              <ArrowRight size={11} />
+                              <span>Sort</span>
                             </button>
                           )}
 
@@ -1289,7 +1362,7 @@ export default function AccountsList({
                               value={acc.status}
                               onChange={(e) => triggerStatusTransition(acc, e.target.value as account_status)}
                               className="table-select-filter"
-                              style={{ padding: "0.1rem 1.25rem 0.1rem 0.3rem", fontSize: "0.7rem", height: "auto", marginLeft: "0.5rem" }}
+                              style={{ padding: "0.1rem 1.25rem 0.1rem 0.3rem", fontSize: "0.7rem", height: "auto", marginLeft: "0.35rem", flexShrink: 0 }}
                             >
                               <option value="DRAFT">DRAFT</option>
                               <option value="PENDING_TL">PENDING_TL</option>
