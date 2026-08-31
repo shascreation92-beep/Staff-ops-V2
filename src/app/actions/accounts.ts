@@ -890,15 +890,15 @@ export async function updateAccountDetailsByTLAction(params: {
 }
 
 /**
- * Bulk Update Account Status Action (Approve / Reject multiple requests)
+ * Bulk Update Account Status Action (Approve / Reject / Accept / Sort multiple requests)
  */
 export async function bulkUpdateAccountStatusAction(
   accountIds: string[],
-  toStatus: "FORWARDED_TO_IT" | "REJECTED",
+  toStatus: account_status,
   notes?: string
 ) {
   try {
-    const user = await enforceAuth(["TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"]);
+    const user = await enforceAuth(["IT_DEPARTMENT", "TEAM_LEAD", "SUPER_ADMIN", "COMPANY_OWNER"]);
 
     if (!accountIds || accountIds.length === 0) {
       return { success: false, error: "No accounts selected for bulk processing." };
@@ -909,7 +909,11 @@ export async function bulkUpdateAccountStatusAction(
 
     for (const accountId of accountIds) {
       try {
-        const res = await updateAccountStatusAction(accountId, toStatus, notes || `Bulk ${toStatus === "FORWARDED_TO_IT" ? "Approved" : "Rejected"} by Team Lead`);
+        const res = await updateAccountStatusAction(
+          accountId, 
+          toStatus, 
+          notes || `Bulk ${toStatus} processed by ${user.role}`
+        );
         if (res?.success !== false) {
           successCount++;
         }
@@ -920,7 +924,8 @@ export async function bulkUpdateAccountStatusAction(
 
     revalidatePath("/associates-requests");
     revalidatePath("/accounts");
-    return { success: true, count: successCount, total: accountIds.length, errors };
+    revalidatePath("/master-accounts-pool");
+    return { success: true, count: successCount, total: accountIds.length, errors, message: `Successfully processed ${successCount} accounts.` };
   } catch (err: any) {
     console.error("[BULK_UPDATE_ACCOUNT_STATUS_ERROR]", err);
     return { success: false, error: err.message || "Failed to execute bulk status update." };
@@ -1281,4 +1286,5 @@ export async function deleteAccountAction(accountId: string) {
     return { success: false, error: error.message || "Failed to delete account." };
   }
 }
+
 

@@ -11,7 +11,8 @@ import {
   updateAccountCommentAction,
   updateAccountITNotesAction,
   createPlatformAction,
-  deleteAccountAction
+  deleteAccountAction,
+  bulkUpdateAccountStatusAction
 } from "@/app/actions/accounts";
 import { 
   Search, 
@@ -34,7 +35,10 @@ import {
   Download,
   Trash2,
   Copy,
-  AlertTriangle
+  AlertTriangle,
+  Zap,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import { account_status, user_role } from "@prisma/client";
 import NotificationBell from "./NotificationBell";
@@ -133,6 +137,43 @@ export default function AccountsList({
   const totalDuplicateRows = React.useMemo(() => {
     return localAccounts.filter(acc => !acc.isArchived && getDuplicateCount(acc.idName) > 1).length;
   }, [localAccounts, dynamicDuplicateMap]);
+
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [bulkActionTarget, setBulkActionTarget] = useState<{ status: account_status; ids: string[]; label: string } | null>(null);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+  const executeBulkStatusUpdate = async () => {
+    if (!bulkActionTarget || bulkActionTarget.ids.length === 0) return;
+    setIsBulkProcessing(true);
+    const { status, ids } = bulkActionTarget;
+    try {
+      setLocalAccounts(prev => prev.map(a => {
+        if (ids.includes(a.id)) {
+          return {
+            ...a,
+            status,
+            verificationStatus: status === "SORTED" ? "Yes" : a.verificationStatus,
+            issueType: status === "SORTED" ? "Active" : a.issueType
+          };
+        }
+        return a;
+      }));
+
+      const res = await bulkUpdateAccountStatusAction(ids, status);
+      if (res.success) {
+        toast.success(res.message || `Successfully updated ${ids.length} accounts!`);
+        setSelectedAccountIds([]);
+        setBulkActionTarget(null);
+        router.refresh();
+      } else {
+        toast.error(res.error || "Failed to update accounts in bulk.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error performing bulk update.");
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
 
   const handleDeleteAccount = async (account: any) => {
     if (!account?.id) return;
@@ -477,6 +518,33 @@ export default function AccountsList({
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalRecords);
   const paginatedAccounts = sortedAccounts.slice(startIndex, endIndex);
+
+  // IT Bulk Selection Helpers
+  const totalPendingITAccounts = React.useMemo(() => {
+    return filteredAccounts.filter(a => !a.isArchived && (a.status === "FORWARDED_TO_IT" || a.status === "IT_PENDING"));
+  }, [filteredAccounts]);
+
+  const visibleEligibleITAccounts = React.useMemo(() => {
+    return paginatedAccounts.filter(a => !a.isArchived && (a.status === "FORWARDED_TO_IT" || a.status === "IT_PENDING"));
+  }, [paginatedAccounts]);
+
+  const isAllVisibleSelected = visibleEligibleITAccounts.length > 0 && visibleEligibleITAccounts.every(a => selectedAccountIds.includes(a.id));
+
+  const toggleSelectAllVisible = () => {
+    if (isAllVisibleSelected) {
+      const visibleIds = new Set(visibleEligibleITAccounts.map(a => a.id));
+      setSelectedAccountIds(prev => prev.filter(id => !visibleIds.has(id)));
+    } else {
+      const visibleIds = visibleEligibleITAccounts.map(a => a.id);
+      setSelectedAccountIds(prev => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  const toggleSelectAccount = (id: string) => {
+    setSelectedAccountIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
 
   const getPageNumbers = () => {
     const pages = [];
@@ -916,6 +984,41 @@ export default function AccountsList({
               </button>
             )}
 
+            {/* Quick Bulk Sort All Pending IT Button */}
+            {(isIT || isSuperAdmin) && totalPendingITAccounts.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const ids = totalPendingITAccounts.map(a => a.id);
+                  setBulkActionTarget({
+                    status: "SORTED",
+                    ids,
+                    label: `Bulk Sort All Filtered Queue (${ids.length} accounts)`
+                  });
+                }}
+                style={{
+                  background: "linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.3) 100%)",
+                  border: "1px solid rgba(16, 185, 129, 0.45)",
+                  color: "#34D399",
+                  fontSize: "0.72rem",
+                  fontWeight: 800,
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 0 15px rgba(16, 185, 129, 0.15)",
+                  transition: "all 0.2s ease"
+                }}
+                title={`Sort all ${totalPendingITAccounts.length} pending IT accounts in current filtered view`}
+              >
+                <Zap size={13} style={{ fill: "#34D399" }} />
+                <span>⚡ Sort All IT ({totalPendingITAccounts.length})</span>
+              </button>
+            )}
+
             <div className="table-search-wrapper" style={{ width: "180px", flexShrink: 0 }}>
               <Search className="header-search-icon" />
               <input
@@ -984,6 +1087,31 @@ export default function AccountsList({
           <table className="premium-table compact-table">
             <thead>
               <tr>
+                {(isIT || isSuperAdmin) && (
+                  <th style={{ width: "36px", textAlign: "center", padding: "0 0.35rem" }}>
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllVisible}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: isAllVisibleSelected ? "#38BDF8" : "var(--text-muted)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 0
+                      }}
+                      title={isAllVisibleSelected ? "Deselect all on this page" : "Select all pending IT accounts on this page"}
+                    >
+                      {isAllVisibleSelected ? (
+                        <CheckSquare size={16} style={{ color: "#38BDF8" }} />
+                      ) : (
+                        <Square size={16} style={{ opacity: 0.5 }} />
+                      )}
+                    </button>
+                  </th>
+                )}
                 {isSuperAdmin && <th className="col-requested-by">Tenant Company</th>}
                 <th className="col-platform">Platform</th>
                 <th className="col-serial">ID Serial</th>
@@ -1005,7 +1133,7 @@ export default function AccountsList({
             <tbody>
               {totalRecords === 0 ? (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 11 : 10} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                  <td colSpan={isSuperAdmin ? (isIT ? 12 : 11) : (isIT ? 11 : 10)} style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
                     No operational accounts cataloged.
                   </td>
                 </tr>
@@ -1013,9 +1141,41 @@ export default function AccountsList({
                 paginatedAccounts.map((acc) => {
                   const rule = getStatusStyle(acc);
                   const duplicates = getDuplicateCount(acc.idName);
+                  const isActionableByIT = acc.status === "FORWARDED_TO_IT" || acc.status === "IT_PENDING";
 
                   return (
-                    <tr key={acc.id}>
+                    <tr key={acc.id} style={{ background: selectedAccountIds.includes(acc.id) ? "rgba(56, 189, 248, 0.05)" : undefined }}>
+                      {(isIT || isSuperAdmin) && (
+                        <td style={{ width: "36px", textAlign: "center", padding: "0 0.35rem" }}>
+                          {isActionableByIT ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelectAccount(acc.id);
+                              }}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                color: selectedAccountIds.includes(acc.id) ? "#38BDF8" : "var(--text-muted)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: 0
+                              }}
+                            >
+                              {selectedAccountIds.includes(acc.id) ? (
+                                <CheckSquare size={16} style={{ color: "#38BDF8" }} />
+                              ) : (
+                                <Square size={16} style={{ opacity: 0.4 }} />
+                              )}
+                            </button>
+                          ) : (
+                            <span style={{ display: "inline-block", width: "16px", height: "16px" }} />
+                          )}
+                        </td>
+                      )}
                       {isSuperAdmin && (
                         <td className="col-requested-by" style={{ fontWeight: 600, color: "var(--gold-primary)" }}>
                           {acc.company?.name || "Global"}
@@ -2699,6 +2859,145 @@ export default function AccountsList({
         </div>
       )}
 
+      {/* Floating Cyber Action Bar for IT Bulk Operations */}
+      {selectedAccountIds.length > 0 && (isIT || isSuperAdmin) && (
+        <div style={{
+          position: "fixed",
+          bottom: "2rem",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 9999,
+          background: "linear-gradient(180deg, rgba(20, 16, 42, 0.96) 0%, rgba(11, 9, 24, 0.98) 100%)",
+          backdropFilter: "blur(24px)",
+          border: "1px solid rgba(56, 189, 248, 0.4)",
+          borderRadius: "16px",
+          padding: "0.75rem 1.35rem",
+          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(56, 189, 248, 0.2)",
+          display: "flex",
+          alignItems: "center",
+          gap: "1.25rem",
+          maxWidth: "92vw",
+          flexWrap: "wrap",
+          justifyContent: "center"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <div style={{
+              background: "rgba(56, 189, 248, 0.2)",
+              border: "1px solid rgba(56, 189, 248, 0.4)",
+              color: "#38BDF8",
+              borderRadius: "8px",
+              padding: "0.25rem 0.65rem",
+              fontSize: "0.8rem",
+              fontWeight: 800,
+              fontFamily: "var(--font-mono)"
+            }}>
+              {selectedAccountIds.length}
+            </div>
+            <span style={{ fontSize: "0.85rem", color: "#FFFFFF", fontWeight: 700 }}>
+              Accounts Selected
+            </span>
+          </div>
+
+          <div style={{ height: "22px", width: "1px", background: "rgba(255, 255, 255, 0.15)" }} />
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+            {/* Bulk Accept */}
+            <button
+              type="button"
+              onClick={() => {
+                setBulkActionTarget({
+                  status: "IT_PENDING",
+                  ids: selectedAccountIds,
+                  label: `Bulk Accept ${selectedAccountIds.length} Accounts into IT Queue`
+                });
+              }}
+              disabled={isBulkProcessing}
+              style={{
+                background: "rgba(56, 189, 248, 0.16)",
+                border: "1px solid rgba(56, 189, 248, 0.4)",
+                color: "#38BDF8",
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                padding: "0.45rem 0.95rem",
+                borderRadius: "8px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                transition: "all 0.2s ease"
+              }}
+            >
+              <Check size={14} />
+              <span>Bulk Accept ({selectedAccountIds.length})</span>
+            </button>
+
+            {/* Bulk Sort */}
+            <button
+              type="button"
+              onClick={() => {
+                setBulkActionTarget({
+                  status: "SORTED",
+                  ids: selectedAccountIds,
+                  label: `Bulk Sort ${selectedAccountIds.length} Accounts`
+                });
+              }}
+              disabled={isBulkProcessing}
+              style={{
+                background: "linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.45) 100%)",
+                border: "1px solid rgba(16, 185, 129, 0.6)",
+                color: "#34D399",
+                fontSize: "0.78rem",
+                fontWeight: 800,
+                padding: "0.45rem 1.05rem",
+                borderRadius: "8px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                boxShadow: "0 0 20px rgba(16, 185, 129, 0.25)",
+                transition: "all 0.2s ease"
+              }}
+            >
+              <Zap size={14} style={{ fill: "#34D399" }} />
+              <span>Bulk Sort ({selectedAccountIds.length})</span>
+            </button>
+
+            {/* Clear Selection */}
+            <button
+              type="button"
+              onClick={() => setSelectedAccountIds([])}
+              style={{
+                background: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                color: "var(--text-muted)",
+                fontSize: "0.75rem",
+                padding: "0.45rem 0.75rem",
+                borderRadius: "8px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.3rem"
+              }}
+            >
+              <X size={13} />
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Action Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!bulkActionTarget}
+        title={bulkActionTarget?.status === "SORTED" ? "Bulk Sort Accounts?" : "Bulk Accept Accounts?"}
+        message={`Are you sure you want to transition ${bulkActionTarget?.ids.length || 0} accounts to ${bulkActionTarget?.status === "SORTED" ? "SORTED (Active & Verified)" : "IT PENDING"}?`}
+        confirmText={bulkActionTarget?.status === "SORTED" ? `⚡ Sort ${bulkActionTarget?.ids.length || 0} Accounts` : `✓ Accept ${bulkActionTarget?.ids.length || 0} Accounts`}
+        variant="gold"
+        isPending={isBulkProcessing}
+        onConfirm={executeBulkStatusUpdate}
+        onCancel={() => setBulkActionTarget(null)}
+      />
+
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={!!accountToDelete}
@@ -2713,4 +3012,5 @@ export default function AccountsList({
     </div>
   );
 }
+
 
