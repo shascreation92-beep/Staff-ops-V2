@@ -48,7 +48,14 @@ import {
   VolumeX,
   LogOut,
   AtSign,
-  Info
+  Info,
+  ExternalLink,
+  Copy,
+  Database,
+  ShieldAlert,
+  Layers,
+  FileText,
+  AlertTriangle
 } from "lucide-react";
 import { user_role } from "@prisma/client";
 import { toast } from "react-hot-toast";
@@ -3927,14 +3934,18 @@ export default function ChatShard({
       {/* Right Column details panel displaying active contact performance metrics or group details */}
       {activeContact && activeContact !== "BROADCAST" && isGroupMember && showRightPanel && (
         <div style={{
-          borderLeft: "1px solid var(--border-dim)",
-          background: "#F9FAFB",
+          width: "320px",
+          minWidth: "320px",
+          borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "linear-gradient(180deg, rgba(16, 13, 31, 0.98) 0%, rgba(10, 8, 22, 0.99) 100%)",
+          backdropFilter: "blur(24px)",
           display: "flex",
           flexDirection: "column",
           height: "100%",
           overflowY: "auto",
-          padding: "1.5rem",
-          position: "relative"
+          padding: "1.25rem",
+          position: "relative",
+          boxShadow: "-8px 0 25px rgba(0, 0, 0, 0.4)"
         }}>
           {/* Close Panel Button */}
           <button
@@ -3944,26 +3955,45 @@ export default function ChatShard({
               position: "absolute",
               top: "1rem",
               right: "1rem",
-              background: "none",
-              border: "none",
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               cursor: "pointer",
               color: "var(--text-muted)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "0.25rem",
-              borderRadius: "50%",
-              transition: "background 0.2s"
+              width: "28px",
+              height: "28px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease"
             }}
-            className="chat-channel-item"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "#FFFFFF";
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-muted)";
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            }}
             title="Collapse Details Panel"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
 
           {/* Profile summary */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", textAlign: "center", paddingBottom: "1.5rem", borderBottom: "1px solid var(--border-dim)" }}>
-            <div className="user-avatar-gold" style={{ width: "4.25rem", height: "4.25rem", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: activeContact.isGroup ? "rgba(2, 80, 161, 0.08)" : "transparent" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", textAlign: "center", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+            <div style={{
+              width: "4.5rem",
+              height: "4.5rem",
+              borderRadius: "50%",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: activeContact.isGroup ? "rgba(56, 189, 248, 0.12)" : "rgba(255, 255, 255, 0.05)",
+              border: "2px solid rgba(56, 189, 248, 0.4)",
+              boxShadow: "0 0 20px rgba(56, 189, 248, 0.2)"
+            }}>
               {activeContact.isGroup ? (
                 <span style={{ fontSize: "1.8rem", fontWeight: "bold" }}>{activeContact.isPrivate ? "🔒" : "#"}</span>
               ) : (
@@ -3974,47 +4004,131 @@ export default function ChatShard({
                 />
               )}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-              <h4 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{activeContact.name}</h4>
-              <span style={{
-                fontSize: "0.65rem",
-                fontWeight: 800,
-                background: activeContact.isGroup ? "var(--gold-gradient)" : (activeContact.role === "SUPER_ADMIN" ? "var(--gold-gradient)" : "rgba(2, 80, 161, 0.08)"),
-                color: (activeContact.isGroup || activeContact.role === "SUPER_ADMIN") ? "#FFFFFF" : "#0250A1",
-                padding: "0.2rem 0.5rem",
-                borderRadius: "4px",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                display: "inline-block",
-                alignSelf: "center"
-              }}>
-                {activeContact.isGroup 
-                  ? (activeContact.isPrivate ? "Private Space" : "Public Channel") 
-                  : activeContact.role.replace(/_/g, " ")}
-              </span>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", width: "100%" }}>
+              <h4 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#FFFFFF", margin: 0, letterSpacing: "-0.01em" }}>
+                {activeContact.name}
+              </h4>
+              
+              {/* Role badge */}
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <span style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 800,
+                  background: activeContact.isGroup 
+                    ? "rgba(56, 189, 248, 0.15)" 
+                    : activeContact.role === "SUPER_ADMIN" 
+                      ? "rgba(245, 158, 11, 0.15)" 
+                      : activeContact.role === "TEAM_LEAD" 
+                        ? "rgba(129, 140, 248, 0.15)" 
+                        : "rgba(56, 189, 248, 0.12)",
+                  color: activeContact.isGroup 
+                    ? "#38BDF8" 
+                    : activeContact.role === "SUPER_ADMIN" 
+                      ? "#FBBF24" 
+                      : activeContact.role === "TEAM_LEAD" 
+                        ? "#A5B4FC" 
+                        : "#38BDF8",
+                  border: activeContact.isGroup
+                    ? "1px solid rgba(56, 189, 248, 0.35)"
+                    : activeContact.role === "SUPER_ADMIN"
+                      ? "1px solid rgba(245, 158, 11, 0.35)"
+                      : activeContact.role === "TEAM_LEAD"
+                        ? "1px solid rgba(129, 140, 248, 0.35)"
+                        : "1px solid rgba(56, 189, 248, 0.25)",
+                  padding: "0.2rem 0.6rem",
+                  borderRadius: "6px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em"
+                }}>
+                  {activeContact.isGroup 
+                    ? (activeContact.isPrivate ? "Private Space" : "Public Channel") 
+                    : activeContact.role.replace(/_/g, " ")}
+                </span>
+              </div>
+
               {!activeContact.isGroup && (
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
                   {activeContact.email}
                 </span>
               )}
+
+              {/* Quick action buttons row for direct contacts */}
+              {!activeContact.isGroup && (
+                <div style={{ display: "flex", gap: "0.45rem", justifyContent: "center", marginTop: "0.5rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeContact.email) {
+                        navigator.clipboard.writeText(activeContact.email);
+                        toast.success("Email copied to clipboard!");
+                      }
+                    }}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      color: "var(--text-secondary)",
+                      fontSize: "0.68rem",
+                      fontWeight: 700,
+                      padding: "0.3rem 0.6rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      transition: "all 0.2s ease"
+                    }}
+                    title="Copy Email Address"
+                  >
+                    <Copy size={11} />
+                    <span>Copy Email</span>
+                  </button>
+
+                  <a
+                    href={`/accounts?search=${encodeURIComponent(activeContact.name || "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      background: "rgba(56, 189, 248, 0.12)",
+                      border: "1px solid rgba(56, 189, 248, 0.3)",
+                      color: "#38BDF8",
+                      fontSize: "0.68rem",
+                      fontWeight: 700,
+                      padding: "0.3rem 0.6rem",
+                      borderRadius: "6px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      textDecoration: "none",
+                      transition: "all 0.2s ease"
+                    }}
+                    title="View cataloged accounts in Database"
+                  >
+                    <ExternalLink size={11} />
+                    <span>View Accounts</span>
+                  </a>
+                </div>
+              )}
+
+              {/* Biography */}
               {!activeContact.isGroup && (
                 <div style={{ 
-                  marginTop: "0.8rem", 
-                  padding: "0.5rem 0.75rem", 
-                  background: "rgba(2, 80, 161, 0.03)", 
-                  borderRadius: "8px", 
-                  border: "1px dashed rgba(2, 80, 161, 0.12)",
+                  marginTop: "0.75rem", 
+                  padding: "0.65rem 0.85rem", 
+                  background: "rgba(255, 255, 255, 0.03)", 
+                  borderRadius: "10px", 
+                  border: "1px solid rgba(255, 255, 255, 0.07)",
                   width: "100%",
                   textAlign: "left"
                 }}>
-                  <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "0.25rem" }}>
-                    Biography
+                  <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#38BDF8", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "0.3rem" }}>
+                    BIOGRAPHY
                   </span>
                   <p style={{ 
                     fontSize: "0.72rem", 
-                    color: activeContact.bio ? "var(--text-secondary)" : "var(--text-muted)", 
+                    color: activeContact.bio ? "#E2E8F0" : "var(--text-muted)", 
                     margin: 0, 
-                    lineHeight: "1.35",
+                    lineHeight: "1.4",
                     fontStyle: activeContact.bio ? "normal" : "italic",
                     whiteSpace: "pre-wrap"
                   }}>
@@ -4029,34 +4143,97 @@ export default function ChatShard({
           {!activeContact.isGroup ? (
             activeContact.role === "TEAM_LEAD" || activeContact.role === "SALES_ASSOCIATE" ? (
               currentUser.role !== "SALES_ASSOCIATE" ? (
-                <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                  <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    Operational Stats
-                  </h5>
+                <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <h5 style={{ fontSize: "0.72rem", fontWeight: 800, color: "#38BDF8", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0, display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                      <Activity size={12} />
+                      <span>OPERATIONAL STATS</span>
+                    </h5>
+                  </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                    <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Total IDs</span>
-                      <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)" }}>{formatNumber(getColleagueStats(activeContact).totalIds)}</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
+                    {/* Total IDs */}
+                    <div style={{ 
+                      background: "rgba(255, 255, 255, 0.03)", 
+                      padding: "0.75rem", 
+                      borderRadius: "10px", 
+                      border: "1px solid rgba(255, 255, 255, 0.08)", 
+                      display: "flex", 
+                      flexDirection: "column", 
+                      gap: "0.25rem" 
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>TOTAL IDS</span>
+                        <Database size={12} style={{ color: "#38BDF8" }} />
+                      </div>
+                      <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#FFFFFF", fontFamily: "var(--font-mono)" }}>
+                        {formatNumber(getColleagueStats(activeContact).totalIds)}
+                      </span>
                     </div>
-                    <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Unverified</span>
-                      <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).unverifiedAccounts > 0 ? "#F59E0B" : "var(--text-primary)" }}>
+
+                    {/* Unverified */}
+                    <div style={{ 
+                      background: "rgba(255, 255, 255, 0.03)", 
+                      padding: "0.75rem", 
+                      borderRadius: "10px", 
+                      border: "1px solid rgba(255, 255, 255, 0.08)", 
+                      display: "flex", 
+                      flexDirection: "column", 
+                      gap: "0.25rem" 
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>UNVERIFIED</span>
+                        <ShieldAlert size={12} style={{ color: "#FBBF24" }} />
+                      </div>
+                      <span style={{ 
+                        fontSize: "1.25rem", 
+                        fontWeight: 800, 
+                        color: getColleagueStats(activeContact).unverifiedAccounts > 0 ? "#FBBF24" : "#FFFFFF", 
+                        fontFamily: "var(--font-mono)" 
+                      }}>
                         {formatNumber(getColleagueStats(activeContact).unverifiedAccounts)}
                       </span>
                     </div>
-                  </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                    <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Suspended</span>
-                      <span style={{ fontSize: "1.2rem", fontWeight: 800, color: getColleagueStats(activeContact).suspendedAccounts > 0 ? "#EF4444" : "var(--text-primary)" }}>
+                    {/* Suspended */}
+                    <div style={{ 
+                      background: "rgba(255, 255, 255, 0.03)", 
+                      padding: "0.75rem", 
+                      borderRadius: "10px", 
+                      border: "1px solid rgba(255, 255, 255, 0.08)", 
+                      display: "flex", 
+                      flexDirection: "column", 
+                      gap: "0.25rem" 
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>SUSPENDED</span>
+                        <AlertTriangle size={12} style={{ color: "#EF4444" }} />
+                      </div>
+                      <span style={{ 
+                        fontSize: "1.25rem", 
+                        fontWeight: 800, 
+                        color: getColleagueStats(activeContact).suspendedAccounts > 0 ? "#EF4444" : "#FFFFFF", 
+                        fontFamily: "var(--font-mono)" 
+                      }}>
                         {formatNumber(getColleagueStats(activeContact).suspendedAccounts)}
                       </span>
                     </div>
-                    <div style={{ background: "#FFFFFF", padding: "0.75rem", borderRadius: "8px", border: "1px solid var(--border-dim)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>FB / Vinted</span>
-                      <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)", paddingTop: "0.25rem" }}>
+
+                    {/* FB / Vinted */}
+                    <div style={{ 
+                      background: "rgba(255, 255, 255, 0.03)", 
+                      padding: "0.75rem", 
+                      borderRadius: "10px", 
+                      border: "1px solid rgba(255, 255, 255, 0.08)", 
+                      display: "flex", 
+                      flexDirection: "column", 
+                      gap: "0.25rem" 
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>FB / VINTED</span>
+                        <Layers size={12} style={{ color: "#A78BFA" }} />
+                      </div>
+                      <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "#FFFFFF", paddingTop: "0.2rem", fontFamily: "var(--font-mono)" }}>
                         {formatNumber(getColleagueStats(activeContact).fbAccounts)} / {formatNumber(getColleagueStats(activeContact).vintedAccounts)}
                       </span>
                     </div>
@@ -4064,10 +4241,10 @@ export default function ChatShard({
                 </div>
               ) : (
                 <div style={{ 
-                  marginTop: "1.5rem", 
+                  marginTop: "1.25rem", 
                   padding: "1.25rem 1rem", 
-                  background: "rgba(2, 80, 161, 0.02)", 
-                  border: "1px solid rgba(2, 80, 161, 0.08)", 
+                  background: "rgba(255, 255, 255, 0.02)", 
+                  border: "1px dashed rgba(255, 255, 255, 0.1)", 
                   borderRadius: "10px", 
                   textAlign: "center",
                   display: "flex",
@@ -4075,8 +4252,8 @@ export default function ChatShard({
                   alignItems: "center",
                   gap: "0.4rem"
                 }}>
-                  <span style={{ fontSize: "1.25rem" }}>🔒</span>
-                  <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <Lock size={20} style={{ color: "#FBBF24" }} />
+                  <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "#FFFFFF", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     Operational Stats Locked
                   </h5>
                   <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: 0, lineHeight: "1.3" }}>
@@ -4086,24 +4263,24 @@ export default function ChatShard({
               )
             ) : (
               <div style={{ 
-                marginTop: "1.5rem", 
-                padding: "1.25rem 1rem", 
-                background: "rgba(2, 80, 161, 0.02)", 
-                border: "1px dashed rgba(2, 80, 161, 0.15)", 
+                marginTop: "1.25rem", 
+                padding: "1rem", 
+                background: "rgba(255, 255, 255, 0.03)", 
+                border: "1px solid rgba(255, 255, 255, 0.08)", 
                 borderRadius: "10px", 
                 textAlign: "left"
               }}>
-                <h5 style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--gold-premium)", margin: "0 0 0.4rem 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  System Scope & Role
+                <h5 style={{ fontSize: "0.68rem", fontWeight: 800, color: "#38BDF8", margin: "0 0 0.4rem 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  SYSTEM SCOPE & ROLE
                 </h5>
-                <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 0.25rem 0" }}>
+                <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "#FFFFFF", margin: "0 0 0.25rem 0" }}>
                   {activeContact.role === "COMPANY_OWNER" 
                     ? "Firm Management" 
                     : activeContact.role === "IT_DEPARTMENT" 
                       ? "IT Operations & Configs" 
                       : "System Administration"}
                 </p>
-                <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: 0, lineHeight: "1.35" }}>
+                <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: 0, lineHeight: "1.4" }}>
                   {activeContact.role === "COMPANY_OWNER" 
                     ? "Responsible for overseeing firm metrics, supervisor directories, and high-level team operational statuses." 
                     : activeContact.role === "IT_DEPARTMENT" 
@@ -4113,14 +4290,15 @@ export default function ChatShard({
               </div>
             )
           ) : (
-            <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <h5 style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--gold-premium)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Group Info
+            <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <h5 style={{ fontSize: "0.72rem", fontWeight: 800, color: "#38BDF8", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
+                GROUP INFO & CONFIGS
               </h5>
+
               {/* Group Description Box */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     Group Description
                   </span>
                   {isGroupCreator && (
@@ -4134,14 +4312,12 @@ export default function ChatShard({
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        color: "var(--gold-premium)",
+                        color: "#38BDF8",
                         display: "flex",
                         alignItems: "center",
                         padding: "0.2rem",
-                        borderRadius: "4px",
-                        transition: "opacity 0.2s"
+                        borderRadius: "4px"
                       }}
-                      className="hover-opacity"
                       title="Update Group Description"
                     >
                       <Edit3 size={12} />
@@ -4151,11 +4327,11 @@ export default function ChatShard({
                 
                 <div style={{ 
                   padding: "0.75rem", 
-                  background: "#FFFFFF", 
+                  background: "rgba(255, 255, 255, 0.03)", 
                   borderRadius: "8px", 
-                  border: "1px solid var(--border-dim)", 
-                  fontSize: "0.78rem", 
-                  color: currentDescriptionText ? "var(--text-secondary)" : "var(--text-muted)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)", 
+                  fontSize: "0.75rem", 
+                  color: currentDescriptionText ? "#E2E8F0" : "var(--text-muted)",
                   lineHeight: "1.4",
                   whiteSpace: "pre-wrap",
                   minHeight: "45px"
@@ -4166,8 +4342,8 @@ export default function ChatShard({
 
               {/* Join Requests (Visible to Creator Only) */}
               {isGroupCreator && activeContact.joinRequests && activeContact.joinRequests.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#EF4444", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#EF4444", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.35rem" }}>
                     <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "#EF4444" }} className="pulse-critical-dot" />
                     <span>Join Requests ({activeContact.joinRequests.length})</span>
                   </span>
@@ -4175,12 +4351,12 @@ export default function ChatShard({
                     {activeContact.joinRequests.map((req: any) => {
                       if (!req?.user) return null;
                       return (
-                        <div key={req.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.35rem 0.5rem", background: "#FFFFFF", borderRadius: "8px", border: "1px solid rgba(239, 68, 68, 0.15)", boxShadow: "0 1px 3px rgba(239,68,68,0.02)" }}>
-                          <div className="user-avatar-gold" style={{ width: "1.25rem", height: "1.25rem", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239, 68, 68, 0.08)" }}>
-                            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#EF4444" }}>{req.user.name?.[0]?.toUpperCase() || "?"}</span>
+                        <div key={req.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", background: "rgba(239, 68, 68, 0.08)", borderRadius: "8px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                          <div style={{ width: "1.4rem", height: "1.4rem", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239, 68, 68, 0.2)", border: "1px solid rgba(239, 68, 68, 0.4)" }}>
+                            <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#EF4444" }}>{req.user.name?.[0]?.toUpperCase() || "?"}</span>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {req.user.name}
                             </span>
                           </div>
@@ -4189,44 +4365,42 @@ export default function ChatShard({
                             <button
                               type="button"
                               onClick={() => handleApproveJoinRequest(req.id)}
-                              className="chat-channel-item"
                               style={{
-                                width: "22px",
-                                height: "22px",
-                                borderRadius: "50%",
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "6px",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                background: "rgba(16, 185, 129, 0.1)",
-                                border: "1px solid rgba(16, 185, 129, 0.2)",
-                                color: "#10B981",
+                                background: "rgba(16, 185, 129, 0.2)",
+                                border: "1px solid rgba(16, 185, 129, 0.4)",
+                                color: "#34D399",
                                 cursor: "pointer",
                                 padding: 0
                               }}
                               title="Approve Request"
                             >
-                              <Check size={11} />
+                              <Check size={12} />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleRejectJoinRequest(req.id)}
-                              className="chat-channel-item"
                               style={{
-                                width: "22px",
-                                height: "22px",
-                                borderRadius: "50%",
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "6px",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                background: "rgba(239, 68, 68, 0.1)",
-                                border: "1px solid rgba(239, 68, 68, 0.2)",
+                                background: "rgba(239, 68, 68, 0.2)",
+                                border: "1px solid rgba(239, 68, 68, 0.4)",
                                 color: "#EF4444",
                                 cursor: "pointer",
                                 padding: 0
                               }}
                               title="Reject Request"
                             >
-                              <X size={11} />
+                              <X size={12} />
                             </button>
                           </div>
                         </div>
@@ -4238,22 +4412,22 @@ export default function ChatShard({
 
               {/* Members List */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Members ({activeGroupMembers.length})
                 </span>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", maxHeight: "160px", overflowY: "auto", paddingRight: "0.25rem" }}>
                   {activeGroupMembers.map((m: any) => {
                     if (!m) return null;
                     return (
-                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.3rem 0.5rem", background: "#FFFFFF", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                        <div className="user-avatar-gold" style={{ width: "1.25rem", height: "1.25rem", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(2, 80, 161, 0.08)" }}>
-                          <span style={{ fontSize: "0.65rem", fontWeight: 700 }}>{m.name?.[0]?.toUpperCase() || "?"}</span>
+                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.35rem 0.6rem", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.07)" }}>
+                        <div style={{ width: "1.4rem", height: "1.4rem", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.3)" }}>
+                          <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#38BDF8" }}>{m.name?.[0]?.toUpperCase() || "?"}</span>
                         </div>
-                        <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                           {m.name}
                         </span>
                         {m.id === currentUser.id && (
-                          <span style={{ fontSize: "0.58rem", color: "var(--gold-premium)", fontWeight: 800 }}>You</span>
+                          <span style={{ fontSize: "0.6rem", color: "#38BDF8", fontWeight: 800, padding: "0.1rem 0.4rem", background: "rgba(56, 189, 248, 0.15)", borderRadius: "4px" }}>You</span>
                         )}
                       </div>
                     );
@@ -4262,24 +4436,23 @@ export default function ChatShard({
               </div>
 
               {/* Action Buttons Row */}
-              <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem", justifyContent: "center", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem", justifyContent: "center", alignItems: "center" }}>
                 <button
                   type="button"
                   onClick={() => handleToggleMuteGroup(activeContact.id)}
                   style={{
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "50%",
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "8px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    border: "1px solid var(--border-dim)",
-                    background: mutedGroups.includes(activeContact.id) ? "rgba(0, 0, 0, 0.05)" : "rgba(2, 80, 161, 0.04)",
-                    color: mutedGroups.includes(activeContact.id) ? "var(--text-muted)" : "#0250A1",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    background: mutedGroups.includes(activeContact.id) ? "rgba(239, 68, 68, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                    color: mutedGroups.includes(activeContact.id) ? "#EF4444" : "var(--text-secondary)",
                     cursor: "pointer",
                     transition: "all 0.2s"
                   }}
-                  className="chat-channel-item"
                   title={mutedGroups.includes(activeContact.id) ? "Unmute Notifications" : "Mute Notifications"}
                 >
                   {mutedGroups.includes(activeContact.id) ? <Volume2 size={16} /> : <VolumeX size={16} />}
@@ -4289,19 +4462,18 @@ export default function ChatShard({
                   type="button"
                   onClick={() => handleLeaveGroup(activeContact.id)}
                   style={{
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "50%",
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "8px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    border: "1px solid rgba(239, 68, 68, 0.2)",
-                    background: "rgba(239, 68, 68, 0.04)",
+                    border: "1px solid rgba(239, 68, 68, 0.35)",
+                    background: "rgba(239, 68, 68, 0.12)",
                     color: "#EF4444",
                     cursor: "pointer",
                     transition: "all 0.2s"
                   }}
-                  className="chat-channel-item"
                   title="Leave Group"
                 >
                   <LogOut size={16} />
@@ -4312,23 +4484,88 @@ export default function ChatShard({
                     type="button"
                     onClick={() => handleDeleteGroup(activeContact.id)}
                     style={{
-                      width: "38px",
-                      height: "38px",
-                      borderRadius: "50%",
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "8px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      border: "none",
-                      background: "#EF4444",
-                      color: "#FFFFFF",
+                      border: "1px solid rgba(239, 68, 68, 0.5)",
+                      background: "rgba(239, 68, 68, 0.25)",
+                      color: "#EF4444",
                       cursor: "pointer",
                       transition: "all 0.2s"
                     }}
-                    className="chat-channel-item"
                     title="Delete Group"
                   >
                     <Trash2 size={16} />
                   </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Shared Media & Files Preview */}
+          {!activeContact.isGroup && (
+            <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#38BDF8", textTransform: "uppercase", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                  <Paperclip size={11} />
+                  <span>SHARED MEDIA & FILES</span>
+                </span>
+                <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+                  {messages.filter(m => m.attachmentUrl || m.content?.includes("ATTACHMENT")).length} files
+                </span>
+              </div>
+
+              <div style={{
+                maxHeight: "130px",
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.35rem",
+                paddingRight: "0.2rem"
+              }}>
+                {messages.filter(m => m.attachmentUrl || m.content?.includes("ATTACHMENT")).length === 0 ? (
+                  <div style={{ padding: "0.75rem", background: "rgba(255, 255, 255, 0.02)", borderRadius: "8px", border: "1px dashed rgba(255, 255, 255, 0.06)", textAlign: "center", fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                    No media or documents shared yet.
+                  </div>
+                ) : (
+                  messages.filter(m => m.attachmentUrl || m.content?.includes("ATTACHMENT")).slice(-6).map((attMsg, idx) => (
+                    <a
+                      key={attMsg.id || idx}
+                      href={attMsg.attachmentUrl || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.4rem 0.6rem",
+                        background: "rgba(255, 255, 255, 0.03)",
+                        border: "1px solid rgba(255, 255, 255, 0.07)",
+                        borderRadius: "8px",
+                        textDecoration: "none",
+                        color: "#FFFFFF",
+                        fontSize: "0.72rem",
+                        transition: "all 0.15s ease"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(56, 189, 248, 0.08)";
+                        e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.25)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.07)";
+                      }}
+                    >
+                      <FileText size={13} style={{ color: "#38BDF8", flexShrink: 0 }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, fontWeight: 500 }}>
+                        {attMsg.attachmentName || attMsg.content?.replace(/^ATTACHMENT.*?: /, "") || "Attachment File"}
+                      </span>
+                      <ExternalLink size={11} style={{ opacity: 0.5, flexShrink: 0 }} />
+                    </a>
+                  ))
                 )}
               </div>
             </div>
