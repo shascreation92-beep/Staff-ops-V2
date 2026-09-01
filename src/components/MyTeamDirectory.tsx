@@ -235,14 +235,14 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
             </button>
 
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "rgba(0, 119, 182, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0077B6" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "rgba(0, 119, 182, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#38BDF8", border: "1px solid rgba(56, 189, 248, 0.25)" }}>
                 <UserPlus size={22} />
               </div>
               <div>
-                <h3 style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0, color: "#0F172A" }}>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
                   Add Sales Representative
                 </h3>
-                <p style={{ fontSize: "0.8rem", color: "#64748B", margin: 0 }}>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
                   Assign a new or existing associate to your team directory.
                 </p>
               </div>
@@ -250,7 +250,7 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
 
             <form onSubmit={handleAddAssociate} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
               <div>
-                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "0.35rem" }}>
                   Full Name <span style={{ color: "#EF4444" }}>*</span>
                 </label>
                 <input
@@ -263,7 +263,9 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
                     width: "100%",
                     padding: "0.65rem 0.85rem",
                     borderRadius: "8px",
-                    border: "1px solid #CBD5E1",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "rgba(255, 255, 255, 0.04)",
+                    color: "var(--text-primary)",
                     fontSize: "0.85rem",
                     outline: "none"
                   }}
@@ -271,7 +273,7 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "0.35rem" }}>
                   Work Email Address <span style={{ color: "#EF4444" }}>*</span>
                 </label>
                 <input
@@ -284,7 +286,9 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
                     width: "100%",
                     padding: "0.65rem 0.85rem",
                     borderRadius: "8px",
-                    border: "1px solid #CBD5E1",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "rgba(255, 255, 255, 0.04)",
+                    color: "var(--text-primary)",
                     fontSize: "0.85rem",
                     outline: "none"
                   }}
@@ -292,17 +296,17 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
               </div>
 
               <div style={{
-                background: "rgba(0, 119, 182, 0.06)",
-                border: "1px solid rgba(0, 119, 182, 0.2)",
+                background: "rgba(0, 119, 182, 0.12)",
+                border: "1px solid rgba(0, 119, 182, 0.25)",
                 borderRadius: "8px",
                 padding: "0.85rem",
                 display: "flex",
                 alignItems: "flex-start",
                 gap: "0.6rem"
               }}>
-                <Shield size={18} style={{ color: "#0077B6", marginTop: "2px", flexShrink: 0 }} />
-                <span style={{ fontSize: "0.78rem", color: "#334155", lineHeight: 1.45 }}>
-                  <strong>IT Approval Workflow:</strong> Upon submission, this request will be sent to the <strong>IT Department</strong>. An IT representative will review, approve, and assign the official password for this Sales Representative.
+                <Shield size={18} style={{ color: "#38BDF8", marginTop: "2px", flexShrink: 0 }} />
+                <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
+                  <strong style={{ color: "var(--text-primary)" }}>IT Approval Workflow:</strong> Upon submission, this request will be sent to the <strong style={{ color: "var(--text-primary)" }}>IT Department</strong>. An IT representative will review, approve, and assign the official password for this Sales Representative.
                 </span>
               </div>
 
@@ -314,9 +318,9 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
                     flex: 1,
                     padding: "0.65rem",
                     borderRadius: "8px",
-                    border: "1px solid #CBD5E1",
-                    background: "#F8FAFC",
-                    color: "#475569",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    color: "var(--text-secondary)",
                     fontWeight: 600,
                     fontSize: "0.85rem",
                     cursor: "pointer"
@@ -332,7 +336,7 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
                     padding: "0.65rem",
                     borderRadius: "8px",
                     border: "none",
-                    background: "#0077B6",
+                    background: "linear-gradient(135deg, #0077B6 0%, #0096C7 100%)",
                     color: "#FFFFFF",
                     fontWeight: 700,
                     fontSize: "0.85rem",
@@ -340,7 +344,8 @@ export default function MyTeamDirectory({ members }: MyTeamDirectoryProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.5rem"
+                    gap: "0.5rem",
+                    boxShadow: "0 4px 12px rgba(0, 119, 182, 0.3)"
                   }}
                 >
                   {isPending ? "Adding..." : "Add Representative"}
@@ -748,13 +753,21 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
         </button>
 
         {isExpanded && (
-          <div style={{ background: "#F9FAFB", borderRadius: "8px", padding: "0.75rem", marginTop: "0.25rem" }}>
+          <div style={{
+            background: "rgba(10, 8, 25, 0.75)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "10px",
+            padding: "0.9rem",
+            marginTop: "0.35rem",
+            boxShadow: "inset 0 1px 1px rgba(255, 255, 255, 0.05)"
+          }}>
             {isEditing ? (
               /* Inline Edit Form */
               <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                   <div>
-                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.2rem" }}>
                       Employee ID
                     </label>
                     <input
@@ -762,29 +775,47 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                       value={employeeId}
                       onChange={(e) => setEmployeeId(e.target.value)}
                       placeholder="e.g. EMP-101"
-                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                      style={{
+                        width: "100%",
+                        fontSize: "0.75rem",
+                        padding: "0.35rem 0.5rem",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        borderRadius: "6px",
+                        background: "rgba(255, 255, 255, 0.04)",
+                        color: "var(--text-primary)",
+                        outline: "none"
+                      }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.2rem" }}>
                       Laptop Brand
                     </label>
                     <select
                       value={laptopBrand}
                       onChange={(e) => setLaptopBrand(e.target.value)}
-                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                      style={{
+                        width: "100%",
+                        fontSize: "0.75rem",
+                        padding: "0.35rem 0.5rem",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        borderRadius: "6px",
+                        background: "rgba(255, 255, 255, 0.04)",
+                        color: "var(--text-primary)",
+                        outline: "none"
+                      }}
                     >
-                      <option value="">Select Brand...</option>
-                      <option value="HP">HP</option>
-                      <option value="Dell">Dell</option>
-                      <option value="ThinkPad">ThinkPad</option>
+                      <option value="" style={{ background: "#0F172A", color: "#FFFFFF" }}>Select Brand...</option>
+                      <option value="HP" style={{ background: "#0F172A", color: "#FFFFFF" }}>HP</option>
+                      <option value="Dell" style={{ background: "#0F172A", color: "#FFFFFF" }}>Dell</option>
+                      <option value="ThinkPad" style={{ background: "#0F172A", color: "#FFFFFF" }}>ThinkPad</option>
                     </select>
                   </div>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                   <div>
-                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.2rem" }}>
                       Laptop Model
                     </label>
                     <input
@@ -792,27 +823,45 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                       value={laptopModel}
                       onChange={(e) => setLaptopModel(e.target.value)}
                       placeholder="e.g. EliteBook 840"
-                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                      style={{
+                        width: "100%",
+                        fontSize: "0.75rem",
+                        padding: "0.35rem 0.5rem",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        borderRadius: "6px",
+                        background: "rgba(255, 255, 255, 0.04)",
+                        color: "var(--text-primary)",
+                        outline: "none"
+                      }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.2rem" }}>
                       OS Version
                     </label>
                     <select
                       value={windowsVersion}
                       onChange={(e) => setWindowsVersion(e.target.value)}
-                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                      style={{
+                        width: "100%",
+                        fontSize: "0.75rem",
+                        padding: "0.35rem 0.5rem",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        borderRadius: "6px",
+                        background: "rgba(255, 255, 255, 0.04)",
+                        color: "var(--text-primary)",
+                        outline: "none"
+                      }}
                     >
-                      <option value="">Select OS...</option>
-                      <option value="Windows_10">Windows 10</option>
-                      <option value="Windows_11">Windows 11</option>
+                      <option value="" style={{ background: "#0F172A", color: "#FFFFFF" }}>Select OS...</option>
+                      <option value="Windows_10" style={{ background: "#0F172A", color: "#FFFFFF" }}>Windows 10</option>
+                      <option value="Windows_11" style={{ background: "#0F172A", color: "#FFFFFF" }}>Windows 11</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.2rem" }}>
                     Laptop Serial Number
                   </label>
                   <input
@@ -820,12 +869,21 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                     value={laptopSerialNumber}
                     onChange={(e) => setLaptopSerialNumber(e.target.value)}
                     placeholder="e.g. CND1234567"
-                    style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                    style={{
+                      width: "100%",
+                      fontSize: "0.75rem",
+                      padding: "0.35rem 0.5rem",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      borderRadius: "6px",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      color: "var(--text-primary)",
+                      outline: "none"
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                  <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.2rem" }}>
                     Laptop Password
                   </label>
                   <input
@@ -833,31 +891,49 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                     value={laptopPassword}
                     onChange={(e) => setLaptopPassword(e.target.value)}
                     placeholder="Laptop login credential"
-                    style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                    style={{
+                      width: "100%",
+                      fontSize: "0.75rem",
+                      padding: "0.35rem 0.5rem",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      borderRadius: "6px",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      color: "var(--text-primary)",
+                      outline: "none"
+                    }}
                   />
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                   <div>
-                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.2rem" }}>
                       VPN Provider
                     </label>
                     <select
                       value={vpnProvider}
                       onChange={(e) => setVpnProvider(e.target.value)}
-                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                      style={{
+                        width: "100%",
+                        fontSize: "0.75rem",
+                        padding: "0.35rem 0.5rem",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        borderRadius: "6px",
+                        background: "rgba(255, 255, 255, 0.04)",
+                        color: "var(--text-primary)",
+                        outline: "none"
+                      }}
                     >
-                      <option value="">Select VPN...</option>
-                      <option value="Surfshark">Surfshark</option>
-                      <option value="ExpressVPN">ExpressVPN</option>
-                      <option value="NordVPN">NordVPN</option>
-                      <option value="ProtonVPN">ProtonVPN</option>
-                      <option value="PureVPN">PureVPN</option>
-                      <option value="HideMe">HideMe</option>
+                      <option value="" style={{ background: "#0F172A", color: "#FFFFFF" }}>Select VPN...</option>
+                      <option value="Surfshark" style={{ background: "#0F172A", color: "#FFFFFF" }}>Surfshark</option>
+                      <option value="ExpressVPN" style={{ background: "#0F172A", color: "#FFFFFF" }}>ExpressVPN</option>
+                      <option value="NordVPN" style={{ background: "#0F172A", color: "#FFFFFF" }}>NordVPN</option>
+                      <option value="ProtonVPN" style={{ background: "#0F172A", color: "#FFFFFF" }}>ProtonVPN</option>
+                      <option value="PureVPN" style={{ background: "#0F172A", color: "#FFFFFF" }}>PureVPN</option>
+                      <option value="HideMe" style={{ background: "#0F172A", color: "#FFFFFF" }}>HideMe</option>
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: "0.15rem" }}>
+                    <label style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.2rem" }}>
                       VPN Credentials
                     </label>
                     <input
@@ -865,48 +941,64 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                       value={vpnCredentials}
                       onChange={(e) => setVpnCredentials(e.target.value)}
                       placeholder="Username / Password details"
-                      style={{ width: "100%", fontSize: "0.75rem", padding: "0.25rem 0.4rem", border: "1px solid var(--border-dim)", borderRadius: "4px", background: "#FFFFFF", color: "var(--text-primary)" }}
+                      style={{
+                        width: "100%",
+                        fontSize: "0.75rem",
+                        padding: "0.35rem 0.5rem",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        borderRadius: "6px",
+                        background: "rgba(255, 255, 255, 0.04)",
+                        color: "var(--text-primary)",
+                        outline: "none"
+                      }}
                     />
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.4rem" }}>
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="btn-gold"
                     style={{
                       flex: 1,
-                      padding: "0.35rem 0.5rem",
-                      fontSize: "0.72rem",
-                      height: "auto",
+                      padding: "0.45rem 0.75rem",
+                      fontSize: "0.75rem",
+                      background: "#0284C7",
+                      color: "#FFFFFF",
+                      border: "1px solid rgba(56, 189, 248, 0.4)",
+                      borderRadius: "6px",
+                      fontWeight: 700,
+                      cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0.25rem"
+                      gap: "0.3rem",
+                      boxShadow: "0 4px 12px rgba(2, 132, 199, 0.25)",
+                      transition: "all 0.2s ease"
                     }}
                   >
-                    <Save size={12} /> {isPending ? "Saving..." : "Save Details"}
+                    <Save size={13} /> {isPending ? "Saving..." : "Save Details"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
                     style={{
                       flex: 1,
-                      padding: "0.35rem 0.5rem",
-                      fontSize: "0.72rem",
-                      background: "rgba(0,0,0,0.04)",
-                      border: "1px solid var(--border-dim)",
-                      borderRadius: "4px",
+                      padding: "0.45rem 0.75rem",
+                      fontSize: "0.75rem",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      borderRadius: "6px",
                       color: "var(--text-secondary)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0.25rem"
+                      gap: "0.3rem",
+                      transition: "all 0.2s ease"
                     }}
                   >
-                    <X size={12} /> Cancel
+                    <X size={13} /> Cancel
                   </button>
                 </div>
               </form>
@@ -914,15 +1006,24 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
               /* Read-Only Details Panel */
               <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", fontSize: "0.75rem" }}>
                 {/* Technical IP Address Frame & Copy Button */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", background: "rgba(2, 80, 161, 0.03)", padding: "0.3rem 0.5rem", borderRadius: "6px", border: "1px solid rgba(2, 80, 161, 0.08)" }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "0.5rem",
+                  background: "rgba(56, 189, 248, 0.06)",
+                  padding: "0.35rem 0.6rem",
+                  borderRadius: "6px",
+                  border: "1px solid rgba(56, 189, 248, 0.15)"
+                }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                    <Network size={13} style={{ color: "var(--gold-primary)", flexShrink: 0 }} />
+                    <Network size={13} style={{ color: "#38BDF8", flexShrink: 0 }} />
                     <span style={{ fontWeight: 700, color: "var(--text-secondary)" }}>IP Address:</span>
                     <span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--text-primary)" }}>{ipAddress}</span>
                   </div>
                   <button
                     onClick={() => handleCopyText(ipAddress, "IP Address")}
-                    style={{ background: "none", border: "none", cursor: "pointer", padding: "0.15rem", color: "var(--text-muted)", opacity: 0.6, display: "flex", alignItems: "center" }}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: "0.15rem", color: "var(--text-muted)", opacity: 0.8, display: "flex", alignItems: "center" }}
                     title="Copy IP Address"
                   >
                     <Copy size={12} />
@@ -946,7 +1047,7 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                           {member.employee.laptopSerialNumber && (
                             <button
                               onClick={() => handleCopyText(member.employee!.laptopSerialNumber || "", "Serial Number")}
-                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.6, display: "inline-flex" }}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.8, display: "inline-flex" }}
                               title="Copy Serial Number"
                             >
                               <Copy size={11} />
@@ -962,13 +1063,13 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                         <span style={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem" }}>Laptop Login</span>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                            <span style={{ fontFamily: "monospace", fontSize: "0.72rem" }}>
+                            <span style={{ fontFamily: "monospace", fontSize: "0.72rem", color: "var(--text-primary)" }}>
                               {showPassword ? (member.employee.laptopPassword || "N/A") : "••••••••"}
                             </span>
                             {member.employee.laptopPassword && (
                               <button
                                 onClick={() => setShowPassword(!showPassword)}
-                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex" }}
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-secondary)", display: "inline-flex" }}
                               >
                                 {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
                               </button>
@@ -977,7 +1078,7 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                           {member.employee.laptopPassword && (
                             <button
                               onClick={() => handleCopyText(member.employee!.laptopPassword || "", "Laptop Password")}
-                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.6, display: "inline-flex" }}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.8, display: "inline-flex" }}
                               title="Copy Laptop Password"
                             >
                               <Copy size={11} />
@@ -999,7 +1100,7 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                             {member.employee.vpnCredentials && (
                               <button
                                 onClick={() => setShowVpn(!showVpn)}
-                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex" }}
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-secondary)", display: "inline-flex" }}
                               >
                                 {showVpn ? <EyeOff size={12} /> : <Eye size={12} />}
                               </button>
@@ -1008,7 +1109,7 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                           {member.employee.vpnCredentials && (
                             <button
                               onClick={() => handleCopyText(member.employee!.vpnCredentials || "", "VPN Credentials")}
-                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.6, display: "inline-flex" }}
+                              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-muted)", opacity: 0.8, display: "inline-flex" }}
                               title="Copy VPN Credentials"
                             >
                               <Copy size={11} />
@@ -1028,23 +1129,24 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                 <button
                   onClick={() => setIsEditing(true)}
                   style={{
-                    background: "rgba(2, 80, 161, 0.05)",
-                    border: "1px solid rgba(2, 80, 161, 0.15)",
-                    borderRadius: "4px",
-                    padding: "0.3rem 0.5rem",
-                    fontSize: "0.7rem",
+                    background: "rgba(56, 189, 248, 0.08)",
+                    border: "1px solid rgba(56, 189, 248, 0.25)",
+                    borderRadius: "6px",
+                    padding: "0.4rem 0.6rem",
+                    fontSize: "0.72rem",
                     fontWeight: 800,
-                    color: "#0250A1",
+                    color: "#38BDF8",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.25rem",
-                    marginTop: "0.25rem",
-                    width: "100%"
+                    gap: "0.3rem",
+                    marginTop: "0.35rem",
+                    width: "100%",
+                    transition: "all 0.2s ease"
                   }}
                 >
-                  <Edit3 size={11} /> ✏️ Edit IT Details
+                  <Edit3 size={12} /> ✏️ Edit IT Details
                 </button>
               </div>
             )}
@@ -1094,26 +1196,26 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
             </button>
 
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "rgba(239, 68, 68, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#EF4444" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "rgba(239, 68, 68, 0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#EF4444", border: "1px solid rgba(239, 68, 68, 0.25)" }}>
                 <Trash2 size={22} />
               </div>
               <div>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, margin: 0, color: "#0F172A" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
                   Request Member Deletion
                 </h3>
-                <p style={{ fontSize: "0.8rem", color: "#64748B", margin: 0 }}>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
                   This request will be routed to the IT Department for confirmation.
                 </p>
               </div>
             </div>
 
             <form onSubmit={handleRequestDeletion} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
-              <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: "8px", padding: "0.75rem", fontSize: "0.8rem", color: "#991B1B" }}>
+              <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", padding: "0.75rem", fontSize: "0.8rem", color: "#FCA5A5" }}>
                 ⚠️ You are requesting deletion for <strong>{member.name || member.email}</strong>. Once approved by IT, their account, employee ID, laptop credentials, and VPN mappings will be permanently wiped.
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#334155", marginBottom: "0.35rem" }}>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "0.35rem" }}>
                   Reason / Notes for IT Department
                 </label>
                 <textarea
@@ -1125,7 +1227,9 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                     width: "100%",
                     padding: "0.65rem",
                     borderRadius: "8px",
-                    border: "1px solid #CBD5E1",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "rgba(255, 255, 255, 0.04)",
+                    color: "var(--text-primary)",
                     fontSize: "0.85rem",
                     outline: "none",
                     resize: "vertical"
@@ -1141,9 +1245,9 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                     flex: 1,
                     padding: "0.65rem",
                     borderRadius: "8px",
-                    border: "1px solid #CBD5E1",
-                    background: "#F8FAFC",
-                    color: "#475569",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    color: "var(--text-secondary)",
                     fontWeight: 600,
                     fontSize: "0.85rem",
                     cursor: "pointer"
@@ -1167,7 +1271,8 @@ function MemberCard({ member, isPendingDeletion }: { member: TeamMember; isPendi
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.5rem"
+                    gap: "0.5rem",
+                    boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)"
                   }}
                 >
                   {isPending ? "Submitting..." : "Send Request to IT"}
