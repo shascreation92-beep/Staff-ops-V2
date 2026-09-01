@@ -11,7 +11,8 @@ import {
   HelpCircle, 
   Target,
   Clock,
-  ShieldX
+  ShieldX,
+  KeyRound
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -24,6 +25,7 @@ interface CombinedStats {
   fbUnverifiedCombined: number;
   fbMarketplaceCombined: number;
   fbIdentityCombined: number;
+  fbCodeCombined: number;
   vintedTotalCombined: number;
   vintedVerifiedCombined: number;
   vintedUnverifiedCombined: number;
@@ -38,6 +40,7 @@ interface PersonalStats {
   fbUnverified: number;
   fbMarketplace: number;
   fbIdentity: number;
+  fbCode: number;
   fbSuspended: number;
   fbTarget: number;
   vintedTotal: number;
@@ -211,7 +214,7 @@ export default function TeamLeadDashboard({
         }
         @media (min-width: 768px) {
           .fb-team-grid-forced {
-            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
           }
           .vinted-team-grid-forced {
             grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -385,6 +388,19 @@ export default function TeamLeadDashboard({
             <div className="kpi-value">{formatNumber(combinedStats.fbIdentityCombined)}</div>
             <div className="kpi-footer" style={{ color: combinedStats.fbIdentityCombined > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Verification hold status</span>
+            </div>
+          </div>
+
+          {/* Card 7: FB Code Issue Combined */}
+          <div className="glass-panel kpi-card kpi-purple">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Code Issue</span>
+              <div className="kpi-icon-wrapper"><KeyRound size={18} /></div>
+            </div>
+            <div className="kpi-value" style={{ color: "#8B5CF6" }}>{formatNumber(combinedStats.fbCodeCombined)}</div>
+            <div className="kpi-footer" style={{ color: combinedStats.fbCodeCombined > 0 ? "#8B5CF6" : "var(--text-muted)" }}>
+              <span>Awaiting 2FA / Login codes</span>
             </div>
           </div>
         </div>
@@ -684,6 +700,19 @@ export default function TeamLeadDashboard({
             <div className="kpi-value">{formatNumber(personalStats.fbIdentity)}</div>
             <div className="kpi-footer" style={{ color: personalStats.fbIdentity > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Verification hold status</span>
+            </div>
+          </div>
+
+          {/* Card 7: FB Code Issue */}
+          <div className="glass-panel kpi-card kpi-purple">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Code Issue</span>
+              <div className="kpi-icon-wrapper"><KeyRound size={18} /></div>
+            </div>
+            <div className="kpi-value" style={{ color: "#8B5CF6" }}>{formatNumber(personalStats.fbCode)}</div>
+            <div className="kpi-footer" style={{ color: personalStats.fbCode > 0 ? "#8B5CF6" : "var(--text-muted)" }}>
+              <span>Awaiting 2FA / Login codes</span>
             </div>
           </div>
 

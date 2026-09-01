@@ -767,6 +767,19 @@ button, input, select, textarea, .card, .glass-card, .login-card-container {
   box-shadow: 0 15px 30px rgba(239, 68, 68, 0.15) !important;
 }
 
+/* Purple/Violet Card Accent (Code Issue) */
+.kpi-card.kpi-purple {
+  border-left: 4px solid #8B5CF6 !important;
+}
+.kpi-card.kpi-purple .kpi-icon-wrapper {
+  background: rgba(139, 92, 246, 0.12) !important;
+  color: #8B5CF6 !important;
+  border: 1px solid rgba(139, 92, 246, 0.25) !important;
+}
+.kpi-card.kpi-purple:hover {
+  box-shadow: 0 15px 30px rgba(139, 92, 246, 0.15) !important;
+}
+
 /* Typography styles */
 .kpi-card .kpi-title {
   color: #94A3B8 !important;

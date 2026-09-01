@@ -32,7 +32,7 @@ export async function GET() {
 
     const [
       saTotalAccounts,
-      fbTotal, fbActive, fbVerified, fbUnverified, fbMarketplace, fbIdentity, fbSuspended,
+      fbTotal, fbActive, fbVerified, fbUnverified, fbMarketplace, fbIdentity, fbCode, fbSuspended,
       vintedTotal, vintedVerified, vintedUnverified, vintedSuspended,
       gumtreeTotal, gumtreeVerified, gumtreeUnverified, gumtreeSuspended
     ] = await Promise.all([
@@ -43,6 +43,7 @@ export async function GET() {
       db.account.count({ where: { createdById: userId, verificationStatus: "No", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: userId, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: userId, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: userId, status: "SORTED", issueType: "Code Issue", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: userId, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: userId, isArchived: false, ...vintedWhere } }),
       db.account.count({ where: { createdById: userId, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
@@ -62,6 +63,7 @@ export async function GET() {
       fbUnverified,
       fbMarketplace,
       fbIdentity,
+      fbCode,
       fbSuspended,
       fbTarget,
       vintedTotal,

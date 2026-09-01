@@ -43,7 +43,8 @@ import {
   AlertTriangle,
   MinusCircle,
   Store,
-  Coins
+  Coins,
+  KeyRound
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -160,6 +161,7 @@ export default async function DashboardPage() {
         vintedAccounts,
         fbMarketplaceIssues,
         fbIdentityAccounts,
+        fbCodeIssues,
         fbSuspendedMarketplaces,
         vintedVerified,
         vintedUnverified,
@@ -172,6 +174,7 @@ export default async function DashboardPage() {
         db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...vintedWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Code Issue", isArchived: false, ...fbWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...vintedWhere } }),
@@ -191,6 +194,7 @@ export default async function DashboardPage() {
           vintedAccounts,
           fbMarketplaceIssues,
           fbIdentityAccounts,
+          fbCodeIssues,
           fbSuspendedMarketplaces,
           vintedVerified,
           vintedUnverified,
@@ -223,6 +227,7 @@ export default async function DashboardPage() {
     itFbUnverifiedAccounts,
     itFbMarketplaceIssues,
     itFbIdentityAccounts,
+    itFbCodeIssues,
     itFbSuspendedMarketplaces
   ] = await Promise.all([
     db.account.count({ where: { ...companyFilter, isArchived: false, ...fbWhere } }),
@@ -230,6 +235,7 @@ export default async function DashboardPage() {
     db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "No", ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+    db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Code Issue", isArchived: false, ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } })
   ]);
 
@@ -257,6 +263,7 @@ export default async function DashboardPage() {
     fbUnverifiedCombined: 0,
     fbMarketplaceCombined: 0,
     fbIdentityCombined: 0,
+    fbCodeCombined: 0,
 
     vintedTotalCombined: 0,
     vintedVerifiedCombined: 0,
@@ -272,6 +279,7 @@ export default async function DashboardPage() {
     fbUnverified: 0,
     fbMarketplace: 0,
     fbIdentity: 0,
+    fbCode: 0,
     fbSuspended: 0,
     fbTarget: 15,
     vintedTotal: 0,
@@ -292,7 +300,7 @@ export default async function DashboardPage() {
   
   // Facebook metrics
   let fbTotal = 0, fbActive = 0, fbVerified = 0, fbUnverified = 0;
-  let fbMarketplace = 0, fbIdentity = 0, fbTarget = 15, fbSuspended = 0;
+  let fbMarketplace = 0, fbIdentity = 0, fbCode = 0, fbTarget = 15, fbSuspended = 0;
   
   // Vinted metrics
   let vintedTotal = 0, vintedVerified = 0, vintedUnverified = 0, vintedSuspended = 0;
@@ -330,13 +338,14 @@ export default async function DashboardPage() {
       _fbUnverifiedCombined,
       _fbMarketplaceCombined,
       _fbIdentityCombined,
+      _fbCodeCombined,
       _vintedTotalCombined,
       _vintedVerifiedCombined,
       _vintedUnverifiedCombined,
       _vintedSuspendedCombined,
 
       _saTotalAccounts,
-      _fbTotal, _fbActive, _fbVerified, _fbUnverified, _fbMarketplace, _fbIdentity, _fbSuspended,
+      _fbTotal, _fbActive, _fbVerified, _fbUnverified, _fbMarketplace, _fbIdentity, _fbCode, _fbSuspended,
       _vintedTotal, _vintedVerified, _vintedUnverified, _vintedSuspended,
       _gumtreeTotal, _gumtreeVerified, _gumtreeUnverified, _gumtreeSuspended,
 
@@ -349,6 +358,7 @@ export default async function DashboardPage() {
       db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Code Issue", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...vintedWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
       db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...vintedWhere } }),
@@ -361,6 +371,7 @@ export default async function DashboardPage() {
       db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Code Issue", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, isArchived: false, ...vintedWhere } }),
       db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
@@ -391,6 +402,7 @@ export default async function DashboardPage() {
       fbUnverifiedCombined: _fbUnverifiedCombined,
       fbMarketplaceCombined: _fbMarketplaceCombined,
       fbIdentityCombined: _fbIdentityCombined,
+      fbCodeCombined: _fbCodeCombined,
       vintedTotalCombined: _vintedTotalCombined,
       vintedVerifiedCombined: _vintedVerifiedCombined,
       vintedUnverifiedCombined: _vintedUnverifiedCombined,
@@ -405,6 +417,7 @@ export default async function DashboardPage() {
       fbUnverified: _fbUnverified,
       fbMarketplace: _fbMarketplace,
       fbIdentity: _fbIdentity,
+      fbCode: _fbCode,
       fbSuspended: _fbSuspended,
       fbTarget,
       vintedTotal: _vintedTotal,
@@ -440,17 +453,18 @@ export default async function DashboardPage() {
 
     const [
       _saTotalAccounts,
-      _fbTotal, _fbActive, _fbVerified, _fbUnverified, _fbMarketplace, _fbIdentity, _fbSuspended,
+      _fbTotal, _fbActive, _fbVerified, _fbUnverified, _fbMarketplace, _fbIdentity, _fbCode, _fbSuspended,
       _vintedTotal, _vintedVerified, _vintedUnverified, _vintedSuspended,
       _gumtreeTotal, _gumtreeVerified, _gumtreeUnverified, _gumtreeSuspended
     ] = await Promise.all([
       db.account.count({ where: { createdById: user.id, isArchived: false } }),
       db.account.count({ where: { createdById: user.id, isArchived: false, ...fbWhere } }),
-      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended"] }, isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: { notIn: ["Marketplace Issue", "Identity Issue", "Suspended", "Code Issue"] }, isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, verificationStatus: "No", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
+      db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Code Issue", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } }),
       db.account.count({ where: { createdById: user.id, isArchived: false, ...vintedWhere } }),
       db.account.count({ where: { createdById: user.id, verificationStatus: "Yes", isArchived: false, ...vintedWhere } }),
@@ -464,7 +478,7 @@ export default async function DashboardPage() {
 
     saTotalAccounts = _saTotalAccounts;
     fbTotal = _fbTotal; fbActive = _fbActive; fbVerified = _fbVerified; fbUnverified = _fbUnverified;
-    fbMarketplace = _fbMarketplace; fbIdentity = _fbIdentity; fbSuspended = _fbSuspended;
+    fbMarketplace = _fbMarketplace; fbIdentity = _fbIdentity; fbCode = _fbCode; fbSuspended = _fbSuspended;
     vintedTotal = _vintedTotal; vintedVerified = _vintedVerified; vintedUnverified = _vintedUnverified; vintedSuspended = _vintedSuspended;
     gumtreeTotal = _gumtreeTotal; gumtreeVerified = _gumtreeVerified; gumtreeUnverified = _gumtreeUnverified; gumtreeSuspended = _gumtreeSuspended;
   }
@@ -646,6 +660,7 @@ export default async function DashboardPage() {
             fbUnverified,
             fbMarketplace,
             fbIdentity,
+            fbCode,
             fbSuspended,
             fbTarget,
             vintedTotal,
@@ -761,10 +776,12 @@ export default async function DashboardPage() {
               </span>
             </div>
 
+            {/* Tier 1: Pool Status Metrics (3 Columns) */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-              gap: "1.25rem"
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "1.25rem",
+              marginBottom: "1.25rem"
             }}>
               {/* Card 1: TOTAL FB ACCOUNTS */}
               <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
@@ -830,7 +847,14 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </Link>
+            </div>
 
+            {/* Tier 2: Operational Issues & Blockers (4 Columns) */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "1.25rem"
+            }}>
               {/* Card 4: FB MARKETPLACE ISSUE */}
               <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&search=Marketplace+Issue`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
                 <div className="glass-panel kpi-card kpi-warning" style={{
@@ -864,7 +888,22 @@ export default async function DashboardPage() {
                 </div>
               </Link>
 
-              {/* Card 6: SUSPENDED MARKETPLACES */}
+              {/* Card 6: FB CODE ISSUE */}
+              <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&search=Code+Issue`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+                <div className="glass-panel kpi-card kpi-purple" style={{ height: "100%" }}>
+                  <div className="kpi-card-glow"></div>
+                  <div className="kpi-header">
+                    <span className="kpi-title">FB Code Issue</span>
+                    <div className="kpi-icon-wrapper"><KeyRound size={16} /></div>
+                  </div>
+                  <div className="kpi-value" style={{ color: "#8B5CF6" }}>{itFbCodeIssues}</div>
+                  <div className="kpi-footer">
+                    <span>Awaiting 2FA / Login codes</span>
+                  </div>
+                </div>
+              </Link>
+
+              {/* Card 7: SUSPENDED MARKETPLACES */}
               <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&search=Suspended`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
                 <div className="glass-panel kpi-card kpi-warning" style={{
                   height: "100%",

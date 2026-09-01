@@ -20,6 +20,7 @@ interface TeamStats {
   vintedAccounts: number;
   fbMarketplaceIssues: number;
   fbIdentityAccounts: number;
+  fbCodeIssues: number;
   fbSuspendedMarketplaces: number;
   vintedVerified: number;
   vintedUnverified: number;
@@ -55,10 +56,10 @@ export default function TeamWiseBreakdown({
   const [teamLeadsStats] = useState<TeamLeadData[]>(initialTeamLeadsStats);
 
   // 1. Weakest Team Detection Logic
-  // Calculate critical failure ratio: (unverified + fbSuspended + vintedSuspended) / total
+  // Calculate critical failure ratio: (unverified + fbSuspended + vintedSuspended + fbCodeIssues) / total
   const getTeamCriticalRatio = (stats: TeamStats) => {
     if (stats.totalAccounts === 0) return 0;
-    const issues = stats.unverifiedAccounts + stats.fbSuspendedMarketplaces + stats.vintedSuspended;
+    const issues = stats.unverifiedAccounts + stats.fbSuspendedMarketplaces + stats.vintedSuspended + (stats.fbCodeIssues || 0);
     return issues / stats.totalAccounts;
   };
 
@@ -200,7 +201,7 @@ export default function TeamWiseBreakdown({
                 {/* Facebook Stats Sub-Grid */}
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
                   gap: "1rem"
                 }}>
                   {/* Stat 1: Total accounts */}
@@ -253,7 +254,17 @@ export default function TeamWiseBreakdown({
                     </span>
                   </div>
 
-                  {/* Stat 6: Suspended */}
+                  {/* Stat 6: Code Issue */}
+                  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+                      Code Issues
+                    </span>
+                    <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#8B5CF6" }}>
+                      {tl.stats.fbCodeIssues || 0}
+                    </span>
+                  </div>
+
+                  {/* Stat 7: Suspended */}
                   <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
                       Suspended

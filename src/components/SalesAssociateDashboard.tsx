@@ -9,7 +9,8 @@ import {
   AlertCircle, 
   HelpCircle, 
   Target,
-  UserCheck
+  UserCheck,
+  KeyRound
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -21,6 +22,7 @@ interface Stats {
   fbUnverified: number;
   fbMarketplace: number;
   fbIdentity: number;
+  fbCode: number;
   fbSuspended: number;
   fbTarget: number;
   vintedTotal: number;
@@ -248,6 +250,19 @@ export default function SalesAssociateDashboard({ initialStats, userName, teamLe
             <div className="kpi-value">{formatNumber(stats.fbIdentity)}</div>
             <div className="kpi-footer" style={{ color: stats.fbIdentity > 0 ? "var(--color-danger)" : "var(--text-muted)" }}>
               <span>Verification hold status</span>
+            </div>
+          </div>
+
+          {/* Card 7: FB Code Issue */}
+          <div className="glass-panel kpi-card kpi-purple">
+            <div className="kpi-card-glow"></div>
+            <div className="kpi-header">
+              <span className="kpi-title">FB Code Issue</span>
+              <div className="kpi-icon-wrapper"><KeyRound size={18} /></div>
+            </div>
+            <div className="kpi-value" style={{ color: "#8B5CF6" }}>{formatNumber(stats.fbCode)}</div>
+            <div className="kpi-footer" style={{ color: stats.fbCode > 0 ? "#8B5CF6" : "var(--text-muted)" }}>
+              <span>Awaiting 2FA / Login codes</span>
             </div>
           </div>
 
