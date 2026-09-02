@@ -201,18 +201,6 @@ export default function SalesAssociateDashboard({ initialStats, userName, teamLe
             </div>
           </div>
 
-          {/* Card 3: FB Verified Acc. */}
-          <div className="glass-panel kpi-card kpi-success">
-            <div className="kpi-card-glow"></div>
-            <div className="kpi-header">
-              <span className="kpi-title">FB Verified Acc.</span>
-              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
-            </div>
-            <div className="kpi-value">{formatNumber(stats.fbVerified)}</div>
-            <div className="kpi-footer">
-              <span>Verification rate: {stats.fbTotal > 0 ? Math.round((stats.fbVerified / stats.fbTotal) * 100) : 0}%</span>
-            </div>
-          </div>
 
           {/* Card 4: FB Unverified Acc. */}
           <div className="glass-panel kpi-card kpi-warning">

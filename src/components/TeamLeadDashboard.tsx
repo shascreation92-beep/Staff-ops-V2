@@ -339,18 +339,6 @@ export default function TeamLeadDashboard({
             </div>
           </div>
 
-          {/* Card 3: FB Verified Combined */}
-          <div className="glass-panel kpi-card kpi-success">
-            <div className="kpi-card-glow"></div>
-            <div className="kpi-header">
-              <span className="kpi-title">FB Verified Accounts</span>
-              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
-            </div>
-            <div className="kpi-value">{formatNumber(combinedStats.fbVerifiedCombined)}</div>
-            <div className="kpi-footer">
-              <span>Verification rate: {combinedStats.fbTotalCombined > 0 ? Math.round((combinedStats.fbVerifiedCombined / combinedStats.fbTotalCombined) * 100) : 0}%</span>
-            </div>
-          </div>
 
           {/* Card 4: FB Unverified Combined */}
           <div className="glass-panel kpi-card kpi-warning">
@@ -651,18 +639,6 @@ export default function TeamLeadDashboard({
             </div>
           </div>
 
-          {/* Card 3: FB Verified Acc. */}
-          <div className="glass-panel kpi-card kpi-success">
-            <div className="kpi-card-glow"></div>
-            <div className="kpi-header">
-              <span className="kpi-title">FB Verified Acc.</span>
-              <div className="kpi-icon-wrapper"><ShieldCheck size={18} /></div>
-            </div>
-            <div className="kpi-value">{formatNumber(personalStats.fbVerified)}</div>
-            <div className="kpi-footer">
-              <span>Verification rate: {personalStats.fbTotal > 0 ? Math.round((personalStats.fbVerified / personalStats.fbTotal) * 100) : 0}%</span>
-            </div>
-          </div>
 
           {/* Card 4: FB Unverified Acc. */}
           <div className="glass-panel kpi-card kpi-warning">
