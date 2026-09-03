@@ -158,6 +158,7 @@ export default async function DashboardPage() {
         verifiedAccounts,
         unverifiedAccounts,
         fbAccounts,
+        fbUnverifiedAccounts,
         vintedAccounts,
         fbMarketplaceIssues,
         fbIdentityAccounts,
@@ -171,6 +172,7 @@ export default async function DashboardPage() {
         db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "Yes", isArchived: false } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...fbWhere } }),
+        db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...fbWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, isArchived: false, ...vintedWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
@@ -180,6 +182,17 @@ export default async function DashboardPage() {
         db.account.count({ where: { createdById: { in: teamUserIds }, verificationStatus: "No", isArchived: false, ...vintedWhere } }),
         db.account.count({ where: { createdById: { in: teamUserIds }, status: "SORTED", issueType: "Suspended", isArchived: false, ...vintedWhere } })
       ]);
+
+      const fbActiveAccounts = Math.max(
+        0,
+        fbAccounts - (
+          fbIdentityAccounts +
+          fbMarketplaceIssues +
+          fbCodeIssues +
+          fbSuspendedMarketplaces +
+          fbUnverifiedAccounts
+        )
+      );
 
       return {
         id: tl.id,
@@ -191,6 +204,8 @@ export default async function DashboardPage() {
           verifiedAccounts,
           unverifiedAccounts,
           fbAccounts,
+          fbActiveAccounts,
+          fbUnverifiedAccounts,
           vintedAccounts,
           fbMarketplaceIssues,
           fbIdentityAccounts,
@@ -223,7 +238,6 @@ export default async function DashboardPage() {
   // Row 2 Queries: Facebook Dedicated Operations
   const [
     itTotalFbAccounts,
-    itFbVerifiedAccounts,
     itFbUnverifiedAccounts,
     itFbMarketplaceIssues,
     itFbIdentityAccounts,
@@ -231,13 +245,24 @@ export default async function DashboardPage() {
     itFbSuspendedMarketplaces
   ] = await Promise.all([
     db.account.count({ where: { ...companyFilter, isArchived: false, ...fbWhere } }),
-    db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "Yes", ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, isArchived: false, verificationStatus: "No", ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Marketplace Issue", isArchived: false, ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Identity Issue", isArchived: false, ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Code Issue", isArchived: false, ...fbWhere } }),
     db.account.count({ where: { ...companyFilter, status: "SORTED", issueType: "Suspended", isArchived: false, ...fbWhere } })
   ]);
+
+  // Second KPI Card: Only fully active accounts (Total minus FB Identity, Marketplace Issue, Code Issue, Suspended, and Unverified)
+  const itFbActiveAccounts = Math.max(
+    0,
+    itTotalFbAccounts - (
+      itFbIdentityAccounts +
+      itFbMarketplaceIssues +
+      itFbCodeIssues +
+      itFbSuspendedMarketplaces +
+      itFbUnverifiedAccounts
+    )
+  );
 
   // Row 3 Queries: Vinted Dedicated Operations
   const [
@@ -798,23 +823,23 @@ export default async function DashboardPage() {
                 </div>
               </Link>
 
-              {/* Card 2: TOTAL VERIFIED ACCOUNTS */}
+              {/* Card 2: FB ACTIVE ACCOUNTS */}
               <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&status=ACTIVE`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
                 <div className="glass-panel kpi-card kpi-success" style={{ height: "100%" }}>
                   <div className="kpi-card-glow"></div>
                   <div className="kpi-header">
-                    <span className="kpi-title">Total Verified Accounts</span>
-                    <div className="kpi-icon-wrapper"><ShieldCheck size={16} /></div>
+                    <span className="kpi-title">FB Active Accounts</span>
+                    <div className="kpi-icon-wrapper"><CheckCircle size={16} /></div>
                   </div>
-                  <div className="kpi-value">{itFbVerifiedAccounts}</div>
+                  <div className="kpi-value">{itFbActiveAccounts}</div>
                   <div className="kpi-footer">
-                    <span>Cleared verification checks</span>
+                    <span>Operational readiness: {itTotalFbAccounts > 0 ? Math.round((itFbActiveAccounts / itTotalFbAccounts) * 100) : 0}%</span>
                   </div>
                 </div>
               </Link>
 
               {/* Card 3: TOTAL UNVERIFIED ACCOUNTS */}
-              <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
+              <Link href={`/master-accounts-pool?platform=${fbPlatform?.id || "ALL"}&search=Unverified`} style={{ textDecoration: "none", cursor: "pointer", display: "block" }}>
                 <div className="glass-panel kpi-card kpi-warning" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
                   <div className="kpi-card-glow"></div>
                   <div className="kpi-header">

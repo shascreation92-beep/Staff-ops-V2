@@ -17,6 +17,8 @@ interface TeamStats {
   verifiedAccounts: number;
   unverifiedAccounts: number;
   fbAccounts: number;
+  fbActiveAccounts?: number;
+  fbUnverifiedAccounts?: number;
   vintedAccounts: number;
   fbMarketplaceIssues: number;
   fbIdentityAccounts: number;
@@ -214,13 +216,13 @@ export default function TeamWiseBreakdown({
                     </span>
                   </div>
 
-                  {/* Stat 2: Verified */}
+                  {/* Stat 2: Active */}
                   <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", padding: "0.75rem 1rem", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
-                      Verified IDs
+                      Active IDs
                     </span>
                     <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#10B981" }}>
-                      {tl.stats.verifiedAccounts}
+                      {tl.stats.fbActiveAccounts ?? 0}
                     </span>
                   </div>
 
@@ -230,7 +232,7 @@ export default function TeamWiseBreakdown({
                       Unverified IDs
                     </span>
                     <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#F59E0B" }}>
-                      {tl.stats.unverifiedAccounts}
+                      {tl.stats.fbUnverifiedAccounts ?? tl.stats.unverifiedAccounts}
                     </span>
                   </div>
 
